@@ -11,7 +11,25 @@ declare -g CHECK_MODE=false
 declare -g DEFAULT_MODE=false
 declare -g VERBOSE_MODE=false
 
+# Определение директории, где находится скрипт
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Автоматическое определение пути к модулям
+if [[ -z "${CACHE_BASE:-}" ]]; then
+    # Если CACHE_BASE не установлена, проверяем наличие локальных модулей
+    if [[ -d "${SCRIPT_DIR}/modules" ]]; then
+        export CACHE_BASE="${SCRIPT_DIR}/modules"
+    else
+        echo "Ошибка: не удалось найти модули. Установите переменную CACHE_BASE или запустите через bsss-local.sh" >&2
+        exit 1
+    fi
+fi
+
 # Подключение модулей
+source "${CACHE_BASE}/helpers/common.sh"
+source "${CACHE_BASE}/helpers/config.sh"
+source "${CACHE_BASE}/helpers/input.sh"
+source "${CACHE_BASE}/helpers/logging.sh"
 source "${CACHE_BASE}/system-check.sh"
 source "${CACHE_BASE}/system-update.sh"
 source "${CACHE_BASE}/ssh-port.sh"
@@ -64,6 +82,9 @@ execute_step() {
 # Основная функция выполнения
 main() {
     parse_arguments "$@"
+    
+    # Инициализация логирования с учетом флага verbose
+    init_logging "$VERBOSE_MODE"
     
     # Проверка прав
     check_root_permissions

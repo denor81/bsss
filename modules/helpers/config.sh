@@ -19,14 +19,13 @@ find_last_active_parameter() {
     
     # Проверка файлов в .d директории
     if [[ -d "$config_dir" ]]; then
-        find "$config_dir" -name "*.conf" -type f | sort | while read -r config_file; do
+        for config_file in $(find "$config_dir" -name "*.conf" -type f | sort); do
             local file_value
             file_value=$(grep -E "^\s*${param_name}\s+" "$config_file" | tail -1 | awk '{print $2}')
             if [[ -n "$file_value" ]]; then
                 last_value="$file_value"
                 last_file="$config_file"
             fi
-            echo "Debug: Processing file: $config_file, value: $file_value"
         done
     fi
     
