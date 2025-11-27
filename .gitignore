@@ -1,1 +1,6 @@
-.git
+# Cache directory
+.cache/
+
+# Test artifacts
+tests/mock-environments/*/etc
+tests/mock-environments/*/var
