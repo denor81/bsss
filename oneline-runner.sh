@@ -6,8 +6,8 @@
 set -euo pipefail
 
 # Константы
-REPO_USER="your-github-username"
-REPO_NAME="your-repo-name"
+REPO_USER="denor81"
+REPO_NAME="bsss"
 RELEASE_URL="https://github.com/${REPO_USER}/${REPO_NAME}/releases/latest/download/project.tar.gz"
 PROJECT_DIR="/tmp/bsss-$$"
 
