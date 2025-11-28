@@ -23,18 +23,12 @@ if [[ ! -d "modules" ]]; then
     exit 1
 fi
 
-# Создаём архив
-tar --exclude='.git' \
-    --exclude='oneline-runner.sh' \
-    --exclude='build-archive.sh' \
-    --exclude='*.md' \
-    --exclude='tests/' \
-    -czf "${ARCHIVE_NAME}" \
+# Создаём архив, явно указывая нужные файлы
+tar -czf "${ARCHIVE_NAME}" \
+    oneline-runner.sh \
     local-runner.sh \
     bsss-main.sh \
-    modules/ \
-    lib/ \
-    templates/ 2>/dev/null || true
+    modules/
 
 echo "[*] Архив ${ARCHIVE_NAME} создан успешно"
 

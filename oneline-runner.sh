@@ -8,7 +8,8 @@ set -euo pipefail
 # Константы
 REPO_USER="denor81"
 REPO_NAME="bsss"
-RELEASE_URL="https://github.com/${REPO_USER}/${REPO_NAME}/releases/latest/download/project.tar.gz"
+# Получаем информацию о последнем релизе
+RELEASE_API_URL="https://api.github.com/repos/${REPO_USER}/${REPO_NAME}/releases/latest"
 PROJECT_DIR="/tmp/bsss-$$"
 
 echo "[*] Загрузка и распаковка проекта..."
@@ -29,8 +30,22 @@ fi
 mkdir -p "$PROJECT_DIR"
 trap "rm -rf $PROJECT_DIR" EXIT
 
-echo "[*] Скачиваю архив с GitHub..."
-if ! curl -Ls "$RELEASE_URL" | tar xz -C "$PROJECT_DIR"; then
+echo "[*] Получаю информацию о последнем релизе..."
+RELEASE_INFO=$(curl -s "$RELEASE_API_URL")
+
+# Извлекаем версию релиза
+TAG_NAME=$(echo "$RELEASE_INFO" | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4)
+
+if [[ -z "$TAG_NAME" ]]; then
+    echo "[!] Не удалось получить версию релиза." >&2
+    exit 1
+fi
+
+# Формируем URL архива на основе версии
+ARCHIVE_URL="https://github.com/${REPO_USER}/${REPO_NAME}/releases/download/${TAG_NAME}/project-${TAG_NAME}.tar.gz"
+
+echo "[*] Скачиваю архив с GitHub: project-${TAG_NAME}.tar.gz"
+if ! curl -Ls "$ARCHIVE_URL" | tar xz -C "$PROJECT_DIR"; then
     echo "[!] Ошибка при скачивании или распаковке архива." >&2
     exit 1
 fi

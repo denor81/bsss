@@ -7,15 +7,28 @@
 ```bash
 # Шаг 1: Создаём архив локально
 VERSION="1.0.0"
-tar --exclude='.git' --exclude='oneline-runner.sh' -czf "project-v${VERSION}.tar.gz" \
-    local-runner.sh lib/ modules/ templates/
+
+# Вариант 1: Используйте готовый скрипт (рекомендуется)
+./build-archive.sh ${VERSION}
+
+# Вариант 2: Создайте архив вручную, явно указывая нужные файлы
+tar -czf "project-v${VERSION}.tar.gz" \
+    oneline-runner.sh \
+    local-runner.sh \
+    bsss-main.sh \
+    modules/
 
 # Шаг 2: Создаём тег в Git
 git tag -a v1.0.0 -m "Release version 1.0.0"
 git push origin v1.0.0
 
 # Шаг 3: Публикуем на GitHub
-gh release create v1.0.0 "project-v1.0.0.tar.gz" --title "Release v1.0.0"
+gh release create v1.0.0 "project-v${VERSION}.tar.gz" --title "Release v${VERSION}"
+
+# Шаг 4: Обновляем oneline-runner.sh в репозитории
+git add oneline-runner.sh
+git commit -m "Update oneline-runner.sh with correct archive URL format"
+git push origin main
 ```
 
 ## Запуск через oneline
@@ -23,19 +36,29 @@ gh release create v1.0.0 "project-v1.0.0.tar.gz" --title "Release v1.0.0"
 Для запуска проекта используйте команду:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/USER/REPO/main/oneline-runner.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh)
 ```
+
+Скрипт автоматически определит последний релиз и скачает соответствующий архив.
 
 ## Структура архива
 
 Архив должен содержать следующие файлы и директории:
-- `local-runner.sh` - основной скрипт запуска
-- `lib/` - библиотеки (если есть)
-- `modules/` - модули проекта
-- `templates/` - шаблоны (если есть)
+- `oneline-runner.sh` - скрипт загрузки и запуска
+- `local-runner.sh` - локальный скрипт запуска
+- `bsss-main.sh` - основной скрипт проекта
+- `modules/` - модули проекта со всеми вложенными файлами и директориями
 
-## Исключения из архива
+## Важное замечание
 
-Из архива исключаются:
-- `.git/` - директория git
-- `oneline-runner.sh` - скрипт загрузки (он загружается отдельно)
+При публикации нового релиза убедитесь, что `oneline-runner.sh` в основной ветке репозитория уже обновлён и умеет работать с новым форматом имени архива. В противном случае пользователи не смогут скачать и запустить последнюю версию.
+
+## Правила формирования архива
+
+В архив включаются только следующие файлы и директории:
+- `oneline-runner.sh` - скрипт загрузки и запуска
+- `local-runner.sh` - локальный скрипт запуска
+- `bsss-main.sh` - основной скрипт проекта
+- `modules/` - модули проекта со всеми вложенными файлами и директориями
+
+Все остальные файлы и директории в проекте не включаются в архив. Это обеспечивает минимальный размер дистрибутива и исключает попадание служебных файлов.
