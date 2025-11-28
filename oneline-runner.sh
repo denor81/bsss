@@ -3,11 +3,32 @@
 # Загрузчик для установки проекта одной командой
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/user/repo/main/oneline-runner.sh)
 
-set -euo pipefail
+set -o pipefail
 
 # Определение директории, где находится скрипт
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly CONFIG_FILE="${SCRIPT_DIR}/config/bsss.conf"
+# Обработка случая запуска через one-liner (bash <(curl ...))
+if [[ -f "${0}" ]]; then
+    # Обычный запуск из файла
+    readonly SCRIPT_DIR="$(cd "$(dirname "${0}")" && pwd)"
+    readonly CONFIG_FILE="${SCRIPT_DIR}/config/bsss.conf"
+else
+    # Запуск через one-liner - используем временную директорию
+    readonly SCRIPT_DIR="/tmp/bsss-config-$$"
+    mkdir -p "$SCRIPT_DIR"
+    
+    # Скачиваем конфигурационный файл напрямую
+    echo "[*] Загрузка конфигурации..."
+    if ! curl -fsSL "https://raw.githubusercontent.com/denor81/bsss/main/config/bsss.conf" > "$SCRIPT_DIR/bsss.conf"; then
+        echo "[!] Ошибка при загрузке конфигурационного файла" >&2
+        rm -rf "$SCRIPT_DIR"
+        exit 1
+    fi
+    
+    # Устанавливаем очистку временной директории при выходе
+    trap "rm -rf $SCRIPT_DIR" EXIT
+    
+    readonly CONFIG_FILE="${SCRIPT_DIR}/bsss.conf"
+fi
 
 # Загрузка конфигурации
 if [[ -f "$CONFIG_FILE" ]]; then
