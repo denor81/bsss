@@ -28,7 +28,8 @@ tar -czf "${ARCHIVE_NAME}" \
     oneline-runner.sh \
     local-runner.sh \
     bsss-main.sh \
-    modules/
+    modules/ \
+    config/
 
 echo "[*] Архив ${ARCHIVE_NAME} создан успешно"
 

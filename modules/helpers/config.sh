@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+# Загрузка конфигурации
+source "${CACHE_BASE}/helpers/config-loader.sh"
+load_config
+
+# Получение конфигурационных параметров
+CONFIG_DEFAULT_INDEX="$(get_config CONFIG_DEFAULT_INDEX)"
+CONFIG_MAX_INDEX="$(get_config CONFIG_MAX_INDEX)"
+CONFIG_FILE_EXTENSION="$(get_config CONFIG_FILE_EXTENSION)"
+BSSS_CONFIG_PREFIX="$(get_config BSSS_CONFIG_PREFIX)"
+
 # Поиск последнего активного параметра в конфигурационных файлах
 find_last_active_parameter() {
     local param_name="$1"
@@ -39,8 +49,8 @@ find_last_active_parameter() {
 # Генерация индекса для нового файла конфигурации
 generate_config_index() {
     local last_file="$1"
-    local default_index="10"
-    local max_index="99"
+    local default_index="$CONFIG_DEFAULT_INDEX"
+    local max_index="$CONFIG_MAX_INDEX"
     
     if [[ "$last_file" == "notfound" ]]; then
         echo "$default_index"
@@ -72,6 +82,6 @@ remove_bsss_files() {
     local param_pattern="$2"
     
     if [[ -d "$config_dir" ]]; then
-        find "$config_dir" -name "*bsss*${param_pattern}*.conf" -type f -delete
+        find "$config_dir" -name "*${BSSS_CONFIG_PREFIX}*${param_pattern}*${CONFIG_FILE_EXTENSION}" -type f -delete
     fi
 }

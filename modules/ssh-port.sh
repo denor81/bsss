@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 
-# Исходные данные
-SSH_PORT_DEFAULT="22"
-SSH_CONFIG_DIR="/etc/ssh/sshd_config.d"
-SSH_MAIN_CONFIG="/etc/ssh/sshd_config"
+# Загрузка конфигурации
+source "${CACHE_BASE}/helpers/config-loader.sh"
+load_config
+
+# Получение конфигурационных параметров
+SSH_PORT_DEFAULT="$(get_config SSH_PORT_DEFAULT)"
+SSH_CONFIG_DIR="$(get_config SSH_CONFIG_DIR)"
+SSH_MAIN_CONFIG="$(get_config SSH_MAIN_CONFIG)"
+SSH_SERVICE_NAME="$(get_config SSH_SERVICE_NAME)"
+SSH_PORT_CONFIG_PATTERN="$(get_config SSH_PORT_CONFIG_PATTERN)"
 
 # Проверка текущего состояния SSH порта
 check_ssh_port() {
@@ -15,12 +21,12 @@ create_ssh_port_config() {
     local port="$1"
     local index="$2"
     
-    local filename="${SSH_CONFIG_DIR}/${index}-bsss-ssh-port.conf"
+    local filename="${SSH_CONFIG_DIR}/${index}-${BSSS_CONFIG_PREFIX}-${SSH_PORT_CONFIG_PATTERN}${CONFIG_FILE_EXTENSION}"
     
     check_write_permission "$SSH_CONFIG_DIR"
     
     cat > "$filename" << EOF
-# SSH port configuration by BSSS
+$BSSS_CONFIG_COMMENT
 Port $port
 EOF
     
@@ -31,7 +37,7 @@ EOF
 apply_ssh_port_settings() {
     log_verbose "Применение настроек SSH..."
     
-    if systemctl daemon-reload && systemctl restart ssh; then
+    if systemctl daemon-reload && systemctl restart "$SSH_SERVICE_NAME"; then
         log_verbose "SSH сервис успешно перезапущен"
     else
         echo "Ошибка при перезапуске SSH сервиса" >&2
@@ -42,7 +48,7 @@ apply_ssh_port_settings() {
 # Возврат к настройкам по умолчанию
 restore_ssh_port_default() {
     log_verbose "Удаление файлов конфигурации SSH порта, созданных BSSS..."
-    remove_bsss_files "$SSH_CONFIG_DIR" "ssh-port"
+    remove_bsss_files "$SSH_CONFIG_DIR" "$SSH_PORT_CONFIG_PATTERN"
     apply_ssh_port_settings
 }
 
@@ -76,7 +82,7 @@ ssh_port() {
                     fi
                     
                     # Удаление старых файлов bsss
-                    remove_bsss_files "$SSH_CONFIG_DIR" "ssh-port"
+                    remove_bsss_files "$SSH_CONFIG_DIR" "$SSH_PORT_CONFIG_PATTERN"
                     
                     # Определение индекса для нового файла
                     local index
@@ -105,7 +111,7 @@ ssh_port() {
                     fi
                     
                     # Создание файла конфигурации
-                    create_ssh_port_config "$new_port" "10"
+                    create_ssh_port_config "$new_port" "$CONFIG_DEFAULT_INDEX"
                     
                     # Сохранение порта в глобальную переменную
                     SSH_PORT="$new_port"

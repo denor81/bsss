@@ -3,8 +3,20 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# Определение директории, где находится скрипт
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Проверяем параметр --uninstall (только для установленной версии)
+if [[ "$1" == "--uninstall" ]]; then
+    # Определяем директорию скрипта для проверки uninstall.sh
+    readonly SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+    if [[ -f "${SCRIPT_DIR}/uninstall.sh" ]]; then
+        exec "${SCRIPT_DIR}/uninstall.sh"
+    else
+        echo "Ошибка: скрипт удаления не найден" >&2
+        exit 1
+    fi
+fi
+
+# Определение директории, где находится скрипт (разрешаем символические ссылки)
+readonly SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly MODULES_DIR="${SCRIPT_DIR}/modules"
 
 # Проверка наличия директории с модулями

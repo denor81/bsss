@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
 
+# Загрузка конфигурации
+source "${CACHE_BASE}/helpers/config-loader.sh"
+load_config
+
+# Получение конфигурационных параметров
+SSH_SERVICE_NAME="$(get_config SSH_SERVICE_NAME)"
+UFW_SERVICE_NAME="$(get_config UFW_SERVICE_NAME)"
+UFW_DEFAULT_POLICY="$(get_config UFW_DEFAULT_POLICY)"
+UFW_SSH_PROTOCOL="$(get_config UFW_SSH_PROTOCOL)"
+SSH_PORT_DEFAULT="$(get_config SSH_PORT_DEFAULT)"
+STATUS_ACTIVE="$(get_config STATUS_ACTIVE)"
+STATUS_INACTIVE="$(get_config STATUS_INACTIVE)"
+
 # Получение текущего SSH порта
 get_current_ssh_port() {
     # Если SSH порт уже установлен в глобальной переменной, используем его
@@ -16,7 +29,7 @@ get_current_ssh_port() {
         local port="${ssh_port_result%:*}"
         echo "$port"
     else
-        echo "22"  # Порт по умолчанию
+        echo "$SSH_PORT_DEFAULT"  # Порт по умолчанию
     fi
 }
 
@@ -28,7 +41,7 @@ setup_ufw() {
     log_verbose "Настройка UFW для SSH порта: $ssh_port"
     
     # Разрешение SSH порта
-    if ufw allow "${ssh_port}/tcp"; then
+    if ufw allow "${ssh_port}/${UFW_SSH_PROTOCOL}"; then
         log_verbose "SSH порт $ssh_port разрешен в UFW"
     else
         echo "Ошибка при разрешении SSH порта в UFW" >&2
@@ -36,8 +49,8 @@ setup_ufw() {
     fi
     
     # Установка политики по умолчанию для входящих соединений
-    if ufw default deny incoming; then
-        log_verbose "Установлена политика deny incoming по умолчанию"
+    if ufw default "$UFW_DEFAULT_POLICY" incoming; then
+        log_verbose "Установлена политика $UFW_DEFAULT_POLICY incoming по умолчанию"
     else
         echo "Ошибка при установке политики по умолчанию" >&2
         exit 1
@@ -66,10 +79,10 @@ disable_ufw() {
 
 # Проверка текущего состояния UFW
 check_ufw_status() {
-    if ufw status | grep -q "Status: active"; then
-        echo "active"
+    if ufw status | grep -q "Status: $STATUS_ACTIVE"; then
+        echo "$STATUS_ACTIVE"
     else
-        echo "inactive"
+        echo "$STATUS_INACTIVE"
     fi
 }
 
@@ -88,7 +101,7 @@ ufw_setup() {
             local current_status
             current_status=$(check_ufw_status)
             
-            if [[ "$current_status" == "active" ]]; then
+            if [[ "$current_status" == "$STATUS_ACTIVE" ]]; then
                 echo "UFW уже активен"
             else
                 echo "Текущее состояние UFW: неактивен"

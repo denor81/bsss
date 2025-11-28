@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# Загрузка конфигурации
+source "${CACHE_BASE}/helpers/config-loader.sh"
+load_config
+
+# Получение конфигурационных параметров
+PORT_MIN="$(get_config PORT_MIN)"
+PORT_MAX="$(get_config PORT_MAX)"
+
 # Функция подтверждения Y/n с Y по умолчанию
 confirm_yes_no() {
     local prompt="$1"
@@ -33,11 +41,11 @@ input_ssh_port() {
         port=$(echo "$port" | tr -d ' ')
         
         # Проверка что это число и в допустимом диапазоне
-        if [[ "$port" =~ ^[0-9]+$ ]] && ((port >= 1 && port <= 65535)); then
+        if [[ "$port" =~ ^[0-9]+$ ]] && ((port >= PORT_MIN && port <= PORT_MAX)); then
             echo "$port"
             return 0
         else
-            echo "Ошибка: порт должен быть числом от 1 до 65535"
+            echo "Ошибка: порт должен быть числом от $PORT_MIN до $PORT_MAX"
         fi
     done
 }

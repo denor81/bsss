@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# Загрузка конфигурации
+source "${CACHE_BASE}/helpers/config-loader.sh"
+load_config
+
+# Получение конфигурационных параметров
+SYSTEMD_SERVICE_NAME="$(get_config SYSTEMD_SERVICE_NAME)"
+
 # Проверка прав root
 check_root_permissions() {
     if [[ $EUID -ne 0 ]]; then
@@ -10,8 +17,8 @@ check_root_permissions() {
 
 # Проверка наличия systemd
 check_systemd() {
-    if ! command -v systemctl >/dev/null 2>&1; then
-        echo "Система не использует systemd. Выход." >&2
+    if ! command -v "$SYSTEMD_SERVICE_NAME" >/dev/null 2>&1; then
+        echo "Система не использует $SYSTEMD_SERVICE_NAME. Выход." >&2
         exit 1
     fi
 }

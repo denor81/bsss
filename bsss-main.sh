@@ -28,6 +28,7 @@ fi
 # Подключение модулей
 source "${CACHE_BASE}/helpers/common.sh"
 source "${CACHE_BASE}/helpers/config.sh"
+source "${CACHE_BASE}/helpers/config-loader.sh"
 source "${CACHE_BASE}/helpers/input.sh"
 source "${CACHE_BASE}/helpers/logging.sh"
 source "${CACHE_BASE}/system-check.sh"
@@ -82,6 +83,9 @@ execute_step() {
 # Основная функция выполнения
 main() {
     parse_arguments "$@"
+    
+    # Загрузка конфигурации
+    load_config
     
     # Инициализация логирования с учетом флага verbose
     init_logging "$VERBOSE_MODE"

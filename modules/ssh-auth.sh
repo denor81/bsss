@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 
-# Исходные данные
-SSH_CONFIG_DIR="/etc/ssh/sshd_config.d"
-SSH_MAIN_CONFIG="/etc/ssh/sshd_config"
-SSH_PARAM="PasswordAuthentication"
-SSH_VALUE="no"
+# Загрузка конфигурации
+source "${CACHE_BASE}/helpers/config-loader.sh"
+load_config
+
+# Получение конфигурационных параметров
+SSH_CONFIG_DIR="$(get_config SSH_CONFIG_DIR)"
+SSH_MAIN_CONFIG="$(get_config SSH_MAIN_CONFIG)"
+SSH_PASSWORD_AUTH_PARAM="$(get_config SSH_PASSWORD_AUTH_PARAM)"
+SSH_PASSWORD_AUTH_VALUE="$(get_config SSH_PASSWORD_AUTH_VALUE)"
+SSH_SERVICE_NAME="$(get_config SSH_SERVICE_NAME)"
+SSH_AUTH_CONFIG_PATTERN="$(get_config SSH_AUTH_CONFIG_PATTERN)"
 
 # Проверка текущего состояния авторизации по паролю
 check_password_auth() {
@@ -13,7 +19,7 @@ check_password_auth() {
     
     # Проверка основного файла
     if [[ -f "$SSH_MAIN_CONFIG" ]]; then
-        value=$(grep -E "^\s*${SSH_PARAM}\s+(yes|no)" "$SSH_MAIN_CONFIG" | tail -1 | awk '{print $2}')
+        value=$(grep -E "^\s*${SSH_PASSWORD_AUTH_PARAM}\s+(yes|no)" "$SSH_MAIN_CONFIG" | tail -1 | awk '{print $2}')
         if [[ -n "$value" ]]; then
             file="$SSH_MAIN_CONFIG"
         fi
@@ -23,7 +29,7 @@ check_password_auth() {
     if [[ -d "$SSH_CONFIG_DIR" ]]; then
         while IFS= read -r -d '' config_file; do
             local file_value
-            file_value=$(grep -E "^\s*${SSH_PARAM}\s+(yes|no)" "$config_file" | tail -1 | awk '{print $2}')
+            file_value=$(grep -E "^\s*${SSH_PASSWORD_AUTH_PARAM}\s+(yes|no)" "$config_file" | tail -1 | awk '{print $2}')
             if [[ -n "$file_value" ]]; then
                 value="$file_value"
                 file="$config_file"
@@ -42,13 +48,13 @@ check_password_auth() {
 create_ssh_auth_config() {
     local index="$1"
     
-    local filename="${SSH_CONFIG_DIR}/${index}-bsss-disable-pass-auth.conf"
+    local filename="${SSH_CONFIG_DIR}/${index}-${BSSS_CONFIG_PREFIX}-${SSH_AUTH_CONFIG_PATTERN}${CONFIG_FILE_EXTENSION}"
     
     check_write_permission "$SSH_CONFIG_DIR"
     
     cat > "$filename" << EOF
-# SSH password authentication disable by BSSS
-${SSH_PARAM} ${SSH_VALUE}
+$BSSS_CONFIG_COMMENT
+${SSH_PASSWORD_AUTH_PARAM} ${SSH_PASSWORD_AUTH_VALUE}
 EOF
     
     log_verbose "Создан файл конфигурации: $filename"
@@ -58,7 +64,7 @@ EOF
 apply_ssh_auth_settings() {
     log_verbose "Применение настроек SSH..."
     
-    if systemctl daemon-reload && systemctl restart ssh; then
+    if systemctl daemon-reload && systemctl restart "$SSH_SERVICE_NAME"; then
         log_verbose "SSH сервис успешно перезапущен"
     else
         echo "Ошибка при перезапуске SSH сервиса" >&2
@@ -69,7 +75,7 @@ apply_ssh_auth_settings() {
 # Возврат к настройкам по умолчанию
 restore_ssh_auth_default() {
     log_verbose "Удаление файлов конфигурации SSH авторизации, созданных BSSS..."
-    remove_bsss_files "$SSH_CONFIG_DIR" "disable-pass-auth"
+    remove_bsss_files "$SSH_CONFIG_DIR" "$SSH_AUTH_CONFIG_PATTERN"
     apply_ssh_auth_settings
 }
 
@@ -98,7 +104,7 @@ ssh_auth() {
                     echo "Текущее состояние авторизации по паролю: включена"
                     if confirm_yes_no "Хотите отключить авторизацию по паролю?"; then
                         # Удаление старых файлов bsss
-                        remove_bsss_files "$SSH_CONFIG_DIR" "disable-pass-auth"
+                        remove_bsss_files "$SSH_CONFIG_DIR" "$SSH_AUTH_CONFIG_PATTERN"
                         
                         # Определение индекса для нового файла
                         local index
@@ -125,7 +131,7 @@ ssh_auth() {
                     fi
                     
                     # Создание файла конфигурации
-                    create_ssh_auth_config "10"
+                    create_ssh_auth_config "$CONFIG_DEFAULT_INDEX"
                     
                     log_state_change "Авторизация по паролю" "включена" "отключена"
                     apply_ssh_auth_settings

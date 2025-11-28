@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 
-# Исходные данные
-GRUB_CONFIG_DIR="/etc/default/grub.d"
-GRUB_MAIN_CONFIG="/etc/default/grub"
-GRUB_PARAM="GRUB_CMDLINE_LINUX_DEFAULT"
-GRUB_VALUE="ipv6.disable=1"
+# Загрузка конфигурации
+source "${CACHE_BASE}/helpers/config-loader.sh"
+load_config
+
+# Получение конфигурационных параметров
+GRUB_CONFIG_DIR="$(get_config GRUB_CONFIG_DIR)"
+GRUB_MAIN_CONFIG="$(get_config GRUB_MAIN_CONFIG)"
+GRUB_CMDLINE_PARAM="$(get_config GRUB_CMDLINE_PARAM)"
+GRUB_IPV6_DISABLE_VALUE="$(get_config GRUB_IPV6_DISABLE_VALUE)"
+GRUB_IPV6_CONFIG_PATTERN="$(get_config GRUB_IPV6_CONFIG_PATTERN)"
+GRUB_UPDATE_COMMAND="$(get_config GRUB_UPDATE_COMMAND)"
 
 # Проверка текущего состояния IPv6
 check_ipv6_state() {
@@ -42,13 +48,13 @@ check_ipv6_state() {
 create_ipv6_config() {
     local index="$1"
     
-    local filename="${GRUB_CONFIG_DIR}/${index}-bsss-ipv6-disable.conf"
+    local filename="${GRUB_CONFIG_DIR}/${index}-${BSSS_CONFIG_PREFIX}-${GRUB_IPV6_CONFIG_PATTERN}${CONFIG_FILE_EXTENSION}"
     
     check_write_permission "$GRUB_CONFIG_DIR"
     
     cat > "$filename" << EOF
-# IPv6 disable configuration by BSSS
-${GRUB_PARAM}="${GRUB_VALUE}"
+$BSSS_CONFIG_COMMENT
+${GRUB_CMDLINE_PARAM}="${GRUB_IPV6_DISABLE_VALUE}"
 EOF
     
     log_verbose "Создан файл конфигурации: $filename"
@@ -58,7 +64,7 @@ EOF
 apply_ipv6_settings() {
     log_verbose "Применение настроек GRUB..."
     
-    if update-grub; then
+    if "$GRUB_UPDATE_COMMAND"; then
         log_verbose "GRUB успешно обновлен"
     else
         echo "Ошибка при обновлении GRUB" >&2
@@ -69,7 +75,7 @@ apply_ipv6_settings() {
 # Возврат к настройкам по умолчанию
 restore_ipv6_default() {
     log_verbose "Удаление файлов конфигурации IPv6, созданных BSSS..."
-    remove_bsss_files "$GRUB_CONFIG_DIR" "ipv6"
+    remove_bsss_files "$GRUB_CONFIG_DIR" "$GRUB_IPV6_CONFIG_PATTERN"
     apply_ipv6_settings
 }
 
@@ -98,7 +104,7 @@ ipv6_disable() {
                     echo "Текущее состояние IPv6: включен"
                     if confirm_yes_no "Хотите отключить IPv6?"; then
                         # Удаление старых файлов bsss
-                        remove_bsss_files "$GRUB_CONFIG_DIR" "ipv6"
+                        remove_bsss_files "$GRUB_CONFIG_DIR" "$GRUB_IPV6_CONFIG_PATTERN"
                         
                         # Определение индекса для нового файла
                         local index
@@ -125,7 +131,7 @@ ipv6_disable() {
                     fi
                     
                     # Создание файла конфигурации
-                    create_ipv6_config "10"
+                    create_ipv6_config "$CONFIG_DEFAULT_INDEX"
                     
                     log_state_change "IPv6" "включен" "отключен"
                     apply_ipv6_settings
