@@ -20,7 +20,7 @@ if [[ -z "${CACHE_BASE:-}" ]]; then
     if [[ -d "${SCRIPT_DIR}/modules" ]]; then
         export CACHE_BASE="${SCRIPT_DIR}/modules"
     else
-        echo "Ошибка: не удалось найти модули. Установите переменную CACHE_BASE или запустите через bsss-local.sh" >&2
+        echo "Ошибка: не удалось найти модули. Установите переменную CACHE_BASE или запустите через local-runner.sh" >&2
         exit 1
     fi
 fi
