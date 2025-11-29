@@ -18,7 +18,9 @@ echo "[*] Загрузка и распаковка проекта..."
 
 # Создаём/удаляем временную директорию
 mkdir -p "$TEMP_PROJECT_DIR"
-trap "rm -rf $TEMP_PROJECT_DIR" EXIT
+# trap "rm -rf $TEMP_PROJECT_DIR" EXIT
+
+echo "[*] Создана временная директория $TEMP_PROJECT_DIR"
 
 # Функция установки в систему
 install_to_system() {
