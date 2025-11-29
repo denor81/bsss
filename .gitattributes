@@ -11,6 +11,8 @@
 # Пример: включить папку dist со всем содержимым
 modules/ -export-ignore
 modules/** -export-ignore
+config/ -export-ignore
+config/** -export-ignore
 
 # Пример: включить конкретный файл в корне
 bsss-main.sh -export-ignore
