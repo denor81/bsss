@@ -5,9 +5,6 @@
 
 set -euo pipefail
 
-# Определение директории, где находится скрипт
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 echo "[*] Загрузка и распаковка проекта..."
 
 # Проверяем наличие tar
@@ -17,6 +14,7 @@ if ! command -v tar &> /dev/null; then
 fi
 
 # Создаём временную директорию
+readonly TEMP_PROJECT_DIR="/tmp/bsss-$$"
 mkdir -p "$TEMP_PROJECT_DIR"
 trap "rm -rf $TEMP_PROJECT_DIR" EXIT
 
