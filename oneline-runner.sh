@@ -9,37 +9,109 @@ readonly ARCHIVE_URL="https://github.com/denor81/bsss/archive/refs/tags/v1.0.0.t
 readonly LINK_NAME="bsss"
 readonly INSTALL_DIR="/opt/bsss"
 readonly TEMP_PROJECT_DIR="/tmp/bsss-$$"
-readonly ERR_SUCCESS=0
+readonly EXIT_SUCCESS=0
 readonly ERR_ALREADY_INSTALLED=1
 readonly ERR_NO_ROOT=2
 readonly ERR_UNPACK=3
 
-echo "[*] Загрузка и распаковка проекта..."
+hello() {
+    log_info "Basic Server Security Setup (BSSS) - oneline запуск..."
+}
+
+handle_result() {
+    local result=$1
+    case $result in
+        "$EXIT_SUCCESS") 
+            log_success "Операция завершена"
+            ;;
+        "$ERR_NO_ROOT") 
+            log_error "Запустите с sudo: sudo $0"
+            ;;
+        "$ERR_ALREADY_INSTALLED") 
+            log_error "Уже установлен. Используйте: bsss --uninstall"
+            ;;
+        "$ERR_UNPACK") 
+            log_error "Проверьте подключение к интернету"
+            ;;
+        *) 
+            log_error "Неизвестная ошибка ($result)"
+            ;;
+    esac
+    return $result
+}
+
+# Проверяем права root
+check_root_permissions() {
+    if [[ $EUID -ne 0 ]]; then
+        log_error "Для работы скрипта требуются права root"
+        log_info "Пожалуйста, запускайте с sudo"
+        return "$ERR_NO_ROOT"
+    fi
+}
+
+# Спрашиваем пользователя о режиме запуска
+ask_user_how_to_run(){
+    log_info "Запустить bsss однократно?"
+    log_info "Y - запуск однократно / n - установить / c - отмена"
+    read -p "Ваш выбор (Y/n/c): " -n 1 -r
+
+if [[ $REPLY =~ ^[Cc]$ ]]; then
+    log_info "Отмена выполнения."
+    # return 0 завершает функцию/скрипт успешно
+    return 0 
+elif [[ $REPLY =~ ^[Nn]$ ]]; then
+    # Установка в систему
+    install_to_system
+    # После установки скрипт, вероятно, должен завершиться
+    return 0 
+else
+    # Разовый запуск (любой другой ввод)
+    log_info "Запускаюсь из временной директории $LOCAL_RUNNER_PATH"
+    
+    # Запускаем локальный runner в ОТДЕЛЬНОМ процессе с передачей всех аргументов
+    # Передаем статус завершения дочернего скрипта как статус родительского
+    bash "$LOCAL_RUNNER_PATH" "$@"
+    # Можно явно не писать return, статус последнего выполненного процесса вернется автоматически
+fi
+}
 
 # Создаём/удаляем временную директорию
-mkdir -p "$TEMP_PROJECT_DIR"
-# trap "rm -rf $TEMP_PROJECT_DIR" EXIT
+create_tmp_dir() {
+    mkdir -p "$TEMP_PROJECT_DIR"
+    trap "rm -rf $TEMP_PROJECT_DIR" EXIT
+    log_info "Создана временная директория $TEMP_PROJECT_DIR"
+}
 
-echo "[*] Создана временная директория $TEMP_PROJECT_DIR"
+# Скаиваем архив
+download_and_unpack_archive() {
+log_info "Скачиваю архив с GitHub: $ARCHIVE_URL"
+if ! curl -Ls "$ARCHIVE_URL" | tar xz -C "$TEMP_PROJECT_DIR"; then
+    log_error "Ошибка при скачивании или распаковке архива."
+    return "$ERR_UNPACK"
+fi
+}
+
+# Проверяем успешность распаковки во временную директорию
+check_archive_unpacking() {
+LOCAL_RUNNER_PATH=$(find "$TEMP_PROJECT_DIR" -type f -name "local-runner.sh")
+if [[ -z "$LOCAL_RUNNER_PATH" ]]; then
+    log_error "Что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
+    return "$ERR_UNPACK"
+fi
+log_success "Архив успешно распакован во временную директорию"
+}
 
 # Функция установки в систему
 install_to_system() {
     # Проверяем, установлен ли уже скрипт
     if [[ -d "$INSTALL_DIR" ]]; then
-        echo "[!] Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога." >&2
-        echo "[*] Для запуска Basic Server Security Setup используйте команду: sudo bsss, если не сработает - проверьте, что установлено в каталоге $INSTALL_DIR." >&2
-        echo "[*] Для удаления ранее установленного скрипта BSSS выполните: sudo bsss --uninstall" >&2
+        log_error "Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога."
+        log_info "Для запуска Basic Server Security Setup используйте команду: sudo bsss, если не сработает - проверьте, что установлено в каталоге $INSTALL_DIR."
+        log_info "Для удаления ранее установленного скрипта BSSS выполните: sudo bsss --uninstall"
         return "$ERR_ALREADY_INSTALLED"
     fi
     
-    # Проверяем права root
-    if [[ $EUID -ne 0 ]]; then
-        echo "[!] Для установки в систему требуются права root." >&2
-        echo "[*] Пожалуйста, запустите $$0 с sudo" >&2
-        return "$ERR_NO_ROOT"
-    fi
-    
-    echo "[*] Устанавливаю BSSS в систему..."
+    log_info "Устанавливаю BSSS в систему..."
     
     # Создаем директорию установки
     mkdir -p "$INSTALL_DIR"
@@ -53,67 +125,31 @@ install_to_system() {
     
     # Создаем символическую ссылку с проверкой конфликта
     if [[ -L "$LINK_NAME" ]]; then
-        echo "[!] Символическая ссылка $LINK_NAME уже существует." >&2
-        echo "[*] Она указывает на: $(readlink "$LINK_NAME") - проверьте устанолен ли BSSS." >&2
+        log_error "Символическая ссылка $LINK_NAME уже существует - BSSS установлен."
+        log_info "Ссылка указывает на: $(readlink "$LINK_NAME")."
         return "$ERR_ALREADY_INSTALLED"
     fi
     
     # Создаем символическую ссылку
     ln -s "$INSTALL_DIR/local-runner.sh" "$LINK_NAME"
     
-    echo "[*] Установка завершена!"
-    echo "[*] Для запуска используйте команду: sudo $LINK_NAME"
-    echo "[*] Для удаления выполните: sudo $LINK_NAME --uninstall"
-    return "$ERR_SUCCESS"
+    log_success "Установка завершена!"
+    log_info "Для запуска используйте команду: sudo bsss"
+    log_info "Для удаления выполните: sudo bsss --uninstall"
+    return "$EXIT_SUCCESS"
 }
 
-# Спрашиваем пользователя о режиме запуска
-echo "[*] Запустить bsss однократно?"
-echo "Y - запуск однократно / n - установить / c - отмена"
-read -p "Ваш выбор (Y/n/c): " -n 1 -r
+log_success() { echo "[v] $1"; }
+log_error() { echo "[x] $1" >&2; }
+log_info() { echo "[*] $1"; }
 
-if [[ $REPLY =~ ^[Cc]$ ]]; then
-    echo "[*] Отмена выполнения."
-    return "$ERR_SUCCESS"
-fi
+hello
+check_root_permissions
+ask_user_how_to_run "$@"
+create_tmp_dir
+download_and_unpack_archive
+check_archive_unpacking
 
-echo "[*] Скачиваю архив с GitHub: $ARCHIVE_URL"
-if ! curl -Ls "$ARCHIVE_URL" | tar xz -C "$TEMP_PROJECT_DIR"; then
-    echo "[!] Ошибка при скачивании или распаковке архива." >&2
-    return "$ERR_UNPACK"
-fi
-
-# Проверяем наличие local-runner.sh
-if [[ ! -f "$TEMP_PROJECT_DIR/local-runner.sh" ]]; then
-    echo "[!] Файл local-runner.sh не найден в архиве." >&2
-    return "$ERR_UNPACK"
-fi
-
-echo "[*] Архив успешно распакован."
-
-# Обрабатываем выбор пользователя
-if [[ $REPLY =~ ^[Nn]$ ]]; then
-    # Установка в систему
-    install_to_system
-else
-    # Разовый запуск
-    echo "[*] Запускаю local-runner.sh из временной директории $TEMP_PROJECT_DIR"
-    
-    # Запускаем локальный runner с передачей всех аргументов
-    # Всегда вернет 0 или сам прекратит выполнение
-    bash "$TEMP_PROJECT_DIR/local-runner.sh" "$@"
-fi
-
-# Теперь используем обработчик ошибок с конструкцией case
-handle_install_result() {
-    local result=$?
-    case $result in
-        "$ERR_SUCCESS") echo "[OK] Установка прошла успешно!" ;;
-        "$ERR_ALREADY_INSTALLED") echo "[ERR] Уже установлен. Попробуйте удалить старую версию перед повторной установкой."  >&2 ;;
-        "$ERR_NO_ROOT") echo "[ERR] Нет root прав."  >&2 ;;
-        "$ERR_UNPACK") echo "[ERR] Ошибка скачивания или распаковки"  >&2 ;;
-        *) echo "[ERR] Неизвестная ошибка ($result)" >&2 ;;
-    esac
-}
-
-handle_install_result
+main "$@"
+handle_result $?
+exit $?
