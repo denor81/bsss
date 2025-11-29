@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
 
 # Глобальная переменная для хранения SSH порта между шагами
 declare -g SSH_PORT=""

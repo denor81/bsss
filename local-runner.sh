@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
+
+readonly CONFIG_FILE="${SCRIPT_DIR}/config/bsss.conf"
+
+# Загрузка конфигурации
+if [[ -f "$CONFIG_FILE" ]]; then
+    source "$CONFIG_FILE"
+else
+    echo "[!] Конфигурационный файл не найден: $CONFIG_FILE" >&2
+    exit 1
+fi
 
 # Проверяем параметр --uninstall (только для установленной версии)
 if [[ "$1" == "--uninstall" ]]; then

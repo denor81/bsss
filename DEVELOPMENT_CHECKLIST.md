@@ -49,7 +49,7 @@
 
 ### 3.1. Базовая структура
 - [ ] Добавить shebang `#!/usr/bin/env bash`
-- [ ] Добавить строгие режимы `set -o errexit, nounset, pipefail`
+- [ ] Добавить строгие режимы `set -euo pipefail`
 - [ ] Добавить константы `CACHE_BASE`, `REMOTE_BASE`, `SCRIPT_VERSION`
 
 ### 3.2. Функции загрузки

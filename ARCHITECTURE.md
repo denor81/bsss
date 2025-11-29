@@ -35,9 +35,7 @@ bsss/
 ### 1.2. Механизм работы
 ```bash
 #!/usr/bin/env bash
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
 
 # Конфигурация загрузчика
 readonly CACHE_BASE="${HOME}/.cache/bsss"
@@ -113,9 +111,7 @@ declare -g VERBOSE_MODE=false
 ### 2.3. Структура основного скрипта
 ```bash
 #!/usr/bin/env bash
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
 
 # Подключение модулей
 source "${CACHE_BASE}/system-check.sh"
@@ -193,9 +189,7 @@ main "$@"
 
 ```bash
 #!/usr/bin/env bash
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
 
 # 3.1.0. Исходные данные
 module_init() {
@@ -597,7 +591,7 @@ test_remote_modules() {
 - Использование двойных кавычек для всех переменных
 
 ### 7.2. Безопасность команд
-- Использование set -o errexit, nounset, pipefail
+- Использование set -euo pipefail
 - Проверка входных данных
 - Валидация путей файлов
 
