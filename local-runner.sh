@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Определение директории, где находится скрипт
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 readonly CONFIG_FILE="${SCRIPT_DIR}/config/bsss.conf"
 
 # Загрузка конфигурации
