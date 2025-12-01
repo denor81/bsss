@@ -6,6 +6,7 @@
 set -Eeuo pipefail
 
 readonly UTIL_NAME="bsss"
+readonly SYMBOL_LINK_PATH="/usr/local/bin/$UTIL_NAME"
 readonly ARCHIVE_URL="file:///tmp/TEST.tar.gz"
 # readonly ARCHIVE_URL="https://github.com/denor81/$UTIL_NAME/archive/refs/tags/v1.0.0.tar.gz"
 readonly INSTALL_DIR="/opt/$UTIL_NAME"
@@ -23,6 +24,7 @@ readonly ERR_NO_ROOT=2
 readonly ERR_DOWNLOAD=3
 readonly ERR_UNPACK=4
 readonly ERR_CHECK_UNPACK=5
+readonly ERR_INCORRECT_CHOICE=6
 
 # Очистка временных файлов
 # shellcheck disable=SC2329
@@ -50,11 +52,9 @@ cleanup_handler() {
 # Передаем имя сигнала в функцию при вызове
 trap 'cleanup_handler EXIT' EXIT
 trap 'cleanup_handler ERR' ERR
-# trap 'cleanup_handler SIGINT' SIGINT
-# trap 'cleanup_handler SIGTERM' SIGTERM
 
 hello() {
-    log_info "Basic Server Security Setup (BSSS) - oneline запуск..."
+    log_info "Basic Server Security Setup (${UTIL_NAME^^}) - oneline запуск..."
 }
 
 # Проверяем права root
@@ -68,28 +68,45 @@ check_root_permissions() {
 
 # Спрашиваем пользователя о режиме запуска
 ask_user_how_to_run(){
-    log_info "Запустить bsss однократно?"
+    log_info "Запустить ${UTIL_NAME^^} однократно?"
     log_info "Y - запуск однократно / n - установить / c - отмена"
-    read -p "Ваш выбор (Y/n/c): " -n 1 -r
-    echo ""
+    local choice
 
-    if [[ $REPLY =~ ^[Cc]$ ]]; then
-        log_info "Выход"
+    while true; do
+        read -p "Ваш выбор (Y/n/c): " -r
+        input=${REPLY:-Y}  # Если пустая строка, то Y по умолчанию
+        
+        # Проверка на допустимые символы (регистронезависимая для Y)
+        if [[ ${input,,} =~ ^[ync]$ ]]; then
+            choice=${input,,}
+            break
+        fi
+        
+        echo "Неверный выбор. Пожалуйста, введите Y, n или c."
+    done
+
+    if [[ $choice =~ ^[Cc]$ ]]; then
+        log_info "Выбрана отмена ($choice)"
         return $SUCCESS
-    elif [[ $REPLY =~ ^[Nn]$ ]]; then
+    elif [[ $choice =~ ^[Nn]$ ]]; then
+        log_info "Выбрана установка ($choice)"
         # Проверяем, установлен ли уже скрипт
         if [[ -d "$INSTALL_DIR" ]]; then
             log_error "Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога."
-            log_info "Для запуска Basic Server Security Setup используйте команду: sudo bsss, если не сработает - проверьте, что установлено в каталоге $INSTALL_DIR."
-            log_info "Для удаления ранее установленного скрипта BSSS выполните: sudo bsss --uninstall"
+            log_info "Для запуска Basic Server Security Setup (${UTIL_NAME^^}) используйте команду: sudo $UTIL_NAME, если не сработает - проверьте, что установлено в каталоге $INSTALL_DIR (ll $INSTALL_DIR) или куда ссылкается ссылка $UTIL_NAME (find /bin /usr/bin /usr/local/bin -type l -ls | grep $UTIL_NAME или realpath $UTIL_NAME)"
+            log_info "Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo $UTIL_NAME --uninstall"
             return "$ERR_ALREADY_INSTALLED"
         fi
         SYS_INSTALL_FLAG=true
-    else
-        log_info "Выбран разовый запуск"
+        return $SUCCESS
+    elif [[ $choice =~ ^[Yy]$ ]]; then
+        log_info "Выбран разовый запуск ($choice)"
         ONETIME_RUN_FLAG=true
+        return $SUCCESS
+    else
+        log_error "Не корректное значение ($choice)"
+        return $ERR_INCORRECT_CHOICE
     fi
-    return $SUCCESS
 }
 
 # Создаём временную директорию
@@ -130,8 +147,8 @@ unpack_archive() {
 
 # Проверяем успешность распаковки во временную директорию
 check_archive_unpacking() {
-    LOCAL_RUNNER_PATH=$(find "$TEMP_PROJECT_DIR" -type f -name "$LOCAL_RUNNER_FILE_NAME")
-    if [[ -z "$LOCAL_RUNNER_PATH" ]]; then
+    TMP_LOCAL_RUNNER_PATH=$(find "$TEMP_PROJECT_DIR" -type f -name "$LOCAL_RUNNER_FILE_NAME")
+    if [[ -z "$TMP_LOCAL_RUNNER_PATH" ]]; then
         log_error "При проверке наличия исполняемого файла произошла ошибка - файл $LOCAL_RUNNER_FILE_NAME не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
         return "$ERR_CHECK_UNPACK"
     fi
@@ -140,43 +157,49 @@ check_archive_unpacking() {
 
 onetime_run() {
     if [[ "$ONETIME_RUN_FLAG" = "true" ]]; then
-        log_info "Единоразовый запуск $LOCAL_RUNNER_PATH"
+        log_info "Единоразовый запуск $TMP_LOCAL_RUNNER_PATH"
         # запускаем в отдельном процессе и ждем завершение
-        bash "$LOCAL_RUNNER_PATH" "$@"
+        bash "$TMP_LOCAL_RUNNER_PATH" "$@"
         return $SUCCESS
     fi
 }
 
-Создайте символическую ссылку в /usr/local/bin:
-Вам понадобятся права суперпользователя (sudo) для записи в этот системный каталог.
-
 # Функция установки в систему
 install_to_system() {
-    log_info "Устанавливаю BSSS в систему..."
-    
+    log_info "Устанавливаю ${UTIL_NAME^^} в систему..."
+    local tmp_dir_path=""
+    local local_runner_path=""
+    tmp_dir_path=$(dirname "$TMP_LOCAL_RUNNER_PATH")
+
+    # Проверка существования символической ссылки
+    if [[ -L "$UTIL_NAME" ]]; then
+        log_error "Символическая ссылка $UTIL_NAME уже существует - запускайте sudo $UTIL_NAME, если не сработает - проверьте, что в директоии $(dirname "$(readlink "$UTIL_NAME")")"
+        return "$ERR_ALREADY_INSTALLED"
+    fi
+
     # Создаем директорию установки
+    log_info "Создаю директорию $INSTALL_DIR"
     mkdir -p "$INSTALL_DIR"
     
     # Копируем файлы
-    cp -r "$(dirname "$LOCAL_RUNNER_PATH")"/* "$INSTALL_DIR/"
+    log_info "Копирую файлы из временной директории $tmp_dir_path в $INSTALL_DIR"
+    cp -r "$tmp_dir_path"/* "$INSTALL_DIR/"
+
+    # Проверка наличия исполняемого скрипта в установочной директории
+    local_runner_path=$(find "$INSTALL_DIR" -type f -name "$LOCAL_RUNNER_FILE_NAME")
+
+    # Создание символической ссылки
+    ln -s "$local_runner_path" "$SYMBOL_LINK_PATH"
+    log_info "Создана символическая ссылка $UTIL_NAME для запуска $local_runner_path. (Расположение ссылки: $(dirname $SYMBOL_LINK_PATH))"
     
     # Делаем скрипты исполняемыми
+    log_info "Устанавливаю права запуска (+x) в $INSTALL_DIR для .sh файлов"
     chmod +x "$INSTALL_DIR"/*.sh
-    chmod -R +x "$INSTALL_DIR"/modules
-    
-    # Создаем символическую ссылку с проверкой конфликта
-    if [[ -L "$UTIL_NAME" ]]; then
-        log_error "Символическая ссылка $UTIL_NAME уже существует - BSSS установлен."
-        log_info "Ссылка указывает на: $(readlink "$UTIL_NAME")."
-        return "$ERR_ALREADY_INSTALLED"
-    fi
-    
-    # Создаем символическую ссылку
-    ln -s "$INSTALL_DIR/local-runner.sh" "$UTIL_NAME"
-    
+    chmod -R +x "$INSTALL_DIR"/modules/*.sh
+
     log_success "Установка в систему завершена"
-    log_info "Для запуска используйте команду: sudo bsss"
-    log_info "Для удаления выполните: sudo bsss --uninstall"
+    log_info "Для запуска: sudo $UTIL_NAME"
+    log_info "Для удаления: sudo $UTIL_NAME --uninstall"
     return "$SUCCESS"
 }
 
