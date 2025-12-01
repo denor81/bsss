@@ -7,9 +7,10 @@ set -Eeuo pipefail
 
 readonly UTIL_NAME="bsss"
 readonly SYMBOL_LINK_PATH="/usr/local/bin/$UTIL_NAME"
-readonly ARCHIVE_URL="file:///tmp/TEST.tar.gz"
+readonly ARCHIVE_URL="file:///tmp/project-v1.0.0.tar.gz"
 # readonly ARCHIVE_URL="https://github.com/denor81/$UTIL_NAME/archive/refs/tags/v1.0.0.tar.gz"
 readonly INSTALL_DIR="/opt/$UTIL_NAME"
+readonly INSTALL_LOG_FILE_NAME=".uninstall_paths"
 readonly LOCAL_RUNNER_FILE_NAME="local-runner.sh"
 declare -a CLEANUP_COMMANDS
 TMPARCHIVE=""
@@ -25,6 +26,10 @@ readonly ERR_DOWNLOAD=3
 readonly ERR_UNPACK=4
 readonly ERR_CHECK_UNPACK=5
 readonly ERR_INCORRECT_CHOICE=6
+
+log_success() { echo "[v] $1"; }
+log_error() { echo "[x] $1" >&2; }
+log_info() { echo "[*] $1"; }
 
 # Очистка временных файлов
 # shellcheck disable=SC2329
@@ -164,11 +169,26 @@ onetime_run() {
     fi
 }
 
+# Добавляет путь в файл лога установки для последующего удаления
+_add_uninstall_path() {
+    local uninstall_path="$1"
+    local install_log_path="$INSTALL_DIR/$INSTALL_LOG_FILE_NAME"
+
+    # Добавляем путь в файл лога, если его там еще нет
+    if ! grep -Fxq "$uninstall_path" "$install_log_path" 2>/dev/null; then
+        echo "$uninstall_path" >> "$install_log_path"
+        log_info "Путь $uninstall_path добавлен в лог удаления $install_log_path"
+    fi
+    
+    return "$SUCCESS"
+}
+
 # Функция установки в систему
 install_to_system() {
     log_info "Устанавливаю ${UTIL_NAME^^} в систему..."
     local tmp_dir_path=""
     local local_runner_path=""
+
     tmp_dir_path=$(dirname "$TMP_LOCAL_RUNNER_PATH")
 
     # Проверка существования символической ссылки
@@ -181,6 +201,9 @@ install_to_system() {
     log_info "Создаю директорию $INSTALL_DIR"
     mkdir -p "$INSTALL_DIR"
     
+    # Добавляем директорию установки в лог удаления
+    _add_uninstall_path "$INSTALL_DIR"
+    
     # Копируем файлы
     log_info "Копирую файлы из временной директории $tmp_dir_path в $INSTALL_DIR"
     cp -r "$tmp_dir_path"/* "$INSTALL_DIR/"
@@ -192,6 +215,9 @@ install_to_system() {
     ln -s "$local_runner_path" "$SYMBOL_LINK_PATH"
     log_info "Создана символическая ссылка $UTIL_NAME для запуска $local_runner_path. (Расположение ссылки: $(dirname $SYMBOL_LINK_PATH))"
     
+    # Добавляем символическую ссылку в лог удаления
+    _add_uninstall_path "$SYMBOL_LINK_PATH"
+    
     # Делаем скрипты исполняемыми
     log_info "Устанавливаю права запуска (+x) в $INSTALL_DIR для .sh файлов"
     chmod +x "$INSTALL_DIR"/*.sh
@@ -202,10 +228,6 @@ install_to_system() {
     log_info "Для удаления: sudo $UTIL_NAME --uninstall"
     return "$SUCCESS"
 }
-
-log_success() { echo "[v] $1"; }
-log_error() { echo "[x] $1" >&2; }
-log_info() { echo "[*] $1"; }
 
 main() {
     hello
