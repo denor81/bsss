@@ -87,7 +87,7 @@ ask_user_how_to_run(){
             break
         fi
         
-        echo "Неверный выбор. Пожалуйста, введите Y, n или c."
+        log_info "Неверный выбор. Пожалуйста, введите Y, n или c."
     done
 
     if [[ $choice =~ ^[Cc]$ ]]; then
