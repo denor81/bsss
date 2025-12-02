@@ -8,13 +8,17 @@ set -Eeuo pipefail
 # Константы
 # shellcheck disable=SC2155
 readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-readonly MODULES_DIR_PATH="${MAIN_DIR_PATH}/modules"
-readonly MAIN_SCRIPT_PATH="${MAIN_DIR_PATH}/bsss-main.sh"
-readonly UNINSTALL_PATHS="/opt/bsss/.uninstall_paths"
+readonly UNINSTALL_PATHS="${MAIN_DIR_PATH}/.uninstall_paths"
+readonly ALLOWED_PARAMS="hu"
 
-# Коды возврата
+UNINSTALL_FLAG=0
+HELP_FLAG=0
+INCORRECT_PARAM_FLAG=0
+ERR_PARAM_PARSE_FLAG=0
+
 readonly SUCCESS=0
 readonly ERR_PARAM_PARSE=1
+readonly ERR_UNINSTALL=2
 
 # Функции логирования
 log_success() { echo -e "[v] $1"; }
@@ -33,17 +37,12 @@ run_uninstall() {
     
     # Читаем файл построчно и удаляем каждый путь
     while IFS= read -r path; do
-        # Пропускаем пустые строки
-        if [[ -z "$path" ]]; then
-            continue
-        fi
-        
         # Проверяем существование пути или символической ссылки перед удалением
         if [[ -e "$path" || -L "$path" ]]; then
             log_info "Удаляю: $path"
             rm -rf "$path" || {
                 log_error "Не удалось удалить: $path"
-                return 1
+                return $ERR_UNINSTALL
             }
             log_success "Удалено: $path"
         else
@@ -52,112 +51,32 @@ run_uninstall() {
     done < "$UNINSTALL_PATHS"
     
     log_success "Удаление завершено успешно"
-    return 0
+    return $SUCCESS
 }
 
 # Парсинг параметров запуска с использованием getopts
-while getopts ":hu" opt; do
+while getopts ":$ALLOWED_PARAMS" opt; do
     case ${opt} in
-        h)
-            log_info "Использование: $0 [-h] [-u]"
-            exit $SUCCESS
-            ;;
-        u)
-            run_uninstall
-            exit $?
-            ;;
-        \?)
-            log_error "Неверный параметр: -$OPTARG"
-            log_info "Использование: $0 [-h] [-u]"
-            exit $ERR_PARAM_PARSE
-            ;;
-        :)
-            log_error "Параметр -$OPTARG требует значение"
-            exit $ERR_PARAM_PARSE
-            ;;
+        h)  HELP_FLAG=1 ;;
+        u)  UNINSTALL_FLAG=1 ;;
+        \?) INCORRECT_PARAM_FLAG=1 ;;
+        :)  ERR_PARAM_PARSE_FLAG=1 ;;
     esac
 done
 
-
-
-
-
-
-# DEBUG BREAKPOINT
-exit 0
-
-# Обработка параметра --uninstall
-handle_uninstall() {
-    if [[ "$1" == "--uninstall" ]]; then
-        local uninstall_script="${SCRIPT_DIR}/uninstall.sh"
-        
-        if [[ -f "$uninstall_script" ]]; then
-            log_info "Запуск скрипта удаления"
-            exec "$uninstall_script"
-        else
-            log_error "Скрипт удаления не найден: $uninstall_script"
-            return "$ERR_UNINSTALL_SCRIPT_NOT_FOUND"
-        fi
-    fi
-}
-
-# DEBUG BREAKPOINT
-exit 0
-
-# Проверка наличия директории с модулями
-check_modules_dir() {
-    if [[ ! -d "$MODULES_DIR" ]]; then
-        log_error "Директория с модулями не найдена: $MODULES_DIR"
-        return "$ERR_MODULES_DIR_NOT_FOUND"
-    fi
-    log_info "Директория с модулями найдена: $MODULES_DIR"
-}
-
-# Установка переменной окружения для локальных модулей
-setup_cache_base() {
-    export CACHE_BASE="$MODULES_DIR"
-    log_info "CACHE_BASE установлен в: $CACHE_BASE"
-}
-
-# Инициализация логирования для предотвращения ошибок
-init_logging_minimal() {
-    # Создаем минимальную функцию log_verbose если она еще не определена
-    if ! declare -f log_verbose >/dev/null 2>&1; then
-        log_verbose() {
-            # Ничего не делаем в minimal режиме
-            return 0
-        }
-    fi
-}
-
-# Запуск основного скрипта
-run_main_script() {
-    if [[ ! -f "$MAIN_SCRIPT" ]]; then
-        log_error "Основной скрипт не найден: $MAIN_SCRIPT"
-        return 1
-    fi
-    
-    log_info "Запуск основного скрипта: $MAIN_SCRIPT"
-    exec "$MAIN_SCRIPT" "$@"
-}
-
 # Основная функция
 main() {
-    # Обработка параметра --uninstall
-    handle_uninstall "$@"
-    
-    # Загрузка конфигурации
-    load_config
-    
-    # Проверка директории с модулями
-    check_modules_dir
-    
-    # Настройка переменной окружения
-    setup_cache_base
-    
-    # Запуск основного скрипта
-    run_main_script "$@"
+    if [[ $UNINSTALL_FLAG -eq 1 ]]; then
+        run_uninstall "$@"
+    fi
+    if [[ $HELP_FLAG -eq 1 ]]; then
+        log_info "Доступны короткие параметры $ALLOWED_PARAMS, например -h."
+        return $SUCCESS
+    fi
+    if [[ $INCORRECT_PARAM_FLAG -eq 1 || $ERR_PARAM_PARSE_FLAG -eq 1 ]]; then
+        log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h."
+        return $ERR_PARAM_PARSE
+    fi
 }
 
-# Запуск основной функции
 main "$@"

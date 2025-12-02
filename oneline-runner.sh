@@ -206,7 +206,6 @@ install_to_system() {
     # Делаем скрипты исполняемыми
     log_info "Устанавливаю права запуска (+x) в $INSTALL_DIR для .sh файлов"
     chmod +x "$INSTALL_DIR"/*.sh
-    chmod -R +x "$INSTALL_DIR"/modules/*.sh
 
     log_success "Установка в систему завершена"
     log_info "Для запуска: sudo $UTIL_NAME"
