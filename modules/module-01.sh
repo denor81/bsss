@@ -5,9 +5,14 @@
 
 set -Eeuo pipefail
 
-log_success() { echo -e "[v] $1"; }
-log_error() { echo -e "[x] $1" >&2; }
-log_info() { echo -e "[ ] $1"; }
+readonly SYMBOL_SUCCESS="[V]"
+readonly SYMBOL_QUESTION="[?]"
+readonly SYMBOL_INFO="[ ]"
+readonly SYMBOL_ERROR="[X]"
+
+log_success() { echo "$SYMBOL_SUCCESS $1"; }
+log_error() { echo "$SYMBOL_ERROR $1" >&2; }
+log_info() { echo "$SYMBOL_INFO $1"; }
 
 log_info "Модуль: $(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 

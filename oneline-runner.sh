@@ -27,9 +27,14 @@ readonly ERR_UNPACK=4
 readonly ERR_CHECK_UNPACK=5
 readonly ERR_INCORRECT_CHOICE=6
 
-log_success() { echo "[v] $1"; }
-log_error() { echo "[x] $1" >&2; }
-log_info() { echo "[ ] $1"; }
+readonly SYMBOL_SUCCESS="[V]"
+readonly SYMBOL_QUESTION="[?]"
+readonly SYMBOL_INFO="[ ]"
+readonly SYMBOL_ERROR="[X]"
+
+log_success() { echo "$SYMBOL_SUCCESS $1"; }
+log_error() { echo "$SYMBOL_ERROR $1" >&2; }
+log_info() { echo "$SYMBOL_INFO $1"; }
 
 # Очистка временных файлов
 # shellcheck disable=SC2329
@@ -78,7 +83,7 @@ ask_user_how_to_run(){
     local choice
 
     while true; do
-        read -p "[ ] Ваш выбор (Y/n/c): " -r
+        read -p "$SYMBOL_QUESTION Ваш выбор (Y/n/c): " -r
         input=${REPLY:-Y}  # Если пустая строка, то Y по умолчанию
         
         # Проверка на допустимые символы (регистронезависимая для Y)

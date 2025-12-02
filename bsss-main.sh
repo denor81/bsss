@@ -16,10 +16,15 @@ readonly ERR_MODULE_NOT_FOUND=1
 readonly ERR_MODULE_EXECUTION=2
 readonly ERR_GET_MODULES=3
 
+readonly SYMBOL_SUCCESS="[V]"
+readonly SYMBOL_QUESTION="[?]"
+readonly SYMBOL_INFO="[ ]"
+readonly SYMBOL_ERROR="[X]"
+
 # Функции логирования
-log_success() { echo -e "[v] $1"; }
-log_error() { echo -e "[x] $1" >&2; }
-log_info() { echo -e "[ ] $1"; }
+log_success() { echo "$SYMBOL_SUCCESS $1"; }
+log_error() { echo "$SYMBOL_ERROR $1" >&2; }
+log_info() { echo "$SYMBOL_INFO $1"; }
 
 # Проверяет существование модуля
 check_module_exists() {

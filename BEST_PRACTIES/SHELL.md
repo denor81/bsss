@@ -42,9 +42,14 @@ check_root_permissions() {
 
 ### 5. **Консистентное логирование**
 ```bash
-log_success() { echo "[v] $1"; }
-log_error() { echo "[x] $1" >&2; }
-log_info() { echo "[ ] $1"; }
+readonly SYMBOL_SUCCESS="[V]"
+readonly SYMBOL_QUESTION="[?]"
+readonly SYMBOL_INFO="[ ]"
+readonly SYMBOL_ERROR="[X]"
+
+log_success() { echo "$SYMBOL_SUCCESS $1"; }
+log_error() { echo "$SYMBOL_ERROR $1" >&2; }
+log_info() { echo "$SYMBOL_INFO $1"; }
 ```
 - Унифицированный формат вывода сообщений
 - Разделение потоков (stderr для ошибок)
@@ -53,7 +58,7 @@ log_info() { echo "[ ] $1"; }
 ### 6. **Валидация пользовательского ввода**
 ```bash
 while true; do
-    read -p "[ ] Ваш выбор (Y/n/c): " -r
+    read -p "$SYMBOL_QUESTION Ваш выбор (Y/n/c): " -r
     input=${REPLY:-Y}
     
     if [[ ${input,,} =~ ^[ync]$ ]]; then

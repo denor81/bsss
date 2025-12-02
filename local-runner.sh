@@ -23,10 +23,15 @@ readonly ERR_PARAM_PARSE=1
 readonly ERR_UNINSTALL=2
 readonly ERR_RUN_MAIN_SCRIPT=3
 
+readonly SYMBOL_SUCCESS="[V]"
+readonly SYMBOL_QUESTION="[?]"
+readonly SYMBOL_INFO="[ ]"
+readonly SYMBOL_ERROR="[X]"
+
 # Функции логирования
-log_success() { echo -e "[v] $1"; }
-log_error() { echo -e "[x] $1" >&2; }
-log_info() { echo -e "[ ] $1"; }
+log_success() { echo "$SYMBOL_SUCCESS $1"; }
+log_error() { echo "$SYMBOL_ERROR $1" >&2; }
+log_info() { echo "$SYMBOL_INFO $1"; }
 
 # Функция удаления установленных файлов и директорий
 run_uninstall() {
