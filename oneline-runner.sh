@@ -234,4 +234,3 @@ main() {
 
 main "$@"
 log_success "Oneline запуск завершен успешно"
-exit $?
