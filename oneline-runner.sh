@@ -26,7 +26,6 @@ readonly ERR_DOWNLOAD=3
 readonly ERR_UNPACK=4
 readonly ERR_CHECK_UNPACK=5
 readonly ERR_INCORRECT_CHOICE=6
-readonly ERR_COPY=7
 
 log_success() { echo "[v] $1"; }
 log_error() { echo "[x] $1" >&2; }
