@@ -10,11 +10,7 @@ set -Eeuo pipefail
 readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly MODULES_DIR_PATH="${MAIN_DIR_PATH}/modules"
 readonly MAIN_SCRIPT_PATH="${MAIN_DIR_PATH}/bsss-main.sh"
-readonly UNINSTALL_PATHS="${MAIN_DIR_PATH}/.uninstall_paths"
-
-# Опции запуска
-readonly OPTIONS=hu
-readonly LOPTIONS=help,uninstall
+readonly UNINSTALL_PATHS="/opt/bsss/.uninstall_paths"
 
 # Коды возврата
 readonly SUCCESS=0
@@ -24,17 +20,6 @@ readonly ERR_PARAM_PARSE=1
 log_success() { echo -e "[v] $1"; }
 log_error() { echo -e "[x] $1" >&2; }
 log_info() { echo -e "[*] $1"; }
-
-# Парсинг параметров запуска
-# Используем if, чтобы временно отключить set -e и захватить stderr
-if ! GETOPT_OUT=$(getopt -o $OPTIONS -l $LOPTIONS -- "$@" 2>&1); then
-    # Если getopt вернула ошибку, переменная 'output' содержит сообщение об ошибке.
-    log_error "Ошибка парсинга аргументов:\n$GETOPT_OUT"
-    exit $ERR_PARAM_PARSE
-else 
-    PARSED_ARGS=$GETOPT_OUT
-    eval set -- "$PARSED_ARGS"
-fi
 
 # Функция удаления установленных файлов и директорий
 run_uninstall() {
@@ -53,8 +38,8 @@ run_uninstall() {
             continue
         fi
         
-        # Проверяем существование пути перед удалением
-        if [[ -e "$path" ]]; then
+        # Проверяем существование пути или символической ссылки перед удалением
+        if [[ -e "$path" || -L "$path" ]]; then
             log_info "Удаляю: $path"
             rm -rf "$path" || {
                 log_error "Не удалось удалить: $path"
@@ -70,27 +55,31 @@ run_uninstall() {
     return 0
 }
 
-# Парсинг параметров
-while true; do
-    case "$1" in
-        -u|--uninstall)
-            run_uninstall
-            ;;
-        -h|--help)
-            log_info "Использование: $0 [--uninstall] [--help]"
+# Парсинг параметров запуска с использованием getopts
+while getopts ":hu" opt; do
+    case ${opt} in
+        h)
+            log_info "Использование: $0 [-h] [-u]"
             exit $SUCCESS
             ;;
-        --)
-            # Конец опций (дальше идут позиционные аргументы, если есть)
-            shift
-            break
+        u)
+            run_uninstall
+            exit $?
             ;;
-        *)
-            log_error "Внутренняя ошибка парсинга." >&2
+        \?)
+            log_error "Неверный параметр: -$OPTARG"
+            log_info "Использование: $0 [-h] [-u]"
+            exit $ERR_PARAM_PARSE
+            ;;
+        :)
+            log_error "Параметр -$OPTARG требует значение"
             exit $ERR_PARAM_PARSE
             ;;
     esac
 done
+
+
+
 
 
 

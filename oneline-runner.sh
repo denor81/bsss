@@ -26,6 +26,7 @@ readonly ERR_DOWNLOAD=3
 readonly ERR_UNPACK=4
 readonly ERR_CHECK_UNPACK=5
 readonly ERR_INCORRECT_CHOICE=6
+readonly ERR_COPY=7
 
 log_success() { echo "[v] $1"; }
 log_error() { echo "[x] $1" >&2; }
@@ -34,7 +35,7 @@ log_info() { echo "[*] $1"; }
 # Очистка временных файлов
 # shellcheck disable=SC2329
 cleanup_handler() {
-    if [ "$CLEANUP_DONE_FLAG" -eq 0 ]; then
+    if [ "$CLEANUP_DONE_FLAG" -eq 1 ]; then
         return "$SUCCESS" # Уже запускали, выходим
     fi
     local reason="$1" 
@@ -50,7 +51,7 @@ cleanup_handler() {
         unset 'CLEANUP_COMMANDS[$i]'
     done
     log_success "Очистка завершена"
-    SYS_INSTALL_FLAG=1
+    CLEANUP_DONE_FLAG=1
     return "$SUCCESS"
 }
 
@@ -160,15 +161,6 @@ check_archive_unpacking() {
     log_info "Исполняемый файл $LOCAL_RUNNER_FILE_NAME найден"
 }
 
-onetime_run() {
-    if [[ "$ONETIME_RUN_FLAG" -eq 0 ]]; then
-        log_info "Единоразовый запуск $TMP_LOCAL_RUNNER_PATH"
-        # запускаем в отдельном процессе и ждем завершение
-        bash "$TMP_LOCAL_RUNNER_PATH" "$@"
-        return $SUCCESS
-    fi
-}
-
 # Добавляет путь в файл лога установки для последующего удаления
 _add_uninstall_path() {
     local uninstall_path="$1"
@@ -187,13 +179,12 @@ _add_uninstall_path() {
 install_to_system() {
     log_info "Устанавливаю ${UTIL_NAME^^} в систему..."
     local tmp_dir_path=""
-    local local_runner_path=""
-
+    local local_runner_path="$INSTALL_DIR/$LOCAL_RUNNER_FILE_NAME"
     tmp_dir_path=$(dirname "$TMP_LOCAL_RUNNER_PATH")
 
     # Проверка существования символической ссылки
-    if [[ -L "$UTIL_NAME" ]]; then
-        log_error "Символическая ссылка $UTIL_NAME уже существует - запускайте sudo $UTIL_NAME, если не сработает - проверьте, что в директоии $(dirname "$(readlink "$UTIL_NAME")")"
+    if [[ -L "$SYMBOL_LINK_PATH" ]]; then
+        log_error "Символическая ссылка $UTIL_NAME уже существует - запускайте sudo $UTIL_NAME, если не сработает - проверьте куда ссылается $UTIL_NAME"
         return "$ERR_ALREADY_INSTALLED"
     fi
 
@@ -208,16 +199,11 @@ install_to_system() {
     log_info "Копирую файлы из временной директории $tmp_dir_path в $INSTALL_DIR"
     cp -r "$tmp_dir_path"/* "$INSTALL_DIR/"
 
-    # Проверка наличия исполняемого скрипта в установочной директории
-    local_runner_path=$(find "$INSTALL_DIR" -type f -name "$LOCAL_RUNNER_FILE_NAME")
-
     # Создание символической ссылки
     ln -s "$local_runner_path" "$SYMBOL_LINK_PATH"
-    log_info "Создана символическая ссылка $UTIL_NAME для запуска $local_runner_path. (Расположение ссылки: $(dirname $SYMBOL_LINK_PATH))"
-    
-    # Добавляем символическую ссылку в лог удаления
+    log_info "Создана символическая ссылка $UTIL_NAME для запуска $local_runner_path. (Расположение ссылки: $(dirname "$SYMBOL_LINK_PATH"))"
     _add_uninstall_path "$SYMBOL_LINK_PATH"
-    
+
     # Делаем скрипты исполняемыми
     log_info "Устанавливаю права запуска (+x) в $INSTALL_DIR для .sh файлов"
     chmod +x "$INSTALL_DIR"/*.sh
@@ -233,16 +219,16 @@ main() {
     hello
     check_root_permissions
     ask_user_how_to_run
-    if [[ "$ONETIME_RUN_FLAG" -eq 0 || "$SYS_INSTALL_FLAG" -eq 0 ]]; then
+    if [[ "$ONETIME_RUN_FLAG" -eq 1 || "$SYS_INSTALL_FLAG" -eq 1 ]]; then
         create_tmp_dir
         download_archive
         unpack_archive
         check_archive_unpacking
     fi
-    if [[ "$ONETIME_RUN_FLAG" -eq 0 ]]; then
-        onetime_run "$@"
+    if [[ "$ONETIME_RUN_FLAG" -eq 1 ]]; then
+        bash "$TMP_LOCAL_RUNNER_PATH" "$@"
     fi
-    if [[ "$SYS_INSTALL_FLAG" -eq 0 ]]; then
+    if [[ "$SYS_INSTALL_FLAG" -eq 1 ]]; then
         install_to_system
     fi
 }
