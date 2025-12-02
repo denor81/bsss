@@ -11,6 +11,7 @@ readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" 
 readonly UNINSTALL_PATHS="${MAIN_DIR_PATH}/.uninstall_paths"
 readonly RUN_PATH="${MAIN_DIR_PATH}/bsss-main.sh"
 readonly ALLOWED_PARAMS="hu"
+readonly UTIL_NAME="bsss"
 
 UNINSTALL_FLAG=0
 HELP_FLAG=0
@@ -35,10 +36,19 @@ log_info() { echo "$SYMBOL_INFO $1"; }
 
 # Функция удаления установленных файлов и директорий
 run_uninstall() {
+    # Запрашиваем подтверждение удаления
+    read -p "$SYMBOL_QUESTION Выбрано удаление $UTIL_NAME - подтвердите - y/n [n]: " -r confirmation
+    confirmation=${confirmation:-n}
+    
+    if [[ ! ${confirmation,,} =~ ^[y]$ ]]; then
+        log_info "Удаление отменено"
+        return $SUCCESS
+    fi
+    
     # Проверяем наличие файла с путями для удаления
     if [[ ! -f "$UNINSTALL_PATHS" ]]; then
         log_error "Файл с путями для удаления не найден: $UNINSTALL_PATHS"
-        return 1
+        return $ERR_UNINSTALL
     fi
     
     log_info "Начинаю удаление установленных файлов..."
