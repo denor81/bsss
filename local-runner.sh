@@ -3,38 +3,99 @@
 # Локальный загрузчик для запуска основного скрипта с конфигурацией
 # Usage: ./local-runner.sh [options] [--uninstall]
 
-set -Eeuox pipefail
+set -Eeuo pipefail
 
 # Константы
-readonly SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-readonly CONFIG_FILE="${SCRIPT_DIR}/config/bsss.conf"
-readonly MODULES_DIR="${SCRIPT_DIR}/modules"
-readonly MAIN_SCRIPT="${SCRIPT_DIR}/bsss-main.sh"
+# shellcheck disable=SC2155
+readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly MODULES_DIR_PATH="${MAIN_DIR_PATH}/modules"
+readonly MAIN_SCRIPT_PATH="${MAIN_DIR_PATH}/bsss-main.sh"
+readonly UNINSTALL_PATHS="${MAIN_DIR_PATH}/.uninstall_paths"
+
+# Опции запуска
+readonly OPTIONS=hu
+readonly LOPTIONS=help,uninstall
 
 # Коды возврата
 readonly SUCCESS=0
-readonly ERR_CONFIG_NOT_FOUND=1
-readonly ERR_MODULES_DIR_NOT_FOUND=2
-readonly ERR_UNINSTALL_SCRIPT_NOT_FOUND=3
+readonly ERR_PARAM_PARSE=1
 
 # Функции логирования
-log_success() { echo "[v] $1"; }
-log_error() { echo "[x] $1" >&2; }
-log_info() { echo "[*] $1"; }
+log_success() { echo -e "[v] $1"; }
+log_error() { echo -e "[x] $1" >&2; }
+log_info() { echo -e "[*] $1"; }
 
-# Проверка и загрузка конфигурационного файла
-load_config() {
-    if [[ ! -f "$CONFIG_FILE" ]]; then
-        log_error "Конфигурационный файл не найден: $CONFIG_FILE"
-        return "$ERR_CONFIG_NOT_FOUND"
+# Парсинг параметров запуска
+# Используем if, чтобы временно отключить set -e и захватить stderr
+if ! GETOPT_OUT=$(getopt -o $OPTIONS -l $LOPTIONS -- "$@" 2>&1); then
+    # Если getopt вернула ошибку, переменная 'output' содержит сообщение об ошибке.
+    log_error "Ошибка парсинга аргументов:\n$GETOPT_OUT"
+    exit $ERR_PARAM_PARSE
+else 
+    PARSED_ARGS=$GETOPT_OUT
+    eval set -- "$PARSED_ARGS"
+fi
+
+# Функция удаления установленных файлов и директорий
+run_uninstall() {
+    # Проверяем наличие файла с путями для удаления
+    if [[ ! -f "$UNINSTALL_PATHS" ]]; then
+        log_error "Файл с путями для удаления не найден: $UNINSTALL_PATHS"
+        return 1
     fi
     
-    # Загрузка конфигурации
-    # shellcheck source=/dev/null
-    source "$CONFIG_FILE"
-    log_info "Конфигурация загружена из: $CONFIG_FILE"
-    return "$SUCCESS"
+    log_info "Начинаю удаление установленных файлов..."
+    
+    # Читаем файл построчно и удаляем каждый путь
+    while IFS= read -r path; do
+        # Пропускаем пустые строки
+        if [[ -z "$path" ]]; then
+            continue
+        fi
+        
+        # Проверяем существование пути перед удалением
+        if [[ -e "$path" ]]; then
+            log_info "Удаляю: $path"
+            rm -rf "$path" || {
+                log_error "Не удалось удалить: $path"
+                return 1
+            }
+            log_success "Удалено: $path"
+        else
+            log_info "Путь не существует, пропускаю: $path"
+        fi
+    done < "$UNINSTALL_PATHS"
+    
+    log_success "Удаление завершено успешно"
+    return 0
 }
+
+# Парсинг параметров
+while true; do
+    case "$1" in
+        -u|--uninstall)
+            run_uninstall
+            ;;
+        -h|--help)
+            log_info "Использование: $0 [--uninstall] [--help]"
+            exit $SUCCESS
+            ;;
+        --)
+            # Конец опций (дальше идут позиционные аргументы, если есть)
+            shift
+            break
+            ;;
+        *)
+            log_error "Внутренняя ошибка парсинга." >&2
+            exit $ERR_PARAM_PARSE
+            ;;
+    esac
+done
+
+
+
+# DEBUG BREAKPOINT
+exit 0
 
 # Обработка параметра --uninstall
 handle_uninstall() {

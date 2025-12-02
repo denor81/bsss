@@ -15,9 +15,9 @@ readonly LOCAL_RUNNER_FILE_NAME="local-runner.sh"
 declare -a CLEANUP_COMMANDS
 TMPARCHIVE=""
 
-ONETIME_RUN_FLAG=false
-SYS_INSTALL_FLAG=false
-CLEANUP_DONE_FLAG=false
+ONETIME_RUN_FLAG=0
+SYS_INSTALL_FLAG=0
+CLEANUP_DONE_FLAG=0
 
 readonly SUCCESS=0
 readonly ERR_ALREADY_INSTALLED=1
@@ -34,7 +34,7 @@ log_info() { echo "[*] $1"; }
 # Очистка временных файлов
 # shellcheck disable=SC2329
 cleanup_handler() {
-    if [ "$CLEANUP_DONE_FLAG" == "true" ]; then
+    if [ "$CLEANUP_DONE_FLAG" -eq 0 ]; then
         return "$SUCCESS" # Уже запускали, выходим
     fi
     local reason="$1" 
@@ -50,7 +50,7 @@ cleanup_handler() {
         unset 'CLEANUP_COMMANDS[$i]'
     done
     log_success "Очистка завершена"
-    CLEANUP_DONE_FLAG=true
+    SYS_INSTALL_FLAG=1
     return "$SUCCESS"
 }
 
@@ -102,11 +102,11 @@ ask_user_how_to_run(){
             log_info "Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo $UTIL_NAME --uninstall"
             return "$ERR_ALREADY_INSTALLED"
         fi
-        SYS_INSTALL_FLAG=true
+        SYS_INSTALL_FLAG=1
         return $SUCCESS
     elif [[ $choice =~ ^[Yy]$ ]]; then
         log_info "Выбран разовый запуск ($choice)"
-        ONETIME_RUN_FLAG=true
+        ONETIME_RUN_FLAG=1
         return $SUCCESS
     else
         log_error "Не корректное значение ($choice)"
@@ -128,7 +128,7 @@ download_archive() {
     log_info "Скачиваю архив с GitHub: $ARCHIVE_URL"
     TMPARCHIVE=$(mktemp --tmpdir "$UTIL_NAME"-archive-XXXXXX)
     CLEANUP_COMMANDS+=("rm -f $TMPARCHIVE")
-    curl_output=$(curl -fsSL "$ARCHIVE_URL" -o "$TMPARCHIVE" 2>&1 ) || { 
+    curl_output=$(curl -fsSL "$ARCHIVE_URL" -o "$TMPARCHIVE" 2>&1) || { 
         log_error "Ошибка загрузки архива - $curl_output"
         return $ERR_DOWNLOAD
     }
@@ -161,7 +161,7 @@ check_archive_unpacking() {
 }
 
 onetime_run() {
-    if [[ "$ONETIME_RUN_FLAG" = "true" ]]; then
+    if [[ "$ONETIME_RUN_FLAG" -eq 0 ]]; then
         log_info "Единоразовый запуск $TMP_LOCAL_RUNNER_PATH"
         # запускаем в отдельном процессе и ждем завершение
         bash "$TMP_LOCAL_RUNNER_PATH" "$@"
@@ -233,16 +233,16 @@ main() {
     hello
     check_root_permissions
     ask_user_how_to_run
-    if [[ "$ONETIME_RUN_FLAG" == "true" || "$SYS_INSTALL_FLAG" == "true" ]]; then
+    if [[ "$ONETIME_RUN_FLAG" -eq 0 || "$SYS_INSTALL_FLAG" -eq 0 ]]; then
         create_tmp_dir
         download_archive
         unpack_archive
         check_archive_unpacking
     fi
-    if [[ "$ONETIME_RUN_FLAG" == "true" ]]; then
+    if [[ "$ONETIME_RUN_FLAG" -eq 0 ]]; then
         onetime_run "$@"
     fi
-    if [[ "$SYS_INSTALL_FLAG" == "true" ]]; then
+    if [[ "$SYS_INSTALL_FLAG" -eq 0 ]]; then
         install_to_system
     fi
 }
