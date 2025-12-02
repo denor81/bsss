@@ -29,7 +29,7 @@ readonly ERR_INCORRECT_CHOICE=6
 
 log_success() { echo "[v] $1"; }
 log_error() { echo "[x] $1" >&2; }
-log_info() { echo "[*] $1"; }
+log_info() { echo "[ ] $1"; }
 
 # Очистка временных файлов
 # shellcheck disable=SC2329
@@ -78,7 +78,7 @@ ask_user_how_to_run(){
     local choice
 
     while true; do
-        read -p "Ваш выбор (Y/n/c): " -r
+        read -p "[ ] Ваш выбор (Y/n/c): " -r
         input=${REPLY:-Y}  # Если пустая строка, то Y по умолчанию
         
         # Проверка на допустимые символы (регистронезависимая для Y)

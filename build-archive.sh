@@ -10,11 +10,12 @@ VERSION="${1:-1.0.0}"
 # Имя архива
 ARCHIVE_NAME="project-v${VERSION}.tar.gz"
 
-echo "[*] Создание архива ${ARCHIVE_NAME}..."
+echo "[ ] Создание архива ${ARCHIVE_NAME}..."
 
 # Создаём архив, явно указывая нужные файлы
 tar -czf "${ARCHIVE_NAME}" \
-    oneline-runner.sh \
+    modules/ \
+    bsss-main.sh \
     local-runner.sh
 
-echo "[*] Архив ${ARCHIVE_NAME} создан успешно"
+echo "[ ] Архив ${ARCHIVE_NAME} создан успешно"

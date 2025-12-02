@@ -44,16 +44,16 @@ check_root_permissions() {
 ```bash
 log_success() { echo "[v] $1"; }
 log_error() { echo "[x] $1" >&2; }
-log_info() { echo "[*] $1"; }
+log_info() { echo "[ ] $1"; }
 ```
 - Унифицированный формат вывода сообщений
 - Разделение потоков (stderr для ошибок)
-- Визуальные маркеры статуса ([v], [x], [*])
+- Визуальные маркеры статуса ([v], [x], [ ])
 
 ### 6. **Валидация пользовательского ввода**
 ```bash
 while true; do
-    read -p "Ваш выбор (Y/n/c): " -r
+    read -p "[ ] Ваш выбор (Y/n/c): " -r
     input=${REPLY:-Y}
     
     if [[ ${input,,} =~ ^[ync]$ ]]; then

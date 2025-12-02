@@ -9,21 +9,24 @@ set -Eeuo pipefail
 # shellcheck disable=SC2155
 readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly UNINSTALL_PATHS="${MAIN_DIR_PATH}/.uninstall_paths"
+readonly RUN_PATH="${MAIN_DIR_PATH}/bsss-main.sh"
 readonly ALLOWED_PARAMS="hu"
 
 UNINSTALL_FLAG=0
 HELP_FLAG=0
 INCORRECT_PARAM_FLAG=0
 ERR_PARAM_PARSE_FLAG=0
+RUN=0
 
 readonly SUCCESS=0
 readonly ERR_PARAM_PARSE=1
 readonly ERR_UNINSTALL=2
+readonly ERR_RUN_MAIN_SCRIPT=3
 
 # Функции логирования
 log_success() { echo -e "[v] $1"; }
 log_error() { echo -e "[x] $1" >&2; }
-log_info() { echo -e "[*] $1"; }
+log_info() { echo -e "[ ] $1"; }
 
 # Функция удаления установленных файлов и директорий
 run_uninstall() {
@@ -44,7 +47,7 @@ run_uninstall() {
                 log_error "Не удалось удалить: $path"
                 return $ERR_UNINSTALL
             }
-            log_success "Удалено: $path"
+            log_info "Удалено: $path"
         else
             log_info "Путь не существует, пропускаю: $path"
         fi
@@ -53,6 +56,11 @@ run_uninstall() {
     log_success "Удаление завершено успешно"
     return $SUCCESS
 }
+
+# Запуск без параметров
+if [ "$#" -eq 0 ]; then
+    RUN=1
+fi
 
 # Парсинг параметров запуска с использованием getopts
 while getopts ":$ALLOWED_PARAMS" opt; do
@@ -76,6 +84,16 @@ main() {
     if [[ $INCORRECT_PARAM_FLAG -eq 1 || $ERR_PARAM_PARSE_FLAG -eq 1 ]]; then
         log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h."
         return $ERR_PARAM_PARSE
+    fi
+    
+    # Запускаем основной скрипт через exec, заменяя текущий процесс
+    if [[ $RUN -eq 1 ]]; then
+        if [[ -f "$RUN_PATH" ]]; then
+            exec bash "$RUN_PATH" "$@"
+        else
+            log_error "Основной скрипт не найден: $RUN_PATH"
+            return $ERR_RUN_MAIN_SCRIPT
+        fi
     fi
 }
 
