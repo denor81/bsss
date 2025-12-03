@@ -16,15 +16,9 @@ readonly ERR_MODULE_NOT_FOUND=1
 readonly ERR_MODULE_EXECUTION=2
 readonly ERR_GET_MODULES=3
 
-readonly SYMBOL_SUCCESS="[V]"
-readonly SYMBOL_QUESTION="[?]"
-readonly SYMBOL_INFO="[ ]"
-readonly SYMBOL_ERROR="[X]"
-
-# Функции логирования
-log_success() { echo "$SYMBOL_SUCCESS $1"; }
-log_error() { echo "$SYMBOL_ERROR $1" >&2; }
-log_info() { echo "$SYMBOL_INFO $1"; }
+# Подключаем библиотеку функций логирования
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]}")/lib/logging.sh"
 
 # Проверяет существование модуля
 check_module_exists() {

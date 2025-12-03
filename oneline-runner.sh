@@ -27,14 +27,9 @@ readonly ERR_UNPACK=4
 readonly ERR_CHECK_UNPACK=5
 readonly ERR_INCORRECT_CHOICE=6
 
-readonly SYMBOL_SUCCESS="[V]"
-readonly SYMBOL_QUESTION="[?]"
-readonly SYMBOL_INFO="[ ]"
-readonly SYMBOL_ERROR="[X]"
-
-log_success() { echo "$SYMBOL_SUCCESS $1"; }
-log_error() { echo "$SYMBOL_ERROR $1" >&2; }
-log_info() { echo "$SYMBOL_INFO $1"; }
+# Подключаем библиотеку функций логирования
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]}")/lib/logging.sh"
 
 # Очистка временных файлов
 # shellcheck disable=SC2329
