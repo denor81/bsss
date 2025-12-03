@@ -7,8 +7,8 @@ set -Eeuo pipefail
 
 # Константы
 # shellcheck disable=SC2155
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly MODULES_DIR="${SCRIPT_DIR}/modules"
+readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+readonly MODULES_DIR="${MAIN_DIR_PATH}/modules"
 
 # Коды возврата
 readonly SUCCESS=0
@@ -18,7 +18,7 @@ readonly ERR_GET_MODULES=3
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
-source "$(dirname "${BASH_SOURCE[0]}")/lib/logging.sh"
+source "${MAIN_DIR_PATH}/lib/logging.sh"
 
 # Проверяет существование модуля
 check_module_exists() {

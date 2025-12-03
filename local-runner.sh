@@ -26,7 +26,7 @@ readonly ERR_RUN_MAIN_SCRIPT=3
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
-source "$(dirname "${BASH_SOURCE[0]}")/lib/logging.sh"
+source "${MAIN_DIR_PATH}/lib/logging.sh"
 
 # Функция удаления установленных файлов и директорий
 run_uninstall() {
@@ -84,7 +84,7 @@ done
 # Основная функция
 main() {
     if [[ $UNINSTALL_FLAG -eq 1 ]]; then
-        run_uninstall "$@"
+        run_uninstall
     fi
     if [[ $HELP_FLAG -eq 1 ]]; then
         log_info "Доступны короткие параметры $ALLOWED_PARAMS, например -h."
@@ -98,7 +98,7 @@ main() {
     # Запускаем основной скрипт через exec, заменяя текущий процесс
     if [[ $RUN -eq 1 ]]; then
         if [[ -f "$RUN_PATH" ]]; then
-            exec bash "$RUN_PATH" "$@"
+            exec bash "$RUN_PATH"
         else
             log_error "Основной скрипт не найден: $RUN_PATH"
             return $ERR_RUN_MAIN_SCRIPT
@@ -106,4 +106,4 @@ main() {
     fi
 }
 
-main "$@"
+main
