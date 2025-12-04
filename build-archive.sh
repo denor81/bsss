@@ -14,6 +14,7 @@ echo "[ ] Создание архива ${ARCHIVE_NAME}..."
 
 # Создаём архив, явно указывая нужные файлы
 tar -czf "${ARCHIVE_NAME}" \
+    lib/ \
     modules/ \
     bsss-main.sh \
     local-runner.sh
