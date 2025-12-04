@@ -209,7 +209,7 @@ install_to_system() {
 
     log_success "Установка в систему завершена"
     log_info "Для запуска: sudo $UTIL_NAME"
-    log_info "Для удаления: sudo $UTIL_NAME --uninstall"
+    log_info "Для удаления: sudo $UTIL_NAME -u"
     return "$SUCCESS"
 }
 

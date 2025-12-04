@@ -5,6 +5,7 @@
 
 # Символы для обозначения статуса сообщений
 readonly SYMBOL_SUCCESS="[V]"
+# shellcheck disable=SC2034
 readonly SYMBOL_QUESTION="[?]" # Используется в read (read -p "$SYMBOL_QUESTION Ваш выбор (Y/n/c): " -r)
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_ERROR="[X]"

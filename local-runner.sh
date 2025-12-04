@@ -87,11 +87,11 @@ main() {
         run_uninstall
     fi
     if [[ $HELP_FLAG -eq 1 ]]; then
-        log_info "Доступны короткие параметры $ALLOWED_PARAMS, например -h."
+        log_info "Доступны короткие параметры $ALLOWED_PARAMS, [-h помощь] [-u удаление]"
         return $SUCCESS
     fi
     if [[ $INCORRECT_PARAM_FLAG -eq 1 || $ERR_PARAM_PARSE_FLAG -eq 1 ]]; then
-        log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h."
+        log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h для вызова помощи"
         return $ERR_PARAM_PARSE
     fi
     
