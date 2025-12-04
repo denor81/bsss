@@ -99,6 +99,18 @@ local fsize=""
 local tar_output=""
 ```
 
+### 10. **Использование констант для хардкод-значений**
+```bash
+# Все хардкод-значения выносим в константы в начале файла
+readonly REBOOT_REQUIRED_FILE="/var/run/reboot-required"
+readonly CONFIG_DIR="/etc/myapp"
+readonly LOG_FILE="/var/log/myapp.log"
+
+# Допускается хардкод только при подключении через source
+# shellcheck disable=SC1091
+source "${MAIN_DIR_PATH}/../lib/logging.sh"
+```
+
 ### 2. **Комментирование**
 ```bash
 # Многострочные комментарии для блоков кода
