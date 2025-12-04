@@ -8,6 +8,7 @@ set -Eeuo pipefail
 # shellcheck disable=SC2155
 readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 # Получаем только имя файла из переменной $0
+# shellcheck disable=SC2155
 readonly SCRIPT_NAME=$(basename "$0") 
 
 # Подключаем библиотеку функций логирования
