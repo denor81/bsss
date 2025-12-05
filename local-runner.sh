@@ -7,9 +7,9 @@ set -Eeuo pipefail
 
 # Константы
 # shellcheck disable=SC2155
-readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-readonly UNINSTALL_PATHS="${MAIN_DIR_PATH}/.uninstall_paths"
-readonly RUN_PATH="${MAIN_DIR_PATH}/bsss-main.sh"
+readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly UNINSTALL_PATHS="${THIS_DIR_PATH}/.uninstall_paths"
+readonly RUN_PATH="${THIS_DIR_PATH}/bsss-main.sh"
 readonly ALLOWED_PARAMS="hu"
 readonly UTIL_NAME="bsss"
 
@@ -26,7 +26,7 @@ readonly ERR_RUN_MAIN_SCRIPT=3
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
-source "${MAIN_DIR_PATH}/lib/logging.sh"
+source "${THIS_DIR_PATH}/lib/logging.sh"
 
 # Функция удаления установленных файлов и директорий
 run_uninstall() {

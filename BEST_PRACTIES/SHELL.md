@@ -108,7 +108,7 @@ readonly LOG_FILE="/var/log/myapp.log"
 
 # Допускается хардкод только при подключении через source
 # shellcheck disable=SC1091
-source "${MAIN_DIR_PATH}/../lib/logging.sh"
+source "${THIS_DIR_PATH}/../lib/logging.sh"
 ```
 
 ### 2. **Комментирование**
