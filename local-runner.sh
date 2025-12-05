@@ -12,12 +12,16 @@ readonly UNINSTALL_PATHS="${THIS_DIR_PATH}/.uninstall_paths"
 readonly RUN_PATH="${THIS_DIR_PATH}/bsss-main.sh"
 readonly ALLOWED_PARAMS="hu"
 readonly UTIL_NAME="bsss"
+# shellcheck disable=SC2034
+# shellcheck disable=SC2155
+readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
 UNINSTALL_FLAG=0
 HELP_FLAG=0
+RUN=0
+
 INCORRECT_PARAM_FLAG=0
 ERR_PARAM_PARSE_FLAG=0
-RUN=0
 
 readonly SUCCESS=0
 readonly ERR_PARAM_PARSE=1

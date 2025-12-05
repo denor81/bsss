@@ -13,15 +13,15 @@ readonly SYMBOL_ERROR="[X]"
 # Функции логирования
 # Выводит успешное сообщение с символом [V]
 log_success() { 
-    echo "$SYMBOL_SUCCESS $1"
+    echo "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1"
 }
 
 # Выводит сообщение об ошибке с символом [X] в stderr
 log_error() { 
-    echo "$SYMBOL_ERROR $1" >&2
+    echo "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
 }
 
 # Выводит информационное сообщение с символом [ ]
 log_info() { 
-    echo "$SYMBOL_INFO $1"
+    echo "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1"
 }

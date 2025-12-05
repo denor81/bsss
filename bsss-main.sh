@@ -9,6 +9,9 @@ set -Eeuo pipefail
 # shellcheck disable=SC2155
 readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly MODULES_DIR="${THIS_DIR_PATH}/modules"
+# shellcheck disable=SC2034
+# shellcheck disable=SC2155
+readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
 # Коды возврата
 readonly SUCCESS=0

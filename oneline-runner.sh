@@ -12,7 +12,10 @@ readonly ARCHIVE_URL="file:///tmp/project-v1.0.0.tar.gz"
 readonly INSTALL_DIR="/opt/$UTIL_NAME"
 readonly INSTALL_LOG_FILE_NAME=".uninstall_paths"
 readonly LOCAL_RUNNER_FILE_NAME="local-runner.sh"
-declare -a CLEANUP_COMMANDS
+# shellcheck disable=SC2034
+# shellcheck disable=SC2155
+readonly CURRENT_MODULE_NAME="$(basename "$0")"
+declare -a CLEANUP_COMMANDS=()
 TMPARCHIVE=""
 
 ONETIME_RUN_FLAG=0
@@ -39,6 +42,11 @@ cleanup_handler() {
     fi
     local reason="$1" 
     log_info "Запуск процедуры очистки по причине: $reason..."
+    
+    # Если команд нет, то очистка не требуется
+    if [[ "${#CLEANUP_COMMANDS[@]}" -eq 0 ]]; then
+        log_info "Очистка не требуется - ничего не было установлено/распаковано"
+    fi
 
     # Проходим по всем командам в массиве в обратном порядке (опционально, но логично)
     for i in "${!CLEANUP_COMMANDS[@]}"; do
@@ -99,7 +107,7 @@ ask_user_how_to_run(){
         if [[ -d "$INSTALL_DIR" ]]; then
             log_error "Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога."
             log_info "Для запуска Basic Server Security Setup (${UTIL_NAME^^}) используйте команду: sudo $UTIL_NAME, если не сработает - проверьте, что установлено в каталоге $INSTALL_DIR (ll $INSTALL_DIR) или куда ссылкается ссылка $UTIL_NAME (find /bin /usr/bin /usr/local/bin -type l -ls | grep $UTIL_NAME или realpath $UTIL_NAME)"
-            log_info "Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo $UTIL_NAME --uninstall"
+            log_info "Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo $UTIL_NAME -u"
             return "$ERR_ALREADY_INSTALLED"
         fi
         SYS_INSTALL_FLAG=1
