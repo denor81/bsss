@@ -43,10 +43,8 @@ run() {
 main() {
     if [[ "$CHECK_FLAG" -eq 1 ]]; then
         check
-        return $?
     elif [[ "$CHECK_FLAG" -eq 0 ]]; then
         run
-        return $?
     else
         log_error "Не определен флаг запуска"
         return 1

@@ -111,7 +111,6 @@ start_modules() {
 # Основная функция
 main() {
     start_modules
-    return $?
 }
 
 main

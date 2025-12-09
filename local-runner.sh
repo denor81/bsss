@@ -81,7 +81,6 @@ run_uninstall() {
 main() {
     if [[ $UNINSTALL_FLAG -eq 1 ]]; then
         run_uninstall
-        return $?
     fi
     if [[ $HELP_FLAG -eq 1 ]]; then
         log_info "Доступны короткие параметры $ALLOWED_PARAMS, [-h помощь] [-u удаление]"
@@ -92,7 +91,6 @@ main() {
     if [[ $RUN -eq 1 ]]; then
         if [[ -f "$RUN_PATH" ]]; then
             exec bash "$RUN_PATH"
-            return $?
         else
             log_error "Основной скрипт не найден: $RUN_PATH"
             return 1

@@ -226,13 +226,15 @@ main() {
     fi
     if [[ "$ONETIME_RUN_FLAG" -eq 1 ]]; then
         bash "$TMP_LOCAL_RUNNER_PATH"
-        return $?
     fi
     if [[ "$SYS_INSTALL_FLAG" -eq 1 ]]; then
         install_to_system
-        return $?
     fi
 }
 
-main
+# (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main
+fi
+
 log_success "Завершен"
