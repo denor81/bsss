@@ -175,39 +175,75 @@ _add_uninstall_path() {
     return 0
 }
 
-# Функция установки в систему
-install_to_system() {
-    log_info "Устанавливаю ${UTIL_NAME^^} в систему..."
-    local tmp_dir_path=""
-    local local_runner_path="$INSTALL_DIR/$LOCAL_RUNNER_FILE_NAME"
-    tmp_dir_path=$(dirname "$TMP_LOCAL_RUNNER_PATH")
+# ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ УСТАНОВКИ ==========
 
-    # Проверка существования символической ссылки
+# Проверка существования символической ссылки
+_check_symlink_exists() {
     if [[ -L "$SYMBOL_LINK_PATH" ]]; then
         log_error "Символическая ссылка $UTIL_NAME уже существует - запускайте sudo $UTIL_NAME, если не сработает - проверьте куда ссылается $UTIL_NAME"
         return 1
     fi
+    return 0
+}
 
-    # Создаем директорию установки
+# Создание директории установки
+_create_install_directory() {
     log_info "Создаю директорию $INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR"
-    
-    # Добавляем директорию установки в лог удаления
+    mkdir -p "$INSTALL_DIR" || {
+        log_error "Не удалось создать директорию $INSTALL_DIR"
+        return 1
+    }
     _add_uninstall_path "$INSTALL_DIR"
-    
-    # Копируем файлы
-    log_info "Копирую файлы из временной директории $tmp_dir_path в $INSTALL_DIR"
-    cp -r "$tmp_dir_path"/* "$INSTALL_DIR/"
+    return 0
+}
 
-    # Создание символической ссылки
-    ln -s "$local_runner_path" "$SYMBOL_LINK_PATH"
+# Копирование файлов установки
+_copy_installation_files() {
+    local tmp_dir_path=$(dirname "$TMP_LOCAL_RUNNER_PATH")
+    log_info "Копирую файлы из $tmp_dir_path в $INSTALL_DIR"
+    
+    cp -r "$tmp_dir_path"/* "$INSTALL_DIR/" || {
+        log_error "Не удалось скопировать файлы"
+        return 1
+    }
+    return 0
+}
+
+# Создание символической ссылки
+_create_symlink() {
+    local local_runner_path="$INSTALL_DIR/$LOCAL_RUNNER_FILE_NAME"
+    
+    ln -s "$local_runner_path" "$SYMBOL_LINK_PATH" || {
+        log_error "Не удалось создать символическую ссылку"
+        return 1
+    }
+    
     log_info "Создана символическая ссылка $UTIL_NAME для запуска $local_runner_path. (Расположение ссылки: $(dirname "$SYMBOL_LINK_PATH"))"
     _add_uninstall_path "$SYMBOL_LINK_PATH"
+    return 0
+}
 
-    # Делаем скрипты исполняемыми
+# Установка прав на выполнение
+_set_execution_permissions() {
     log_info "Устанавливаю права запуска (+x) в $INSTALL_DIR для .sh файлов"
-    chmod +x "$INSTALL_DIR"/*.sh
+    chmod +x "$INSTALL_DIR"/*.sh 2>/dev/null
+    # Возвращаем 0 даже если нет .sh файлов - это нормально
+    return 0
+}
 
+# ========== ОСНОВНАЯ ФУНКЦИЯ УСТАНОВКИ ==========
+
+# Функция установки в систему
+install_to_system() {
+    log_info "Устанавливаю ${UTIL_NAME^^} в систему..."
+    
+    # Порядок важен - проверяем условия перед действиями
+    _check_symlink_exists
+    _create_install_directory
+    _copy_installation_files
+    _create_symlink
+    _set_execution_permissions
+    
     log_success "Установка в систему завершена"
     log_info "Для запуска: sudo $UTIL_NAME"
     log_info "Для удаления: sudo $UTIL_NAME -u"
