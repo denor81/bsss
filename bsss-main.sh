@@ -6,6 +6,7 @@
 set -Eeuo pipefail
 
 # Константы
+readonly UTIL_NAME="bsss"
 # shellcheck disable=SC2155
 readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly MODULES_DIR="${THIS_DIR_PATH}/modules"
@@ -22,6 +23,10 @@ readonly ERR_GET_MODULES=3
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}/lib/logging.sh"
+
+hello() {
+    log_info "Запуск основной системы ${UTIL_NAME^^}"
+}
 
 # Проверяет существование модуля
 check_module_exists() {
@@ -47,7 +52,7 @@ run_module() {
     bash "$module_path"
     local exit_code=$?
     
-    if [[ $exit_code -eq $SUCCESS ]]; then
+    if [[ $exit_code -eq "$SUCCESS" ]]; then
         log_success "Модуль $module_name выполнен успешно"
     else
         log_error "Модуль $module_name завершился с ошибкой (код: $exit_code)"
@@ -110,9 +115,9 @@ start_modules() {
 
 # Основная функция
 main() {
-    log_info "Запуск основной системы BSSS"
     start_modules
-    log_success "Работа системы завершена"
+    return $?
 }
 
-main "$@"
+main
+log_success "Завершен"

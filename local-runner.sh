@@ -6,12 +6,12 @@
 set -Eeuo pipefail
 
 # Константы
+readonly UTIL_NAME="bsss"
 # shellcheck disable=SC2155
 readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly UNINSTALL_PATHS="${THIS_DIR_PATH}/.uninstall_paths"
 readonly RUN_PATH="${THIS_DIR_PATH}/bsss-main.sh"
 readonly ALLOWED_PARAMS="hu"
-readonly UTIL_NAME="bsss"
 # shellcheck disable=SC2034
 # shellcheck disable=SC2155
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
@@ -32,15 +32,30 @@ readonly ERR_RUN_MAIN_SCRIPT=3
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}/lib/logging.sh"
 
+# Запуск без параметров
+if [ "$#" -eq 0 ]; then
+    RUN=1
+fi
+
+# Парсинг параметров запуска с использованием getopts
+while getopts ":$ALLOWED_PARAMS" opt; do
+    case ${opt} in
+        h)  HELP_FLAG=1 ;;
+        u)  UNINSTALL_FLAG=1 ;;
+        \?) INCORRECT_PARAM_FLAG=1 ;;
+        :)  ERR_PARAM_PARSE_FLAG=1 ;;
+    esac
+done
+
 # Функция удаления установленных файлов и директорий
 run_uninstall() {
     # Запрашиваем подтверждение удаления
-    read -p "$SYMBOL_QUESTION Выбрано удаление $UTIL_NAME - подтвердите - y/n [n]: " -r confirmation
+    read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] Выбрано удаление $UTIL_NAME - подтвердите - y/n [n]: " -r confirmation
     confirmation=${confirmation:-n}
     
     if [[ ! ${confirmation,,} =~ ^[y]$ ]]; then
         log_info "Удаление отменено"
-        return $SUCCESS
+        return "$SUCCESS"
     fi
     
     # Проверяем наличие файла с путями для удаления
@@ -67,32 +82,18 @@ run_uninstall() {
     done < "$UNINSTALL_PATHS"
     
     log_success "Удаление завершено успешно"
-    return $SUCCESS
+    return "$SUCCESS"
 }
-
-# Запуск без параметров
-if [ "$#" -eq 0 ]; then
-    RUN=1
-fi
-
-# Парсинг параметров запуска с использованием getopts
-while getopts ":$ALLOWED_PARAMS" opt; do
-    case ${opt} in
-        h)  HELP_FLAG=1 ;;
-        u)  UNINSTALL_FLAG=1 ;;
-        \?) INCORRECT_PARAM_FLAG=1 ;;
-        :)  ERR_PARAM_PARSE_FLAG=1 ;;
-    esac
-done
 
 # Основная функция
 main() {
     if [[ $UNINSTALL_FLAG -eq 1 ]]; then
         run_uninstall
+        return $?
     fi
     if [[ $HELP_FLAG -eq 1 ]]; then
         log_info "Доступны короткие параметры $ALLOWED_PARAMS, [-h помощь] [-u удаление]"
-        return $SUCCESS
+        return "$SUCCESS"
     fi
     if [[ $INCORRECT_PARAM_FLAG -eq 1 || $ERR_PARAM_PARSE_FLAG -eq 1 ]]; then
         log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h для вызова помощи"
@@ -103,6 +104,7 @@ main() {
     if [[ $RUN -eq 1 ]]; then
         if [[ -f "$RUN_PATH" ]]; then
             exec bash "$RUN_PATH"
+            return $?
         else
             log_error "Основной скрипт не найден: $RUN_PATH"
             return $ERR_RUN_MAIN_SCRIPT
@@ -111,3 +113,4 @@ main() {
 }
 
 main
+log_success "Завершен"

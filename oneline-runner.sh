@@ -86,7 +86,7 @@ ask_user_how_to_run(){
     local choice
 
     while true; do
-        read -p "$SYMBOL_QUESTION Ваш выбор (Y/n/c): " -r
+        read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] Ваш выбор (Y/n/c): " -r
         input=${REPLY:-Y}  # Если пустая строка, то Y по умолчанию
         
         # Проверка на допустимые символы (регистронезависимая для Y)
@@ -100,7 +100,7 @@ ask_user_how_to_run(){
 
     if [[ $choice =~ ^[Cc]$ ]]; then
         log_info "Выбрана отмена ($choice)"
-        return $SUCCESS
+        return "$SUCCESS"
     elif [[ $choice =~ ^[Nn]$ ]]; then
         log_info "Выбрана установка ($choice)"
         # Проверяем, установлен ли уже скрипт
@@ -111,11 +111,11 @@ ask_user_how_to_run(){
             return "$ERR_ALREADY_INSTALLED"
         fi
         SYS_INSTALL_FLAG=1
-        return $SUCCESS
+        return "$SUCCESS"
     elif [[ $choice =~ ^[Yy]$ ]]; then
         log_info "Выбран разовый запуск ($choice)"
         ONETIME_RUN_FLAG=1
-        return $SUCCESS
+        return "$SUCCESS"
     else
         log_error "Не корректное значение ($choice)"
         return $ERR_INCORRECT_CHOICE
@@ -127,7 +127,7 @@ create_tmp_dir() {
     TEMP_PROJECT_DIR=$(mktemp -d --tmpdir "$UTIL_NAME"-XXXXXX)
     CLEANUP_COMMANDS+=("rm -rf $TEMP_PROJECT_DIR")
     log_info "Создана временная директория $TEMP_PROJECT_DIR"
-    return $SUCCESS
+    return "$SUCCESS"
 }
 
 # Скаиваем архив во временный файл
@@ -143,7 +143,7 @@ download_archive() {
     local fsize=""
     fsize=$(stat -c "%s" "$TMPARCHIVE" | awk '{printf "%.2f KB\n", $1/1024}')
     log_info "Архив скачан в $TMPARCHIVE (размер: $fsize, тип: $(file -ib "$TMPARCHIVE"))"
-    return $SUCCESS
+    return "$SUCCESS"
 }
 
 unpack_archive() {
@@ -155,7 +155,7 @@ unpack_archive() {
     local dir_size=""
     dir_size=$(du -sb "$TEMP_PROJECT_DIR" | cut -f1 | awk '{printf "%.2f KB\n", $1/1024}' )
     log_info "Архив распакован в $TEMP_PROJECT_DIR (размер: $dir_size)"
-    return $SUCCESS
+    return "$SUCCESS"
 }
 
 # Проверяем успешность распаковки во временную директорию
@@ -166,6 +166,7 @@ check_archive_unpacking() {
         return "$ERR_CHECK_UNPACK"
     fi
     log_info "Исполняемый файл $LOCAL_RUNNER_FILE_NAME найден"
+    return "$SUCCESS"
 }
 
 # Добавляет путь в файл лога установки для последующего удаления
@@ -178,7 +179,6 @@ _add_uninstall_path() {
         echo "$uninstall_path" >> "$install_log_path"
         log_info "Путь $uninstall_path добавлен в лог удаления $install_log_path"
     fi
-    
     return "$SUCCESS"
 }
 
@@ -233,11 +233,13 @@ main() {
     fi
     if [[ "$ONETIME_RUN_FLAG" -eq 1 ]]; then
         bash "$TMP_LOCAL_RUNNER_PATH" "$@"
+        return $?
     fi
     if [[ "$SYS_INSTALL_FLAG" -eq 1 ]]; then
         install_to_system
+        return $?
     fi
 }
 
 main "$@"
-log_success "Oneline запуск завершен успешно"
+log_success "Завершен"

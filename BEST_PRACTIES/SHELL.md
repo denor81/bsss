@@ -47,18 +47,26 @@ readonly SYMBOL_QUESTION="[?]"
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_ERROR="[X]"
 
-log_success() { echo "$SYMBOL_SUCCESS $1"; }
-log_error() { echo "$SYMBOL_ERROR $1" >&2; }
-log_info() { echo "$SYMBOL_INFO $1"; }
+log_success() { echo "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2; }
+log_error() { echo "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2; }
+log_info() { echo "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2; }
 ```
 - Унифицированный формат вывода сообщений
-- Разделение потоков (stderr для ошибок)
-- Визуальные маркеры статуса ([v], [x], [ ])
+- **Все логи отправляются в stderr** для сохранения чистоты stdout
+- Визуальные маркеры статуса ([V], [X], [ ])
+- Использование имени модуля в логах для идентификации источника
+
+#### Важность направления всех логов в stderr:
+- **Чистый stdout**: Позволяет функциям возвращать данные в stdout без смешивания с логами
+- **Консистентность**: Все сообщения (успех, информация, ошибки) используют один поток вывода
+- **Совместимость**: Легко перенаправлять логи отдельно от основного вывода: `script.sh 2>log.txt`
+- **Отладка**: Удобно фильтровать вывод: `script.sh 2>&1 | grep "ERROR"`
+- **Интеграция**: Позволяет использовать вывод скрипта в пайплайнах без загрязнения логами
 
 ### 6. **Валидация пользовательского ввода**
 ```bash
 while true; do
-    read -p "$SYMBOL_QUESTION Ваш выбор (Y/n/c): " -r
+    read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] Ваш выбор (Y/n/c): " -r
     input=${REPLY:-Y}
     
     if [[ ${input,,} =~ ^[ync]$ ]]; then
@@ -99,7 +107,7 @@ local fsize=""
 local tar_output=""
 ```
 
-### 10. **Использование констант для хардкод-значений**
+### 2. **Использование констант для хардкод-значений**
 ```bash
 # Все хардкод-значения выносим в константы в начале файла
 readonly REBOOT_REQUIRED_FILE="/var/run/reboot-required"
@@ -111,7 +119,7 @@ readonly LOG_FILE="/var/log/myapp.log"
 source "${THIS_DIR_PATH}/../lib/logging.sh"
 ```
 
-### 2. **Комментирование**
+### 3. **Комментирование**
 ```bash
 # Многострочные комментарии для блоков кода
 # -----------------------------------------
@@ -124,7 +132,7 @@ TEMP_PROJECT_DIR=$(mktemp -d --tmpdir "$UTIL_NAME"-XXXXXX)
 CLEANUP_COMMANDS+=("rm -rf $TEMP_PROJECT_DIR")  # Добавляем в список очистки
 ```
 
-### 3. **Обработка ошибок с детализацией**
+### 4. **Обработка ошибок с детализацией**
 ```bash
 curl_output=$(curl -fsSL "$ARCHIVE_URL" -o "$TMPARCHIVE" 2>&1 ) || { 
     log_error "Ошибка загрузки архива - $curl_output"  # Вывод конкретной ошибки
@@ -136,7 +144,7 @@ fsize=$(stat -c "%s" "$TMPARCHIVE" | awk '{printf "%.2f KB\n", $1/1024}')
 log_info "Архив скачан в $TMPARCHIVE (размер: $fsize, тип: $(file -ib "$TMPARCHIVE"))"
 ```
 
-### 4. **Структура условных операторов**
+### 5. **Структура условных операторов**
 ```bash
 # Ясная последовательность условий
 if [[ $choice =~ ^[Cc]$ ]]; then
@@ -155,7 +163,7 @@ if [[ "$ONETIME_RUN_FLAG" == "true" ]]; then
 fi
 ```
 
-### 5. **Работа с путями и файлами**
+### 6. **Работа с путями и файлами**
 ```bash
 # Поиск файла с проверкой
 TMP_LOCAL_RUNNER_PATH=$(find "$TEMP_PROJECT_DIR" -type f -name "$LOCAL_RUNNER_FILE_NAME")
@@ -168,7 +176,7 @@ tmp_dir_path=$(dirname "$TMP_LOCAL_RUNNER_PATH")
 mkdir -p "$INSTALL_DIR"  # -p для создания вложенных директорий
 ```
 
-### 6. **Форматирование вывода**
+### 7. **Форматирование вывода**
 ```bash
 # Единообразное форматирование размеров
 fsize=$(stat -c "%s" "$TMPARCHIVE" | awk '{printf "%.2f KB\n", $1/1024}')
@@ -179,7 +187,7 @@ log_info "Создана временная директория $TEMP_PROJECT_D
 log_info "Исполняемый файл $LOCAL_RUNNER_FILE_NAME найден"
 ```
 
-### 7. **Архитектурные паттерны**
+### 8. **Архитектурные паттерны**
 ```bash
 # Шаблон "командной строки" для очистки
 CLEANUP_COMMANDS+=("rm -rf $TEMP_PROJECT_DIR")
@@ -192,7 +200,7 @@ for i in "${!CLEANUP_COMMANDS[@]}"; do
 done
 ```
 
-### 8. **Документирование интерфейса**
+### 9. **Документирование интерфейса**
 ```bash
 # Четкое описание использования в шапке
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/...)
@@ -213,7 +221,7 @@ log_info "Пожалуйста, запускайте с sudo"
 6. **Документирование через код** - имена и структура должны быть самодокументирующимися
 7. **Грациозная деградация** - понятные сообщения об ошибках и рекомендации
 
-### 9. **Коды возврата и их использование**
+### 10. **Коды возврата и их использование**
 ```bash
 # Определение кодов возврата в начале файла
 readonly SUCCESS=0
@@ -230,7 +238,7 @@ fi
 # Возврат кода успеха при отмене операции пользователем
 if [[ ! ${confirmation,,} =~ ^[y]$ ]]; then
     log_info "Удаление отменено"
-    return $SUCCESS  # Вместо return 0
+    return "$SUCCESS"  # Вместо return 0
 fi
 ```
 

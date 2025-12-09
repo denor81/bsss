@@ -14,38 +14,47 @@ readonly SCRIPT_NAME=$(basename "$0")
 readonly CURRENT_MODULE_NAME="$SCRIPT_NAME"
 readonly REBOOT_REQUIRED_FILE="/var/run/reboot-required"
 
-CHECK_FLAG=0
+CHECK_FLAG=1 # По умолчанию запускаем проверку
 
 # Коды возврата
 readonly SUCCESS=0
-readonly ERR_SYS_REBOOT_REQUIRED=1
-readonly ERR_RUN_FLAG=2
+readonly ERR_RUN_FLAG=1
+readonly ERR_SYS_REBOOT_REQUIRED=2
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}"/../lib/logging.sh
 
-log_info "Модуль: ${THIS_DIR_PATH}/${SCRIPT_NAME}"
-log_info "Проверка необходимости перезагрузки системы $REBOOT_REQUIRED_FILE"
-
-# Запуск без параметров
-if [ "$#" -eq 0 ]; then
-    RUN=1
-fi
-
-# Проверяем необходимость перезагрузки системы
-
-if [[ -f "$REBOOT_REQUIRED_FILE" ]]; then
-    log_error "Требуется перезагрузки системы. Перезагрузитесь командой reboot. Обнаружен файл $REBOOT_REQUIRED_FILE"
-    exit "$ERR_SYS_REBOOT_REQUIRED"
-elif [[ "$CHECK_FLAG" -eq 1 ]]; then
+check() {
     log_info "ЗАПУСК МОДУЛЯ $SCRIPT_NAME В РЕЖИМЕ ПРОВЕРКИ"
-elif [[ "$RUN" -eq 1 ]]; then
-    log_info "ЗАПУСК МОДУЛЯ $SCRIPT_NAME В СТАНДАРТНОМ РЕЖИМЕ"
-else
-    log_error "Не определен флаг запуска"
-    exit "$ERR_RUN_FLAG"
-fi
+    if [[ -f "$REBOOT_REQUIRED_FILE" ]]; then
+        log_info "Требуется перезагрузки системы."
+    else
+        log_info "Перезагрузка не требутся"
+    fi
+    return "$SUCCESS"
+}
 
-# Модуль успешно завершен
-exit "$SUCCESS"
+run() {
+    log_info "ЗАПУСК МОДУЛЯ $SCRIPT_NAME В СТАНДАРТНОМ РЕЖИМЕ"
+    if [[ -f "$REBOOT_REQUIRED_FILE" ]]; then
+        log_error "Требуется перезагрузки системы. Перезагрузитесь командой reboot. Обнаружен файл $REBOOT_REQUIRED_FILE"
+        return "$ERR_SYS_REBOOT_REQUIRED"
+    fi
+    return "$SUCCESS"
+}
+
+main() {
+    if [[ "$CHECK_FLAG" -eq 1 ]]; then
+        check
+        return $?
+    elif [[ "$CHECK_FLAG" -eq 0 ]]; then
+        run
+        return $?
+    else
+        log_error "Не определен флаг запуска"
+        return "$ERR_RUN_FLAG"
+    fi
+}
+
+main 
