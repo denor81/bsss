@@ -16,10 +16,6 @@ readonly REBOOT_REQUIRED_FILE="/var/run/reboot-required"
 
 CHECK_FLAG=1 # По умолчанию запускаем проверку
 
-# Коды возврата
-readonly SUCCESS=0
-readonly ERR_RUN_FLAG=1
-readonly ERR_SYS_REBOOT_REQUIRED=2
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
@@ -32,16 +28,16 @@ check() {
     else
         log_info "Перезагрузка не требутся"
     fi
-    return "$SUCCESS"
+    return 0
 }
 
 run() {
     log_info "ЗАПУСК МОДУЛЯ $SCRIPT_NAME В СТАНДАРТНОМ РЕЖИМЕ"
     if [[ -f "$REBOOT_REQUIRED_FILE" ]]; then
         log_error "Требуется перезагрузки системы. Перезагрузитесь командой reboot. Обнаружен файл $REBOOT_REQUIRED_FILE"
-        return "$ERR_SYS_REBOOT_REQUIRED"
+        return 1
     fi
-    return "$SUCCESS"
+    return 0
 }
 
 main() {
@@ -53,7 +49,7 @@ main() {
         return $?
     else
         log_error "Не определен флаг запуска"
-        return "$ERR_RUN_FLAG"
+        return 1
     fi
 }
 

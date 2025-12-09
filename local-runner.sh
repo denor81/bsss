@@ -20,14 +20,6 @@ UNINSTALL_FLAG=0
 HELP_FLAG=0
 RUN=0
 
-INCORRECT_PARAM_FLAG=0
-ERR_PARAM_PARSE_FLAG=0
-
-readonly SUCCESS=0
-readonly ERR_PARAM_PARSE=1
-readonly ERR_UNINSTALL=2
-readonly ERR_RUN_MAIN_SCRIPT=3
-
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}/lib/logging.sh"
@@ -42,8 +34,8 @@ while getopts ":$ALLOWED_PARAMS" opt; do
     case ${opt} in
         h)  HELP_FLAG=1 ;;
         u)  UNINSTALL_FLAG=1 ;;
-        \?) INCORRECT_PARAM_FLAG=1 ;;
-        :)  ERR_PARAM_PARSE_FLAG=1 ;;
+        \?) log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h для вызова помощи" ;;
+        :)  log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h для вызова помощи" ;;
     esac
 done
 
@@ -55,13 +47,13 @@ run_uninstall() {
     
     if [[ ! ${confirmation,,} =~ ^[y]$ ]]; then
         log_info "Удаление отменено"
-        return "$SUCCESS"
+        return 0
     fi
     
     # Проверяем наличие файла с путями для удаления
     if [[ ! -f "$UNINSTALL_PATHS" ]]; then
         log_error "Файл с путями для удаления не найден: $UNINSTALL_PATHS"
-        return $ERR_UNINSTALL
+        return 1
     fi
     
     log_info "Начинаю удаление установленных файлов..."
@@ -73,7 +65,7 @@ run_uninstall() {
             log_info "Удаляю: $path"
             rm -rf "$path" || {
                 log_error "Не удалось удалить: $path"
-                return $ERR_UNINSTALL
+                return 1
             }
             log_info "Удалено: $path"
         else
@@ -82,7 +74,7 @@ run_uninstall() {
     done < "$UNINSTALL_PATHS"
     
     log_success "Удаление завершено успешно"
-    return "$SUCCESS"
+    return 0
 }
 
 # Основная функция
@@ -93,11 +85,7 @@ main() {
     fi
     if [[ $HELP_FLAG -eq 1 ]]; then
         log_info "Доступны короткие параметры $ALLOWED_PARAMS, [-h помощь] [-u удаление]"
-        return "$SUCCESS"
-    fi
-    if [[ $INCORRECT_PARAM_FLAG -eq 1 || $ERR_PARAM_PARSE_FLAG -eq 1 ]]; then
-        log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h для вызова помощи"
-        return $ERR_PARAM_PARSE
+        return 0
     fi
     
     # Запускаем основной скрипт через exec, заменяя текущий процесс
@@ -107,7 +95,7 @@ main() {
             return $?
         else
             log_error "Основной скрипт не найден: $RUN_PATH"
-            return $ERR_RUN_MAIN_SCRIPT
+            return 1
         fi
     fi
 }

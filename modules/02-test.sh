@@ -15,9 +15,6 @@ readonly CURRENT_MODULE_NAME="$SCRIPT_NAME"
 
 CHECK_FLAG=1
 
-# Коды возврата
-readonly SUCCESS=0
-readonly ERR_RUN_FLAG=1
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
@@ -116,7 +113,7 @@ check() {
     
     log_info "Текущий активный порт SSH: $ssh_port"
     echo "$ssh_port"
-    return "$SUCCESS"
+    return 0
 }
 
 # Вызовите debug_ssh_port в вашем скрипте для диагностики
@@ -161,7 +158,7 @@ check() {
 
 run() {
     log_info "ЗАПУСК МОДУЛЯ $SCRIPT_NAME В СТАНДАРТНОМ РЕЖИМЕ"
-    return "$SUCCESS"
+    return 0
 }
 
 main() {
@@ -173,7 +170,7 @@ main() {
         return $?
     fi
     log_error "Не определен флаг запуска"
-    return "$ERR_RUN_FLAG"
+    return 1
 }
 
 main 

@@ -22,13 +22,6 @@ ONETIME_RUN_FLAG=0
 SYS_INSTALL_FLAG=0
 CLEANUP_DONE_FLAG=0
 
-readonly SUCCESS=0
-readonly ERR_ALREADY_INSTALLED=1
-readonly ERR_NO_ROOT=2
-readonly ERR_DOWNLOAD=3
-readonly ERR_UNPACK=4
-readonly ERR_CHECK_UNPACK=5
-readonly ERR_INCORRECT_CHOICE=6
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
@@ -38,7 +31,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/logging.sh"
 # shellcheck disable=SC2329
 cleanup_handler() {
     if [ "$CLEANUP_DONE_FLAG" -eq 1 ]; then
-        return "$SUCCESS" # Уже запускали, выходим
+        return 0 # Уже запускали, выходим
     fi
     local reason="$1" 
     log_info "Запуск процедуры очистки по причине: $reason..."
@@ -59,7 +52,7 @@ cleanup_handler() {
     done
     log_success "Очистка завершена"
     CLEANUP_DONE_FLAG=1
-    return "$SUCCESS"
+    return 0
 }
 
 # Передаем имя сигнала в функцию при вызове
@@ -75,7 +68,7 @@ check_root_permissions() {
     if [[ $EUID -ne 0 ]]; then
         log_error "Для работы скрипта требуются права root"
         log_info "Пожалуйста, запускайте с sudo"
-        return "$ERR_NO_ROOT"
+        return 1
     fi
 }
 
@@ -100,7 +93,7 @@ ask_user_how_to_run(){
 
     if [[ $choice =~ ^[Cc]$ ]]; then
         log_info "Выбрана отмена ($choice)"
-        return "$SUCCESS"
+        return 0
     elif [[ $choice =~ ^[Nn]$ ]]; then
         log_info "Выбрана установка ($choice)"
         # Проверяем, установлен ли уже скрипт
@@ -108,17 +101,17 @@ ask_user_how_to_run(){
             log_error "Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога."
             log_info "Для запуска Basic Server Security Setup (${UTIL_NAME^^}) используйте команду: sudo $UTIL_NAME, если не сработает - проверьте, что установлено в каталоге $INSTALL_DIR (ll $INSTALL_DIR) или куда ссылкается ссылка $UTIL_NAME (find /bin /usr/bin /usr/local/bin -type l -ls | grep $UTIL_NAME или realpath $UTIL_NAME)"
             log_info "Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo $UTIL_NAME -u"
-            return "$ERR_ALREADY_INSTALLED"
+            return 1
         fi
         SYS_INSTALL_FLAG=1
-        return "$SUCCESS"
+        return 0
     elif [[ $choice =~ ^[Yy]$ ]]; then
         log_info "Выбран разовый запуск ($choice)"
         ONETIME_RUN_FLAG=1
-        return "$SUCCESS"
+        return 0
     else
         log_error "Не корректное значение ($choice)"
-        return $ERR_INCORRECT_CHOICE
+        return 1
     fi
 }
 
@@ -127,7 +120,7 @@ create_tmp_dir() {
     TEMP_PROJECT_DIR=$(mktemp -d --tmpdir "$UTIL_NAME"-XXXXXX)
     CLEANUP_COMMANDS+=("rm -rf $TEMP_PROJECT_DIR")
     log_info "Создана временная директория $TEMP_PROJECT_DIR"
-    return "$SUCCESS"
+    return 0
 }
 
 # Скаиваем архив во временный файл
@@ -136,26 +129,26 @@ download_archive() {
     log_info "Скачиваю архив с GitHub: $ARCHIVE_URL"
     TMPARCHIVE=$(mktemp --tmpdir "$UTIL_NAME"-archive-XXXXXX)
     CLEANUP_COMMANDS+=("rm -f $TMPARCHIVE")
-    curl_output=$(curl -fsSL "$ARCHIVE_URL" -o "$TMPARCHIVE" 2>&1) || { 
+    curl_output=$(curl -fsSL "$ARCHIVE_URL" -o "$TMPARCHIVE" 2>&1) || {
         log_error "Ошибка загрузки архива - $curl_output"
-        return $ERR_DOWNLOAD
+        return 1
     }
     local fsize=""
     fsize=$(stat -c "%s" "$TMPARCHIVE" | awk '{printf "%.2f KB\n", $1/1024}')
     log_info "Архив скачан в $TMPARCHIVE (размер: $fsize, тип: $(file -ib "$TMPARCHIVE"))"
-    return "$SUCCESS"
+    return 0
 }
 
 unpack_archive() {
     local tar_output=""
     tar_output=$(tar -xzf "$TMPARCHIVE" -C "$TEMP_PROJECT_DIR" 2>&1 ) || {
         log_error "Ошибка распаковки архива - $tar_output"
-        return $ERR_UNPACK
+        return 1
     }
     local dir_size=""
     dir_size=$(du -sb "$TEMP_PROJECT_DIR" | cut -f1 | awk '{printf "%.2f KB\n", $1/1024}' )
     log_info "Архив распакован в $TEMP_PROJECT_DIR (размер: $dir_size)"
-    return "$SUCCESS"
+    return 0
 }
 
 # Проверяем успешность распаковки во временную директорию
@@ -163,10 +156,10 @@ check_archive_unpacking() {
     TMP_LOCAL_RUNNER_PATH=$(find "$TEMP_PROJECT_DIR" -type f -name "$LOCAL_RUNNER_FILE_NAME")
     if [[ -z "$TMP_LOCAL_RUNNER_PATH" ]]; then
         log_error "При проверке наличия исполняемого файла произошла ошибка - файл $LOCAL_RUNNER_FILE_NAME не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
-        return "$ERR_CHECK_UNPACK"
+        return 1
     fi
     log_info "Исполняемый файл $LOCAL_RUNNER_FILE_NAME найден"
-    return "$SUCCESS"
+    return 0
 }
 
 # Добавляет путь в файл лога установки для последующего удаления
@@ -179,7 +172,7 @@ _add_uninstall_path() {
         echo "$uninstall_path" >> "$install_log_path"
         log_info "Путь $uninstall_path добавлен в лог удаления $install_log_path"
     fi
-    return "$SUCCESS"
+    return 0
 }
 
 # Функция установки в систему
@@ -192,7 +185,7 @@ install_to_system() {
     # Проверка существования символической ссылки
     if [[ -L "$SYMBOL_LINK_PATH" ]]; then
         log_error "Символическая ссылка $UTIL_NAME уже существует - запускайте sudo $UTIL_NAME, если не сработает - проверьте куда ссылается $UTIL_NAME"
-        return "$ERR_ALREADY_INSTALLED"
+        return 1
     fi
 
     # Создаем директорию установки
@@ -218,7 +211,7 @@ install_to_system() {
     log_success "Установка в систему завершена"
     log_info "Для запуска: sudo $UTIL_NAME"
     log_info "Для удаления: sudo $UTIL_NAME -u"
-    return "$SUCCESS"
+    return 0
 }
 
 main() {

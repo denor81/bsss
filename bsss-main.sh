@@ -14,11 +14,6 @@ readonly MODULES_DIR="${THIS_DIR_PATH}/modules"
 # shellcheck disable=SC2155
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-# Коды возврата
-readonly SUCCESS=0
-readonly ERR_MODULE_NOT_FOUND=1
-readonly ERR_MODULE_EXECUTION=2
-readonly ERR_GET_MODULES=3
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
@@ -35,10 +30,10 @@ check_module_exists() {
     
     if [[ ! -f "$module_path" ]]; then
         log_error "Модуль не найден: $module_path"
-        return "$ERR_MODULE_NOT_FOUND"
+        return 1
     fi
     
-    return "$SUCCESS"
+    return 0
 }
 
 # Запускает модуль в изолированном процессе
@@ -52,14 +47,14 @@ run_module() {
     bash "$module_path"
     local exit_code=$?
     
-    if [[ $exit_code -eq "$SUCCESS" ]]; then
+    if [[ $exit_code -eq 0 ]]; then
         log_success "Модуль $module_name выполнен успешно"
     else
         log_error "Модуль $module_name завершился с ошибкой (код: $exit_code)"
-        return "$ERR_MODULE_EXECUTION"
+        return 1
     fi
     
-    return "$SUCCESS"
+    return 0
 }
 
 # Получает список всех доступных модулей
@@ -68,7 +63,7 @@ get_available_modules() {
         find "$MODULES_DIR" -name "*.sh" -type f | sort
     else
         log_error "Директория модулей не найдена: $MODULES_DIR"
-        return "$ERR_MODULE_NOT_FOUND"
+        return 1
     fi
 }
 
@@ -79,12 +74,12 @@ start_modules() {
     local modules_list
     modules_list=$(get_available_modules) || {
         log_error "Ошибка при получении списка модулей"
-        return "$ERR_GET_MODULES"
+        return 1
     }
     
     if [[ -z "$modules_list" ]]; then
         log_info "Модули для запуска не найдены"
-        return "$ERR_GET_MODULES"
+        return 1
     fi
     
     local module_count=0
@@ -110,7 +105,7 @@ start_modules() {
     
     log_info "Завершено: $success_count из $module_count модулей выполнено успешно"
     
-    return "$SUCCESS"
+    return 0
 }
 
 # Основная функция
