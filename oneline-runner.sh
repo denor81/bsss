@@ -225,7 +225,7 @@ main() {
         check_archive_unpacking
     fi
     if [[ "$ONETIME_RUN_FLAG" -eq 1 ]]; then
-        bash "$TMP_LOCAL_RUNNER_PATH" "$@"
+        bash "$TMP_LOCAL_RUNNER_PATH"
         return $?
     fi
     if [[ "$SYS_INSTALL_FLAG" -eq 1 ]]; then
@@ -234,5 +234,5 @@ main() {
     fi
 }
 
-main "$@"
+main
 log_success "Завершен"
