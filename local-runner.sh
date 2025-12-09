@@ -67,7 +67,6 @@ run_uninstall() {
                 log_error "Не удалось удалить: $path"
                 return 1
             }
-            log_info "Удалено: $path"
         else
             log_info "Путь не существует, пропускаю: $path"
         fi
