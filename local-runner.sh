@@ -29,6 +29,8 @@ if [ "$#" -eq 0 ]; then
     RUN=1
 fi
 
+log_info "Запуск"
+
 # Парсинг параметров запуска с использованием getopts
 while getopts ":$ALLOWED_PARAMS" opt; do
     case ${opt} in
