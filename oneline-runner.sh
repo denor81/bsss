@@ -23,14 +23,29 @@ ONETIME_RUN_FLAG=0
 SYS_INSTALL_FLAG=0
 CLEANUP_DONE_FLAG=0
 
+# Символы для обозначения статуса сообщений
+# shellcheck disable=SC2034
+readonly SYMBOL_SUCCESS="[V]"
+readonly SYMBOL_QUESTION="[?]" # Используется в read (read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] Ваш выбор (Y/n/c): " -r)
+readonly SYMBOL_INFO="[ ]"
+readonly SYMBOL_ERROR="[X]"
 
-# Подключаем библиотеку функций логирования
-# shellcheck disable=SC1091
-source "$(dirname "${BASH_SOURCE[0]}")/lib/logging.sh"
-# shellcheck disable=SC1091
-source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
-# shellcheck disable=SC1091
-source "$(dirname "${BASH_SOURCE[0]}")/lib/install_to_system_functions.sh"
+# Функции логирования
+# Выводит успешное сообщение с символом [V]
+# Все логи отправляем в stderr, что бы сохранять stdout пустым
+log_success() {
+    echo "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2
+}
+
+# Выводит сообщение об ошибке с символом [X] в stderr
+log_error() {
+    echo "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
+}
+
+# Выводит информационное сообщение с символом [ ]
+log_info() {
+    echo "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
+}
 
 # Очистка временных файлов
 # shellcheck disable=SC2329
@@ -167,6 +182,78 @@ check_archive_unpacking() {
     return 0
 }
 
+# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ УСТАНОВКИ
+
+# Добавляет путь в файл лога установки для последующего удаления
+_add_uninstall_path() {
+    local uninstall_path="$1"
+    local install_log_path="$INSTALL_DIR/$INSTALL_LOG_FILE_NAME"
+
+    # Добавляем путь в файл лога, если его там еще нет
+    if ! grep -Fxq "$uninstall_path" "$install_log_path" 2>/dev/null; then
+        echo "$uninstall_path" >> "$install_log_path"
+        log_info "Путь $uninstall_path добавлен в лог удаления $install_log_path"
+    fi
+    return 0
+}
+
+# Подключаем общие функции
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+
+# Функция теперь может работать как с дефолтами, так и с переданными параметрами
+_check_symlink_exists() {
+    if [[ -L "$SYMBOL_LINK_PATH" ]]; then
+        log_error "Символическая ссылка $UTIL_NAME уже существует"
+        return 1
+    fi
+    return 0
+}
+
+# Создание директории установки
+_create_install_directory() {
+    log_info "Создаю директорию $INSTALL_DIR"
+    mkdir -p "$INSTALL_DIR" || {
+        log_error "Не удалось создать директорию $INSTALL_DIR"
+        return 1
+    }
+    _add_uninstall_path "$INSTALL_DIR"
+    return 0
+}
+
+# Копирование файлов установки
+_copy_installation_files() {
+    local tmp_dir_path=$(dirname "$TMP_LOCAL_RUNNER_PATH")
+    log_info "Копирую файлы из $tmp_dir_path в $INSTALL_DIR"
+    
+    cp -r "$tmp_dir_path"/* "$INSTALL_DIR/" || {
+        log_error "Не удалось скопировать файлы"
+        return 1
+    }
+    return 0
+}
+
+# Создание символической ссылки
+_create_symlink() {
+    local local_runner_path="$INSTALL_DIR/$LOCAL_RUNNER_FILE_NAME"
+    
+    ln -s "$local_runner_path" "$SYMBOL_LINK_PATH" || {
+        log_error "Не удалось создать символическую ссылку"
+        return 1
+    }
+    
+    log_info "Создана символическая ссылка $UTIL_NAME для запуска $local_runner_path. (Расположение ссылки: $(dirname "$SYMBOL_LINK_PATH"))"
+    _add_uninstall_path "$SYMBOL_LINK_PATH"
+    return 0
+}
+
+# Установка прав на выполнение
+_set_execution_permissions() {
+    log_info "Устанавливаю права запуска (+x) в $INSTALL_DIR для .sh файлов"
+    chmod +x "$INSTALL_DIR"/*.sh 2>/dev/null
+    # Возвращаем 0 даже если нет .sh файлов - это нормально
+    return 0
+}
 
 # Функция установки в систему
 install_to_system() {
