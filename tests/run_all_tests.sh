@@ -52,13 +52,32 @@ run_test_file() {
         return 1
     fi
     
-    # Запускаем тестовый файл
+    # Запускаем тестовый файл и захватываем вывод
     print_header "Запуск теста: $test_file"
-    bash "$test_path"
+    local test_output
+    test_output=$(bash "$test_path" 2>&1)
     local test_result=$?
     
-    # Возвращаем результат выполнения теста
-    return $test_result
+    # Выводим результат выполнения теста
+    echo "$test_output"
+    
+    # Если тестовый файл завершился с ошибкой, возвращаем ошибку
+    if [[ $test_result -ne 0 ]]; then
+        return $test_result
+    fi
+    
+    # Анализируем вывод на наличие проваленных тестов
+    local failed_tests
+    failed_tests=$(echo "$test_output" | grep -c "^\[X\]" || true)
+    
+    # Если есть проваленные тесты, возвращаем ошибку
+    if [[ $failed_tests -gt 0 ]]; then
+        echo "Обнаружено $failed_tests проваленных тестов в $test_file"
+        return 1
+    fi
+    
+    # Иначе возвращаем успех
+    return 0
 }
 
 # ==========================================
