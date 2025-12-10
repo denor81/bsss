@@ -3,7 +3,19 @@
 # Загрузчик для установки проекта одной командой
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh)
 
+# Функция для определения, был ли скрипт вызван через source
+is_sourced() {
+    [[ "${BASH_SOURCE[0]}" != "${0}" ]]
+}
+
+# По умолчанию включаем режим строгой обработки ошибок
 set -Eeuo pipefail
+
+# Проверка: если скрипт запущен через source, ОТКЛЮЧАЕМ строгий режим
+if is_sourced; then
+    # Отключаем строгий режим при source
+    set +Eeuo pipefail
+fi
 
 readonly UTIL_NAME="bsss"
 # shellcheck disable=SC2034
@@ -185,9 +197,16 @@ check_archive_unpacking() {
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ УСТАНОВКИ
 
 # Добавляет путь в файл лога установки для последующего удаления
+# TESTED: tests/test_add_uninstall_path.sh
 _add_uninstall_path() {
-    local uninstall_path="$1"
-    local install_log_path="$INSTALL_DIR/$INSTALL_LOG_FILE_NAME"
+    local uninstall_path="${1:-}"  # Путь для добавления в лог удаления
+    local install_log_path="${2:-$INSTALL_DIR/$INSTALL_LOG_FILE_NAME}"  # Путь к файлу лога удаления
+
+    # Проверяем, что передан путь для добавления
+    if [[ -z "$uninstall_path" ]]; then
+        log_error "Не указан путь для добавления в лог удаления"
+        return 1
+    fi
 
     # Добавляем путь в файл лога, если его там еще нет
     if ! grep -Fxq "$uninstall_path" "$install_log_path" 2>/dev/null; then
@@ -198,8 +217,11 @@ _add_uninstall_path() {
 }
 
 # Проверка символической ссылки
+# TESTED: tests/test_check_symlink_exists.sh
 _check_symlink_exists() {
-    if [[ -L "$SYMBOL_LINK_PATH" ]]; then
+    local symlink_path="${1:-$SYMBOL_LINK_PATH}"  # Берет параметр, либо дефолтную переменную
+    
+    if [[ -L "$symlink_path" ]]; then
         log_error "Символическая ссылка $UTIL_NAME уже существует"
         return 1
     fi
@@ -207,22 +229,28 @@ _check_symlink_exists() {
 }
 
 # Создание директории установки
+# TESTED: tests/test_create_install_directory.sh
 _create_install_directory() {
-    log_info "Создаю директорию $INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR" || {
-        log_error "Не удалось создать директорию $INSTALL_DIR"
+    local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
+    
+    log_info "Создаю директорию $install_dir"
+    mkdir -p "$install_dir" || {
+        log_error "Не удалось создать директорию $install_dir"
         return 1
     }
-    _add_uninstall_path "$INSTALL_DIR"
+    _add_uninstall_path "$install_dir"
     return 0
 }
 
 # Копирование файлов установки
+# TESTED: tests/test_copy_installation_files.sh
 _copy_installation_files() {
-    local tmp_dir_path=$(dirname "$TMP_LOCAL_RUNNER_PATH")
-    log_info "Копирую файлы из $tmp_dir_path в $INSTALL_DIR"
+    local tmp_dir_path="${1:-$(dirname "$TMP_LOCAL_RUNNER_PATH")}"  # Берет параметр, либо вычисляет из TMP_LOCAL_RUNNER_PATH
+    local install_dir="${2:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     
-    cp -r "$tmp_dir_path"/* "$INSTALL_DIR/" || {
+    log_info "Копирую файлы из $tmp_dir_path в $install_dir"
+    
+    cp -r "$tmp_dir_path"/* "$install_dir/" || {
         log_error "Не удалось скопировать файлы"
         return 1
     }
@@ -230,23 +258,32 @@ _copy_installation_files() {
 }
 
 # Создание символической ссылки
+# TESTED: tests/test_create_symlink.sh
 _create_symlink() {
-    local local_runner_path="$INSTALL_DIR/$LOCAL_RUNNER_FILE_NAME"
+    local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
+    local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"  # Берет параметр, либо дефолтную переменную
+    local symbol_link_path="${3:-$SYMBOL_LINK_PATH}"  # Берет параметр, либо дефолтную переменную
+    local util_name="${4:-$UTIL_NAME}"  # Берет параметр, либо дефолтную переменную
     
-    ln -s "$local_runner_path" "$SYMBOL_LINK_PATH" || {
+    local local_runner_path="$install_dir/$local_runner_file_name"
+    
+    ln -s "$local_runner_path" "$symbol_link_path" || {
         log_error "Не удалось создать символическую ссылку"
         return 1
     }
     
-    log_info "Создана символическая ссылка $UTIL_NAME для запуска $local_runner_path. (Расположение ссылки: $(dirname "$SYMBOL_LINK_PATH"))"
-    _add_uninstall_path "$SYMBOL_LINK_PATH"
+    log_info "Создана символическая ссылка $util_name для запуска $local_runner_path. (Расположение ссылки: $(dirname "$symbol_link_path"))"
+    _add_uninstall_path "$symbol_link_path"
     return 0
 }
 
 # Установка прав на выполнение
+# TESTED: tests/test_set_execution_permissions.sh
 _set_execution_permissions() {
-    log_info "Устанавливаю права запуска (+x) в $INSTALL_DIR для .sh файлов"
-    chmod +x "$INSTALL_DIR"/*.sh 2>/dev/null
+    local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
+    
+    log_info "Устанавливаю права запуска (+x) в $install_dir для .sh файлов"
+    chmod +x "$install_dir"/*.sh 2>/dev/null
     # Возвращаем 0 даже если нет .sh файлов - это нормально
     return 0
 }

@@ -3,10 +3,9 @@
 # Тест для функции _create_symlink
 
 # Подключаем тестируемый файл
-# shellcheck source=../lib/install_to_system_functions.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../lib/install_to_system_functions.sh"
-# Примечание: logging.sh не подключаем, так как мы мокируем log_error и log_info
-# Примечание: common.sh не подключаем, так как мы мокируем _add_uninstall_path
+# shellcheck source=../oneline-runner.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../oneline-runner.sh"
+# Примечание: функции логирования и _add_uninstall_path уже определены в oneline-runner.sh
 
 # ==========================================
 # ПЕРЕМЕННЫЕ ДЛЯ ФАЙЛА ТЕСТА
@@ -17,6 +16,16 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/install_to_system_functions.sh"
 # ==========================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ТЕСТА
 # ==========================================
+# Переопределяем trap, чтобы избежать вызова cleanup_handler
+trap() {
+    : # Ничего не делаем, подавляем trap
+}
+
+# Переопределяем cleanup_handler, чтобы избежать очистки
+cleanup_handler() {
+    : # Ничего не делаем, подавляем cleanup
+}
+
 # Мокируем log_info, чтобы избежать вывода в нашем формате
 log_info() {
     : # Ничего не делаем, подавляем вывод
@@ -61,32 +70,33 @@ test_create_symlink_success() {
     echo "#!/bin/bash" > "$test_file"
     chmod +x "$test_file"
     
-    # Переопределяем глобальные переменные для условий теста
-    local INSTALL_DIR="$test_dir"
-    local LOCAL_RUNNER_FILE_NAME="test_runner.sh"
-    local SYMBOL_LINK_PATH="$test_dir/test_symlink"
-    local UTIL_NAME="test_util"
+    # Определяем параметры для функции
+    local install_dir="$test_dir"
+    local local_runner_file_name="test_runner.sh"
+    local symbol_link_path="$test_dir/test_symlink"
+    local util_name="test_util"
     
-    # Вызываем тестируемую функцию
-    _create_symlink
+    # Вызываем тестируемую функцию с параметрами вместо переопределения readonly переменных
+    _create_symlink "$install_dir" "$local_runner_file_name" "$symbol_link_path" "$util_name"
     
     # Проверяем результат
     local result=$?
     assertEquals 0 $result "Успешное создание символической ссылки"
     
     # Проверяем, что символическая ссылка действительно создана
-    if [[ -L "$SYMBOL_LINK_PATH" ]]; then
-        echo "[V] Символическая ссылка $SYMBOL_LINK_PATH создана"
+    if [[ -L "$symbol_link_path" ]]; then
+        echo "[V] Символическая ссылка $symbol_link_path создана"
     else
-        echo "[X] Символическая ссылка $SYMBOL_LINK_PATH не создана"
+        echo "[X] Символическая ссылка $symbol_link_path не создана"
     fi
     
     # Проверяем, что ссылка указывает на правильный файл
-    local link_target=$(readlink "$SYMBOL_LINK_PATH")
-    if [[ "$link_target" == "$test_file" ]]; then
+    local link_target=$(readlink "$symbol_link_path")
+    local expected_target="$install_dir/$local_runner_file_name"
+    if [[ "$link_target" == "$expected_target" ]]; then
         echo "[V] Ссылка указывает на правильный файл: $link_target"
     else
-        echo "[X] Ссылка указывает на неправильный файл: $link_target (ожидалось: $test_file)"
+        echo "[X] Ссылка указывает на неправильный файл: $link_target (ожидалось: $expected_target)"
     fi
     
     # Удаляем временную директорию
@@ -98,26 +108,26 @@ test_create_symlink_target_not_exists() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Переопределяем глобальные переменные для условий теста
-    local INSTALL_DIR="$test_dir"
-    local LOCAL_RUNNER_FILE_NAME="nonexistent_runner.sh"  # Файл не существует
-    local SYMBOL_LINK_PATH="$test_dir/test_symlink"
-    local UTIL_NAME="test_util"
+    # Определяем параметры для функции
+    local install_dir="$test_dir"
+    local local_runner_file_name="nonexistent_runner.sh"  # Файл не существует
+    local symbol_link_path="$test_dir/test_symlink"
+    local util_name="test_util"
     
-    # Вызываем тестируемую функцию
-    _create_symlink
+    # Вызываем тестируемую функцию с параметрами
+    _create_symlink "$install_dir" "$local_runner_file_name" "$symbol_link_path" "$util_name"
     
     # Проверяем результат (ln -s не выдает ошибку при создании ссылки на несуществующий файл)
     local result=$?
     assertEquals 0 $result "Создание символической ссылки на несуществующий файл (допустимо)"
     
     # Проверяем, что символическая ссылка создана
-    if [[ -L "$SYMBOL_LINK_PATH" ]]; then
+    if [[ -L "$symbol_link_path" ]]; then
         echo "[V] Символическая ссылка создана"
         
         # Проверяем, что ссылка указывает на несуществующий файл
-        local link_target=$(readlink "$SYMBOL_LINK_PATH")
-        if [[ "$link_target" == "$INSTALL_DIR/nonexistent_runner.sh" ]]; then
+        local link_target=$(readlink "$symbol_link_path")
+        if [[ "$link_target" == "$install_dir/nonexistent_runner.sh" ]]; then
             echo "[V] Ссылка указывает на правильный файл: $link_target"
         else
             echo "[X] Ссылка указывает на неправильный файл: $link_target"
@@ -140,21 +150,21 @@ test_create_symlink_dir_not_exists() {
     echo "#!/bin/bash" > "$test_file"
     chmod +x "$test_file"
     
-    # Переопределяем глобальные переменные для условий теста
-    local INSTALL_DIR="$test_dir"
-    local LOCAL_RUNNER_FILE_NAME="test_runner.sh"
-    local SYMBOL_LINK_PATH="$test_dir/nonexistent_dir/test_symlink"  # Директория не существует
-    local UTIL_NAME="test_util"
+    # Определяем параметры для функции
+    local install_dir="$test_dir"
+    local local_runner_file_name="test_runner.sh"
+    local symbol_link_path="$test_dir/nonexistent_dir/test_symlink"  # Директория не существует
+    local util_name="test_util"
     
-    # Вызываем тестируемую функцию, перенаправляя stderr, чтобы скрыть сообщение об ошибке ln
-    _create_symlink 2>/dev/null
+    # Вызываем тестируемую функцию с параметрами, перенаправляя stderr, чтобы скрыть сообщение об ошибке ln
+    _create_symlink "$install_dir" "$local_runner_file_name" "$symbol_link_path" "$util_name" 2>/dev/null
     
     # Проверяем результат
     local result=$?
     assertEquals 1 $result "Ошибка создания символической ссылки (директория для ссылки не существует)"
     
     # Проверяем, что символическая ссылка не создана
-    if [[ ! -L "$SYMBOL_LINK_PATH" ]]; then
+    if [[ ! -L "$symbol_link_path" ]]; then
         echo "[V] Символическая ссылка не создана"
     else
         echo "[X] Символическая ссылка создана (не должно было произойти)"
@@ -174,24 +184,24 @@ test_create_symlink_relative_path() {
     echo "#!/bin/bash" > "$test_file"
     chmod +x "$test_file"
     
-    # Переопределяем глобальные переменные для условий теста
-    local INSTALL_DIR="$test_dir"
-    local LOCAL_RUNNER_FILE_NAME="test_runner.sh"
-    local SYMBOL_LINK_PATH="$test_dir/test_symlink"  # Используем абсолютный путь для изоляции
-    local UTIL_NAME="test_util"
+    # Определяем параметры для функции
+    local install_dir="$test_dir"
+    local local_runner_file_name="test_runner.sh"
+    local symbol_link_path="$test_dir/test_symlink"  # Используем абсолютный путь для изоляции
+    local util_name="test_util"
     
-    # Вызываем тестируемую функцию
-    _create_symlink
+    # Вызываем тестируемую функцию с параметрами
+    _create_symlink "$install_dir" "$local_runner_file_name" "$symbol_link_path" "$util_name"
     
     # Проверяем результат
     local result=$?
     assertEquals 0 $result "Успешное создание символической ссылки"
     
     # Проверяем, что символическая ссылка действительно создана
-    if [[ -L "$SYMBOL_LINK_PATH" ]]; then
-        echo "[V] Символическая ссылка $SYMBOL_LINK_PATH создана"
+    if [[ -L "$symbol_link_path" ]]; then
+        echo "[V] Символическая ссылка $symbol_link_path создана"
     else
-        echo "[X] Символическая ссылка $SYMBOL_LINK_PATH не создана"
+        echo "[X] Символическая ссылка $symbol_link_path не создана"
     fi
     
     # Удаляем временную директорию

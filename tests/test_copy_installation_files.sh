@@ -3,9 +3,9 @@
 # Тест для функции _copy_installation_files
 
 # Подключаем тестируемый файл
-# shellcheck source=../lib/install_to_system_functions.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../lib/install_to_system_functions.sh"
-# Примечание: logging.sh не подключаем, так как мы мокируем log_error и log_info
+# shellcheck source=../oneline-runner.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../oneline-runner.sh"
+# Примечание: функции логирования уже определены в oneline-runner.sh
 
 # ==========================================
 # ПЕРЕМЕННЫЕ ДЛЯ ФАЙЛА ТЕСТА
@@ -16,6 +16,16 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/install_to_system_functions.sh"
 # ==========================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ТЕСТА
 # ==========================================
+# Переопределяем trap, чтобы избежать вызова cleanup_handler
+trap() {
+    : # Ничего не делаем, подавляем trap
+}
+
+# Переопределяем cleanup_handler, чтобы избежать очистки
+cleanup_handler() {
+    : # Ничего не делаем, подавляем cleanup
+}
+
 # Мокируем log_info, чтобы избежать вывода в нашем формате
 log_info() {
     : # Ничего не делаем, подавляем вывод
@@ -60,41 +70,38 @@ test_copy_installation_files_success() {
     mkdir -p "$source_dir/subdir"
     echo "test content 3" > "$source_dir/subdir/file3.txt"
     
-    # Переопределяем глобальные переменные для условий теста
-    local TMP_LOCAL_RUNNER_PATH="$source_dir/some_runner.sh"
-    local INSTALL_DIR="$test_dir/install"
-    
     # Создаем директорию назначения
-    mkdir -p "$INSTALL_DIR"
+    local install_dir="$test_dir/install"
+    mkdir -p "$install_dir"
     
-    # Вызываем тестируемую функцию
-    _copy_installation_files
+    # Вызываем тестируемую функцию с параметрами вместо переопределения readonly переменных
+    _copy_installation_files "$source_dir" "$install_dir"
     
     # Проверяем результат
     local result=$?
     assertEquals 0 $result "Успешное копирование файлов"
     
     # Проверяем, что файлы скопированы
-    if [[ -f "$INSTALL_DIR/file1.txt" ]]; then
+    if [[ -f "$install_dir/file1.txt" ]]; then
         echo "[V] Файл file1.txt скопирован"
     else
         echo "[X] Файл file1.txt не скопирован"
     fi
     
-    if [[ -f "$INSTALL_DIR/file2.txt" ]]; then
+    if [[ -f "$install_dir/file2.txt" ]]; then
         echo "[V] Файл file2.txt скопирован"
     else
         echo "[X] Файл file2.txt не скопирован"
     fi
     
-    if [[ -f "$INSTALL_DIR/subdir/file3.txt" ]]; then
+    if [[ -f "$install_dir/subdir/file3.txt" ]]; then
         echo "[V] Файл subdir/file3.txt скопирован"
     else
         echo "[X] Файл subdir/file3.txt не скопирован"
     fi
     
     # Проверяем содержимое скопированных файлов
-    local content1=$(cat "$INSTALL_DIR/file1.txt")
+    local content1=$(cat "$install_dir/file1.txt")
     if [[ "$content1" == "test content 1" ]]; then
         echo "[V] Содержимое файла file1.txt корректно"
     else
@@ -117,12 +124,8 @@ test_copy_installation_files_no_dest_dir() {
     # Создаем тестовый файл в исходной директории
     echo "test content" > "$source_dir/file1.txt"
     
-    # Переопределяем глобальные переменные для условий теста
-    local TMP_LOCAL_RUNNER_PATH="$source_dir/some_runner.sh"
-    local INSTALL_DIR="$test_dir/install"  # Директория не создана
-    
-    # Вызываем тестируемую функцию, перенаправляя stderr, чтобы скрыть сообщение об ошибке cp
-    _copy_installation_files 2>/dev/null
+    # Вызываем тестируемую функцию с параметрами, перенаправляя stderr, чтобы скрыть сообщение об ошибке cp
+    _copy_installation_files "$source_dir" "$test_dir/install" 2>/dev/null
     
     # Проверяем результат
     local result=$?
@@ -141,22 +144,19 @@ test_copy_installation_files_empty_source() {
     local source_dir="$test_dir/source"
     mkdir -p "$source_dir"
     
-    # Переопределяем глобальные переменные для условий теста
-    local TMP_LOCAL_RUNNER_PATH="$source_dir/some_runner.sh"
-    local INSTALL_DIR="$test_dir/install"
-    
     # Создаем директорию назначения
-    mkdir -p "$INSTALL_DIR"
+    local install_dir="$test_dir/install"
+    mkdir -p "$install_dir"
     
-    # Вызываем тестируемую функцию, перенаправляя stderr, чтобы скрыть сообщение об ошибке cp
-    _copy_installation_files 2>/dev/null
+    # Вызываем тестируемую функцию с параметрами, перенаправляя stderr, чтобы скрыть сообщение об ошибке cp
+    _copy_installation_files "$source_dir" "$install_dir" 2>/dev/null
     
     # Проверяем результат
     local result=$?
     assertEquals 1 $result "Копирование пустой директории (должно завершиться с ошибкой)"
     
     # Проверяем, что директория назначения осталась пустой
-    local file_count=$(find "$INSTALL_DIR" -type f | wc -l)
+    local file_count=$(find "$install_dir" -type f | wc -l)
     if [[ "$file_count" -eq 0 ]]; then
         echo "[V] Директория назначения пуста"
     else
@@ -181,29 +181,26 @@ test_copy_installation_files_special_files() {
     chmod +x "$source_dir/executable.sh"
     ln -s "executable.sh" "$source_dir/symlink.sh"
     
-    # Переопределяем глобальные переменные для условий теста
-    local TMP_LOCAL_RUNNER_PATH="$source_dir/some_runner.sh"
-    local INSTALL_DIR="$test_dir/install"
-    
     # Создаем директорию назначения
-    mkdir -p "$INSTALL_DIR"
+    local install_dir="$test_dir/install"
+    mkdir -p "$install_dir"
     
-    # Вызываем тестируемую функцию
-    _copy_installation_files
+    # Вызываем тестируемую функцию с параметрами
+    _copy_installation_files "$source_dir" "$install_dir"
     
     # Проверяем результат
     local result=$?
     assertEquals 0 $result "Копирование файлов специальных типов"
     
     # Проверяем, что исполняемый файл скопирован с правами
-    if [[ -x "$INSTALL_DIR/executable.sh" ]]; then
+    if [[ -x "$install_dir/executable.sh" ]]; then
         echo "[V] Исполняемый файл скопирован с правами на выполнение"
     else
         echo "[X] Исполняемый файл скопирован без прав на выполнение"
     fi
     
     # Проверяем, что символическая ссылка скопирована
-    if [[ -L "$INSTALL_DIR/symlink.sh" ]]; then
+    if [[ -L "$install_dir/symlink.sh" ]]; then
         echo "[V] Символическая ссылка скопирована"
     else
         echo "[X] Символическая ссылка не скопирована"

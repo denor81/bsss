@@ -3,9 +3,9 @@
 # Тест для функции _set_execution_permissions
 
 # Подключаем тестируемый файл
-# shellcheck source=../lib/install_to_system_functions.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../lib/install_to_system_functions.sh"
-# Примечание: logging.sh не подключаем, так как мы мокируем log_info
+# shellcheck source=../oneline-runner.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../oneline-runner.sh"
+# Примечание: функции логирования уже определены в oneline-runner.sh
 
 # ==========================================
 # ПЕРЕМЕННЫЕ ДЛЯ ФАЙЛА ТЕСТА
@@ -16,6 +16,16 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/install_to_system_functions.sh"
 # ==========================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ТЕСТА
 # ==========================================
+# Переопределяем trap, чтобы избежать вызова cleanup_handler
+trap() {
+    : # Ничего не делаем, подавляем trap
+}
+
+# Переопределяем cleanup_handler, чтобы избежать очистки
+cleanup_handler() {
+    : # Ничего не делаем, подавляем cleanup
+}
+
 # Мокируем log_info, чтобы избежать вывода в нашем формате
 log_info() {
     : # Ничего не делаем, подавляем вывод
@@ -45,46 +55,43 @@ test_set_execution_permissions_success() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Переопределяем глобальную переменную для условий теста
-    local INSTALL_DIR="$test_dir"
-    
     # Создаем тестовые .sh файлы без прав на выполнение
-    echo "#!/bin/bash" > "$INSTALL_DIR/script1.sh"
-    echo "#!/bin/bash" > "$INSTALL_DIR/script2.sh"
-    echo "test content" > "$INSTALL_DIR/file.txt"  # Не .sh файл
+    echo "#!/bin/bash" > "$test_dir/script1.sh"
+    echo "#!/bin/bash" > "$test_dir/script2.sh"
+    echo "test content" > "$test_dir/file.txt"  # Не .sh файл
     
     # Убираем права на выполнение у .sh файлов
-    chmod -x "$INSTALL_DIR"/*.sh
+    chmod -x "$test_dir"/*.sh
     
     # Проверяем, что файлы не имеют прав на выполнение
-    if [[ ! -x "$INSTALL_DIR/script1.sh" ]]; then
+    if [[ ! -x "$test_dir/script1.sh" ]]; then
         echo "[V] script1.sh не имеет прав на выполнение до вызова функции"
     else
         echo "[X] script1.sh уже имеет права на выполнение до вызова функции"
     fi
     
-    # Вызываем тестируемую функцию
-    _set_execution_permissions
+    # Вызываем тестируемую функцию с параметром вместо переопределения readonly переменной
+    _set_execution_permissions "$test_dir"
     
     # Проверяем результат
     local result=$?
     assertEquals 0 $result "Успешная установка прав на выполнение"
     
     # Проверяем, что .sh файлы теперь имеют права на выполнение
-    if [[ -x "$INSTALL_DIR/script1.sh" ]]; then
+    if [[ -x "$test_dir/script1.sh" ]]; then
         echo "[V] script1.sh имеет права на выполнение после вызова функции"
     else
         echo "[X] script1.sh не имеет прав на выполнение после вызова функции"
     fi
     
-    if [[ -x "$INSTALL_DIR/script2.sh" ]]; then
+    if [[ -x "$test_dir/script2.sh" ]]; then
         echo "[V] script2.sh имеет права на выполнение после вызова функции"
     else
         echo "[X] script2.sh не имеет прав на выполнение после вызова функции"
     fi
     
     # Проверяем, что не .sh файл не изменил своих прав
-    if [[ ! -x "$INSTALL_DIR/file.txt" ]]; then
+    if [[ ! -x "$test_dir/file.txt" ]]; then
         echo "[V] file.txt не имеет прав на выполнение (как и ожидалось)"
     else
         echo "[X] file.txt имеет права на выполнение (неожиданно)"
@@ -99,24 +106,21 @@ test_set_execution_permissions_no_sh_files() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Переопределяем глобальную переменную для условий теста
-    local INSTALL_DIR="$test_dir"
-    
     # Создаем файлы не .sh расширения
-    echo "test content 1" > "$INSTALL_DIR/file1.txt"
-    echo "test content 2" > "$INSTALL_DIR/file2.conf"
-    mkdir -p "$INSTALL_DIR/subdir"
-    echo "test content 3" > "$INSTALL_DIR/subdir/file3.log"
+    echo "test content 1" > "$test_dir/file1.txt"
+    echo "test content 2" > "$test_dir/file2.conf"
+    mkdir -p "$test_dir/subdir"
+    echo "test content 3" > "$test_dir/subdir/file3.log"
     
-    # Вызываем тестируемую функцию
-    _set_execution_permissions
+    # Вызываем тестируемую функцию с параметром
+    _set_execution_permissions "$test_dir"
     
     # Проверяем результат
     local result=$?
     assertEquals 0 $result "Директория без .sh файлов"
     
     # Проверяем, что файлы не имеют прав на выполнение
-    if [[ ! -x "$INSTALL_DIR/file1.txt" ]]; then
+    if [[ ! -x "$test_dir/file1.txt" ]]; then
         echo "[V] file1.txt не имеет прав на выполнение"
     else
         echo "[X] file1.txt имеет права на выполнение"
@@ -131,11 +135,8 @@ test_set_execution_permissions_empty_dir() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Переопределяем глобальную переменную для условий теста
-    local INSTALL_DIR="$test_dir"
-    
-    # Вызываем тестируемую функцию
-    _set_execution_permissions
+    # Вызываем тестируемую функцию с параметром
+    _set_execution_permissions "$test_dir"
     
     # Проверяем результат
     local result=$?
@@ -150,30 +151,27 @@ test_set_execution_permissions_already_executable() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Переопределяем глобальную переменную для условий теста
-    local INSTALL_DIR="$test_dir"
-    
     # Создаем тестовые .sh файлы с правами на выполнение
-    echo "#!/bin/bash" > "$INSTALL_DIR/script1.sh"
-    echo "#!/bin/bash" > "$INSTALL_DIR/script2.sh"
-    chmod +x "$INSTALL_DIR"/*.sh
+    echo "#!/bin/bash" > "$test_dir/script1.sh"
+    echo "#!/bin/bash" > "$test_dir/script2.sh"
+    chmod +x "$test_dir"/*.sh
     
     # Проверяем, что файлы уже имеют права на выполнение
-    if [[ -x "$INSTALL_DIR/script1.sh" ]]; then
+    if [[ -x "$test_dir/script1.sh" ]]; then
         echo "[V] script1.sh уже имеет права на выполнение перед вызовом функции"
     else
         echo "[X] script1.sh не имеет прав на выполнение перед вызовом функции"
     fi
     
-    # Вызываем тестируемую функцию
-    _set_execution_permissions
+    # Вызываем тестируемую функцию с параметром
+    _set_execution_permissions "$test_dir"
     
     # Проверяем результат
     local result=$?
     assertEquals 0 $result "Файлы уже имеют права на выполнение"
     
     # Проверяем, что .sh файлы все еще имеют права на выполнение
-    if [[ -x "$INSTALL_DIR/script1.sh" ]]; then
+    if [[ -x "$test_dir/script1.sh" ]]; then
         echo "[V] script1.sh все еще имеет права на выполнение после вызова функции"
     else
         echo "[X] script1.sh не имеет прав на выполнение после вызова функции"
@@ -188,11 +186,8 @@ test_set_execution_permissions_dir_not_exists() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Переопределяем глобальную переменную для условий теста
-    local INSTALL_DIR="$test_dir/nonexistent"
-    
-    # Вызываем тестируемую функцию
-    _set_execution_permissions
+    # Вызываем тестируемую функцию с параметром
+    _set_execution_permissions "$test_dir/nonexistent"
     
     # Проверяем результат
     local result=$?

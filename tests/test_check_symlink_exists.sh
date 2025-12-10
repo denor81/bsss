@@ -3,9 +3,8 @@
 # Тест для функции _check_symlink_exists
 
 # Подключаем тестируемый файл
-# shellcheck source=../lib/install_to_system_functions.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../lib/install_to_system_functions.sh"
-# Примечание: logging.sh не подключаем, так как мы мокируем log_error
+# shellcheck source=../oneline-runner.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../oneline-runner.sh"
 
 # ==========================================
 # ПЕРЕМЕННЫЕ ДЛЯ ФАЙЛА ТЕСТА
@@ -16,6 +15,16 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/install_to_system_functions.sh"
 # ==========================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ТЕСТА
 # ==========================================
+# Переопределяем trap, чтобы избежать вызова cleanup_handler
+trap() {
+    : # Ничего не делаем, подавляем trap
+}
+
+# Переопределяем cleanup_handler, чтобы избежать очистки
+cleanup_handler() {
+    : # Ничего не делаем, подавляем cleanup
+}
+
 # Мокируем log_error, чтобы избежать вывода в нашем формате
 log_error() {
     : # Ничего не делаем, подавляем вывод
@@ -45,11 +54,8 @@ test_check_symlink_exists_not_exists() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Переопределяем глобальную переменную для условий теста
-    local SYMBOL_LINK_PATH="$test_dir/test_symlink"
-    
-    # Вызываем тестируемую функцию
-    _check_symlink_exists
+    # Вызываем тестируемую функцию с параметром вместо переопределения readonly переменной
+    _check_symlink_exists "$test_dir/test_symlink"
     
     # Проверяем результат
     local result=$?
@@ -64,15 +70,12 @@ test_check_symlink_exists_exists() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Переопределяем глобальную переменную для условий теста
-    local SYMBOL_LINK_PATH="$test_dir/test_symlink"
-    
     # Создаем тестовый файл и символическую ссылку
     touch "$test_dir/test_file"
-    ln -s "$test_dir/test_file" "$SYMBOL_LINK_PATH"
+    ln -s "$test_dir/test_file" "$test_dir/test_symlink"
     
-    # Вызываем тестируемую функцию
-    _check_symlink_exists
+    # Вызываем тестируемую функцию с параметром вместо переопределения readonly переменной
+    _check_symlink_exists "$test_dir/test_symlink"
     
     # Проверяем результат
     local result=$?
@@ -87,18 +90,35 @@ test_check_symlink_exists_regular_file() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Переопределяем глобальную переменную для условий теста
-    local SYMBOL_LINK_PATH="$test_dir/test_file"
-    
     # Создаем обычный файл (не символическую ссылку)
-    touch "$SYMBOL_LINK_PATH"
+    touch "$test_dir/test_file"
     
-    # Вызываем тестируемую функцию
-    _check_symlink_exists
+    # Вызываем тестируемую функцию с параметром вместо переопределения readonly переменной
+    _check_symlink_exists "$test_dir/test_file"
     
     # Проверяем результат
     local result=$?
     assertEquals 0 $result "Обычный файл (не ссылка)"
+    
+    # Удаляем временную директорию
+    rm -rf "$test_dir"
+}
+
+# Тест 4: проверка работы с параметром
+test_check_symlink_exists_with_param() {
+    # Создаем временную директорию для теста
+    local test_dir=$(mktemp -d)
+    
+    # Создаем тестовый файл и символическую ссылку
+    touch "$test_dir/test_file"
+    ln -s "$test_dir/test_file" "$test_dir/test_symlink"
+    
+    # Вызываем тестируемую функцию с параметром
+    _check_symlink_exists "$test_dir/test_symlink"
+    
+    # Проверяем результат
+    local result=$?
+    assertEquals 1 $result "Ссылка существует (с параметром)"
     
     # Удаляем временную директорию
     rm -rf "$test_dir"
@@ -117,6 +137,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     test_check_symlink_exists_not_exists
     test_check_symlink_exists_exists
     test_check_symlink_exists_regular_file
+    test_check_symlink_exists_with_param
     
     echo "============================================="
     echo "Тесты завершены"
