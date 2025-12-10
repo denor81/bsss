@@ -148,10 +148,23 @@ ask_user_how_to_run(){
 }
 
 # Создаём временную директорию
-create_tmp_dir() {
-    TEMP_PROJECT_DIR=$(mktemp -d --tmpdir "$UTIL_NAME"-XXXXXX)
-    CLEANUP_COMMANDS+=("rm -rf $TEMP_PROJECT_DIR")
-    log_info "Создана временная директория $TEMP_PROJECT_DIR"
+# TESTED: tests/test_create_tmp_dir.sh
+_create_tmp_dir() {
+    local util_name="${1:-$UTIL_NAME}"  # Имя утилиты для префикса временной директории
+    local add_to_cleanup="${2:-true}"  # Добавлять ли директорию в CLEANUP_COMMANDS
+    
+    local temp_dir
+    temp_dir=$(mktemp -d --tmpdir "$util_name"-XXXXXX)
+    
+    # Устанавливаем глобальную переменную для обратной совместимости
+    TEMP_PROJECT_DIR="$temp_dir"
+    
+    # Добавляем в CLEANUP_COMMANDS если нужно
+    if [[ "$add_to_cleanup" == "true" ]]; then
+        CLEANUP_COMMANDS+=("rm -rf $temp_dir")
+    fi
+    
+    log_info "Создана временная директория $temp_dir"
     return 0
 }
 
@@ -338,7 +351,7 @@ main() {
     check_root_permissions
     ask_user_how_to_run
     if [[ "$ONETIME_RUN_FLAG" -eq 1 || "$SYS_INSTALL_FLAG" -eq 1 ]]; then
-        create_tmp_dir
+        _create_tmp_dir
         _download_archive
         _unpack_archive "$TMPARCHIVE" "$TEMP_PROJECT_DIR"
         _check_archive_unpacking "$TEMP_PROJECT_DIR" "$LOCAL_RUNNER_FILE_NAME"
