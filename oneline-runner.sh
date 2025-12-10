@@ -184,13 +184,17 @@ unpack_archive() {
 }
 
 # Проверяем успешность распаковки во временную директорию
-check_archive_unpacking() {
-    TMP_LOCAL_RUNNER_PATH=$(find "$TEMP_PROJECT_DIR" -type f -name "$LOCAL_RUNNER_FILE_NAME")
+# TESTED: tests/test_check_archive_unpacking.sh
+_check_archive_unpacking() {
+    local temp_project_dir="${1:-$TEMP_PROJECT_DIR}"  # Берет параметр, либо дефолтную переменную
+    local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"  # Берет параметр, либо дефолтную переменную
+    
+    TMP_LOCAL_RUNNER_PATH="${3:-$(find "$temp_project_dir" -type f -name "$local_runner_file_name")}"
     if [[ -z "$TMP_LOCAL_RUNNER_PATH" ]]; then
-        log_error "При проверке наличия исполняемого файла произошла ошибка - файл $LOCAL_RUNNER_FILE_NAME не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
+        log_error "При проверке наличия исполняемого файла произошла ошибка - файл $local_runner_file_name не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
         return 1
     fi
-    log_info "Исполняемый файл $LOCAL_RUNNER_FILE_NAME найден"
+    log_info "Исполняемый файл $local_runner_file_name найден"
     return 0
 }
 
@@ -313,7 +317,7 @@ main() {
         create_tmp_dir
         download_archive
         unpack_archive
-        check_archive_unpacking
+        _check_archive_unpacking "$TEMP_PROJECT_DIR" "$LOCAL_RUNNER_FILE_NAME"
     fi
     if [[ "$ONETIME_RUN_FLAG" -eq 1 ]]; then
         bash "$TMP_LOCAL_RUNNER_PATH"
