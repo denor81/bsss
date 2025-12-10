@@ -28,6 +28,8 @@ CLEANUP_DONE_FLAG=0
 # shellcheck disable=SC1091
 source "$(dirname "${BASH_SOURCE[0]}")/lib/logging.sh"
 # shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
+# shellcheck disable=SC1091
 source "$(dirname "${BASH_SOURCE[0]}")/lib/install_to_system_functions.sh"
 
 # Очистка временных файлов
@@ -165,18 +167,6 @@ check_archive_unpacking() {
     return 0
 }
 
-# Добавляет путь в файл лога установки для последующего удаления
-_add_uninstall_path() {
-    local uninstall_path="$1"
-    local install_log_path="$INSTALL_DIR/$INSTALL_LOG_FILE_NAME"
-
-    # Добавляем путь в файл лога, если его там еще нет
-    if ! grep -Fxq "$uninstall_path" "$install_log_path" 2>/dev/null; then
-        echo "$uninstall_path" >> "$install_log_path"
-        log_info "Путь $uninstall_path добавлен в лог удаления $install_log_path"
-    fi
-    return 0
-}
 
 # Функция установки в систему
 install_to_system() {

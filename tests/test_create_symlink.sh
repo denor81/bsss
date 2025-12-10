@@ -6,6 +6,7 @@
 # shellcheck source=../lib/install_to_system_functions.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/install_to_system_functions.sh"
 # Примечание: logging.sh не подключаем, так как мы мокируем log_error и log_info
+# Примечание: common.sh не подключаем, так как мы мокируем _add_uninstall_path
 
 # ==========================================
 # ПЕРЕМЕННЫЕ ДЛЯ ФАЙЛА ТЕСТА

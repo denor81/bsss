@@ -8,14 +8,27 @@
 # Директория с тестами
 TESTS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
-# Массив с именами файлов тестов
-TEST_FILES=(
-    "test_check_symlink_exists.sh"
-    "test_copy_installation_files.sh"
-    "test_create_install_directory.sh"
-    "test_create_symlink.sh"
-    "test_set_execution_permissions.sh"
-)
+# Функция для динамического обнаружения тестовых файлов
+discover_test_files() {
+    local test_files=()
+    
+    # Находим все файлы с префиксом test_ в директории тестов
+    for file in "$TESTS_DIR"/test_*.sh; do
+        # Проверяем, что файл существует (на случай, если нет файлов с таким шаблоном)
+        if [[ -f "$file" ]]; then
+            # Извлекаем только имя файла без пути
+            local filename=$(basename "$file")
+            test_files+=("$filename")
+        fi
+    done
+    
+    # Сортируем файлы по имени для последовательного выполнения
+    IFS=$'\n' test_files=($(sort <<<"${test_files[*]}"))
+    unset IFS
+    
+    # Возвращаем массив через глобальную переменную
+    TEST_FILES=("${test_files[@]}")
+}
 
 # ==========================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -86,6 +99,8 @@ run_test_file() {
 
 # Функция для запуска всех тестов
 run_all_tests() {
+    # Сначала обнаруживаем все тестовые файлы
+    discover_test_files
     local total_tests=${#TEST_FILES[@]}
     local passed_tests=0
     local failed_tests=0

@@ -2,6 +2,10 @@
 # lib/install_to_system_functions.sh
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ УСТАНОВКИ
 
+# Подключаем общие функции
+# shellcheck disable=SC1091
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+
 # Функция теперь может работать как с дефолтами, так и с переданными параметрами
 # TESTED: tests/test_check_symlink_exists.sh
 _check_symlink_exists() {
