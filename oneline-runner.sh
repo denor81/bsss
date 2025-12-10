@@ -177,10 +177,13 @@ _add_uninstall_path() {
 
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ УСТАНОВКИ ==========
 
-# Проверка существования символической ссылки
+# Функция теперь может работать как с дефолтами, так и с переданными параметрами
 _check_symlink_exists() {
-    if [[ -L "$SYMBOL_LINK_PATH" ]]; then
-        log_error "Символическая ссылка $UTIL_NAME уже существует - запускайте sudo $UTIL_NAME, если не сработает - проверьте куда ссылается $UTIL_NAME"
+    local symlink_path="${1:-$SYMBOL_LINK_PATH}"
+    local util_name="${2:-$UTIL_NAME}"
+    
+    if [[ -L "$symlink_path" ]]; then
+        log_error "Символическая ссылка $util_name уже существует"
         return 1
     fi
     return 0
