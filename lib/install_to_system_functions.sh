@@ -3,6 +3,7 @@
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ УСТАНОВКИ
 
 # Функция теперь может работать как с дефолтами, так и с переданными параметрами
+# TESTED: tests/test_check_symlink_exists.sh
 _check_symlink_exists() {
     if [[ -L "$SYMBOL_LINK_PATH" ]]; then
         log_error "Символическая ссылка $UTIL_NAME уже существует"
@@ -12,6 +13,7 @@ _check_symlink_exists() {
 }
 
 # Создание директории установки
+# TESTED: tests/test_create_install_directory.sh
 _create_install_directory() {
     log_info "Создаю директорию $INSTALL_DIR"
     mkdir -p "$INSTALL_DIR" || {
