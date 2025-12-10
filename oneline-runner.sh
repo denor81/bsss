@@ -197,11 +197,7 @@ _add_uninstall_path() {
     return 0
 }
 
-# Подключаем общие функции
-# shellcheck disable=SC1091
-source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
-
-# Функция теперь может работать как с дефолтами, так и с переданными параметрами
+# Проверка символической ссылки
 _check_symlink_exists() {
     if [[ -L "$SYMBOL_LINK_PATH" ]]; then
         log_error "Символическая ссылка $UTIL_NAME уже существует"
