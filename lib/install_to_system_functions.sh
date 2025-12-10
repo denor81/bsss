@@ -53,6 +53,7 @@ _create_symlink() {
 }
 
 # Установка прав на выполнение
+# TESTED: tests/test_set_execution_permissions.sh
 _set_execution_permissions() {
     log_info "Устанавливаю права запуска (+x) в $INSTALL_DIR для .sh файлов"
     chmod +x "$INSTALL_DIR"/*.sh 2>/dev/null
