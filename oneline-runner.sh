@@ -155,31 +155,55 @@ create_tmp_dir() {
     return 0
 }
 
-# Скаиваем архив во временный файл
-download_archive() {
+# Скачиваем архив во временный файл
+# TESTED: tests/test_download_archive.sh
+_download_archive() {
+    local archive_url="${1:-$ARCHIVE_URL}"  # URL архива для скачивания
+    local tmparchive="${2:-}"  # Путь к временному файлу архива (если не указан, будет создан)
+    local add_to_cleanup="${3:-true}"  # Добавлять ли файл в CLEANUP_COMMANDS
+    
     local curl_output=""
-    log_info "Скачиваю архив с GitHub: $ARCHIVE_URL"
-    TMPARCHIVE=$(mktemp --tmpdir "$UTIL_NAME"-archive-XXXXXX)
-    CLEANUP_COMMANDS+=("rm -f $TMPARCHIVE")
-    curl_output=$(curl -fsSL "$ARCHIVE_URL" -o "$TMPARCHIVE" 2>&1) || {
+    
+    # Если tmparchive не указан, создаем временный файл
+    if [[ -z "$tmparchive" ]]; then
+        tmparchive=$(mktemp --tmpdir "$UTIL_NAME"-archive-XXXXXX)
+    fi
+    
+    log_info "Скачиваю архив: $archive_url"
+    
+    # Добавляем в CLEANUP_COMMANDS если нужно
+    if [[ "$add_to_cleanup" == "true" ]]; then
+        CLEANUP_COMMANDS+=("rm -f $tmparchive")
+    fi
+    
+    curl_output=$(curl -fsSL "$archive_url" -o "$tmparchive" 2>&1) || {
         log_error "Ошибка загрузки архива - $curl_output"
         return 1
     }
+    
     local fsize=""
-    fsize=$(stat -c "%s" "$TMPARCHIVE" | awk '{printf "%.2f KB\n", $1/1024}')
-    log_info "Архив скачан в $TMPARCHIVE (размер: $fsize, тип: $(file -ib "$TMPARCHIVE"))"
+    fsize=$(stat -c "%s" "$tmparchive" | awk '{printf "%.2f KB\n", $1/1024}')
+    log_info "Архив скачан в $tmparchive (размер: $fsize, тип: $(file -ib "$tmparchive"))"
+    
+    # Устанавливаем глобальную переменную для обратной совместимости
+    TMPARCHIVE="$tmparchive"
+    
     return 0
 }
 
-unpack_archive() {
+# TESTED: tests/test_unpack_archive.sh
+_unpack_archive() {
+    local tmparchive="${1:-$TMPARCHIVE}"  # Берет параметр, либо дефолтную переменную
+    local temp_project_dir="${2:-$TEMP_PROJECT_DIR}"  # Берет параметр, либо дефолтную переменную
+    
     local tar_output=""
-    tar_output=$(tar -xzf "$TMPARCHIVE" -C "$TEMP_PROJECT_DIR" 2>&1 ) || {
+    tar_output=$(tar -xzf "$tmparchive" -C "$temp_project_dir" 2>&1 ) || {
         log_error "Ошибка распаковки архива - $tar_output"
         return 1
     }
     local dir_size=""
-    dir_size=$(du -sb "$TEMP_PROJECT_DIR" | cut -f1 | awk '{printf "%.2f KB\n", $1/1024}' )
-    log_info "Архив распакован в $TEMP_PROJECT_DIR (размер: $dir_size)"
+    dir_size=$(du -sb "$temp_project_dir" | cut -f1 | awk '{printf "%.2f KB\n", $1/1024}' )
+    log_info "Архив распакован в $temp_project_dir (размер: $dir_size)"
     return 0
 }
 
@@ -315,8 +339,8 @@ main() {
     ask_user_how_to_run
     if [[ "$ONETIME_RUN_FLAG" -eq 1 || "$SYS_INSTALL_FLAG" -eq 1 ]]; then
         create_tmp_dir
-        download_archive
-        unpack_archive
+        _download_archive
+        _unpack_archive "$TMPARCHIVE" "$TEMP_PROJECT_DIR"
         _check_archive_unpacking "$TEMP_PROJECT_DIR" "$LOCAL_RUNNER_FILE_NAME"
     fi
     if [[ "$ONETIME_RUN_FLAG" -eq 1 ]]; then
