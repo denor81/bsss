@@ -38,6 +38,7 @@ _copy_installation_files() {
 }
 
 # Создание символической ссылки
+# TESTED: tests/test_create_symlink.sh
 _create_symlink() {
     local local_runner_path="$INSTALL_DIR/$LOCAL_RUNNER_FILE_NAME"
     
