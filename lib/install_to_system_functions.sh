@@ -25,6 +25,7 @@ _create_install_directory() {
 }
 
 # Копирование файлов установки
+# TESTED: tests/test_copy_installation_files.sh
 _copy_installation_files() {
     local tmp_dir_path=$(dirname "$TMP_LOCAL_RUNNER_PATH")
     log_info "Копирую файлы из $tmp_dir_path в $INSTALL_DIR"
