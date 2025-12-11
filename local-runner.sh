@@ -36,11 +36,12 @@ log_info "Запуск"
 _parse_params() {
     # Всегда используем дефолтный ALLOWED_PARAMS
     local allowed_params="${1:-$ALLOWED_PARAMS}"
-    
+    shift
+
     # Сбрасываем OPTIND
     OPTIND=1
     
-    while getopts ":$allowed_params" opt; do
+    while getopts ":$allowed_params" opt "$@"; do
         case "${opt}" in
             h)  HELP_FLAG=1 ;;
             u)  UNINSTALL_FLAG=1 ;;
