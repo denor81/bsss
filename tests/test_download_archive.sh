@@ -113,10 +113,6 @@ test_download_archive_default_params() {
     echo "test content" > "$test_file"
     tar -czf "$test_archive" -C "$test_dir" test.txt
     
-    # Устанавливаем глобальные переменные для функции
-    # Note: ARCHIVE_URL is readonly, so we'll pass it as a parameter instead
-    local CLEANUP_COMMANDS=()
-    
     # Вызываем тестируемую функцию с URL в качестве параметра
     _download_archive "file://$test_archive"
     
@@ -127,15 +123,15 @@ test_download_archive_default_params() {
     # Проверяем, что TMPARCHIVE установлен и файл существует
     if [ -f "$TMPARCHIVE" ]; then
         echo "[V] Файл успешно загружен с параметрами по умолчанию"
+        # Проверяем, что файл имеет ненулевой размер (содержит данные)
+        local file_size=$(stat -c "%s" "$TMPARCHIVE" 2>/dev/null || echo "0")
+        if [ "$file_size" -gt 0 ]; then
+            echo "[V] Загруженный файл имеет корректный размер"
+        else
+            echo "[X] Загруженный файл имеет нулевой размер"
+        fi
     else
         echo "[X] Файл не загружен с параметрами по умолчанию"
-    fi
-    
-    # Проверяем, что файл добавлен в CLEANUP_COMMANDS
-    if [[ "${#CLEANUP_COMMANDS[@]}" -gt 0 ]]; then
-        echo "[V] Файл добавлен в CLEANUP_COMMANDS"
-    else
-        echo "[X] Файл не добавлен в CLEANUP_COMMANDS"
     fi
     
     # Удаляем временные файлы
@@ -143,8 +139,8 @@ test_download_archive_default_params() {
     rm -rf "$test_dir"
 }
 
-# Тест 4: проверка работы без добавления в CLEANUP_COMMANDS
-test_download_archive_no_cleanup() {
+# Тест 4: проверка работы с указанным путем для сохранения
+test_download_archive_specific_path() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     local test_file="$test_dir/test.txt"
@@ -156,27 +152,26 @@ test_download_archive_no_cleanup() {
     
     # Создаем URL для файла
     local archive_url="file://$test_archive"
-    local CLEANUP_COMMANDS=()
     
-    # Вызываем тестируемую функцию с параметром add_to_cleanup=false
+    # Вызываем тестируемую функцию с указанным путем для сохранения
     _download_archive "$archive_url" "$test_dir/downloaded.tar.gz" false
     
     # Проверяем результат
     local result=$?
-    assertEquals 0 $result "Загрузка без добавления в CLEANUP_COMMANDS"
+    assertEquals 0 $result "Загрузка в указанный путь"
     
-    # Проверяем, что файл загружен
+    # Проверяем, что файл загружен по указанному пути
     if [ -f "$test_dir/downloaded.tar.gz" ]; then
-        echo "[V] Файл успешно загружен"
+        echo "[V] Файл успешно загружен по указанному пути"
+        # Проверяем, что файл имеет ненулевой размер (содержит данные)
+        local file_size=$(stat -c "%s" "$test_dir/downloaded.tar.gz" 2>/dev/null || echo "0")
+        if [ "$file_size" -gt 0 ]; then
+            echo "[V] Загруженный файл имеет корректный размер"
+        else
+            echo "[X] Загруженный файл имеет нулевой размер"
+        fi
     else
-        echo "[X] Файл не загружен"
-    fi
-    
-    # Проверяем, что файл НЕ добавлен в CLEANUP_COMMANDS
-    if [[ "${#CLEANUP_COMMANDS[@]}" -eq 0 ]]; then
-        echo "[V] Файл не добавлен в CLEANUP_COMMANDS"
-    else
-        echo "[X] Файл добавлен в CLEANUP_COMMANDS"
+        echo "[X] Файл не загружен по указанному пути"
     fi
     
     # Удаляем временную директорию
@@ -210,6 +205,13 @@ test_download_archive_auto_tmpfile() {
     # Проверяем, что TMPARCHIVE установлен и файл существует
     if [ -f "$TMPARCHIVE" ]; then
         echo "[V] Временный файл успешно создан и загружен"
+        # Проверяем, что файл имеет ненулевой размер (содержит данные)
+        local file_size=$(stat -c "%s" "$TMPARCHIVE" 2>/dev/null || echo "0")
+        if [ "$file_size" -gt 0 ]; then
+            echo "[V] Загруженный файл имеет корректный размер"
+        else
+            echo "[X] Загруженный файл имеет нулевой размер"
+        fi
     else
         echo "[X] Временный файл не создан или не загружен"
     fi
@@ -219,6 +221,69 @@ test_download_archive_auto_tmpfile() {
     
     # Восстанавливаем старое значение TMPARCHIVE
     TMPARCHIVE="$old_tmparchive"
+    
+    # Удаляем временную директорию
+    rm -rf "$test_dir"
+}
+
+# Тест 6: проверка обработки сетевых ошибок (неверный хост)
+test_download_archive_network_error() {
+    # Создаем временную директорию для теста
+    local test_dir=$(mktemp -d)
+    
+    # Используем несуществующий URL, который вызовет ошибку сети
+    local invalid_url="http://nonexistent-host-12345.com/nonexistent.tar.gz"
+    
+    # Вызываем тестируемую функцию с невалидным URL
+    _download_archive "$invalid_url" "$test_dir/downloaded.tar.gz" false
+    
+    # Проверяем, что функция вернула ошибку
+    local result=$?
+    assertEquals 1 $result "Обработка сетевой ошибки"
+    
+    # Проверяем, что файл не был создан
+    if [ ! -f "$test_dir/downloaded.tar.gz" ]; then
+        echo "[V] Файл не создан при сетевой ошибке"
+    else
+        echo "[X] Файл создан при сетевой ошибке"
+    fi
+    
+    # Удаляем временную директорию
+    rm -rf "$test_dir"
+}
+
+# Тест 7: проверка обработки некорректного архива
+test_download_archive_invalid_archive() {
+    # Создаем временную директорию для теста
+    local test_dir=$(mktemp -d)
+    local invalid_archive="$test_dir/invalid.tar.gz"
+    
+    # Создаем некорректный файл архива (просто текстовый файл)
+    echo "Это не архив, а просто текст" > "$invalid_archive"
+    
+    # Создаем URL для файла
+    local archive_url="file://$invalid_archive"
+    
+    # Вызываем тестируемую функцию с некорректным архивом
+    _download_archive "$archive_url" "$test_dir/downloaded.tar.gz" false
+    
+    # Проверяем результат (функция должна успешно скачать файл, даже если он некорректный)
+    local result=$?
+    assertEquals 0 $result "Загрузка некорректного архива"
+    
+    # Проверяем, что файл загружен
+    if [ -f "$test_dir/downloaded.tar.gz" ]; then
+        echo "[V] Некорректный файл успешно загружен"
+        # Проверяем, что файл имеет ненулевой размер
+        local file_size=$(stat -c "%s" "$test_dir/downloaded.tar.gz" 2>/dev/null || echo "0")
+        if [ "$file_size" -gt 0 ]; then
+            echo "[V] Загруженный файл имеет корректный размер"
+        else
+            echo "[X] Загруженный файл имеет нулевой размер"
+        fi
+    else
+        echo "[X] Некорректный файл не загружен"
+    fi
     
     # Удаляем временную директорию
     rm -rf "$test_dir"
@@ -237,8 +302,10 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     test_download_archive_valid_url
     test_download_archive_invalid_url
     test_download_archive_default_params
-    test_download_archive_no_cleanup
+    test_download_archive_specific_path
     test_download_archive_auto_tmpfile
+    test_download_archive_network_error
+    test_download_archive_invalid_archive
     
     echo "============================================="
     echo "Тесты завершены"

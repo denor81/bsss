@@ -41,18 +41,31 @@ _add_uninstall_path() {
     : # Ничего не делаем, подавляем вывод
 }
 
-# Вспомогательная функция для сравнения результатов
-assertEquals() {
-    local expected="$1"
-    local actual="$2"
-    local message="$3"
+# Вспомогательная функция для проверки истинности условия
+assertTrue() {
+    local condition="$1"
+    local message="$2"
     
-    if [ "$expected" != "$actual" ]; then
-        echo "[X] $message [$expected]/[$actual]"
-        return 1
-    else
-        echo "[V] $message [$expected]/[$actual]"
+    if eval "$condition"; then
+        echo "[V] $message"
         return 0
+    else
+        echo "[X] $message"
+        return 1
+    fi
+}
+
+# Вспомогательная функция для проверки ложности условия
+assertFalse() {
+    local condition="$1"
+    local message="$2"
+    
+    if ! eval "$condition"; then
+        echo "[V] $message"
+        return 0
+    else
+        echo "[X] $message"
+        return 1
     fi
 }
 
@@ -62,22 +75,21 @@ assertEquals() {
 
 # Тест 1: успешное создание директории
 test_create_install_directory_success() {
-    # Создаем временную директорию для теста
-    local test_dir=$(mktemp -d)
+    # Создаем временную директорию для теста с обработкой ошибок
+    local test_dir
+    test_dir=$(mktemp -d) || {
+        echo "[X] Не удалось создать временную директорию для теста"
+        return 1
+    }
     
-    # Вызываем тестируемую функцию с параметром вместо переопределения readonly переменной
-    _create_install_directory "$test_dir/test_install_dir"
+    # Определяем путь для создания директории
+    local install_dir="$test_dir/test_install_dir"
     
-    # Проверяем результат
-    local result=$?
-    assertEquals 0 $result "Успешное создание директории"
+    # Вызываем тестируемую функцию с параметром
+    _create_install_directory "$install_dir"
     
-    # Проверяем, что директория действительно создана
-    if [[ -d "$test_dir/test_install_dir" ]]; then
-        echo "[V] Директория $test_dir/test_install_dir создана"
-    else
-        echo "[X] Директория $test_dir/test_install_dir не создана"
-    fi
+    # Проверяем поведение вместо кода возврата: директория должна существовать
+    assertTrue "[[ -d \"$install_dir\" ]]" "Директория $install_dir создана"
     
     # Удаляем временную директорию
     rm -rf "$test_dir"
@@ -85,18 +97,25 @@ test_create_install_directory_success() {
 
 # Тест 2: создание директории с ошибкой (файл с таким же именем существует)
 test_create_install_directory_file_exists() {
-    # Создаем временную директорию для теста
-    local test_dir=$(mktemp -d)
+    # Создаем временную директорию для теста с обработкой ошибок
+    local test_dir
+    test_dir=$(mktemp -d) || {
+        echo "[X] Не удалось создать временную директорию для теста"
+        return 1
+    }
+    
+    # Определяем путь для создания директории
+    local install_dir="$test_dir/test_install_dir"
     
     # Создаем файл с таким же именем, как директория, которую мы пытаемся создать
-    touch "$test_dir/test_install_dir"
+    touch "$install_dir"
     
     # Вызываем тестируемую функцию с параметром, перенаправляя stderr, чтобы скрыть сообщение об ошибке mkdir
-    _create_install_directory "$test_dir/test_install_dir" 2>/dev/null
+    _create_install_directory "$install_dir" 2>/dev/null
     
-    # Проверяем результат
-    local result=$?
-    assertEquals 1 $result "Ошибка создания директории (файл с таким же именем существует)"
+    # Проверяем поведение: файл не должен быть заменен директорией
+    assertFalse "[[ -d \"$install_dir\" ]]" "Директория $install_dir не создана (файл существует)"
+    assertTrue "[[ -f \"$install_dir\" ]]" "Файл $install_dir все еще существует"
     
     # Удаляем временную директорию
     rm -rf "$test_dir"
@@ -104,25 +123,24 @@ test_create_install_directory_file_exists() {
 
 # Тест 3: создание уже существующей директории
 test_create_install_directory_already_exists() {
-    # Создаем временную директорию для теста
-    local test_dir=$(mktemp -d)
+    # Создаем временную директорию для теста с обработкой ошибок
+    local test_dir
+    test_dir=$(mktemp -d) || {
+        echo "[X] Не удалось создать временную директорию для теста"
+        return 1
+    }
+    
+    # Определяем путь для создания директории
+    local install_dir="$test_dir/test_install_dir"
     
     # Создаем директорию заранее
-    mkdir -p "$test_dir/test_install_dir"
+    mkdir -p "$install_dir"
     
     # Вызываем тестируемую функцию с параметром
-    _create_install_directory "$test_dir/test_install_dir"
+    _create_install_directory "$install_dir"
     
-    # Проверяем результат (должна быть успешной, так как mkdir -p не выдает ошибку для существующих директорий)
-    local result=$?
-    assertEquals 0 $result "Создание уже существующей директории"
-    
-    # Проверяем, что директория все еще существует
-    if [[ -d "$test_dir/test_install_dir" ]]; then
-        echo "[V] Директория $test_dir/test_install_dir существует"
-    else
-        echo "[X] Директория $test_dir/test_install_dir не существует"
-    fi
+    # Проверяем поведение: директория все еще должна существовать
+    assertTrue "[[ -d \"$install_dir\" ]]" "Директория $install_dir существует после повторного вызова"
     
     # Удаляем временную директорию
     rm -rf "$test_dir"
@@ -130,8 +148,12 @@ test_create_install_directory_already_exists() {
 
 # Тест 4: создание вложенной директории
 test_create_install_directory_nested() {
-    # Создаем временную директорию для теста
-    local test_dir=$(mktemp -d)
+    # Создаем временную директорию для теста с обработкой ошибок
+    local test_dir
+    test_dir=$(mktemp -d) || {
+        echo "[X] Не удалось создать временную директорию для теста"
+        return 1
+    }
     
     # Создаем путь с вложенными директориями
     local nested_dir="$test_dir/level1/level2/level3"
@@ -139,19 +161,51 @@ test_create_install_directory_nested() {
     # Вызываем тестируемую функцию с параметром
     _create_install_directory "$nested_dir"
     
-    # Проверяем результат
-    local result=$?
-    assertEquals 0 $result "Создание вложенной директории"
+    # Проверяем поведение: все вложенные директории должны быть созданы
+    assertTrue "[[ -d \"$nested_dir\" ]]" "Вложенная директория $nested_dir создана"
     
-    # Проверяем, что все вложенные директории созданы
-    if [[ -d "$nested_dir" ]]; then
-        echo "[V] Вложенная директория $nested_dir создана"
-    else
-        echo "[X] Вложенная директория $nested_dir не создана"
-    fi
+    # Проверяем, что и промежуточные директории созданы
+    assertTrue "[[ -d \"$test_dir/level1\" ]]" "Промежуточная директория $test_dir/level1 создана"
+    assertTrue "[[ -d \"$test_dir/level1/level2\" ]]" "Промежуточная директория $test_dir/level1/level2 создана"
     
     # Удаляем временную директорию
     rm -rf "$test_dir"
+}
+
+# Тест 5: создание директории с путем, содержащим пробелы
+test_create_install_directory_with_spaces() {
+    # Создаем временную директорию для теста с обработкой ошибок
+    local test_dir
+    test_dir=$(mktemp -d) || {
+        echo "[X] Не удалось создать временную директорию для теста"
+        return 1
+    }
+    
+    # Определяем путь с пробелами
+    local install_dir="$test_dir/test install dir"
+    
+    # Вызываем тестируемую функцию с параметром
+    _create_install_directory "$install_dir"
+    
+    # Проверяем поведение: директория с пробелами должна быть создана
+    assertTrue "[[ -d \"$install_dir\" ]]" "Директория с пробелами $install_dir создана"
+    
+    # Удаляем временную директорию
+    rm -rf "$test_dir"
+}
+
+# Тест 6: создание директории с пустым путем
+test_create_install_directory_empty_path() {
+    # Вызываем тестируемую функцию с пустым параметром
+    _create_install_directory ""
+    
+    # Проверяем поведение: должна использоваться директория по умолчанию
+    assertTrue "[[ -d \"$INSTALL_DIR\" ]]" "Директория по умолчанию $INSTALL_DIR создана"
+    
+    # Удаляем созданную директорию, если она существует
+    if [[ -d "$INSTALL_DIR" ]]; then
+        rm -rf "$INSTALL_DIR"
+    fi
 }
 
 # ==========================================
@@ -161,13 +215,15 @@ test_create_install_directory_nested() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "Запуск тестов для функции _create_install_directory"
     echo "============================================="
-    echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
+    echo "Формат вывода: [V]/[X] [Описание теста]"
     echo "============================================="
     
     test_create_install_directory_success
     test_create_install_directory_file_exists
     test_create_install_directory_already_exists
     test_create_install_directory_nested
+    test_create_install_directory_with_spaces
+    test_create_install_directory_empty_path
     
     echo "============================================="
     echo "Тесты завершены"

@@ -104,21 +104,20 @@ test_check_symlink_exists_regular_file() {
     rm -rf "$test_dir"
 }
 
-# Тест 4: проверка работы с параметром
-test_check_symlink_exists_with_param() {
+# Тест 4: проверка битой символической ссылки (ссылка существует, но указывает на несуществующий файл)
+test_check_symlink_exists_broken() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
     
-    # Создаем тестовый файл и символическую ссылку
-    touch "$test_dir/test_file"
-    ln -s "$test_dir/test_file" "$test_dir/test_symlink"
+    # Создаем символическую ссылку на несуществующий файл
+    ln -s "$test_dir/nonexistent_file" "$test_dir/broken_symlink"
     
     # Вызываем тестируемую функцию с параметром
-    _check_symlink_exists "$test_dir/test_symlink"
+    _check_symlink_exists "$test_dir/broken_symlink"
     
     # Проверяем результат
     local result=$?
-    assertEquals 1 $result "Ссылка существует (с параметром)"
+    assertEquals 1 $result "Битая символическая ссылка"
     
     # Удаляем временную директорию
     rm -rf "$test_dir"
@@ -137,7 +136,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     test_check_symlink_exists_not_exists
     test_check_symlink_exists_exists
     test_check_symlink_exists_regular_file
-    test_check_symlink_exists_with_param
+    test_check_symlink_exists_broken
     
     echo "============================================="
     echo "Тесты завершены"

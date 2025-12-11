@@ -185,13 +185,123 @@ test_set_execution_permissions_already_executable() {
 test_set_execution_permissions_dir_not_exists() {
     # Создаем временную директорию для теста
     local test_dir=$(mktemp -d)
+    local nonexistent_path="$test_dir/nonexistent"
     
     # Вызываем тестируемую функцию с параметром
-    _set_execution_permissions "$test_dir/nonexistent"
+    _set_execution_permissions "$nonexistent_path"
     
     # Проверяем результат
     local result=$?
     assertEquals 0 $result "Директория не существует"
+    
+    # Проверяем, что директория действительно не была создана
+    if [[ ! -d "$nonexistent_path" ]]; then
+        echo "[V] Директория не была создана после вызова функции"
+    else
+        echo "[X] Директория была создана после вызова функции"
+    fi
+    
+    # Удаляем временную директорию
+    rm -rf "$test_dir"
+}
+
+# Тест 6: файлы в поддиректориях
+test_set_execution_permissions_subdirectories() {
+    # Создаем временную директорию для теста
+    local test_dir=$(mktemp -d)
+    
+    # Создаем структуру с поддиректориями
+    mkdir -p "$test_dir/subdir1"
+    mkdir -p "$test_dir/subdir2"
+    
+    # Создаем .sh файлы в разных директориях
+    echo "#!/bin/bash" > "$test_dir/script.sh"
+    echo "#!/bin/bash" > "$test_dir/subdir1/subscript1.sh"
+    echo "#!/bin/bash" > "$test_dir/subdir2/subscript2.sh"
+    echo "test content" > "$test_dir/subdir1/file.txt"
+    
+    # Убираем права на выполнение у .sh файлов
+    chmod -x "$test_dir/script.sh"
+    chmod -x "$test_dir/subdir1/subscript1.sh"
+    chmod -x "$test_dir/subdir2/subscript2.sh"
+    
+    # Вызываем тестируемую функцию с параметром
+    _set_execution_permissions "$test_dir"
+    
+    # Проверяем результат
+    local result=$?
+    assertEquals 0 $result "Файлы в поддиректориях"
+    
+    # Проверяем, что только файл в корневой директории получил права на выполнение
+    if [[ -x "$test_dir/script.sh" ]]; then
+        echo "[V] script.sh в корневой директории имеет права на выполнение"
+    else
+        echo "[X] script.sh в корневой директории не имеет прав на выполнение"
+    fi
+    
+    # Проверяем, что файлы в поддиректориях не получили права на выполнение
+    if [[ ! -x "$test_dir/subdir1/subscript1.sh" ]]; then
+        echo "[V] subscript1.sh в поддиректории не имеет прав на выполнение"
+    else
+        echo "[X] subscript1.sh в поддиректории имеет права на выполнение"
+    fi
+    
+    if [[ ! -x "$test_dir/subdir2/subscript2.sh" ]]; then
+        echo "[V] subscript2.sh в поддиректории не имеет прав на выполнение"
+    else
+        echo "[X] subscript2.sh в поддиректории имеет права на выполнение"
+    fi
+    
+    # Удаляем временную директорию
+    rm -rf "$test_dir"
+}
+
+# Тест 7: файлы без расширения
+test_set_execution_permissions_no_extension() {
+    # Создаем временную директорию для теста
+    local test_dir=$(mktemp -d)
+    
+    # Создаем файлы с разными расширениями и без расширения
+    echo "#!/bin/bash" > "$test_dir/script"
+    echo "#!/bin/bash" > "$test_dir/script.sh"
+    echo "#!/bin/bash" > "$test_dir/script.bash"
+    echo "#!/bin/bash" > "$test_dir/.hidden.sh"
+    
+    # Убираем права на выполнение у всех файлов
+    chmod -x "$test_dir"/*
+    
+    # Вызываем тестируемую функцию с параметром
+    _set_execution_permissions "$test_dir"
+    
+    # Проверяем результат
+    local result=$?
+    assertEquals 0 $result "Файлы без расширения"
+    
+    # Проверяем, что только .sh файлы получили права на выполнение
+    if [[ -x "$test_dir/script.sh" ]]; then
+        echo "[V] script.sh имеет права на выполнение"
+    else
+        echo "[X] script.sh не имеет прав на выполнение"
+    fi
+    
+    if [[ ! -x "$test_dir/.hidden.sh" ]]; then
+        echo "[V] .hidden.sh не имеет прав на выполнение (скрытые файлы не обрабатываются)"
+    else
+        echo "[X] .hidden.sh имеет права на выполнение (неожиданно)"
+    fi
+    
+    # Проверяем, что файлы без расширения .sh не получили права на выполнение
+    if [[ ! -x "$test_dir/script" ]]; then
+        echo "[V] script (без расширения) не имеет прав на выполнение"
+    else
+        echo "[X] script (без расширения) имеет права на выполнение"
+    fi
+    
+    if [[ ! -x "$test_dir/script.bash" ]]; then
+        echo "[V] script.bash (не .sh расширение) не имеет прав на выполнение"
+    else
+        echo "[X] script.bash (не .sh расширение) имеет права на выполнение"
+    fi
     
     # Удаляем временную директорию
     rm -rf "$test_dir"
@@ -212,6 +322,8 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     test_set_execution_permissions_empty_dir
     test_set_execution_permissions_already_executable
     test_set_execution_permissions_dir_not_exists
+    test_set_execution_permissions_subdirectories
+    test_set_execution_permissions_no_extension
     
     echo "============================================="
     echo "Тесты завершены"
