@@ -113,5 +113,9 @@ main() {
     start_modules
 }
 
-main
+# (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main
+fi
+
 log_success "Завершен"

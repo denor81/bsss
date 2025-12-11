@@ -32,14 +32,23 @@ fi
 log_info "Запуск"
 
 # Парсинг параметров запуска с использованием getopts
-while getopts ":$ALLOWED_PARAMS" opt; do
-    case ${opt} in
-        h)  HELP_FLAG=1 ;;
-        u)  UNINSTALL_FLAG=1 ;;
-        \?) log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h для вызова помощи" ;;
-        :)  log_info "Некорректный параметр, доступны короткие параметры $ALLOWED_PARAMS, например -h для вызова помощи" ;;
-    esac
-done
+# TESTED: tests/test_parse_params.sh
+_parse_params() {
+    # Всегда используем дефолтный ALLOWED_PARAMS
+    local allowed_params="${1:-$ALLOWED_PARAMS}"
+    
+    # Сбрасываем OPTIND
+    OPTIND=1
+    
+    while getopts ":$allowed_params" opt; do
+        case "${opt}" in
+            h)  HELP_FLAG=1 ;;
+            u)  UNINSTALL_FLAG=1 ;;
+            \?) log_info "Некорректный параметр -$OPTARG, доступны: $allowed_params" ;;
+            :)  log_info "Параметр -$OPTARG требует значение" ;;
+        esac
+    done
+}
 
 # Функция удаления установленных файлов и директорий
 run_uninstall() {
@@ -80,6 +89,7 @@ run_uninstall() {
 
 # Основная функция
 main() {
+    _parse_params "$ALLOWED_PARAMS" "$@"
     if [[ $UNINSTALL_FLAG -eq 1 ]]; then
         run_uninstall
     fi
@@ -99,5 +109,9 @@ main() {
     fi
 }
 
-main
+# (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
+
 log_success "Завершен"
