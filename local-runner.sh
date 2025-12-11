@@ -24,6 +24,10 @@ RUN=0
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}/lib/logging.sh"
 
+# Подключаем библиотеку функций удаления
+# shellcheck disable=SC1091
+source "${THIS_DIR_PATH}/lib/uninstall_functions.sh"
+
 # Запуск без параметров
 if [ "$#" -eq 0 ]; then
     RUN=1
@@ -51,48 +55,12 @@ _parse_params() {
     done
 }
 
-# Функция удаления установленных файлов и директорий
-run_uninstall() {
-    # Запрашиваем подтверждение удаления
-    read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] Выбрано удаление $UTIL_NAME - подтвердите - y/n [n]: " -r confirmation
-    confirmation=${confirmation:-n}
-    
-    if [[ ! ${confirmation,,} =~ ^[y]$ ]]; then
-        log_info "Удаление отменено"
-        return 0
-    fi
-    
-    # Проверяем наличие файла с путями для удаления
-    if [[ ! -f "$UNINSTALL_PATHS" ]]; then
-        log_error "Файл с путями для удаления не найден: $UNINSTALL_PATHS"
-        return 1
-    fi
-    
-    log_info "Начинаю удаление установленных файлов..."
-    
-    # Читаем файл построчно и удаляем каждый путь
-    while IFS= read -r path; do
-        # Проверяем существование пути или символической ссылки перед удалением
-        if [[ -e "$path" || -L "$path" ]]; then
-            log_info "Удаляю: $path"
-            rm -rf "$path" || {
-                log_error "Не удалось удалить: $path"
-                return 1
-            }
-        else
-            log_info "Путь не существует, пропускаю: $path"
-        fi
-    done < "$UNINSTALL_PATHS"
-    
-    log_success "Удаление завершено успешно"
-    return 0
-}
-
 # Основная функция
 main() {
     _parse_params "$ALLOWED_PARAMS" "$@"
     if [[ $UNINSTALL_FLAG -eq 1 ]]; then
-        run_uninstall
+        # Вызываем адаптированную для тестирования версию функции с параметрами по умолчанию
+        _run_uninstall_testable "$UNINSTALL_PATHS" "$UTIL_NAME" "$CURRENT_MODULE_NAME" "false"
     fi
     if [[ $HELP_FLAG -eq 1 ]]; then
         log_info "Доступны короткие параметры $ALLOWED_PARAMS, [-h помощь] [-u удаление]"
