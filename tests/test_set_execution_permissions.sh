@@ -312,19 +312,56 @@ test_set_execution_permissions_no_extension() {
 # ==========================================
 # Запускаем тесты только если файл вызван напрямую
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Запуск тестов для функции _set_execution_permissions"
-    echo "============================================="
-    echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
-    echo "============================================="
-    
-    test_set_execution_permissions_success
-    test_set_execution_permissions_no_sh_files
-    test_set_execution_permissions_empty_dir
-    test_set_execution_permissions_already_executable
-    test_set_execution_permissions_dir_not_exists
-    test_set_execution_permissions_subdirectories
-    test_set_execution_permissions_no_extension
-    
-    echo "============================================="
-    echo "Тесты завершены"
+    # Проверяем, запущен ли тест через раннер
+    if [[ "${TEST_RUNNER_MODE:-}" == "1" ]]; then
+        # Режим работы через раннер - выводим только в случае ошибок
+        test_result=0
+        
+        # Запускаем тесты и захватываем вывод
+        test_set_execution_permissions_success || test_result=1
+        test_set_execution_permissions_no_sh_files || test_result=1
+        test_set_execution_permissions_empty_dir || test_result=1
+        test_set_execution_permissions_already_executable || test_result=1
+        test_set_execution_permissions_dir_not_exists || test_result=1
+        test_set_execution_permissions_subdirectories || test_result=1
+        test_set_execution_permissions_no_extension || test_result=1
+        
+        # Если есть ошибки, выводим полный отчет
+        if [[ $test_result -ne 0 ]]; then
+            echo "Запуск тестов для функции _set_execution_permissions"
+            echo "============================================="
+            echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
+            echo "============================================="
+            
+            test_set_execution_permissions_success
+            test_set_execution_permissions_no_sh_files
+            test_set_execution_permissions_empty_dir
+            test_set_execution_permissions_already_executable
+            test_set_execution_permissions_dir_not_exists
+            test_set_execution_permissions_subdirectories
+            test_set_execution_permissions_no_extension
+            
+            echo "============================================="
+            echo "Тесты завершены с ошибками"
+        fi
+        
+        exit $test_result
+    else
+        # Прямой запуск - всегда выводим полный отчет
+        echo "Запуск тестов для функции _set_execution_permissions"
+        echo "============================================="
+        echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
+        echo "============================================="
+        
+        test_set_execution_permissions_success
+        test_set_execution_permissions_no_sh_files
+        test_set_execution_permissions_empty_dir
+        test_set_execution_permissions_already_executable
+        test_set_execution_permissions_dir_not_exists
+        test_set_execution_permissions_subdirectories
+        test_set_execution_permissions_no_extension
+        
+        echo "============================================="
+        echo "Тесты завершены"
+    fi
 fi

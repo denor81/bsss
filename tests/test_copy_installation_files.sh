@@ -356,20 +356,59 @@ test_copy_installation_files_no_source_dir() {
 # ==========================================
 # Запускаем тесты только если файл вызван напрямую
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Запуск тестов для функции _copy_installation_files"
-    echo "============================================="
-    echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
-    echo "============================================="
-    
-    test_copy_installation_files_success
-    test_copy_installation_files_no_dest_dir
-    test_copy_installation_files_empty_source
-    test_copy_installation_files_special_files
-    test_copy_installation_files_with_spaces
-    test_copy_installation_files_special_permissions
-    test_copy_installation_files_large_files
-    test_copy_installation_files_no_source_dir
-    
-    echo "============================================="
-    echo "Тесты завершены"
+    # Проверяем, запущен ли тест через раннер
+    if [[ "${TEST_RUNNER_MODE:-}" == "1" ]]; then
+        # Режим работы через раннер - выводим только в случае ошибок
+        test_result=0
+        
+        # Запускаем тесты и захватываем вывод
+        test_copy_installation_files_success || test_result=1
+        test_copy_installation_files_no_dest_dir || test_result=1
+        test_copy_installation_files_empty_source || test_result=1
+        test_copy_installation_files_special_files || test_result=1
+        test_copy_installation_files_with_spaces || test_result=1
+        test_copy_installation_files_special_permissions || test_result=1
+        test_copy_installation_files_large_files || test_result=1
+        test_copy_installation_files_no_source_dir || test_result=1
+        
+        # Если есть ошибки, выводим полный отчет
+        if [[ $test_result -ne 0 ]]; then
+            echo "Запуск тестов для функции _copy_installation_files"
+            echo "============================================="
+            echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
+            echo "============================================="
+            
+            test_copy_installation_files_success
+            test_copy_installation_files_no_dest_dir
+            test_copy_installation_files_empty_source
+            test_copy_installation_files_special_files
+            test_copy_installation_files_with_spaces
+            test_copy_installation_files_special_permissions
+            test_copy_installation_files_large_files
+            test_copy_installation_files_no_source_dir
+            
+            echo "============================================="
+            echo "Тесты завершены с ошибками"
+        fi
+        
+        exit $test_result
+    else
+        # Прямой запуск - всегда выводим полный отчет
+        echo "Запуск тестов для функции _copy_installation_files"
+        echo "============================================="
+        echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
+        echo "============================================="
+        
+        test_copy_installation_files_success
+        test_copy_installation_files_no_dest_dir
+        test_copy_installation_files_empty_source
+        test_copy_installation_files_special_files
+        test_copy_installation_files_with_spaces
+        test_copy_installation_files_special_permissions
+        test_copy_installation_files_large_files
+        test_copy_installation_files_no_source_dir
+        
+        echo "============================================="
+        echo "Тесты завершены"
+    fi
 fi

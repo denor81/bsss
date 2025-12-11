@@ -66,16 +66,15 @@ run_test_file() {
     fi
     
     # Запускаем тестовый файл и захватываем вывод
-    print_header "Запуск теста: $test_file"
     local test_output
-    test_output=$(bash "$test_path" 2>&1)
+    test_output=$(TEST_RUNNER_MODE=1 bash "$test_path" 2>&1)
     local test_result=$?
     
-    # Выводим результат выполнения теста
-    echo "$test_output"
-    
-    # Если тестовый файл завершился с ошибкой, возвращаем ошибку
+    # Если тестовый файл завершился с ошибкой, выводим полный результат
     if [[ $test_result -ne 0 ]]; then
+        print_header "Запуск теста: $test_file"
+        echo "$test_output"
+        echo "Тестовый файл $test_file завершился с кодом ошибки: $test_result"
         return $test_result
     fi
     
@@ -83,11 +82,16 @@ run_test_file() {
     local failed_tests
     failed_tests=$(echo "$test_output" | grep -c "^\[X\]" || true)
     
-    # Если есть проваленные тесты, возвращаем ошибку
+    # Если есть проваленные тесты, выводим полный результат
     if [[ $failed_tests -gt 0 ]]; then
+        print_header "Запуск теста: $test_file"
+        echo "$test_output"
         echo "Обнаружено $failed_tests проваленных тестов в $test_file"
         return 1
     fi
+    
+    # Если все тесты прошли успешно, выводим только галочку и имя файла
+    echo "[✓] $test_file"
     
     # Иначе возвращаем успех
     return 0
@@ -106,28 +110,16 @@ run_all_tests() {
     local failed_tests=0
     local test_results=()
     
-    print_header "ЗАПУСК ВСЕХ ТЕСТОВ"
-    echo "Всего тестовых файлов для запуска: $total_tests"
-    echo "Режим выполнения: последовательный"
-    print_separator
-    
     # Запускаем каждый тестовый файл последовательно
     for test_file in "${TEST_FILES[@]}"; do
-        echo ""
-        echo "Запускаем тестовый файл: $test_file"
-        
         # Запускаем тестовый файл и сохраняем результат
         if run_test_file "$test_file"; then
-            echo "[V] Тестовый файл $test_file выполнен успешно"
             ((passed_tests++))
             test_results+=("$test_file: PASSED")
         else
-            echo "[X] Тестовый файл $test_file выполнен с ошибками"
             ((failed_tests++))
             test_results+=("$test_file: FAILED")
         fi
-        
-        print_separator
     done
     
     # Выводим итоговую статистику

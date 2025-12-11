@@ -310,20 +310,59 @@ test_check_archive_unpacking_multiple_subdirs() {
 # ==========================================
 # Запускаем тесты только если файл вызван напрямую
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Запуск тестов для функции _check_archive_unpacking"
-    echo "============================================="
-    echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
-    echo "============================================="
-    
-    test_check_archive_unpacking_file_exists_in_root
-    test_check_archive_unpacking_file_exists_in_subdir
-    test_check_archive_unpacking_file_not_exists
-    test_check_archive_unpacking_empty_dir
-    test_check_archive_unpacking_with_path_param
-    test_check_archive_unpacking_with_invalid_path_param
-    test_check_archive_unpacking_similar_filenames
-    test_check_archive_unpacking_multiple_subdirs
-    
-    echo "============================================="
-    echo "Тесты завершены"
+    # Проверяем, запущен ли тест через раннер
+    if [[ "${TEST_RUNNER_MODE:-}" == "1" ]]; then
+        # Режим работы через раннер - выводим только в случае ошибок
+        test_result=0
+        
+        # Запускаем тесты и захватываем вывод
+        test_check_archive_unpacking_file_exists_in_root || test_result=1
+        test_check_archive_unpacking_file_exists_in_subdir || test_result=1
+        test_check_archive_unpacking_file_not_exists || test_result=1
+        test_check_archive_unpacking_empty_dir || test_result=1
+        test_check_archive_unpacking_with_path_param || test_result=1
+        test_check_archive_unpacking_with_invalid_path_param || test_result=1
+        test_check_archive_unpacking_similar_filenames || test_result=1
+        test_check_archive_unpacking_multiple_subdirs || test_result=1
+        
+        # Если есть ошибки, выводим полный отчет
+        if [[ $test_result -ne 0 ]]; then
+            echo "Запуск тестов для функции _check_archive_unpacking"
+            echo "============================================="
+            echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
+            echo "============================================="
+            
+            test_check_archive_unpacking_file_exists_in_root
+            test_check_archive_unpacking_file_exists_in_subdir
+            test_check_archive_unpacking_file_not_exists
+            test_check_archive_unpacking_empty_dir
+            test_check_archive_unpacking_with_path_param
+            test_check_archive_unpacking_with_invalid_path_param
+            test_check_archive_unpacking_similar_filenames
+            test_check_archive_unpacking_multiple_subdirs
+            
+            echo "============================================="
+            echo "Тесты завершены с ошибками"
+        fi
+        
+        exit $test_result
+    else
+        # Прямой запуск - всегда выводим полный отчет
+        echo "Запуск тестов для функции _check_archive_unpacking"
+        echo "============================================="
+        echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
+        echo "============================================="
+        
+        test_check_archive_unpacking_file_exists_in_root
+        test_check_archive_unpacking_file_exists_in_subdir
+        test_check_archive_unpacking_file_not_exists
+        test_check_archive_unpacking_empty_dir
+        test_check_archive_unpacking_with_path_param
+        test_check_archive_unpacking_with_invalid_path_param
+        test_check_archive_unpacking_similar_filenames
+        test_check_archive_unpacking_multiple_subdirs
+        
+        echo "============================================="
+        echo "Тесты завершены"
+    fi
 fi

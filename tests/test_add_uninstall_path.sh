@@ -381,21 +381,62 @@ test_add_uninstall_path_no_write_permissions() {
 # ==========================================
 # Запускаем тесты только если файл вызван напрямую
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Запуск тестов для функции _add_uninstall_path"
-    echo "============================================="
-    echo "Формат вывода: [V]/[X] [Описание теста]"
-    echo "============================================="
-    
-    test_add_uninstall_path_success
-    test_add_uninstall_path_duplicate
-    test_add_uninstall_path_multiple
-    test_add_uninstall_path_with_spaces
-    test_add_uninstall_path_empty
-    test_add_uninstall_path_special_chars
-    test_add_uninstall_path_long
-    test_add_uninstall_path_newline
-    test_add_uninstall_path_no_write_permissions
-    
-    echo "============================================="
-    echo "Тесты завершены"
+    # Проверяем, запущен ли тест через раннер
+    if [[ "${TEST_RUNNER_MODE:-}" == "1" ]]; then
+        # Режим работы через раннер - выводим только в случае ошибок
+        test_result=0
+        
+        # Запускаем тесты и захватываем вывод
+        test_add_uninstall_path_success || test_result=1
+        test_add_uninstall_path_duplicate || test_result=1
+        test_add_uninstall_path_multiple || test_result=1
+        test_add_uninstall_path_with_spaces || test_result=1
+        test_add_uninstall_path_empty || test_result=1
+        test_add_uninstall_path_special_chars || test_result=1
+        test_add_uninstall_path_long || test_result=1
+        test_add_uninstall_path_newline || test_result=1
+        test_add_uninstall_path_no_write_permissions || test_result=1
+        
+        # Если есть ошибки, выводим полный отчет
+        if [[ $test_result -ne 0 ]]; then
+            echo "Запуск тестов для функции _add_uninstall_path"
+            echo "============================================="
+            echo "Формат вывода: [V]/[X] [Описание теста]"
+            echo "============================================="
+            
+            test_add_uninstall_path_success
+            test_add_uninstall_path_duplicate
+            test_add_uninstall_path_multiple
+            test_add_uninstall_path_with_spaces
+            test_add_uninstall_path_empty
+            test_add_uninstall_path_special_chars
+            test_add_uninstall_path_long
+            test_add_uninstall_path_newline
+            test_add_uninstall_path_no_write_permissions
+            
+            echo "============================================="
+            echo "Тесты завершены с ошибками"
+        fi
+        
+        exit $test_result
+    else
+        # Прямой запуск - всегда выводим полный отчет
+        echo "Запуск тестов для функции _add_uninstall_path"
+        echo "============================================="
+        echo "Формат вывода: [V]/[X] [Описание теста]"
+        echo "============================================="
+        
+        test_add_uninstall_path_success
+        test_add_uninstall_path_duplicate
+        test_add_uninstall_path_multiple
+        test_add_uninstall_path_with_spaces
+        test_add_uninstall_path_empty
+        test_add_uninstall_path_special_chars
+        test_add_uninstall_path_long
+        test_add_uninstall_path_newline
+        test_add_uninstall_path_no_write_permissions
+        
+        echo "============================================="
+        echo "Тесты завершены"
+    fi
 fi

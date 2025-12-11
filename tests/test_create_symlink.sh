@@ -307,19 +307,56 @@ test_create_symlink_empty_params() {
 # ==========================================
 # Запускаем тесты только если файл вызван напрямую
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Запуск тестов для функции _create_symlink"
-    echo "============================================="
-    echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
-    echo "============================================="
-    
-    test_create_symlink_success
-    test_create_symlink_target_not_exists
-    test_create_symlink_dir_not_exists
-    test_create_symlink_relative_path
-    test_create_symlink_existing_link
-    test_create_symlink_invalid_params
-    test_create_symlink_empty_params
-    
-    echo "============================================="
-    echo "Тесты завершены"
+    # Проверяем, запущен ли тест через раннер
+    if [[ "${TEST_RUNNER_MODE:-}" == "1" ]]; then
+        # Режим работы через раннер - выводим только в случае ошибок
+        test_result=0
+        
+        # Запускаем тесты и захватываем вывод
+        test_create_symlink_success || test_result=1
+        test_create_symlink_target_not_exists || test_result=1
+        test_create_symlink_dir_not_exists || test_result=1
+        test_create_symlink_relative_path || test_result=1
+        test_create_symlink_existing_link || test_result=1
+        test_create_symlink_invalid_params || test_result=1
+        test_create_symlink_empty_params || test_result=1
+        
+        # Если есть ошибки, выводим полный отчет
+        if [[ $test_result -ne 0 ]]; then
+            echo "Запуск тестов для функции _create_symlink"
+            echo "============================================="
+            echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
+            echo "============================================="
+            
+            test_create_symlink_success
+            test_create_symlink_target_not_exists
+            test_create_symlink_dir_not_exists
+            test_create_symlink_relative_path
+            test_create_symlink_existing_link
+            test_create_symlink_invalid_params
+            test_create_symlink_empty_params
+            
+            echo "============================================="
+            echo "Тесты завершены с ошибками"
+        fi
+        
+        exit $test_result
+    else
+        # Прямой запуск - всегда выводим полный отчет
+        echo "Запуск тестов для функции _create_symlink"
+        echo "============================================="
+        echo "Формат вывода: [V]/[X] [Описание теста] [Ожидаемый результат]/[Полученный результат]"
+        echo "============================================="
+        
+        test_create_symlink_success
+        test_create_symlink_target_not_exists
+        test_create_symlink_dir_not_exists
+        test_create_symlink_relative_path
+        test_create_symlink_existing_link
+        test_create_symlink_invalid_params
+        test_create_symlink_empty_params
+        
+        echo "============================================="
+        echo "Тесты завершены"
+    fi
 fi
