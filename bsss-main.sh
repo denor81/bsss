@@ -31,19 +31,32 @@ get_available_modules() {
 
 # Собирает экспресс-статус от всех модулей
 collect_modules_status() {
+    local critycal=0
     printf '%.0s#' {1..40}; echo
     while IFS= read -r module_path; do
         if [[ -n "$module_path" ]]; then
+
             out="$(bash "$module_path")"
-            # Ожидаем от модуля message, symbol
+
+            # Ожидаем от модуля message, symbol, status
             eval "$out"
+
             decoded_message=$(echo "$message" | base64 --decode)
             decoded_symbol=$(echo "$symbol" | base64 --decode)
+
+            if [[ $status -eq 1 ]]; then
+                critycal=1
+            fi
             
             echo "# $decoded_symbol $(basename "$module_path"): $decoded_message"
         fi
     done <<< "$(get_available_modules)" || return 1
     printf '%.0s#' {1..40}; echo
+
+    if [[ $critycal -eq 1 ]]; then
+        log_error "Запуск не возможен, один из модулей показывает ошибку"
+        return 1
+    fi
 }
 
 

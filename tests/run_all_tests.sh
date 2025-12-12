@@ -3,10 +3,18 @@
 # Единый раннер для всех тестов в последовательном режиме
 
 # ==========================================
+# ПОДКЛЮЧЕНИЕ БИБЛИОТЕК
+# ==========================================
+# Подключаем библиотеку логирования
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/logging.sh"
+
+# ==========================================
 # КОНФИГУРАЦИЯ РАННЕРА
 # ==========================================
 # Директория с тестами
 TESTS_DIR="$(dirname "${BASH_SOURCE[0]}")"
+# Имя модуля для логирования
+CURRENT_MODULE_NAME="test_runner"
 
 # Функция для динамического обнаружения тестовых файлов
 discover_test_files() {
@@ -55,13 +63,13 @@ run_test_file() {
     
     # Проверяем существование файла теста
     if [[ ! -f "$test_path" ]]; then
-        echo "[X] Файл теста не найден: $test_path"
+        log_error "Файл теста не найден: $test_path"
         return 1
     fi
     
     # Проверяем, что файл исполняемый
     if [[ ! -x "$test_path" ]]; then
-        echo "[X] Файл теста не исполняемый: $test_path"
+        log_error "Файл теста не исполняемый: $test_path"
         return 1
     fi
     
@@ -80,7 +88,7 @@ run_test_file() {
     
     # Анализируем вывод на наличие проваленных тестов
     local failed_tests
-    failed_tests=$(echo "$test_output" | grep -c "^\[X\]" || true)
+    failed_tests=$(echo "$test_output" | grep -c "^\[X\] \[" || true)
     
     # Если есть проваленные тесты, выводим полный результат
     if [[ $failed_tests -gt 0 ]]; then
@@ -91,7 +99,7 @@ run_test_file() {
     fi
     
     # Если все тесты прошли успешно, выводим только галочку и имя файла
-    echo "[✓] $test_file"
+    log_success "$test_file"
     
     # Иначе возвращаем успех
     return 0
@@ -128,19 +136,14 @@ run_all_tests() {
     echo "Успешно выполнено: $passed_tests"
     echo "Выполнено с ошибками: $failed_tests"
     
-    # Выводим детальные результаты
-    echo ""
-    echo "Детальные результаты:"
-    for result in "${test_results[@]}"; do
-        echo "  - $result"
-    done
-    
     # Возвращаем общий результат (0 если все тесты прошли успешно)
     if [[ $failed_tests -eq 0 ]]; then
         print_header "ВСЕ ТЕСТЫ ПРОШЛИ УСПЕШНО"
+        log_success "Все тесты выполнены успешно"
         return 0
     else
         print_header "НЕКОТОРЫЕ ТЕСТЫ ЗАВЕРШИЛИСЬ С ОШИБКАМИ"
+        log_error "Обнаружено $failed_tests тестовых файлов с ошибками"
         return 1
     fi
 }
