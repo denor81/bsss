@@ -18,7 +18,6 @@ readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
 UNINSTALL_FLAG=0
 HELP_FLAG=0
-RUN=0
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
@@ -27,11 +26,6 @@ source "${THIS_DIR_PATH}/lib/logging.sh"
 # Подключаем библиотеку функций удаления
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}/lib/uninstall_functions.sh"
-
-# Запуск без параметров
-if [ "$#" -eq 0 ]; then
-    RUN=1
-fi
 
 log_info "Запуск"
 
@@ -49,8 +43,8 @@ _parse_params() {
         case "${opt}" in
             h)  HELP_FLAG=1 ;;
             u)  UNINSTALL_FLAG=1 ;;
-            \?) log_info "Некорректный параметр -$OPTARG, доступны: $allowed_params" ;;
-            :)  log_info "Параметр -$OPTARG требует значение" ;;
+            \?) log_error "Некорректный параметр -$OPTARG, доступны: $allowed_params" ;;
+            :)  log_error "Параметр -$OPTARG требует значение" ;;
         esac
     done
 }
@@ -68,13 +62,15 @@ main() {
     fi
     
     # Запускаем основной скрипт через exec, заменяя текущий процесс
-    if [[ $RUN -eq 1 ]]; then
+    if [[ "$#" -eq 0 ]]; then
         if [[ -f "$RUN_PATH" ]]; then
             exec bash "$RUN_PATH"
         else
             log_error "Основной скрипт не найден: $RUN_PATH"
             return 1
         fi
+    else
+        log_error "Ошибка запуска"
     fi
 }
 
@@ -82,5 +78,3 @@ main() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
 fi
-
-log_success "Завершен"

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# module-01.sh
-# Тестовый
-# Возвращает код успеха 0
+# module-04.sh
+# Четвертый модуль системы
+# Проверяет SSH порт
+# Usage: ./04-ssh-port.sh [-c]
+#   -c  Экспресс-анализ с выводом в Key-Value формате
 
 set -Eeuo pipefail
 
@@ -12,13 +14,34 @@ readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" 
 readonly SCRIPT_NAME=$(basename "$0")
 # shellcheck disable=SC2034
 readonly CURRENT_MODULE_NAME="$SCRIPT_NAME"
+readonly ALLOWED_PARAMS="c"
 
-CHECK_FLAG=1
+# Флаги режимов работы
+CHECK_FLAG=0  # Режим экспресс-анализа
 
 
 # Подключаем библиотеку функций логирования
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}"/../lib/logging.sh
+
+# ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+
+# Парсер параметров командной строки
+_parse_params() {
+    local allowed_params="${1:-$ALLOWED_PARAMS}"
+    shift
+
+    # Сбрасываем OPTIND
+    OPTIND=1
+    
+    while getopts ":$allowed_params" opt "$@"; do
+        case "${opt}" in
+            c)  CHECK_FLAG=1 ;;
+            \?) log_error "Некорректный параметр -$OPTARG, доступны: $allowed_params" >&2 ;;
+            :)  log_error "Параметр -$OPTARG требует значение" >&2 ;;
+        esac
+    done
+}
 
 # check() {
 #     log_info "ЗАПУСК МОДУЛЯ $SCRIPT_NAME В РЕЖИМЕ ПРОВЕРКИ"
@@ -62,58 +85,54 @@ source "${THIS_DIR_PATH}"/../lib/logging.sh
 # }
 
 check() {
-    log_info "ЗАПУСК МОДУЛЯ $SCRIPT_NAME В РЕЖИМЕ ПРОВЕРКИ"
+    local status=0
+    local message="SSH порт: 22"
+    local details="Служба SSH работает на стандартном порту"
+    local ssh_port="22"
     
-    echo "=== ДИАГНОСТИКА ==="
-    
-    # 1. Проверяем процессы
-    echo "1. Поиск процессов sshd:"
-    ps aux | grep -E '[s]shd' | head -5
-    
-    # 2. Ищем [listener]
+    # Основная логика определения порта
     local listener_pid
-    listener_pid=$(ps aux | awk '/[s]shd.*\[listener\]/ {print $2; exit}')
-    echo "2. PID процесса с [listener]: $listener_pid"
-    
-    # 3. Проверяем /proc
-    if [[ -n "$listener_pid" ]] && [[ -d "/proc/$listener_pid" ]]; then
-        echo "3. Проверка /proc/$listener_pid/net/tcp:"
-        if [[ -f "/proc/$listener_pid/net/tcp" ]]; then
-            grep -E ":0016[[:space:]]" "/proc/$listener_pid/net/tcp" || echo "Не найден порт 22 в /proc"
-        else
-            echo "Файл /proc/$listener_pid/net/tcp не существует"
-        fi
-    fi
-    
-    # 4. Проверяем ss
-    echo "4. Вывод ss -tlnp для ssh:"
-    sudo ss -tlnp 2>&1 | grep -i ssh || echo "Не найдено"
-    
-    # 5. Основная логика
-    local ssh_port
     listener_pid=$(ps aux | awk '/[s]shd.*\[listener\]/ {print $2; exit}')
     
     if [[ -n "$listener_pid" ]] && [[ -f "/proc/$listener_pid/net/tcp" ]]; then
         # Самый надежный метод для Linux
         ssh_port=$(awk '$4 ~ /:0016$/ {split($4, a, ":"); print strtonum("0x" a[2]); exit}' \
                    "/proc/$listener_pid/net/tcp" 2>/dev/null)
-        echo "5. Порт из /proc: $ssh_port"
     fi
     
     if [[ -z "$ssh_port" ]] && command -v ss >/dev/null 2>&1; then
         ssh_port=$(sudo ss -tln 2>/dev/null | \
                    awk '/:22[[:space:]]/ && /LISTEN/ {print "22"; exit}')
-        echo "6. Порт из ss: $ssh_port"
     fi
     
     ssh_port="${ssh_port:-22}"
-    echo "7. Итоговый порт: $ssh_port"
     
-    echo "=== КОНЕЦ ДИАГНОСТИКИ ==="
+    # Определяем статус
+    if [[ -z "$listener_pid" ]]; then
+        status=1
+        message="SSH сервис не найден"
+        details="Процесс sshd не обнаружен в системе"
+    elif [[ "$ssh_port" != "22" ]]; then
+        status=0
+        message="SSH порт: $ssh_port (не стандартный)"
+        details="SSH работает на нестандартном порту"
+    else
+        message="SSH порт: $ssh_port"
+        details="Служба SSH работает на стандартном порту"
+    fi
     
-    log_info "Текущий активный порт SSH: $ssh_port"
-    echo "$ssh_port"
-    return 0
+    # Вывод в Key-Value формате
+    echo "module=$SCRIPT_NAME"
+    echo "status=$status"
+    echo "message=$message"
+    echo "details=$details"
+    
+    # Возвращаем код в зависимости от статуса
+    if [[ "$status" -eq 0 ]]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # Вызовите debug_ssh_port в вашем скрипте для диагностики
@@ -161,14 +180,27 @@ run() {
     return 0
 }
 
+# ========== ОСНОВНАЯ ФУНКЦИЯ ==========
+
 main() {
+    # Если нет параметров, используем режим check по умолчанию
+    if [[ "$#" -eq 0 ]]; then
+        CHECK_FLAG=1
+    fi
+    
+    # Парсим параметры
+    _parse_params "$ALLOWED_PARAMS" "$@"
+    
+    # Выполняем в зависимости от режима
     if [[ "$CHECK_FLAG" -eq 1 ]]; then
         check
-    elif [[ "$CHECK_FLAG" -eq 0 ]]; then
-        run
+    else
+        log_error "Не определен режим запуска. Используйте -c для проверки"
+        return 1
     fi
-    log_error "Не определен флаг запуска"
-    return 1
 }
 
-main 
+# (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
