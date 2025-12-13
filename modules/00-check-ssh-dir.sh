@@ -2,6 +2,7 @@
 # 00-check-ssh-dir.sh
 # Нулевой модуль системы
 # Проверяет наличие директории /etc/ssh/sshd_config.d/
+# MODULE_TYPE: check-only
 
 set -Eeuo pipefail
 

@@ -2,6 +2,7 @@
 # 01-check-os.sh
 # Первый модуль системы
 # Проверяет операционную систему
+# MODULE_TYPE: check-only
 
 set -Eeuo pipefail
 

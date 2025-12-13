@@ -2,6 +2,7 @@
 # 03-check-sys-reload.sh
 # Третий модуль системы
 # Проверяет необходимость перезагрузки системы
+# MODULE_TYPE: check-only
 
 set -Eeuo pipefail
 

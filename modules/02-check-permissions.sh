@@ -2,6 +2,7 @@
 # 02-check-permissions.sh
 # Второй модуль системы
 # Проверяет права доступа
+# MODULE_TYPE: check-only
 
 set -Eeuo pipefail
 
