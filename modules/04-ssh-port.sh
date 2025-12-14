@@ -117,6 +117,80 @@ get_ssh_config_ports() {
     fi
 }
 
+# ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПРОВЕРКИ КОНФИГУРАЦИИ ==========
+
+# ADAPTATED FOR TESTS: 14/12/24
+# Проверяет наличие конфигурационных файлов SSH
+check_ssh_config_exists() {
+    # Параметризация для тестирования
+    local config_dir="${1:-$SSH_CONFIG_DIR}"
+    local config_mask="${2:-$SSH_CONFIG_FILE_MASK}"
+    local found_files
+    
+    # Ищем файлы по маске
+    found_files=$(find "$config_dir" -type f -iname "$config_mask" 2>/dev/null || true)
+    
+    if [[ -z "$found_files" ]]; then
+        return 1  # Файлы не найдены
+    else
+        return 0  # Файлы найдены
+    fi
+}
+
+# Предлагает пользователю выбор между сбросом и изменением порта
+ask_user_reset_or_change() {
+    local input_source="${1:-/dev/tty}"                    # Источник ввода (по умолчанию /dev/tty)
+    local symbol_question="${2:-$SYMBOL_QUESTION}"         # Символ вопроса
+    local module_name="${3:-${CURRENT_MODULE_NAME:-04-ssh-port}}"  # Имя модуля
+    
+    local choice=""
+    local valid_choice=false
+    
+    while [[ "$valid_choice" == "false" ]]; do
+        # Выводим сообщение через библиотеку логирования
+        log_info "Обнаружены существующие конфигурационные файлы SSH"
+        log_info "Выберите действие:"
+        log_info "1. Сбросить настройки на значения по умолчанию (порт 22)"
+        log_info "2. Изменить порт на новое значение"
+
+        # Получаем данные из указанного источника ввода
+        read -p "$symbol_question [$module_name] Ваш выбор (1/2) [2]: " -r choice < "$input_source"
+        
+        # Обработка пустого ввода (по умолчанию 2)
+        if [[ -z "$choice" ]]; then
+            choice="2"
+        fi
+        
+        # Проверка корректности ввода
+        if [[ "$choice" == "1" ]]; then
+            echo "reset"
+            valid_choice=true
+        elif [[ "$choice" == "2" ]]; then
+            echo "change"
+            valid_choice=true
+        else
+            log_error "Некорректный выбор. Введите 1 или 2"
+        fi
+    done
+}
+
+# Выполняет сброс настроек SSH к значениям по умолчанию
+restore_default() {
+    log_info "Сбрасываю настройки SSH к значениям по умолчанию..."
+    
+    # Шаг 1: Удаляем старые конфигурационные файлы
+    remove_old_ssh_config_files || return 1
+    
+    # Шаг 2: Перезапускаем SSH сервис
+    restart_ssh_service || return 1
+    
+    # Шаг 3: Проверяем результат изменений
+    check 1 || return 1
+    
+    log_success "Настройки SSH успешно сброшены к значениям по умолчанию (порт 22)"
+    return 0
+}
+
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СМЕНЫ ПОРТА ==========
 
 # ADAPTATED FOR TESTS: 14/12/24
@@ -379,23 +453,38 @@ check() {
 # Режим изменения порта
 run() {
     local new_port
+    local user_choice
     
-    # Шаг 1: Получаем порт от пользователя с валидацией
+    # Шаг 1: Проверяем наличие существующих конфигурационных файлов
+    if check_ssh_config_exists; then
+        # Шаг 2: Если файлы существуют, предлагаем выбор пользователю
+        user_choice=$(ask_user_reset_or_change)
+        
+        # Шаг 3: Обрабатываем выбор пользователя
+        if [[ "$user_choice" == "reset" ]]; then
+            # Сбрасываем настройки на значения по умолчанию
+            restore_default
+            return $?
+        fi
+        # Если выбор "change", продолжаем с обычной сменой порта
+    fi
+    
+    # Шаг 4: Получаем порт от пользователя с валидацией
     new_port=$(ask_user_for_port)
     if [[ $? -ne 0 || -z "$new_port" ]]; then
         return 1
     fi
     
-    # Шаг 2: Удаляем старые конфигурационные файлы
+    # Шаг 5: Удаляем старые конфигурационные файлы
     remove_old_ssh_config_files || return 1
     
-    # Шаг 3: Создаем новый конфигурационный файл
+    # Шаг 6: Создаем новый конфигурационный файл
     create_new_ssh_config_file "$new_port" || return 1
     
-    # Шаг 4: Перезапускаем SSH сервис
+    # Шаг 7: Перезапускаем SSH сервис
     restart_ssh_service || return 1
     
-    # Шаг 5: Проверяем результат изменений
+    # Шаг 8: Проверяем результат изменений
     check 1
     
     # Успешное завершение
