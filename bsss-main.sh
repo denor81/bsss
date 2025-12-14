@@ -71,7 +71,7 @@ get_modules_by_type() {
 # Собирает экспресс-статус от всех модулей
 collect_modules_status() {
     local critycal=0
-    printf '%.0s#' {1..40}; echo
+    printf '%.0s#' {1..80}; echo
     while IFS= read -r module_path; do
         if [[ -n "$module_path" ]]; then
 
@@ -90,7 +90,7 @@ collect_modules_status() {
             echo "# $decoded_symbol $(basename "$module_path"): $decoded_message"
         fi
     done <<< "$(get_available_modules)" || return 1
-    printf '%.0s#' {1..40}; echo
+    printf '%.0s#' {1..80}; echo
 
     if [[ $critycal -eq 1 ]]; then
         log_error "Запуск не возможен, один из модулей показывает ошибку"
@@ -125,11 +125,11 @@ run_change_modules() {
         return 0
     fi
     
-    log_info "Запуск модулей для изменений..."
+    # log_info "Запуск модулей для изменений..."
     
     while IFS= read -r module_path; do
         if [[ -n "$module_path" ]]; then
-            log_info "Запуск $(basename "$module_path") в режиме изменений..."
+            log_info "Запуск $(basename "$module_path")"
             
             # Запускаем модуль напрямую, интерактивные запросы пойдут через /dev/tty
             if bash "$module_path" -r; then

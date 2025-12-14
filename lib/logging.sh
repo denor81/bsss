@@ -14,15 +14,21 @@ readonly SYMBOL_ERROR="[X]"
 # Выводит успешное сообщение с символом [V]
 # Все логи отправляем в stderr, что бы сохранять stdout пустым
 log_success() {
-    echo "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2
+    echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2
 }
 
 # Выводит сообщение об ошибке с символом [X] в stderr
 log_error() {
-    echo "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
+    echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
 }
 
 # Выводит информационное сообщение с символом [ ]
 log_info() {
-    echo "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
+    local symbol=${2:-$SYMBOL_INFO}
+    echo -e "$symbol [$CURRENT_MODULE_NAME] $1" >&2
+}
+
+# Выводит информационное сообщение с символом [ ]
+log_info_simple_tab() {
+    echo -e "$SYMBOL_INFO ---- $1" >&2
 }

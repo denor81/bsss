@@ -10,6 +10,8 @@ set -Eeuo pipefail
 
 # shellcheck disable=SC2155
 readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+# shellcheck disable=SC2155
+readonly CURRENT_MODULE_NAME="$(basename "$0")"
 readonly DEFAULT_SSH_PORT=22
 readonly ALLOWED_PARAMS="r"
 readonly SSH_CONFIG_DIR="/etc/ssh/sshd_config.d"
@@ -128,11 +130,15 @@ check_ssh_config_exists() {
     local found_files
     
     # Ищем файлы по маске
-    found_files=$(find "$config_dir" -type f -iname "$config_mask" 2>/dev/null || true)
+    found_files=$(find "$config_dir" -type f -iname "$config_mask" 2>/dev/null)
     
     if [[ -z "$found_files" ]]; then
         return 1  # Файлы не найдены
     else
+        log_info_simple_tab "Найден(ы) конфиг(и)"
+        for file in $found_files; do
+            log_info_simple_tab "$file [$(grep -iE '^port' "$file")]"
+        done
         return 0  # Файлы найдены
     fi
 }
@@ -147,14 +153,15 @@ ask_user_reset_or_change() {
     local valid_choice=false
     
     while [[ "$valid_choice" == "false" ]]; do
-        # Выводим сообщение через библиотеку логирования
-        log_info "Обнаружены существующие конфигурационные файлы SSH"
-        log_info "Выберите действие:"
-        log_info "1. Сбросить настройки на значения по умолчанию (порт 22)"
-        log_info "2. Изменить порт на новое значение"
-
         # Получаем данные из указанного источника ввода
-        read -p "$symbol_question [$module_name] Ваш выбор (1/2) [2]: " -r choice < "$input_source"
+        # В теории может быть несколько файлов BSSS, на практике же один файл
+        log_info_simple_tab "1. По умолчанию - означает удаление конфиг файлов BSSS для SSH
+            порта (другие настройки не трогаются) - будет задействован стандартный порт 22
+            или другой порт, если присутствуют другие настройки в /etc/ssh/ директории."
+        log_info_simple_tab "2. Переустановить порт - означает, что будут удалены конфиг файл(ы) BSSS для SSH
+            и создан новый файл с новым указанным портом - он и будет действовать."
+        log_info_simple_tab "Актуальная информация отображается в информационном блоке при запуске BSSS."
+        read -p "$symbol_question [$module_name] Введите 1 или 2: " -r choice < "$input_source"
         
         # Обработка пустого ввода (по умолчанию 2)
         if [[ -z "$choice" ]]; then
@@ -176,7 +183,7 @@ ask_user_reset_or_change() {
 
 # Выполняет сброс настроек SSH к значениям по умолчанию
 restore_default() {
-    log_info "Сбрасываю настройки SSH к значениям по умолчанию..."
+    # log_info "Сбрасываю настройки SSH к значениям по умолчанию..."
     
     # Шаг 1: Удаляем старые конфигурационные файлы
     remove_old_ssh_config_files || return 1
@@ -187,7 +194,7 @@ restore_default() {
     # Шаг 3: Проверяем результат изменений
     check 1 || return 1
     
-    log_success "Настройки SSH успешно сброшены к значениям по умолчанию (порт 22)"
+    # log_success "Настройки SSH успешно сброшены к значениям по умолчанию (порт 22)"
     return 0
 }
 
@@ -207,10 +214,10 @@ ask_user_for_port() {
     
     while [[ "$valid_port" == "false" ]]; do
         # Выводим сообщение через библиотеку логирования
-        log_info "Введите номер порта для SSH (1-65535):"
+        # log_info "Введите номер порта для SSH (1-65535):"
 
         # Получаем данные из указанного источника ввода
-        read -p "$symbol_question [$module_name] Порт: " -r port < "$input_source"
+        read -p "$symbol_question [$module_name] Введите номер порта для SSH (1-65535): " -r port < "$input_source"
         
         # Проверка, что введено число
         if [[ ! "$port" =~ ^[0-9]+$ ]]; then
@@ -225,15 +232,15 @@ ask_user_for_port() {
         fi
         
         # Предупреждение для привилегированных портов (< 1024)
-        if [[ "$port" -lt 1024 ]]; then
-            log_info "Порт $port является привилегированным (< 1024)"
-            log_info "Убедитесь, что SSH имеет права на использование этого порта"
-        fi
+        # if [[ "$port" -lt 1024 ]]; then
+            # log_info "Порт $port является привилегированным (< 1024)"
+            # log_info "Убедитесь, что SSH имеет права на использование этого порта"
+        # fi
         
         # Проверка занятости порта
         if is_port_in_use "$port"; then
             log_error "Порт $port уже используется другим процессом"
-            log_info "Проверьте, какой процесс использует порт: ss -tlnp | grep :$port"
+            log_info "Проверьте, какой процесс использует порт: ss -nlptu | grep :$port"
             continue
         fi
         
@@ -267,16 +274,17 @@ remove_old_ssh_config_files() {
     found_files=$(find "$config_dir" -type f -iname "$config_mask" 2>/dev/null || true)
     
     if [[ -z "$found_files" ]]; then
-        log_info "Старые конфигурационные файлы SSH не найдены"
+        # log_info "Старые конфигурационные файлы SSH не найдены"
         return 0
     fi
     
-    log_info "Найдены старые конфигурационные файлы:"
+    # log_info "Найдены старые конфигурационные файлы:"
     while IFS= read -r file; do
         if [[ -f "$file" ]]; then
-            log_info "  - $file"
+            # log_info "  - $file"
+            local port=$(grep -iE '^port' "$file")
             if rm -f "$file"; then
-                log_success "Удален файл: $file"
+                log_info "Удален файл: $file [$port]"
                 ((removed_count++))
             else
                 log_error "Не удалось удалить файл: $file"
@@ -284,9 +292,9 @@ remove_old_ssh_config_files() {
         fi
     done <<< "$found_files"
     
-    if [[ $removed_count -gt 0 ]]; then
-        log_success "Удалено $removed_count старых конфигурационных файлов"
-    fi
+    # if [[ $removed_count -gt 0 ]]; then
+        # log_success "Удалено $removed_count старых конфигурационных файлов"
+    # fi
     
     return 0
 }
@@ -304,7 +312,7 @@ create_new_ssh_config_file() {
         return 1
     fi
     
-    log_info "Создаю конфигурационный файл: $config_path"
+    # log_info "Создаю конфигурационный файл: $config_path"
     
     # Создаем файл с настройкой порта
     if cat > "$config_path" << EOF
@@ -313,8 +321,8 @@ create_new_ssh_config_file() {
 Port $port
 EOF
     then
-        log_success "Конфигурационный файл создан: $config_path"
-        log_info "SSH будет слушать на порту: $port"
+        log_success "Конфиг создан: $config_path [$(grep -iE '^port' "$config_path")]"
+        # log_info "SSH будет слушать на порту: $port"
         return 0
     else
         log_error "Не удалось создать конфигурационный файл: $config_path"
@@ -324,13 +332,13 @@ EOF
 
 # Перезапуск SSH сервиса
 restart_ssh_service() {
-    log_info "Перезагружаю конфигурацию systemd..."
+    log_info "Перезагружаю конфигурацию [systemctl daemon-reload]"
     systemctl daemon-reload || return 1
     
-    log_info "Перезапускаю SSH сервис..."
+    log_info "Перезапускаю SSH сервис [systemctl restart ssh]"
     systemctl restart ssh || return 1
     
-    log_success "SSH сервис успешно перезапущен"
+    # log_success "SSH сервис успешно перезапущен"
     return 0
 }
 
@@ -352,9 +360,6 @@ _collect_ssh_ports_data() {
     if config_ssh_ports=$(get_ssh_config_ports 2>/dev/null); then
         # Форматируем порты в виде "22,23,24" или "22"
         config_ports_formatted=$(echo "$config_ssh_ports" | tr '\n' ',' | sed 's/,$//')
-    else
-        # Если порты не найдены в конфигурации, используем порт 22 по умолчанию
-        config_ports_formatted="$default_ssh_port"
     fi
     
     # Форматируем активные порты
@@ -366,7 +371,7 @@ _collect_ssh_ports_data() {
     
     # Возвращаем данные через глобальные переменные
     COLLECTED_ACTIVE_PORTS="$active_ports_formatted"
-    COLLECTED_CONFIG_PORTS="$config_ports_formatted"
+    COLLECTED_CONFIG_PORTS="${config_ports_formatted:-}"
 }
 
 # TESTED: tests/test_ssh-port_format_user_output.sh
@@ -376,7 +381,7 @@ _format_user_output() {
     local message="$2"
     local symbol="$3"
     
-    echo "$symbol $message"
+    log_info "$message" "$symbol"
     return "$status"
 }
 
@@ -420,23 +425,9 @@ check() {
         status=1
         message="SSH сервис не найден или не слушает порты"
         symbol="$SYMBOL_ERROR"
-        
-        if [[ "$out_msg_type" -eq 1 ]]; then
-            _format_user_output "$status" "$message" "$symbol"
-        else
-            _format_eval_output "$status" "$message" "$symbol" "" "$config_ports"
-        fi
-        return 1
-    fi
-    
-    # Проверяем соответствие конфигурации и активных портов
-    if [[ "$active_ports" == "$config_ports" ]]; then
-        status=0
-        message="SSH работает на портах: $active_ports"
-        symbol="$SYMBOL_SUCCESS"
     else
         status=0
-        message="SSH работает на портах: $active_ports (в конфигурации: $config_ports)"
+        message="SSH работает на портах: $active_ports (в конфигурации: ${config_ports:-нет активной настройки})"
         symbol="$SYMBOL_INFO"
     fi
     

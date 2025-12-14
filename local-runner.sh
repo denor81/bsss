@@ -27,7 +27,7 @@ source "${THIS_DIR_PATH}/lib/logging.sh"
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}/lib/uninstall_functions.sh"
 
-log_info "Запуск"
+# log_info "Запуск"
 
 # Парсинг параметров запуска с использованием getopts
 # TESTED: tests/test_local-runner_parse_params.sh
