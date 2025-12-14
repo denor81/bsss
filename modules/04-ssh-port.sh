@@ -10,11 +10,6 @@ set -Eeuo pipefail
 
 # shellcheck disable=SC2155
 readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-# Получаем только имя файла из переменной $0
-# shellcheck disable=SC2155
-readonly SCRIPT_NAME=$(basename "$0")
-# shellcheck disable=SC2034
-readonly CURRENT_MODULE_NAME="$SCRIPT_NAME"
 readonly DEFAULT_SSH_PORT=22
 readonly ALLOWED_PARAMS="r"
 readonly SSH_CONFIG_DIR="/etc/ssh/sshd_config.d"
@@ -78,7 +73,6 @@ _extract_ports_from_file() {
 }
 
 # Функция для сбора портов из конфигурационных файлов SSH
-# Source: modules/ssh.txt
 get_ssh_config_ports() {
     local main_config="${1:-/etc/ssh/sshd_config}"
     local config_dir="${2:-/etc/ssh/sshd_config.d}"
