@@ -52,14 +52,15 @@ _get_active_ssh_ports() {
     ss -tlnp | awk '/sshd/ && /LISTEN/ {split($4,a,":"); print a[length(a)]}' | sort -u
 }
 
-# Функция для сбора портов из конфигурационных файлов SSH
-# Source: modules/ssh.txt
-get_ssh_config_ports() {
-    local main_config="/etc/ssh/sshd_config"
-    local config_dir="/etc/ssh/sshd_config.d"
+# Вспомогательная функция для извлечения портов из файла конфигурации
+_extract_ports_from_file() {
+    local config_file="${1:-}"
     local found_ports=()
     
-    # Обрабатываем основной конфиг
+    if [[ ! -f "$config_file" ]]; then
+        return 0
+    fi
+    
     # Ищем строки Port или ListenPort (с большой буквой!)
     # Игнорируем закомментированные строки
     while IFS= read -r line; do
@@ -67,8 +68,30 @@ get_ssh_config_ports() {
         if [[ "$port" =~ ^[0-9]+$ ]]; then
             found_ports+=("$port")
         fi
-    done < <(grep -E "^[[:space:]]*(Port|ListenPort)[[:space:]]+" "$main_config" 2>/dev/null | \
+    done < <(grep -E "^[[:space:]]*(Port|ListenPort)[[:space:]]+" "$config_file" 2>/dev/null | \
              grep -v "^[[:space:]]*#")
+    
+    # Выводим найденные порты
+    if [[ ${#found_ports[@]} -gt 0 ]]; then
+        printf "%s\n" "${found_ports[@]}"
+    fi
+}
+
+# Функция для сбора портов из конфигурационных файлов SSH
+# Source: modules/ssh.txt
+get_ssh_config_ports() {
+    local main_config="${1:-/etc/ssh/sshd_config}"
+    local config_dir="${2:-/etc/ssh/sshd_config.d}"
+    local found_ports=()
+    local ports_from_file
+    
+    # Обрабатываем основной конфиг
+    ports_from_file=$(_extract_ports_from_file "$main_config")
+    if [[ -n "$ports_from_file" ]]; then
+        while IFS= read -r port; do
+            found_ports+=("$port")
+        done <<< "$ports_from_file"
+    fi
     
     # Обрабатываем файлы из директории sshd_config.d/
     if [[ -d "$config_dir" ]]; then
@@ -76,14 +99,12 @@ get_ssh_config_ports() {
         for conf_file in "$config_dir"/*.conf; do
             # Проверяем существование (glob может не найти файлы)
             if [[ -f "$conf_file" ]]; then
-                
-                while IFS= read -r line; do
-                    port=$(echo "$line" | awk '{print $2}')
-                    if [[ "$port" =~ ^[0-9]+$ ]]; then
+                ports_from_file=$(_extract_ports_from_file "$conf_file")
+                if [[ -n "$ports_from_file" ]]; then
+                    while IFS= read -r port; do
                         found_ports+=("$port")
-                    fi
-                done < <(grep -E "^[[:space:]]*(Port|ListenPort)[[:space:]]+" "$conf_file" | \
-                         grep -v "^[[:space:]]*#")
+                    done <<< "$ports_from_file"
+                fi
             fi
         done
     fi
@@ -231,14 +252,11 @@ restart_ssh_service() {
     return 0
 }
 
-# ========== ОСНОВНЫЕ ФУНКЦИИ ==========
+# ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПРОВЕРКИ ПОРТОВ ==========
 
-# Режим проверки - собирает информацию о портах SSH
-check() {
-    local out_msg_type="${1:-0}"  # 0 - для парсинга через eval, 1 - для вывода пользователю
-    local status
-    local message
-    local symbol
+# Сбор данных о портах SSH
+_collect_ssh_ports_data() {
+    local default_ssh_port="${1:-$DEFAULT_SSH_PORT}"
     local active_ssh_ports
     local config_ssh_ports
     local active_ports_formatted
@@ -253,53 +271,95 @@ check() {
         config_ports_formatted=$(echo "$config_ssh_ports" | tr '\n' ',' | sed 's/,$//')
     else
         # Если порты не найдены в конфигурации, используем порт 22 по умолчанию
-        config_ports_formatted="$DEFAULT_SSH_PORT"
+        config_ports_formatted="$default_ssh_port"
     fi
     
     # Форматируем активные порты
     if [[ -n "$active_ssh_ports" ]]; then
         active_ports_formatted=$(echo "$active_ssh_ports" | tr '\n' ',' | sed 's/,$//')
     else
+        active_ports_formatted=""
+    fi
+    
+    # Возвращаем данные через глобальные переменные
+    COLLECTED_ACTIVE_PORTS="$active_ports_formatted"
+    COLLECTED_CONFIG_PORTS="$config_ports_formatted"
+}
+
+# Форматирование вывода для пользователя
+_format_user_output() {
+    local status="$1"
+    local message="$2"
+    local symbol="$3"
+    
+    echo "$symbol $message"
+    return "$status"
+}
+
+# Форматирование вывода для парсинга через eval
+_format_eval_output() {
+    local status="$1"
+    local message="$2"
+    local symbol="$3"
+    local active_ports="$4"
+    local config_ports="$5"
+    
+    echo "message=\"$(printf '%s' "$message" | base64)\""
+    echo "symbol=\"$(printf '%s' "$symbol" | base64)\""
+    echo "status=$status"
+    echo "active_ssh_port=$active_ports"
+    echo "config_files_ssh_port=$config_ports"
+    return "$status"
+}
+
+# ========== ОСНОВНЫЕ ФУНКЦИИ ==========
+
+# Режим проверки - собирает информацию о портах SSH
+check() {
+    local out_msg_type="${1:-0}"  # 0 - для парсинга через eval, 1 - для вывода пользователю
+    local default_ssh_port="${2:-$DEFAULT_SSH_PORT}"
+    
+    local status
+    local message
+    local symbol
+    local active_ports
+    local config_ports
+    
+    # Собираем данные о портах
+    _collect_ssh_ports_data "$default_ssh_port"
+    active_ports="$COLLECTED_ACTIVE_PORTS"
+    config_ports="$COLLECTED_CONFIG_PORTS"
+    
+    # Проверяем наличие активных портов
+    if [[ -z "$active_ports" ]]; then
         status=1
         message="SSH сервис не найден или не слушает порты"
         symbol="$SYMBOL_ERROR"
         
         if [[ "$out_msg_type" -eq 1 ]]; then
-            # Вывод для пользователя
-            echo "$symbol $message"
-            return 1
+            _format_user_output "$status" "$message" "$symbol"
         else
-            # Вывод в Key-Value формате для парсинга через eval
-            echo "message=\"$(printf '%s' "$message" | base64)\""
-            echo "symbol=\"$(printf '%s' "$symbol" | base64)\""
-            echo "status=$status"
-            echo "active_ssh_port="
-            echo "config_files_ssh_port=$config_ports_formatted"
-            return 1
+            _format_eval_output "$status" "$message" "$symbol" "" "$config_ports"
         fi
+        return 1
     fi
     
     # Проверяем соответствие конфигурации и активных портов
-    if [[ "$active_ports_formatted" == "$config_ports_formatted" ]]; then
+    if [[ "$active_ports" == "$config_ports" ]]; then
         status=0
-        message="SSH работает на портах: $active_ports_formatted"
+        message="SSH работает на портах: $active_ports"
         symbol="$SYMBOL_SUCCESS"
     else
         status=0
-        message="SSH работает на портах: $active_ports_formatted (в конфигурации: $config_ports_formatted)"
+        message="SSH работает на портах: $active_ports (в конфигурации: $config_ports)"
         symbol="$SYMBOL_INFO"
     fi
     
+    # Форматируем вывод в зависимости от типа
     if [[ "$out_msg_type" -eq 1 ]]; then
-        # Вывод для пользователя
-        echo "$symbol $message"
+        _format_user_output "$status" "$message" "$symbol"
     else
-        # Вывод в Key-Value формате для парсинга через eval
-        echo "message=\"$(printf '%s' "$message" | base64)\""
-        echo "symbol=\"$(printf '%s' "$symbol" | base64)\""
-        echo "status=$status"
-        echo "active_ssh_port=$active_ports_formatted"
-        echo "config_files_ssh_port=$config_ports_formatted"
+        _format_eval_output "$status" "$message" "$symbol" "$active_ports" "$config_ports"
     fi
     
     return "$status"
