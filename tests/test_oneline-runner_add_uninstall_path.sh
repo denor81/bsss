@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/test_add_uninstall_path.sh
+# tests/test_oneline-runner_add_uninstall_path.sh
 # Тест для функции _add_uninstall_path
 
 # Подключаем тестируемый файл

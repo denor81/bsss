@@ -14,7 +14,7 @@ readonly REBOOT_REQUIRED_FILE="/var/run/reboot-required"
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}/../lib/logging.sh"
 
-# TESTED: tests/test_check_sys_reload.sh
+# TESTED: tests/test_check-sys-reload_check.sh
 check() {
     local reboot_file=${1:-$REBOOT_REQUIRED_FILE}
     local status

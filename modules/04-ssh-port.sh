@@ -26,7 +26,7 @@ source "${THIS_DIR_PATH}"/../lib/logging.sh
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 
 # Парсер параметров командной строки
-# TESTED: tests/test_parse_params_ssh_port.sh
+# TESTED: tests/test_ssh-port_parse_params.sh
 _parse_params() {
     local allowed_params="${1:-$ALLOWED_PARAMS}"
     shift
@@ -44,11 +44,13 @@ _parse_params() {
 }
 
 # Получение активных портов SSH
+# TESTED: tests/test_ssh-port_get_active_ssh_ports.sh
 _get_active_ssh_ports() {
     ss -tlnp | awk '/sshd/ && /LISTEN/ {split($4,a,":"); print a[length(a)]}' | sort -u
 }
 
 # Вспомогательная функция для извлечения портов из файла конфигурации
+# TESTED: tests/test_ssh-port_extract_ports_from_file.sh
 _extract_ports_from_file() {
     local config_file="${1:-}"
     local found_ports=()
@@ -74,6 +76,7 @@ _extract_ports_from_file() {
 }
 
 # Функция для сбора портов из конфигурационных файлов SSH
+# TESTED: tests/test_ssh-port_get_ssh_config_ports.sh
 get_ssh_config_ports() {
     local main_config="${1:-/etc/ssh/sshd_config}"
     local config_dir="${2:-/etc/ssh/sshd_config.d}"
@@ -116,17 +119,24 @@ get_ssh_config_ports() {
 
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СМЕНЫ ПОРТА ==========
 
+# ADAPTATED FOR TESTS: 14/12/24
+# НЕ МОЖЕТ БЫТЬ КОРРЕКТНО ПРОТЕСТИРОВАН ИЗ ЗА ОЖИДАНИЯ ВВОДА ОТ /dev/tty
 # Функция для ввода порта от пользователя с валидацией
 ask_user_for_port() {
-    local port
+    # Параметризация для тестирования
+    local input_source="${1:-/dev/tty}"                    # Источник ввода (по умолчанию /dev/tty)
+    local symbol_question="${2:-$SYMBOL_QUESTION}"         # Символ вопроса
+    local module_name="${3:-${CURRENT_MODULE_NAME:-04-ssh-port}}"  # Имя модуля
+    
+    local port=""
     local valid_port=false
     
     while [[ "$valid_port" == "false" ]]; do
         # Выводим сообщение через библиотеку логирования
         log_info "Введите номер порта для SSH (1-65535):"
 
-        # Получаем данные напрмую из терминала < /dev/tty
-        read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] Порт: " -r port < /dev/tty
+        # Получаем данные из указанного источника ввода
+        read -p "$symbol_question [$module_name] Порт: " -r port < "$input_source"
         
         # Проверка, что введено число
         if [[ ! "$port" =~ ^[0-9]+$ ]]; then
@@ -160,6 +170,7 @@ ask_user_for_port() {
 }
 
 # Проверка занятости порта
+# НЕ МОЖЕТ БЫТЬ КОРРЕКТНО ПРОТЕСТИРОВАН
 is_port_in_use() {
     local port="${1:-}"
     
@@ -171,6 +182,7 @@ is_port_in_use() {
 }
 
 # Поиск и удаление старых конфигурационных файлов
+# TESTED: tests/test_ssh-port_remove_old_ssh_config_files.sh
 remove_old_ssh_config_files() {
     local config_dir="${1:-$SSH_CONFIG_DIR}"
     local config_mask="${2:-$SSH_CONFIG_FILE_MASK}"
@@ -206,6 +218,7 @@ remove_old_ssh_config_files() {
 }
 
 # Создание нового конфигурационного файла
+# TESTED: tests/test_ssh-port_create_new_ssh_config_file.sh
 create_new_ssh_config_file() {
     local port="${1:-}"
     local config_dir="${2:-$SSH_CONFIG_DIR}"
@@ -250,6 +263,7 @@ restart_ssh_service() {
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПРОВЕРКИ ПОРТОВ ==========
 
 # Сбор данных о портах SSH
+# TESTED: tests/test_ssh-port_collect_ssh_ports_data.sh
 _collect_ssh_ports_data() {
     local default_ssh_port="${1:-$DEFAULT_SSH_PORT}"
     local active_ssh_ports
@@ -281,6 +295,7 @@ _collect_ssh_ports_data() {
     COLLECTED_CONFIG_PORTS="$config_ports_formatted"
 }
 
+# TESTED: tests/test_ssh-port_format_user_output.sh
 # Форматирование вывода для пользователя
 _format_user_output() {
     local status="$1"
@@ -310,6 +325,7 @@ _format_eval_output() {
 # ========== ОСНОВНЫЕ ФУНКЦИИ ==========
 
 # Режим проверки - собирает информацию о портах SSH
+# TESTED: tests/test_check.sh
 check() {
     local out_msg_type="${1:-0}"  # 0 - для парсинга через eval, 1 - для вывода пользователю
     local default_ssh_port="${2:-$DEFAULT_SSH_PORT}"

@@ -15,7 +15,7 @@ readonly ALLOWED_SYS="ubuntu"
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}/../lib/logging.sh"
 
-# TESTED: tests/test_check_os.sh
+# TESTED: tests/test_check-os_check.sh
 check() {
     local os_release_file=${1:-$OS_RELEASE_FILE}
     local allowed_sys=${2:-$ALLOWED_SYS}

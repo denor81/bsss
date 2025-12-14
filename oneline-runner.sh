@@ -148,7 +148,7 @@ ask_user_how_to_run(){
 }
 
 # Создаём временную директорию
-# TESTED: tests/test_create_tmp_dir.sh
+# TESTED: tests/test_oneline-runner_create_tmp_dir.sh
 _create_tmp_dir() {
     local util_name="${1:-$UTIL_NAME}"  # Имя утилиты для префикса временной директории
     local add_to_cleanup="${2:-true}"  # Добавлять ли директорию в CLEANUP_COMMANDS
@@ -169,7 +169,7 @@ _create_tmp_dir() {
 }
 
 # Скачиваем архив во временный файл
-# TESTED: tests/test_download_archive.sh
+# TESTED: tests/test_oneline-runner_download_archive.sh
 _download_archive() {
     local archive_url="${1:-$ARCHIVE_URL}"  # URL архива для скачивания
     local tmparchive="${2:-}"  # Путь к временному файлу архива (если не указан, будет создан)
@@ -204,7 +204,7 @@ _download_archive() {
     return 0
 }
 
-# TESTED: tests/test_unpack_archive.sh
+# TESTED: tests/test_oneline-runner_unpack_archive.sh
 _unpack_archive() {
     local tmparchive="${1:-$TMPARCHIVE}"  # Берет параметр, либо дефолтную переменную
     local temp_project_dir="${2:-$TEMP_PROJECT_DIR}"  # Берет параметр, либо дефолтную переменную
@@ -221,7 +221,7 @@ _unpack_archive() {
 }
 
 # Проверяем успешность распаковки во временную директорию
-# TESTED: tests/test_check_archive_unpacking.sh
+# TESTED: tests/test_oneline-runner_check_archive_unpacking.sh
 _check_archive_unpacking() {
     local temp_project_dir="${1:-$TEMP_PROJECT_DIR}"  # Берет параметр, либо дефолтную переменную
     local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"  # Берет параметр, либо дефолтную переменную
@@ -238,7 +238,7 @@ _check_archive_unpacking() {
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ УСТАНОВКИ
 
 # Добавляет путь в файл лога установки для последующего удаления
-# TESTED: tests/test_add_uninstall_path.sh
+# TESTED: tests/test_oneline-runner_add_uninstall_path.sh
 _add_uninstall_path() {
     local uninstall_path="${1:-}"  # Путь для добавления в лог удаления
     local install_log_path="${2:-$INSTALL_DIR/$INSTALL_LOG_FILE_NAME}"  # Путь к файлу лога удаления
@@ -258,7 +258,7 @@ _add_uninstall_path() {
 }
 
 # Проверка символической ссылки
-# TESTED: tests/test_check_symlink_exists.sh
+# TESTED: tests/test_oneline-runner_check_symlink_exists.sh
 _check_symlink_exists() {
     local symlink_path="${1:-$SYMBOL_LINK_PATH}"  # Берет параметр, либо дефолтную переменную
     
@@ -270,7 +270,7 @@ _check_symlink_exists() {
 }
 
 # Создание директории установки
-# TESTED: tests/test_create_install_directory.sh
+# TESTED: tests/test_oneline-runner_create_install_directory.sh
 _create_install_directory() {
     local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     
@@ -284,7 +284,7 @@ _create_install_directory() {
 }
 
 # Копирование файлов установки
-# TESTED: tests/test_copy_installation_files.sh
+# TESTED: tests/test_oneline-runner_copy_installation_files.sh
 _copy_installation_files() {
     local tmp_dir_path="${1:-$(dirname "$TMP_LOCAL_RUNNER_PATH")}"  # Берет параметр, либо вычисляет из TMP_LOCAL_RUNNER_PATH
     local install_dir="${2:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
@@ -299,7 +299,7 @@ _copy_installation_files() {
 }
 
 # Создание символической ссылки
-# TESTED: tests/test_create_symlink.sh
+# TESTED: tests/test_oneline-runner_create_symlink.sh
 _create_symlink() {
     local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"  # Берет параметр, либо дефолтную переменную
@@ -319,7 +319,7 @@ _create_symlink() {
 }
 
 # Установка прав на выполнение
-# TESTED: tests/test_set_execution_permissions.sh
+# TESTED: tests/test_oneline-runner_set_execution_permissions.sh
 _set_execution_permissions() {
     local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     

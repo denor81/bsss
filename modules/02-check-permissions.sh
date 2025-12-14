@@ -13,7 +13,7 @@ readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" 
 # shellcheck disable=SC1091
 source "${THIS_DIR_PATH}/../lib/logging.sh"
 
-# TESTED: tests/test_check_permissions.sh
+# TESTED: tests/test_check-permissions_check.sh
 check() {
     local euid=${1:-$EUID}  # Effective user ID, defaults to current EUID
     local sudo_check_command=${2:-"sudo -n true 2>/dev/null"}  # Command to check sudo access

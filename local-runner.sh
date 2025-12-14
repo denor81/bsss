@@ -30,7 +30,7 @@ source "${THIS_DIR_PATH}/lib/uninstall_functions.sh"
 log_info "Запуск"
 
 # Парсинг параметров запуска с использованием getopts
-# TESTED: tests/test_parse_params.sh
+# TESTED: tests/test_local-runner_parse_params.sh
 _parse_params() {
     # Всегда используем дефолтный ALLOWED_PARAMS
     local allowed_params="${1:-$ALLOWED_PARAMS}"

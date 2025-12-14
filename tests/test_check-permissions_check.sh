@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/test_check_permissions.sh
+# tests/test_check-permissions_check.sh
 # Тест для функции check из modules/02-check-permissions.sh
 
 # Подключаем тестируемый файл
