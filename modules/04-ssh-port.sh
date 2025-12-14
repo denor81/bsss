@@ -26,6 +26,7 @@ source "${THIS_DIR_PATH}"/../lib/logging.sh
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 
 # Парсер параметров командной строки
+# TESTED: tests/test_parse_params_ssh_port.sh
 _parse_params() {
     local allowed_params="${1:-$ALLOWED_PARAMS}"
     shift
