@@ -360,6 +360,9 @@ _collect_ssh_ports_data() {
     if config_ssh_ports=$(get_ssh_config_ports 2>/dev/null); then
         # Форматируем порты в виде "22,23,24" или "22"
         config_ports_formatted=$(echo "$config_ssh_ports" | tr '\n' ',' | sed 's/,$//')
+    else
+        # Если порты не найдены в конфигурации, используем порт по умолчанию
+        config_ports_formatted="$default_ssh_port"
     fi
     
     # Форматируем активные порты
