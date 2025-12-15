@@ -28,7 +28,7 @@ check() {
     else
         status=0
         message="Перезагрузка не требуется"
-        symbol="$SYMBOL_SUCCESS"
+        symbol="$SYMBOL_INFO"
     fi
     
     # Вывод в Key-Value формате для парсинга через eval

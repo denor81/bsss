@@ -98,8 +98,7 @@ hello() {
 # Проверяем права root
 check_root_permissions() {
     if [[ $EUID -ne 0 ]]; then
-        log_error "Для работы скрипта требуются права root"
-        log_info "Пожалуйста, запускайте с sudo"
+        log_error "Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
         return 1
     fi
 }
@@ -341,8 +340,7 @@ install_to_system() {
     _set_execution_permissions
     
     log_success "Установка в систему завершена"
-    log_info "Для запуска: sudo $UTIL_NAME"
-    log_info "Для удаления: sudo $UTIL_NAME -u"
+    log_info "Используйте для запуска: sudo $UTIL_NAME, для удаления: sudo $UTIL_NAME -u"
     return 0
 }
 
@@ -368,5 +366,3 @@ main() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main
 fi
-
-log_success "Завершен"

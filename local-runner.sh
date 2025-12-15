@@ -51,26 +51,20 @@ _parse_params() {
 
 # Основная функция
 main() {
+    if [[ $EUID -ne 0 ]]; then
+        log_error "Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
+        return 0
+    fi
     _parse_params "$ALLOWED_PARAMS" "$@"
     if [[ $UNINSTALL_FLAG -eq 1 ]]; then
         # Вызываем адаптированную для тестирования версию функции с параметрами по умолчанию
-        _run_uninstall_testable "$UNINSTALL_PATHS" "$UTIL_NAME" "$CURRENT_MODULE_NAME" "false"
-    fi
-    if [[ $HELP_FLAG -eq 1 ]]; then
+        _run_uninstall "$UNINSTALL_PATHS" "$UTIL_NAME" "$CURRENT_MODULE_NAME" "false"
+        return 0
+    elif [[ $HELP_FLAG -eq 1 ]]; then
         log_info "Доступны короткие параметры $ALLOWED_PARAMS, [-h помощь] [-u удаление]"
         return 0
-    fi
-    
-    # Запускаем основной скрипт через exec, заменяя текущий процесс
-    if [[ "$#" -eq 0 ]]; then
-        if [[ -f "$RUN_PATH" ]]; then
-            exec bash "$RUN_PATH"
-        else
-            log_error "Основной скрипт не найден: $RUN_PATH"
-            return 1
-        fi
     else
-        log_error "Ошибка запуска"
+        exec bash "$RUN_PATH"
     fi
 }
 

@@ -34,7 +34,7 @@ check() {
         else
             status=0
             message="Текущая система ${ID^} $VERSION_ID поддерживается"
-            symbol="$SYMBOL_SUCCESS"
+            symbol="$SYMBOL_INFO"
         fi
     else
         status=1

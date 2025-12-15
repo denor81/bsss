@@ -24,7 +24,7 @@ check() {
     if [[ -d "$ssh_config_dir" ]]; then
         status=0
         message="Директория $ssh_config_dir существует"
-        symbol="$SYMBOL_SUCCESS"
+        symbol="$SYMBOL_INFO"
     else
         status=1
         message="Директория $ssh_config_dir не найдена. Система слишком старая для этого скрипта."

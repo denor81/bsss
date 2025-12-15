@@ -160,7 +160,6 @@ ask_user_reset_or_change() {
             или другой порт, если присутствуют другие настройки в /etc/ssh/ директории."
         log_info_simple_tab "2. Переустановить порт - означает, что будут удалены конфиг файл(ы) BSSS для SSH
             и создан новый файл с новым указанным портом - он и будет действовать."
-        log_info_simple_tab "Актуальная информация отображается в информационном блоке при запуске BSSS."
         read -p "$symbol_question [$module_name] Введите 1 или 2: " -r choice < "$input_source"
         
         # Обработка пустого ввода (по умолчанию 2)
@@ -321,7 +320,7 @@ create_new_ssh_config_file() {
 Port $port
 EOF
     then
-        log_success "Конфиг создан: $config_path [$(grep -iE '^port' "$config_path")]"
+        log_info "Конфиг создан: $config_path [$(grep -iE '^port' "$config_path")]"
         # log_info "SSH будет слушать на порту: $port"
         return 0
     else
