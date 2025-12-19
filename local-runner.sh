@@ -1,71 +1,64 @@
 #!/usr/bin/env bash
 # local-runner.sh
 # Локальный загрузчик для запуска основного скрипта с конфигурацией
-# Usage: ./local-runner.sh [options] [--uninstall]
+# Usage: ./local-runner.sh [options] [-h]
 
 set -Eeuo pipefail
 
 # Константы
-readonly UTIL_NAME="bsss"
-# shellcheck disable=SC2155
-readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-readonly UNINSTALL_PATHS="${THIS_DIR_PATH}/.uninstall_paths"
-readonly RUN_PATH="${THIS_DIR_PATH}/bsss-main.sh"
+readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly MAIN_FILE="bsss-main.sh"
 readonly ALLOWED_PARAMS="hu"
-# shellcheck disable=SC2034
-# shellcheck disable=SC2155
-readonly CURRENT_MODULE_NAME="$(basename "$0")"
+readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление]"
+readonly CURRENT_MODULE_NAME="$(basename "$0")" # Used in logging
 
-UNINSTALL_FLAG=0
-HELP_FLAG=0
+ACTION=""
 
-# Подключаем библиотеку функций логирования
-# shellcheck disable=SC1091
-source "${THIS_DIR_PATH}/lib/logging.sh"
-
-# Подключаем библиотеку функций удаления
-# shellcheck disable=SC1091
-source "${THIS_DIR_PATH}/lib/uninstall_functions.sh"
-
-# log_info "Запуск"
+source "${MAIN_DIR_PATH}/lib/vars.conf"
+source "${MAIN_DIR_PATH}/lib/logging.sh"
+source "${MAIN_DIR_PATH}/lib/uninstall_functions.sh"
 
 # Парсинг параметров запуска с использованием getopts
-# TESTED: tests/test_local-runner_parse_params.sh
 _parse_params() {
     # Всегда используем дефолтный ALLOWED_PARAMS
     local allowed_params="${1:-$ALLOWED_PARAMS}"
     shift
-
-    # Сбрасываем OPTIND
-    OPTIND=1
     
     while getopts ":$allowed_params" opt "$@"; do
         case "${opt}" in
-            h)  HELP_FLAG=1 ;;
-            u)  UNINSTALL_FLAG=1 ;;
+            h)  ACTION="help" ;;
+            u)  ACTION="uninstall" ;;
             \?) log_error "Некорректный параметр -$OPTARG, доступны: $allowed_params" ;;
             :)  log_error "Параметр -$OPTARG требует значение" ;;
         esac
     done
 }
 
-# Основная функция
-main() {
+_check_permissions() {
     if [[ $EUID -ne 0 ]]; then
         log_error "Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
-        return 0
+        return 1
     fi
+}
+
+_show_help() {
+    log_info "Доступны короткие параметры $ALLOWED_PARAMS $ALLOWED_PARAMS_HELP"
+}
+
+_run_default() {
+    exec bash "$MAIN_DIR_PATH/$MAIN_FILE"
+}
+
+# Основная функция
+main() {
+    _check_permissions
     _parse_params "$ALLOWED_PARAMS" "$@"
-    if [[ $UNINSTALL_FLAG -eq 1 ]]; then
-        # Вызываем адаптированную для тестирования версию функции с параметрами по умолчанию
-        _run_uninstall "$UNINSTALL_PATHS" "$UTIL_NAME" "$CURRENT_MODULE_NAME" "false"
-        return 0
-    elif [[ $HELP_FLAG -eq 1 ]]; then
-        log_info "Доступны короткие параметры $ALLOWED_PARAMS, [-h помощь] [-u удаление]"
-        return 0
-    else
-        exec bash "$RUN_PATH"
-    fi
+
+    case "$ACTION" in
+        help)      _show_help ;;
+        uninstall) _run_uninstall ;;
+        *)         _run_default ;;
+    esac
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован

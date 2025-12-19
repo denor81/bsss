@@ -1,61 +1,21 @@
 #!/usr/bin/env bash
-# 04-ssh-port.sh
-# Четвертый модуль системы
-# Проверяет и изменяет SSH порт
-# Usage: ./04-ssh-port.sh [-r]
-#   -r  Режим изменения порта
-# MODULE_TYPE: check-and-run
+# Изменяет SSH порт
+# MODULE_TYPE: modify
 
 set -Eeuo pipefail
 
-# shellcheck disable=SC2155
-readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-# shellcheck disable=SC2155
+readonly MODULES_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
-readonly DEFAULT_SSH_PORT=22
-readonly ALLOWED_PARAMS="r"
-readonly SSH_CONFIG_DIR="/etc/ssh/sshd_config.d"
-readonly SSH_CONFIG_FILE_MASK="*bsss-ssh-port.conf"
-readonly SSH_CONFIG_FILE="10-bsss-ssh-port.conf"
 
-# Флаги режимов работы
-RUN_FLAG=0  # Режим изменения порта
-
-# Подключаем библиотеку функций логирования
-# shellcheck disable=SC1091
-source "${THIS_DIR_PATH}"/../lib/logging.sh
-
-# ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
-
-# Парсер параметров командной строки
-# TESTED: tests/test_ssh-port_parse_params.sh
-_parse_params() {
-    local allowed_params="${1:-$ALLOWED_PARAMS}"
-    shift
-
-    # Сбрасываем OPTIND
-    OPTIND=1
-    
-    while getopts ":$allowed_params" opt "$@"; do
-        case "${opt}" in
-            r)  RUN_FLAG=1 ;;
-            \?) log_error "Некорректный параметр -$OPTARG, доступны: $allowed_params" ;;
-            :)  log_error "Параметр -$OPTARG требует значение" ;;
-        esac
-    done
-}
-
-# Получение активных портов SSH
-# TESTED: tests/test_ssh-port_get_active_ssh_ports.sh
-_get_active_ssh_ports() {
-    ss -tlnp | awk '/sshd/ && /LISTEN/ {split($4,a,":"); print a[length(a)]}' | sort -u
-}
+source "${MODULES_DIR_PATH}/../lib/vars.conf"
+source "${MODULES_DIR_PATH}/../lib/logging.sh"
+source "${MODULES_DIR_PATH}/common-helpers.sh"
+source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
 # Вспомогательная функция для извлечения портов из файла конфигурации
-# TESTED: tests/test_ssh-port_extract_ports_from_file.sh
 _extract_ports_from_file() {
-    local config_file="${1:-}"
-    local found_ports=()
+    local config_file="$1"
+    local -a found_ports=()
     
     if [[ ! -f "$config_file" ]]; then
         return 0
@@ -78,11 +38,10 @@ _extract_ports_from_file() {
 }
 
 # Функция для сбора портов из конфигурационных файлов SSH
-# TESTED: tests/test_ssh-port_get_ssh_config_ports.sh
 get_ssh_config_ports() {
     local main_config="${1:-/etc/ssh/sshd_config}"
     local config_dir="${2:-/etc/ssh/sshd_config.d}"
-    local found_ports=()
+    local -a found_ports=()
     local ports_from_file
     
     # Обрабатываем основной конфиг
@@ -185,13 +144,13 @@ restore_default() {
     # log_info "Сбрасываю настройки SSH к значениям по умолчанию..."
     
     # Шаг 1: Удаляем старые конфигурационные файлы
-    remove_old_ssh_config_files || return 1
+    remove_old_ssh_config_files
     
     # Шаг 2: Перезапускаем SSH сервис
-    restart_ssh_service || return 1
+    restart_ssh_service
     
     # Шаг 3: Проверяем результат изменений
-    check 1 || return 1
+    check 1
     
     # log_success "Настройки SSH успешно сброшены к значениям по умолчанию (порт 22)"
     return 0
@@ -262,7 +221,6 @@ is_port_in_use() {
 }
 
 # Поиск и удаление старых конфигурационных файлов
-# TESTED: tests/test_ssh-port_remove_old_ssh_config_files.sh
 remove_old_ssh_config_files() {
     local config_dir="${1:-$SSH_CONFIG_DIR}"
     local config_mask="${2:-$SSH_CONFIG_FILE_MASK}"
@@ -299,7 +257,6 @@ remove_old_ssh_config_files() {
 }
 
 # Создание нового конфигурационного файла
-# TESTED: tests/test_ssh-port_create_new_ssh_config_file.sh
 create_new_ssh_config_file() {
     local port="${1:-}"
     local config_dir="${2:-$SSH_CONFIG_DIR}"
@@ -332,10 +289,10 @@ EOF
 # Перезапуск SSH сервиса
 restart_ssh_service() {
     log_info "Перезагружаю конфигурацию [systemctl daemon-reload]"
-    systemctl daemon-reload || return 1
+    systemctl daemon-reload
     
     log_info "Перезапускаю SSH сервис [systemctl restart ssh]"
-    systemctl restart ssh || return 1
+    systemctl restart ssh
     
     # log_success "SSH сервис успешно перезапущен"
     return 0
@@ -344,7 +301,6 @@ restart_ssh_service() {
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПРОВЕРКИ ПОРТОВ ==========
 
 # Сбор данных о портах SSH
-# TESTED: tests/test_ssh-port_collect_ssh_ports_data.sh
 _collect_ssh_ports_data() {
     local default_ssh_port="${1:-$DEFAULT_SSH_PORT}"
     local active_ssh_ports
@@ -376,7 +332,6 @@ _collect_ssh_ports_data() {
     COLLECTED_CONFIG_PORTS="${config_ports_formatted:-}"
 }
 
-# TESTED: tests/test_ssh-port_format_user_output.sh
 # Форматирование вывода для пользователя
 _format_user_output() {
     local status="$1"
@@ -400,14 +355,15 @@ _format_eval_output() {
     echo "status=$status"
     echo "active_ssh_port=$active_ports"
     echo "config_files_ssh_port=$config_ports"
+    echo "END"
     return "$status"
 }
 
 # ========== ОСНОВНЫЕ ФУНКЦИИ ==========
 
 # Режим проверки - собирает информацию о портах SSH
-# TESTED: tests/test_check.sh
 check() {
+    # Отдельный режим 1 для прмого логирования в терминал 
     local out_msg_type="${1:-0}"  # 0 - для парсинга через eval, 1 - для вывода пользователю
     local default_ssh_port="${2:-$DEFAULT_SSH_PORT}"
     
@@ -425,7 +381,7 @@ check() {
     # Проверяем наличие активных портов
     if [[ -z "$active_ports" ]]; then
         status=1
-        message="SSH сервис не найден или не слушает порты"
+        message="SSH сервис не распознан или не слушает порты"
         symbol="$SYMBOL_ERROR"
     else
         status=0
@@ -437,7 +393,8 @@ check() {
     if [[ "$out_msg_type" -eq 1 ]]; then
         _format_user_output "$status" "$message" "$symbol"
     else
-        _format_eval_output "$status" "$message" "$symbol" "$active_ports" "$config_ports"
+        # _format_eval_output "$status" "$message" "$symbol" "$active_ports" "$config_ports"
+        log_info "$message"
     fi
     
     return "$status"
@@ -469,13 +426,13 @@ run() {
     fi
     
     # Шаг 5: Удаляем старые конфигурационные файлы
-    remove_old_ssh_config_files || return 1
+    remove_old_ssh_config_files
     
     # Шаг 6: Создаем новый конфигурационный файл
-    create_new_ssh_config_file "$new_port" || return 1
+    create_new_ssh_config_file "$new_port"
     
     # Шаг 7: Перезапускаем SSH сервис
-    restart_ssh_service || return 1
+    restart_ssh_service
     
     # Шаг 8: Проверяем результат изменений
     check 1
@@ -484,25 +441,17 @@ run() {
     return 0
 }
 
-# ========== ОСНОВНАЯ ФУНКЦИЯ ==========
+
+
+check() {
+    log_info "Текущие активные SSH порты: $(_get_active_ssh_ports)"
+    log_info "Основной конфиг файл: $SSH_CONFIG_FILE"
+    log_info "Список файлов по маске: $(_get_files_paths_by_mask "$SSH_CONFIGD_DIR" "$SSH_CONFIG_FILE_MASK" )"
+    log_info "Список файлов с портом: $(_get_all_config_files_with_port )"
+}
 
 main() {
-    # Если нет параметров, используем режим check по умолчанию
-    if [[ "$#" -eq 0 ]]; then
-        RUN_FLAG=0
-    fi
-    
-    # Парсим параметры
-    _parse_params "$ALLOWED_PARAMS" "$@"
-    
-    # Выполняем в зависимости от режима
-    if [[ "$RUN_FLAG" -eq 1 ]]; then
-        # В режиме изменений выполняем действия и возвращаем только код возврата
-        run
-    else
-        # В режиме проверки выводим информацию в stdout для парсинга основным скриптом
-        check
-    fi
+    check
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован

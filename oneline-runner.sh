@@ -73,18 +73,17 @@ cleanup_handler() {
         log_info "Очистка не требуется - ничего не было установлено/распаковано"
     fi
 
-    # Проходим по всем командам в массиве в обратном порядке (опционально, но логично)
+    # Проходим по всем командам в массиве
     for i in "${!CLEANUP_COMMANDS[@]}"; do
-        CMD="${CLEANUP_COMMANDS[$i]}"
-        log_info "Удаляю: $CMD"
+        local cmd="${CLEANUP_COMMANDS[$i]}"
+        log_info "Удаляю: $cmd"
         # Используем eval для выполнения сохраненной строки команды
-        eval "$CMD"
-        # Удаляем выполненную команду из массива (опционально)
+        eval "$cmd"
+        # Удаляем выполненную команду из массива
         unset 'CLEANUP_COMMANDS[$i]'
     done
     log_success "Очистка завершена"
     CLEANUP_DONE_FLAG=1
-    return 0
 }
 
 # Передаем имя сигнала в функцию при вызове
@@ -104,7 +103,7 @@ check_root_permissions() {
 }
 
 # Спрашиваем пользователя о режиме запуска
-ask_user_how_to_run(){
+ask_user_how_to_run() {
     log_info "Запустить ${UTIL_NAME^^} однократно?"
     log_info "Y - запуск однократно / n - установить / c - отмена"
     local choice
@@ -119,12 +118,11 @@ ask_user_how_to_run(){
             break
         fi
         
-        log_info "Неверный выбор. Пожалуйста, введите Y, n или c."
+        log_info "Неверный выбор [$input]. Пожалуйста, выберите [ync]"
     done
 
     if [[ $choice =~ ^[Cc]$ ]]; then
         log_info "Выбрана отмена ($choice)"
-        return 0
     elif [[ $choice =~ ^[Nn]$ ]]; then
         log_info "Выбрана установка ($choice)"
         # Проверяем, установлен ли уже скрипт
@@ -135,11 +133,9 @@ ask_user_how_to_run(){
             return 1
         fi
         SYS_INSTALL_FLAG=1
-        return 0
     elif [[ $choice =~ ^[Yy]$ ]]; then
         log_info "Выбран разовый запуск ($choice)"
         ONETIME_RUN_FLAG=1
-        return 0
     else
         log_error "Не корректное значение ($choice)"
         return 1
@@ -147,7 +143,6 @@ ask_user_how_to_run(){
 }
 
 # Создаём временную директорию
-# TESTED: tests/test_oneline-runner_create_tmp_dir.sh
 _create_tmp_dir() {
     local util_name="${1:-$UTIL_NAME}"  # Имя утилиты для префикса временной директории
     local add_to_cleanup="${2:-true}"  # Добавлять ли директорию в CLEANUP_COMMANDS
@@ -164,11 +159,9 @@ _create_tmp_dir() {
     fi
     
     log_info "Создана временная директория $temp_dir"
-    return 0
 }
 
 # Скачиваем архив во временный файл
-# TESTED: tests/test_oneline-runner_download_archive.sh
 _download_archive() {
     local archive_url="${1:-$ARCHIVE_URL}"  # URL архива для скачивания
     local tmparchive="${2:-}"  # Путь к временному файлу архива (если не указан, будет создан)
@@ -199,11 +192,8 @@ _download_archive() {
     
     # Устанавливаем глобальную переменную для обратной совместимости
     TMPARCHIVE="$tmparchive"
-    
-    return 0
 }
 
-# TESTED: tests/test_oneline-runner_unpack_archive.sh
 _unpack_archive() {
     local tmparchive="${1:-$TMPARCHIVE}"  # Берет параметр, либо дефолтную переменную
     local temp_project_dir="${2:-$TEMP_PROJECT_DIR}"  # Берет параметр, либо дефолтную переменную
@@ -216,11 +206,9 @@ _unpack_archive() {
     local dir_size=""
     dir_size=$(du -sb "$temp_project_dir" | cut -f1 | awk '{printf "%.2f KB\n", $1/1024}' )
     log_info "Архив распакован в $temp_project_dir (размер: $dir_size)"
-    return 0
 }
 
 # Проверяем успешность распаковки во временную директорию
-# TESTED: tests/test_oneline-runner_check_archive_unpacking.sh
 _check_archive_unpacking() {
     local temp_project_dir="${1:-$TEMP_PROJECT_DIR}"  # Берет параметр, либо дефолтную переменную
     local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"  # Берет параметр, либо дефолтную переменную
@@ -231,13 +219,11 @@ _check_archive_unpacking() {
         return 1
     fi
     log_info "Исполняемый файл $local_runner_file_name найден"
-    return 0
 }
 
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ УСТАНОВКИ
 
 # Добавляет путь в файл лога установки для последующего удаления
-# TESTED: tests/test_oneline-runner_add_uninstall_path.sh
 _add_uninstall_path() {
     local uninstall_path="${1:-}"  # Путь для добавления в лог удаления
     local install_log_path="${2:-$INSTALL_DIR/$INSTALL_LOG_FILE_NAME}"  # Путь к файлу лога удаления
@@ -253,11 +239,9 @@ _add_uninstall_path() {
         echo "$uninstall_path" >> "$install_log_path"
         log_info "Путь $uninstall_path добавлен в лог удаления $install_log_path"
     fi
-    return 0
 }
 
 # Проверка символической ссылки
-# TESTED: tests/test_oneline-runner_check_symlink_exists.sh
 _check_symlink_exists() {
     local symlink_path="${1:-$SYMBOL_LINK_PATH}"  # Берет параметр, либо дефолтную переменную
     
@@ -265,11 +249,9 @@ _check_symlink_exists() {
         log_error "Символическая ссылка $UTIL_NAME уже существует"
         return 1
     fi
-    return 0
 }
 
 # Создание директории установки
-# TESTED: tests/test_oneline-runner_create_install_directory.sh
 _create_install_directory() {
     local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     
@@ -279,11 +261,9 @@ _create_install_directory() {
         return 1
     }
     _add_uninstall_path "$install_dir"
-    return 0
 }
 
 # Копирование файлов установки
-# TESTED: tests/test_oneline-runner_copy_installation_files.sh
 _copy_installation_files() {
     local tmp_dir_path="${1:-$(dirname "$TMP_LOCAL_RUNNER_PATH")}"  # Берет параметр, либо вычисляет из TMP_LOCAL_RUNNER_PATH
     local install_dir="${2:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
@@ -294,11 +274,9 @@ _copy_installation_files() {
         log_error "Не удалось скопировать файлы"
         return 1
     }
-    return 0
 }
 
 # Создание символической ссылки
-# TESTED: tests/test_oneline-runner_create_symlink.sh
 _create_symlink() {
     local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"  # Берет параметр, либо дефолтную переменную
@@ -314,18 +292,15 @@ _create_symlink() {
     
     log_info "Создана символическая ссылка $util_name для запуска $local_runner_path. (Расположение ссылки: $(dirname "$symbol_link_path"))"
     _add_uninstall_path "$symbol_link_path"
-    return 0
 }
 
 # Установка прав на выполнение
-# TESTED: tests/test_oneline-runner_set_execution_permissions.sh
 _set_execution_permissions() {
     local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     
     log_info "Устанавливаю права запуска (+x) в $install_dir для .sh файлов"
     chmod +x "$install_dir"/*.sh 2>/dev/null
     # Возвращаем 0 даже если нет .sh файлов - это нормально
-    return 0
 }
 
 # Функция установки в систему
@@ -341,7 +316,6 @@ install_to_system() {
     
     log_success "Установка в систему завершена"
     log_info "Используйте для запуска: sudo $UTIL_NAME, для удаления: sudo $UTIL_NAME -u"
-    return 0
 }
 
 main() {

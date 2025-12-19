@@ -1,145 +1,94 @@
 #!/usr/bin/env bash
-# bsss-main.sh
 # Основной скрипт для последовательного запуска модулей системы
-# Usage: ./bsss-main.sh
+# Usage: run with ./local-runner.sh
 
 set -Eeuo pipefail
 
 # Константы
-# shellcheck disable=SC2155
-readonly THIS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-readonly MODULES_DIR="${THIS_DIR_PATH}/modules"
-# shellcheck disable=SC2034
-# shellcheck disable=SC2155
+readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
+source "${MAIN_DIR_PATH}/lib/vars.conf"
+source "${MAIN_DIR_PATH}/lib/logging.sh"
+source "${MAIN_DIR_PATH}/lib/user_confirmation.sh"
+source "${MAIN_DIR_PATH}/modules/common-helpers.sh"
 
-# Подключаем библиотеку функций логирования
-# shellcheck disable=SC1091
-source "${THIS_DIR_PATH}/lib/logging.sh"
-
-# Получает список всех доступных модулей
-get_available_modules() {
-    if [[ -d "$MODULES_DIR" ]]; then
-        # Ищем все исполняемые файлы, включая .sh и без расширения
-        find "$MODULES_DIR" -type f \( -name "[0-9][0-9]*.sh" -o -executable \) | sort
-    else
-        log_error "Директория модулей не найдена: $MODULES_DIR"
-        return 1
-    fi
-}
-
-# Получает тип модуля из метаданных
-get_module_type() {
-    local module_path="${1:-}"
-    if [[ -z "$module_path" || ! -f "$module_path" ]]; then
-        echo "check-only"  # По умолчанию
-        return 1
-    fi
-    
-    # Ищем строку с MODULE_TYPE
-    local module_type
-    module_type=$(grep "^# MODULE_TYPE:" "$module_path" 2>/dev/null | cut -d: -f2 | tr -d ' ')
-    
-    # Если не найдено, считаем check-only
-    if [[ -z "$module_type" ]]; then
-        echo "check-only"
-    else
-        echo "$module_type"
-    fi
+# Получаю все модули с типом (разделитель \t)
+_get_all_modules_with_types() {
+    mapfile -t available_paths < <(_get_files_paths_by_mask "${MAIN_DIR_PATH}/modules" "$MODULES_MASK")
+    awk -F': ' 'BEGIN { OFS="\t" } /^# MODULE_TYPE:/ { print FILENAME, $2; nextfile }' "${available_paths[@]}"
 }
 
 # Получает список модулей по типу
-get_modules_by_type() {
-    local required_type="${1:-check-only}"
-    local modules=()
-    
-    while IFS= read -r module_path; do
-        if [[ -n "$module_path" ]]; then
-            local module_type
-            module_type=$(get_module_type "$module_path")
-            
-            if [[ "$module_type" == "$required_type" ]]; then
-                modules+=("$module_path")
-            fi
+_get_modules_by_type() {
+    local required_type="$1"
+    declare -a matching_modules=()
+
+    while IFS=$'\t' read -r m_path m_type; do
+        if [[ "$m_type" == "$required_type" ]]; then
+            matching_modules+=("$m_path")
         fi
-    done <<< "$(get_available_modules)"
-    
-    printf '%s\n' "${modules[@]}"
+    done < <(_get_all_modules_with_types)
+
+    if (( ${#matching_modules[@]} > 0 )); then
+        printf '%s\n' "${matching_modules[@]}"
+    else
+        log_error "Не найдены модули для редактирования конфигурации"
+        return 1
+    fi
+}
+
+_draw_border() {
+    printf '%.0s#' {1..80}; echo
 }
 
 # Собирает экспресс-статус от всех модулей
-collect_modules_status() {
-    local critycal=0
-    printf '%.0s#' {1..80}; echo
-    while IFS= read -r module_path; do
-        if [[ -n "$module_path" ]]; then
+run_modules_polling() {
+    local rc=0
 
-            out="$(bash "$module_path")"
-
-            # Ожидаем от модуля message, symbol, status
-            eval "$out"
-
-            decoded_message=$(echo "$message" | base64 --decode)
-            decoded_symbol=$(echo "$symbol" | base64 --decode)
-
-            if [[ $status -eq 1 ]]; then
-                critycal=1
-            fi
-            
-            echo "# $decoded_symbol $(basename "$module_path"): $decoded_message"
+    _draw_border
+    while IFS= read -r m_path; do
+    
+        if ! bash "$m_path"; then
+            rc=1
         fi
-    done <<< "$(get_available_modules)" || return 1
-    printf '%.0s#' {1..80}; echo
+        
+    done < <(_get_modules_by_type "$MODULE_TYPE_CHECK")
+    _draw_border
 
-    if [[ $critycal -eq 1 ]]; then
+    if (( rc > 0 )); then
         log_error "Запуск не возможен, один из модулей показывает ошибку"
         return 1
     fi
 }
 
-# Запрашивает подтверждение у пользователя
-ask_user_confirmation() {
-    local choice
+user_choice() {
+    # Запрашиваем подтверждение у пользователя
+    local user_choice
+    user_choice=$(_ask_user_confirmation "Запустить модули последовательно?" "Y" "yn" )
     
-    while true; do
-        read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] Запустить модули последовательно? (Y/n): " -r choice
-        choice=${choice:-Y}  # Y по умолчанию
-        
-        if [[ ${choice,,} =~ ^[yn]$ ]]; then
-            echo "${choice,,}"
-            return 0
-        fi
-        
-        log_error "Некорректный выбор. Введите Y или n"
-    done
+    if [[ "$user_choice" == "n" ]]; then
+        log_info "Выход по запросу пользователя"
+        exit 0
+    fi
 }
 
 # Запускает change-модули с параметром -r
-run_change_modules() {
-    local change_modules
-    change_modules=$(get_modules_by_type "check-and-run")
-    
-    if [[ -z "$change_modules" ]]; then
-        log_info "Модули для изменений не найдены"
-        return 0
-    fi
-    
-    # log_info "Запуск модулей для изменений..."
+run_modules_modifying() {
     
     while IFS= read -r module_path; do
-        if [[ -n "$module_path" ]]; then
-            log_info "Запуск $(basename "$module_path")"
-            
-            # Запускаем модуль напрямую, интерактивные запросы пойдут через /dev/tty
-            if bash "$module_path" -r; then
-                log_success "$(basename "$module_path") выполнен успешно"
-            else
-                log_error "Ошибка при выполнении $(basename "$module_path")"
-                return 1
-            fi
+
+        log_info "Запуск $(basename "$module_path")"
+        
+        # Запускаем модуль напрямую, интерактивные запросы пойдут через /dev/tty
+        if bash "$module_path"; then
+            log_success "$(basename "$module_path") выполнен успешно"
+        else
+            log_error "Ошибка при выполнении $(basename "$module_path")"
+            return 1
         fi
-    done <<< "$change_modules"
+
+    done < <(_get_modules_by_type "$MODULE_TYPE_MODIFY")
     
     log_success "Все модули для изменений выполнены"
     return 0
@@ -147,20 +96,9 @@ run_change_modules() {
 
 # Основная функция
 main() {
-    # Сначала экспресс-анализ всех модулей
-    collect_modules_status
-    
-    # Запрашиваем подтверждение у пользователя
-    local user_choice
-    user_choice=$(ask_user_confirmation)
-    
-    if [[ "$user_choice" == "n" ]]; then
-        log_info "Выход по запросу пользователя"
-        return 0
-    fi
-    
-    # Запускаем change-модули
-    run_change_modules
+    run_modules_polling
+    user_choice
+    run_modules_modifying
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован

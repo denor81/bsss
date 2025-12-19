@@ -1,36 +1,33 @@
 #!/usr/bin/env bash
 # uninstall_functions.sh
 # Библиотека функций для удаления установленных файлов и директорий
-# Использование: source "$(dirname "${BASH_SOURCE[0]}")/../lib/uninstall_functions.sh"
+# Использование: source "${MAIN_DIR_PATH}/lib/uninstall_functions.sh"
 
-# Адаптированная для тестирования функция удаления установленных файлов и директорий
-# Параметризирована для удобного тестирования
-_run_uninstall() {
-    # Параметры функции с значениями по умолчанию
-    local uninstall_paths="${1:-$UNINSTALL_PATHS}"  # Путь к файлу со списком путей для удаления
-    local util_name="${2:-$UTIL_NAME}"  # Имя утилиты для вывода в сообщениях
-    local current_module_name="${3:-$CURRENT_MODULE_NAME}"  # Имя текущего модуля
-    local auto_confirm="${4:-false}"  # Автоматическое подтверждение (true/false)
+set -Eeuo pipefail
+
+source "${MAIN_DIR_PATH}/lib/user_confirmation.sh"
+UNINSTALL_FILE_PATH=$MAIN_DIR_PATH/$UNINSTALL_PATHS
+
+user_choice() {
+    # Запрашиваем подтверждение у пользователя
+    local user_choice
+    user_choice=$(_ask_user_confirmation "Подтверждаете удаление?" "n" "yn" )
     
-    # Запрашиваем подтверждение удаления, если не указано авто-подтверждение
-    if [[ "$auto_confirm" != "true" ]]; then
-        read -p "$SYMBOL_QUESTION [$current_module_name] Выбрано удаление $util_name - подтвердите - y/n [n]: " -r confirmation
-        confirmation=${confirmation:-n}
-        
-        if [[ ! ${confirmation,,} =~ ^[y]$ ]]; then
-            log_info "Удаление отменено"
-            return 0
-        fi
+    if [[ "$user_choice" == "n" ]]; then
+        log_info "Выход по запросу пользователя"
+        exit 0
     fi
-    
+}
+
+check_uninstall_file() {
     # Проверяем наличие файла с путями для удаления
-    if [[ ! -f "$uninstall_paths" ]]; then
-        log_error "Файл с путями для удаления не найден: $uninstall_paths"
+    if [[ ! -f "$UNINSTALL_FILE_PATH" ]]; then
+        log_error "Файл с путями для удаления не найден: $UNINSTALL_FILE_PATH"
         return 1
     fi
-    
-    log_info "Начинаю удаление установленных файлов..."
-    
+}
+
+do_uninstall() {
     # Читаем файл построчно и удаляем каждый путь
     while IFS= read -r path; do
         # Проверяем существование пути или символической ссылки перед удалением
@@ -43,8 +40,17 @@ _run_uninstall() {
         else
             log_info "Путь не существует, пропускаю: $path"
         fi
-    done < "$uninstall_paths"
+    done < "$UNINSTALL_FILE_PATH"
+}
+
+
+_run_uninstall() {
+    user_choice
+    check_uninstall_file
     
+    log_info "Начинаю удаление установленных файлов..."
+    do_uninstall
     log_success "Удаление завершено успешно"
+
     return 0
 }
