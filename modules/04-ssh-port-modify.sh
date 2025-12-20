@@ -446,8 +446,8 @@ run() {
 check() {
     log_info "Текущие активные SSH порты: $(_get_active_ssh_ports)"
     log_info "Основной конфиг файл: $SSH_CONFIG_FILE"
-    log_info "Список файлов по маске: $(_get_files_paths_by_mask "$SSH_CONFIGD_DIR" "$SSH_CONFIG_FILE_MASK" )"
-    log_info "Список файлов с портом: $(_get_all_config_files_with_port )"
+    log_info "Список файлов по маске: $(_get_files_paths_by_mask "$SSH_CONFIGD_DIR" "$SSH_CONFIG_FILE_MASK")"
+    ask_user_reset_or_change
 }
 
 main() {

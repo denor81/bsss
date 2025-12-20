@@ -21,7 +21,5 @@ _get_files_paths_by_mask() {
 
     if (( ${#files[@]} > 0 )); then
         printf '%s\n' "${files[@]}"
-    else
-        log_error "Файлы по маске $mask в директории $dir не найдены";
     fi
 }
