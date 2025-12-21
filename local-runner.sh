@@ -28,8 +28,8 @@ _parse_params() {
         case "${opt}" in
             h)  ACTION="help" ;;
             u)  ACTION="uninstall" ;;
-            \?) log_error "Некорректный параметр -$OPTARG, доступны: $allowed_params" ;;
-            :)  log_error "Параметр -$OPTARG требует значение" ;;
+            \?) log_error "Некорректный параметр -$OPTARG, доступны: $allowed_params"; return 1 ;;
+            :)  log_error "Параметр -$OPTARG требует значение"; return 1 ;;
         esac
     done
 }

@@ -104,7 +104,6 @@ check_ssh_config_exists() {
 
 # Предлагает пользователю выбор между сбросом и изменением порта
 ask_user_reset_or_change() {
-    local input_source="${1:-/dev/tty}"                    # Источник ввода (по умолчанию /dev/tty)
     local symbol_question="${2:-$SYMBOL_QUESTION}"         # Символ вопроса
     local module_name="${3:-${CURRENT_MODULE_NAME:-04-ssh-port}}"  # Имя модуля
     
@@ -119,7 +118,7 @@ ask_user_reset_or_change() {
             или другой порт, если присутствуют другие настройки в /etc/ssh/ директории."
         log_info_simple_tab "2. Переустановить порт - означает, что будут удалены конфиг файл(ы) BSSS для SSH
             и создан новый файл с новым указанным портом - он и будет действовать."
-        read -p "$symbol_question [$module_name] Введите 1 или 2: " -r choice < "$input_source"
+        read -p "$symbol_question [$module_name] Введите 1 или 2: " -r choice
         
         # Обработка пустого ввода (по умолчанию 2)
         if [[ -z "$choice" ]]; then
@@ -209,7 +208,6 @@ ask_user_for_port() {
 }
 
 # Проверка занятости порта
-# НЕ МОЖЕТ БЫТЬ КОРРЕКТНО ПРОТЕСТИРОВАН
 is_port_in_use() {
     local port="${1:-}"
     
@@ -446,7 +444,7 @@ run() {
 check() {
     log_info "Текущие активные SSH порты: $(_get_active_ssh_ports)"
     log_info "Основной конфиг файл: $SSH_CONFIG_FILE"
-    log_info "Список файлов по маске: $(_get_files_paths_by_mask "$SSH_CONFIGD_DIR" "$SSH_CONFIG_FILE_MASK")"
+    log_info "Список правил: $(_get_files_paths_by_mask "$SSH_CONFIGD_DIR" "$SSH_CONFIG_FILE_MASK")"
     ask_user_reset_or_change
 }
 

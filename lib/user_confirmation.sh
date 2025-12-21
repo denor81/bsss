@@ -3,20 +3,25 @@
 # Выбор полльзователем параметра
 # Использование: source "/lib/user_confirmation.sh"
 
+set -Eeuo pipefail
+
 _ask_user_confirmation() {
     local question=$1
     local default=$2
-    local allowed=$3
+    local pattern=$3
+    local hint=$4
 
     while true; do
-        read -p "$QUESTION_PREFIX $question [$allowed]: " -r choice
+        read -p "$QUESTION_PREFIX $question [$hint]: " -r choice
+
         choice=${choice:-$default}
         
-        if [[ ${choice,,} =~ ^[$allowed]$ ]]; then
-            echo "${choice,,}"
+        if [[ "${choice,,}" =~ ^$pattern$ ]]; then
+            echo "$choice"
             break
         fi
         
-        log_error "Некорректный выбор. Доступные символы [$allowed]"
+        log_error "Некорректный выбор. Доступные символы по паттерну [$pattern]"
     done
 }
+

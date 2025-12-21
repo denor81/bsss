@@ -30,7 +30,7 @@ check_config_ports() {
     if [[ -n "$config_ports" ]]; then
         log_info "Активные SSH настройки в /etc/ssh: ${config_ports}"
     else
-        log_info "Нет активных настроек [Port] в файле $SSH_CONFIG_FILE и в директории $SSH_CONFIGD_DIR";
+        log_info "Нет активных настроек [Port] [$SSH_CONFIG_FILE и ${SSH_CONFIGD_DIR}/]"
     fi
 }
 
@@ -48,7 +48,7 @@ check_bsss_configs() {
     if (( ${#paths_with_ports[@]} > 0 )); then
         log_success "Найден конфиг файл [${UTIL_NAME^^}]: $(printf '%s ' "${paths_with_ports[@]//$'\t'/ }")"
     else
-        log_info "Нет активных настроек [${UTIL_NAME^^}]"
+        log_info "Нет активных настроек [${UTIL_NAME^^}] [${SSH_CONFIGD_DIR}/]"
     fi
 }
 
