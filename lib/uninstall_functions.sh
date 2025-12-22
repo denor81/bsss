@@ -6,17 +6,6 @@
 source "${MAIN_DIR_PATH}/lib/user_confirmation.sh"
 UNINSTALL_FILE_PATH=$MAIN_DIR_PATH/$UNINSTALL_PATHS
 
-user_choice() {
-    # Запрашиваем подтверждение у пользователя
-    local user_choice=""
-    user_choice=$(_ask_user_confirmation "Подтверждаете удаление?" "n" "[yn]" "y/N" )
-    
-    if [[ "$user_choice" == "n" ]]; then
-        log_info "Выход по запросу пользователя"
-        exit 0
-    fi
-}
-
 check_uninstall_file() {
     # Проверяем наличие файла с путями для удаления
     if [[ ! -f "$UNINSTALL_FILE_PATH" ]]; then
@@ -44,12 +33,10 @@ do_uninstall() {
 
 
 _run_uninstall() {
-    user_choice
+    _confirm_action "Удалить ${UTIL_NAME^^}?" "Удаление отменено пользователем" "N" || return "$?"
     check_uninstall_file
     
     log_info "Начинаю удаление установленных файлов..."
     do_uninstall
     log_success "Удаление завершено успешно"
-
-    return 0
 }

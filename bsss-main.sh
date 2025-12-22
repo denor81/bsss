@@ -18,7 +18,7 @@ _get_all_modules_with_types() {
     local raw_paths=""
     local -a available_paths=()
 
-    raw_paths=$(_get_files_paths_by_mask "${MAIN_DIR_PATH}/modules" "$MODULES_MASK") || return 1
+    raw_paths=$(_get_paths_by_mask "${MAIN_DIR_PATH}/modules" "$MODULES_MASK") || return 1
 
     if [[ -n "$raw_paths" ]]; then
         mapfile -t available_paths < <(printf '%s' "$raw_paths")
@@ -91,21 +91,11 @@ run_modules_polling() {
     fi
 }
 
-user_choice() {
-    # Запрашиваем подтверждение у пользователя
-    local user_choice=""
-    user_choice=$(_ask_user_confirmation "Запустить модули последовательно?" "y" "[yn]" "Y/n" )
-    
-    if [[ "$user_choice" == "n" ]]; then
-        log_info "Выход по запросу пользователя"
-        exit 0
-    fi
-}
-
 # Запускает change-модули с параметром -r
 run_modules_modifying() {
     local modify_modules=""
     local m_path=""
+    local m_name=""
 
     modify_modules=$(_get_modules_by_type "$MODULE_TYPE_MODIFY") || return 1
     
@@ -116,14 +106,17 @@ run_modules_modifying() {
         while IFS= read -r m_path <&3; do
 
             [[ -z "$m_path" ]] && continue
+            m_name=$(basename "$m_path")
 
-            log_info "Запуск $(basename "$m_path")"
+            _confirm_action "Запустить модуль $m_name?" "Запуск отменен" "Y" || return "$?"
+
+            log_info "Запуск $m_name"
 
             # Запускаем модуль напрямую, интерактивные запросы пойдут через /dev/tty
             if bash "$m_path"; then
-                log_success "$(basename "$m_path") выполнен успешно"
+                log_success "$m_name выполнен успешно"
             else
-                log_error "Ошибка при выполнении $(basename "$m_path")"
+                log_error "Ошибка при выполнении $m_name"
                 return 1
             fi
         # IMPORTANT COMMENT
@@ -145,7 +138,7 @@ run_modules_modifying() {
 # Основная функция
 main() {
     run_modules_polling
-    user_choice
+    _confirm_action "Запустить настройку?" "Запуск отменен" "Y" || return "$?"
     run_modules_modifying
 }
 

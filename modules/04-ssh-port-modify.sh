@@ -9,151 +9,88 @@ readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
 source "${MODULES_DIR_PATH}/../lib/vars.conf"
 source "${MODULES_DIR_PATH}/../lib/logging.sh"
-source "${MODULES_DIR_PATH}/../user_confirmation.sh"
+source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
-# Вспомогательная функция для извлечения портов из файла конфигурации
-_extract_ports_from_file() {
-    local config_file="$1"
-    local -a found_ports=()
-    
-    if [[ ! -f "$config_file" ]]; then
-        return 0
-    fi
-    
-    # Ищем строки Port или ListenPort (с большой буквой!)
-    # Игнорируем закомментированные строки
-    while IFS= read -r line; do
-        port=$(echo "$line" | awk '{print $2}')
-        if [[ "$port" =~ ^[0-9]+$ ]]; then
-            found_ports+=("$port")
-        fi
-    done < <(grep -E "^[[:space:]]*(Port|ListenPort)[[:space:]]+" "$config_file" 2>/dev/null | \
-             grep -v "^[[:space:]]*#")
-    
-    # Выводим найденные порты
-    if [[ ${#found_ports[@]} -gt 0 ]]; then
-        printf "%s\n" "${found_ports[@]}"
-    fi
-}
+_dispatch_logic() {
+    local raw_paths
 
-# Функция для сбора портов из конфигурационных файлов SSH
-get_ssh_config_ports() {
-    local main_config="${1:-/etc/ssh/sshd_config}"
-    local config_dir="${2:-/etc/ssh/sshd_config.d}"
-    local -a found_ports=()
-    local ports_from_file
-    
-    # Обрабатываем основной конфиг
-    ports_from_file=$(_extract_ports_from_file "$main_config")
-    if [[ -n "$ports_from_file" ]]; then
-        while IFS= read -r port; do
-            found_ports+=("$port")
-        done <<< "$ports_from_file"
-    fi
-    
-    # Обрабатываем файлы из директории sshd_config.d/
-    if [[ -d "$config_dir" ]]; then
-        # ПРАВИЛЬНОЕ раскрытие glob - используем цикл для всех .conf файлов
-        for conf_file in "$config_dir"/*.conf; do
-            # Проверяем существование (glob может не найти файлы)
-            if [[ -f "$conf_file" ]]; then
-                ports_from_file=$(_extract_ports_from_file "$conf_file")
-                if [[ -n "$ports_from_file" ]]; then
-                    while IFS= read -r port; do
-                        found_ports+=("$port")
-                    done <<< "$ports_from_file"
-                fi
-            fi
-        done
-    fi
-    
-    # Выводим уникальные порты
-    if [[ ${#found_ports[@]} -gt 0 ]]; then
-        printf "%s\n" "${found_ports[@]}" | sort -un
+    raw_paths=$(_get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")
+
+    if [[ -z "$raw_paths" ]]; then
+        _branch_bsss_not_exists
     else
-        log_info "Порты не найдены в файлах конфигурации"
-        log_info "Это значит, что используется дефолтный порт 22"
-        return 1
+        _branch_bsss_exists "$raw_paths"
     fi
 }
 
-# ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПРОВЕРКИ КОНФИГУРАЦИИ ==========
-
-# ADAPTATED FOR TESTS: 14/12/24
-# Проверяет наличие конфигурационных файлов SSH
-check_ssh_config_exists() {
-    # Параметризация для тестирования
-    local config_dir="${1:-$SSH_CONFIG_DIR}"
-    local config_mask="${2:-$SSH_CONFIG_FILE_MASK}"
-    local found_files
-    
-    # Ищем файлы по маске
-    found_files=$(find "$config_dir" -type f -iname "$config_mask" 2>/dev/null)
-    
-    if [[ -z "$found_files" ]]; then
-        return 1  # Файлы не найдены
-    else
-        log_info_simple_tab "Найден(ы) конфиг(и)"
-        for file in $found_files; do
-            log_info_simple_tab "$file [$(grep -iE '^port' "$file")]"
-        done
-        return 0  # Файлы найдены
-    fi
+_branch_bsss_not_exists() {
+    log_info "_branch_bsss_not_exists"
 }
 
-# Предлагает пользователю выбор между сбросом и изменением порта
-ask_user_reset_or_change() {
-    local symbol_question="${2:-$SYMBOL_QUESTION}"         # Символ вопроса
-    local module_name="${3:-${CURRENT_MODULE_NAME:-04-ssh-port}}"  # Имя модуля
-    
-    local choice=""
-    local valid_choice=false
-    
-    while [[ "$valid_choice" == "false" ]]; do
-        # Получаем данные из указанного источника ввода
-        # В теории может быть несколько файлов BSSS, на практике же один файл
-        log_info_simple_tab "1. По умолчанию - означает удаление конфиг файлов BSSS для SSH порта
-            (другие настройки не трогаются) - будет задействован стандартный порт 22
-            или другой порт, если присутствуют другие настройки в /etc/ssh/ директории."
-        log_info_simple_tab "2. Переустановить порт - означает, что будут удалены конфиг файл(ы) BSSS для SSH
-            и создан новый файл с новым указанным портом - он и будет действовать."
-        read -p "$symbol_question [$module_name] Введите 1 или 2: " -r choice
-        
-        # Обработка пустого ввода (по умолчанию 2)
-        if [[ -z "$choice" ]]; then
-            choice="2"
-        fi
-        
-        # Проверка корректности ввода
-        if [[ "$choice" == "1" ]]; then
-            echo "reset"
-            valid_choice=true
-        elif [[ "$choice" == "2" ]]; then
-            echo "change"
-            valid_choice=true
-        else
-            log_error "Некорректный выбор. Введите 1 или 2"
-        fi
+_branch_bsss_exists() {
+    local raw_paths="$1"
+    local user_action
+    local -a paths=()
+
+    mapfile -t paths < <(printf '%s' "$raw_paths")
+
+    log_info "Найдена конфигурация ${UTIL_NAME^^}:"
+
+    for path in "${paths[@]}"; do
+        log_info_simple_tab "Путь: $path"
     done
+
+    log_info_simple_tab "1. Сброс (удаление файлов BSSS, возврат к порту по умолчанию)"
+    log_info_simple_tab "2. Переустановка (замена на новый порт)"
+
+    user_action=$(_ask_value "Выберите" "" "^[12]$" "1/2") || return "$?"
+
+    case "$user_action" in
+        1) _action_restore_default "$raw_paths" ;;
+        2) _action_reinstall_port "$raw_paths" ;;
+    esac
 }
+
+_action_restore_default() {
+    local raw_paths="$1"
+
+    _delete_paths "$raw_paths"
+    restart_services
+    check_active_ports
+    check_config_ports
+    check_bsss_configs
+}
+
+_action_reinstall_port() {
+    local raw_paths="$1"
+    local new_port
+
+    new_port=$(_ask_value "Введите новый порт" "" "^[0-9]+$" "1-65535")
+}
+
+restart_services() {
+    systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
+    systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
+}
+
+
+
+
+
+
+
+
+
+
+
 
 # Выполняет сброс настроек SSH к значениям по умолчанию
 restore_default() {
-    # log_info "Сбрасываю настройки SSH к значениям по умолчанию..."
-    
-    # Шаг 1: Удаляем старые конфигурационные файлы
     remove_old_ssh_config_files
-    
-    # Шаг 2: Перезапускаем SSH сервис
-    restart_ssh_service
-    
-    # Шаг 3: Проверяем результат изменений
+    restart_services
     check 1
-    
-    # log_success "Настройки SSH успешно сброшены к значениям по умолчанию (порт 22)"
-    return 0
 }
 
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СМЕНЫ ПОРТА ==========
@@ -286,16 +223,7 @@ EOF
 }
 
 # Перезапуск SSH сервиса
-restart_ssh_service() {
-    log_info "Перезагружаю конфигурацию [systemctl daemon-reload]"
-    systemctl daemon-reload
-    
-    log_info "Перезапускаю SSH сервис [systemctl restart ssh]"
-    systemctl restart ssh
-    
-    # log_success "SSH сервис успешно перезапущен"
-    return 0
-}
+
 
 # ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПРОВЕРКИ ПОРТОВ ==========
 
@@ -431,7 +359,7 @@ run() {
     create_new_ssh_config_file "$new_port"
     
     # Шаг 7: Перезапускаем SSH сервис
-    restart_ssh_service
+    restart_services
     
     # Шаг 8: Проверяем результат изменений
     check 1
@@ -440,24 +368,19 @@ run() {
     return 0
 }
 
-run_confirm() {
-    local user_choice=""
-    user_choice=$(_ask_user_confirmation "Запустить модуль ${CURRENT_MODULE_NAME}?" "y" "[yn]" "Y/n" )
-}
-
 run_modify() {
-
+    run_confirm
 }
 
 check() {
     log_info "Текущие активные SSH порты: $(_get_active_ssh_ports)"
     log_info "Основной конфиг файл: $SSH_CONFIG_FILE"
-    log_info "Список правил: $(_get_files_paths_by_mask "$SSH_CONFIGD_DIR" "$SSH_CONFIG_FILE_MASK")"
+    log_info "Список правил: $(_get_paths_by_mask "$SSH_CONFIGD_DIR" "$SSH_CONFIG_FILE_MASK")"
     ask_user_reset_or_change
 }
 
 main() {
-    run_modify
+    _dispatch_logic
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
