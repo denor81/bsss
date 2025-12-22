@@ -3,15 +3,13 @@
 # Библиотека функций для удаления установленных файлов и директорий
 # Использование: source "${MAIN_DIR_PATH}/lib/uninstall_functions.sh"
 
-set -Eeuo pipefail
-
 source "${MAIN_DIR_PATH}/lib/user_confirmation.sh"
 UNINSTALL_FILE_PATH=$MAIN_DIR_PATH/$UNINSTALL_PATHS
 
 user_choice() {
     # Запрашиваем подтверждение у пользователя
-    local user_choice
-    user_choice=$(_ask_user_confirmation "Подтверждаете удаление?" "n" "yn" )
+    local user_choice=""
+    user_choice=$(_ask_user_confirmation "Подтверждаете удаление?" "n" "[yn]" "y/N" )
     
     if [[ "$user_choice" == "n" ]]; then
         log_info "Выход по запросу пользователя"
@@ -28,6 +26,7 @@ check_uninstall_file() {
 }
 
 do_uninstall() {
+    local path=""
     # Читаем файл построчно и удаляем каждый путь
     while IFS= read -r path; do
         # Проверяем существование пути или символической ссылки перед удалением

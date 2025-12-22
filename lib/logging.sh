@@ -6,7 +6,7 @@
 # Символы для обозначения статуса сообщений
 # shellcheck disable=SC2034
 readonly SYMBOL_SUCCESS="[V]"
-readonly SYMBOL_QUESTION="[?]" # Используется в read (read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] Ваш выбор (Y/n/c): " -r)
+readonly SYMBOL_QUESTION="[?]" # Используется в lib/user_confirmation.sh
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_ERROR="[X]"
 

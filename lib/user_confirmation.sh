@@ -3,8 +3,6 @@
 # Выбор полльзователем параметра
 # Использование: source "/lib/user_confirmation.sh"
 
-set -Eeuo pipefail
-
 _ask_user_confirmation() {
     local question=$1
     local default=$2
