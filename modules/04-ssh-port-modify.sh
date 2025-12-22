@@ -59,8 +59,8 @@ _action_restore_default() {
     _delete_paths "$raw_paths"
     restart_services
     check_active_ports
-    check_config_ports
-    check_bsss_configs
+    check_config_ports "$SSH_CONFIG_FILE" "$SSH_CONFIG_FILE_MASK" "SSH"
+    check_config_ports "" "$BSSS_SSH_CONFIG_FILE_MASK" "$UTIL_NAME"
 }
 
 _action_reinstall_port() {

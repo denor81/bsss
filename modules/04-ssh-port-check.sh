@@ -14,8 +14,8 @@ source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
 check() {
     check_active_ports
-    check_config_ports
-    check_bsss_configs
+    check_config_ports "$SSH_CONFIG_FILE" "$SSH_CONFIG_FILE_MASK" "SSH"
+    check_config_ports "" "$BSSS_SSH_CONFIG_FILE_MASK" "$UTIL_NAME"
 }
 
 

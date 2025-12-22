@@ -51,30 +51,6 @@ _get_paths_and_port() {
     fi
 }
 
-# Получаю все конфиг порты из конфигураций /etc/ssh/...
-# Вернет: 22,888 or none
-_get_config_ports() {
-    local additional_path="${1:-}"
-    local mask="$2"
-    local raw_data=""
-    local -a ports=()
-
-    raw_data=$(_get_paths_and_port "$additional_path" "$mask") || return 1
-
-    if [[ -n "$raw_data" ]]; then
-        local ports_list=""
-
-        ports_list=$(printf '%s\n' "$raw_data" | awk '{ print $2 }' | sort -u) || return 1
-        
-        mapfile -t ports < <(printf '%s' "$ports_list")
-    fi
-
-    if (( ${#ports[@]} > 0 )); then
-        (local IFS=","; echo "${ports[*]}")
-    fi
-}
-
-
 check_active_ports() {
     local active_ports=""
 
@@ -84,14 +60,22 @@ check_active_ports() {
 }
 
 # Ищем все порты в файлах конфигурации /etc/ssh...
+# Возврат:
+# [ ] [04-ssh-port-check.sh] Активные SSH правила: 40
+# [ ] ---- /etc/ssh/sshd_config.d/40-bsss-ssh-port.conf 40
+
 check_config_ports() {
+    local additional_path="${1:-}"
+    local mask="$2"
+    local mask_name="$3"
+
     local raw_paths=""
     local ports_list
     local -a paths_with_ports=()
     local path_w_port
 
     # ожидаем получить список портов из каталога настроек SSH, если пусто, то портов нет, но скрипт может быть продолжен
-    raw_paths=$(_get_paths_and_port "$SSH_CONFIG_FILE" "$SSH_CONFIG_FILE_MASK") || return 1
+    raw_paths=$(_get_paths_and_port "$additional_path" "$mask") || return 1
     mapfile -t paths_with_ports < <(printf '%s' "${raw_paths//$'\t'/ }") # Заменяю \t на пробел
 
     if (( "${#paths_with_ports[@]}" > 0 )); then
@@ -99,30 +83,12 @@ check_config_ports() {
         # Берем только порты поссле \t в каждой строке
         ports_list=$(echo "$raw_paths" | cut -f2 | sort -u | paste -sd, -)
 
-        log_info "Активные SSH правила в /etc/ssh: $ports_list"
+        log_info "Активные ${mask_name^^} правила: $ports_list"
 
         for path_w_port in "${paths_with_ports[@]}"; do
             log_info_simple_tab "$path_w_port"
         done
     else
-        log_info "Нет активных правил SSH портов [$SSH_CONFIG_FILE и ${SSH_CONFIGD_DIR}/]"
-    fi
-}
-ПОДУМАТЬ НУЖНА ЛИ ЭТА ФУНКЦИЯ ИЛИ ОБЪЕДЕНИТЬ ЕЕ С check_config_ports
-# Есть ли уже конфигурация bsss?
-check_bsss_configs() {
-    local raw_paths=""
-    local -a paths_with_ports=()
-
-    raw_paths=$(_get_paths_and_port "" "$BSSS_SSH_CONFIG_FILE_MASK") || return 1
-
-    if [[ -n "$raw_paths" ]]; then
-        mapfile -t paths_with_ports < <(printf '%s' "$raw_paths")
-    fi
-    
-    if (( ${#paths_with_ports[@]} > 0 )); then
-        log_success "Найдено активное правило [${UTIL_NAME^^}]: $(printf '%s ' "${paths_with_ports[@]//$'\t'/ }")"
-    else
-        log_info "Нет активных правил [${UTIL_NAME^^}] [${SSH_CONFIGD_DIR}/]"
+        log_info "Нет активных правил ${mask_name^^} портов"
     fi
 }
