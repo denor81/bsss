@@ -59,15 +59,15 @@ _action_restore_default() {
     _delete_paths "$raw_paths"
     restart_services
     check_active_ports
-    check_config_ports "$SSH_CONFIG_FILE" "$SSH_CONFIG_FILE_MASK" "SSH"
-    check_config_ports "" "$BSSS_SSH_CONFIG_FILE_MASK" "$UTIL_NAME"
+    check_config_ports "$SSH_CONFIG_FILE" "$SSH_CONFIG_FILE_MASK" "SSH" # Проверка SSH портов во всех файлах
+    check_config_ports "" "$BSSS_SSH_CONFIG_FILE_MASK" "$UTIL_NAME" # Проверка BSSS правил
 }
 
 _action_reinstall_port() {
     local raw_paths="$1"
     local new_port
 
-    new_port=$(_ask_value "Введите новый порт" "" "^[0-9]+$" "1-65535")
+    new_port=$(_ask_value "Введите новый порт" "" "^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$" "1-65535")
 }
 
 restart_services() {
