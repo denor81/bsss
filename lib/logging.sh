@@ -32,5 +32,5 @@ log_info() {
 
 # Выводит информационное сообщение с символом [ ]
 log_info_simple_tab() {
-    echo -e "$SYMBOL_INFO ---- $1" >&2
+    echo -e "$SYMBOL_INFO    $1" >&2
 }
