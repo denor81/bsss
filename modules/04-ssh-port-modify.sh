@@ -54,6 +54,7 @@ _branch_bsss_exists() {
 }
 
 _actions_after_port_set() {
+    sleep 0.2
     restart_services
     check_active_ports
     # check_config_ports "$SSH_CONFIG_FILE" "$SSH_CONFIG_FILE_MASK" "SSH" # Проверка SSH портов во всех файлах
@@ -89,8 +90,16 @@ _action_install_port() {
 }
 
 restart_services() {
-    systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
-    systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
+    # systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
+    # systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
+    if sshd -t; then
+        # systemctl reload ssh && log_info "SSH сервис перезагружен [systemctl reload ssh]"
+        systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
+        systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
+    else
+        log_error "Ошибка конфигурации ssh [sshd -t]"
+        return 1
+    fi
 }
 
 _is_port_busy() {
