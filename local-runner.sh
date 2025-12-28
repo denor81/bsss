@@ -46,7 +46,7 @@ _show_help() {
 }
 
 _run_default() {
-    exec bash "$MAIN_DIR_PATH/$MAIN_FILE"
+    exec bash "${MAIN_DIR_PATH%/}/$MAIN_FILE"
 }
 
 # Основная функция
