@@ -2,6 +2,47 @@
 # MODULE_TYPE: helper
 # Использование: source "/modules/...sh"
 
+# @param dir    [optional] Directory to search in (default: current directory).
+# @param mask   [optional] Glob pattern (default: "*").
+# @stdout:      NUL-separated strings "path"
+_get_paths_by_mask() {
+    local dir=${1:-.}
+    local mask=${2:-*}
+
+    ( shopt -s nullglob; printf '%s\0' "${dir%/}"/$mask )
+}
+
+# @stdin:   NUL-separated paths
+# @stdout:  NUL-separated strings "path:type"
+_get_module_types () {
+    xargs -r0 awk -F ':[[:space:]]' '
+        BEGIN { IGNORECASE=1; ORS="\0" }
+        /^# MODULE_TYPE:/ {
+            print FILENAME ":" $2
+            nextfile  
+        }
+    '
+}
+
+
+
+
+
+
+_delete_paths() {
+    local raw_paths="$1"
+    local path
+    local -a paths=()
+
+    mapfile -t paths < <(printf '%s' "$raw_paths")
+
+    for path in "${paths[@]}"; do
+        if rm -rf "$path"; then
+            log_info "Удалено: $path"
+        fi
+    done
+}
+
 # Получение активных портов SSH из ss
 # Вернет: 22,888 or none
 _get_active_ssh_ports() {

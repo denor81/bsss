@@ -52,27 +52,28 @@ _get_all_modules_with_types() {
 }
 
 # Return: path{:}type{\0}
-_get_all_modules_with_types_updated () {
-    _get_paths_by_mask_updated "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
-    | xargs -r0 grep -HEi '(^|\s*)#\s*MODULE_TYPE:\s+' 2>/dev/null \
+_get_all_modules_with_types_pipe () {
+    xargs -r0 grep -HEi '(^|\s*)#\s*MODULE_TYPE:\s+' 2>/dev/null \
     | sed -E 's/:\s*#\s*MODULE_TYPE\s*:\s*/:/I' \
     | tr '\n' '\0'
 }
 
 _get_all_modules_with_types_awk () {
     xargs -r0 awk -F ':[[:space:]]' '
-        BEGIN { IGNORECASE=1 }
+        BEGIN { IGNORECASE=1; ORS="\0" }
         /^# MODULE_TYPE:/ {
             print FILENAME ":" $2
             nextfile  
         }
-    ' | tr '\n' '\0'
+    '
 }
 
 get_modules_w_types() {
     # _get_all_modules_with_types_updated "$SSH_CONFIGD_DIR" "$SSH_CONFIG_FILE_MASK"
     # _get_all_modules_with_types_updated
     _get_paths_by_mask_updated "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" | _get_all_modules_with_types_awk
+    echo
+    _get_paths_by_mask_updated "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" | _get_all_modules_with_types_pipe
 }
 
 get_modules_w_types

@@ -56,10 +56,6 @@ _get_modules_by_type() {
     fi
 }
 
-_draw_border() {
-    printf '%.0s#' {1..80}; echo
-}
-
 # Собирает экспресс-статус от всех модулей
 run_modules_polling() {
     local rc=0
