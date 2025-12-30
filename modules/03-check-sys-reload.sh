@@ -19,7 +19,7 @@ source "${MODULES_DIR_PATH}/../lib/logging.sh"
 # @exit_code:   0 — перезагрузка не требуется, 1 — необходима перезагрузка.
 check() {
     if [[ -f "$REBOOT_REQUIRED_FILE_PATH" ]]; then
-        log_error "Система нуждается в перезагрузке [$REBOOT_REQUIRED_FILE_PATH]"
+        log_error "Система нуждается в перезагрузке $REBOOT_REQUIRED_FILE_PATH"
         return 1
     else
         log_info "Перезагрузка не требуется"

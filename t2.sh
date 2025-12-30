@@ -26,11 +26,11 @@ get_paths_by_mask() {
 # @stdout:      NUL-separated strings "path:type"
 # @stderr:      Ничего.
 # @exit_code:   0 — всегда.
-get_modules_types () {
+get_modules_paths_w_type () {
     xargs -r0 awk -F ':[[:space:]]' '
         BEGIN { IGNORECASE=1; ORS="\0" }
         /^# MODULE_TYPE:/ {
-            print FILENAME ":" $2
+            print FILENAME "<:>" $2
             nextfile  
         }
     '
@@ -45,19 +45,10 @@ get_modules_types () {
 # @stderr:      Ничего.
 # @exit_code:   0 — всегда.
 get_modules_by_type () {
-    local type="check"
-    xargs -r0 echo "$@"
+    awk -v type="$1" -v RS='\0' -F'<:>' '
+        type == $2 { printf "%s\0", $1 }
+    '
 }
 
-#     xargs -r0 awk -v type="$type" -F ':' '
-#         BEGIN { IGNORECASE=1; ORS="\0" }
-#         {
-#             if (type == $2) {
-#                 print FILENAME
-#             }
-#         }
-#     '
-# }
 
-
-get_paths_by_mask "$MODULES_DIR" "$MODULES_MASK" | get_modules_types | get_modules_by_type
+get_paths_by_mask "$MODULES_DIR" "$MODULES_MASK" | get_modules_paths_w_type | get_modules_by_type "$MODULE_TYPE_CHECK"

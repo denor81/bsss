@@ -58,6 +58,22 @@ source "${MAIN_DIR_PATH}/modules/common-helpers.sh"
 
 
 run_modules_polling() {
+    local err=0
+    local found=0
+
+    draw_border
+    while read -r -d '' m_path; do
+        found=$((found + 1))
+        if ! bash "$m_path"; then
+            err=1
+        fi
+    done < <(get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
+    | get_modules_paths_w_type \
+    | get_modules_by_type "$MODULE_TYPE_CHECK")
+
+    (( found == 0 )) && { log_error "Запуск не возможен, Модули не найдены"; draw_border; return 1; }
+    (( err > 0 )) && { log_error "Запуск не возможен, один из модулей показывает ошибку"; draw_border; return 1; }
+    draw_border
     
 }
 
