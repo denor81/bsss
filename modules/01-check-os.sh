@@ -10,8 +10,13 @@ readonly CURRENT_MODULE_NAME="$(basename "$0")"
 source "${MODULES_DIR_PATH}/../lib/vars.conf"
 source "${MODULES_DIR_PATH}/../lib/logging.sh"
 
-# @stdin:   content of a file (stream)
-# @stdout:  string ID
+# @type:        Filter
+# @description: Получает строку ID текущей системы.
+# @params:      нет.
+# @stdin:       content of a file (stream)
+# @stdout:      string ID
+# @stderr:      Ничего.
+# @exit_code:   0 — всегда.
 _get_os_id() {
     awk -F= '
         $1=="ID" {
@@ -22,10 +27,11 @@ _get_os_id() {
     '
 }
 
-# @description: Проверяет совместимость текущей ОС с разрешенным списком.
+# @type:        Validator
+# @description: Проверяет совместимость текущей ОС с разрешенной.
 # @params:      Использует глобальные readonly OS_RELEASE_FILE_PATH и ALLOWED_SYS.
 # @stdin:       Не используется.
-# @stdout:      Ничего (чистая функция-валидатор).
+# @stdout:      Ничего.
 # @stderr:      Диагностические сообщения (log_info, log_error).
 # @exit_code:   0 — система поддерживается, 1 — ошибка валидации или файл не найден.
 check() {
@@ -44,20 +50,6 @@ check() {
 
     log_info "Система ${id^} поддерживается"
 }
-
-
-# check() {
-#     if [[ -f "$OS_RELEASE_FILE_PATH" ]]; then
-#         source "$OS_RELEASE_FILE_PATH"
-        
-#         if [[ "$ID" != "$ALLOWED_SYS" ]]; then
-#             log_error "Система ${ID^} не поддерживается"
-#             return 1
-#         else
-#             log_info "Система ${ID^} поддерживается"
-#         fi
-#     fi
-# }
 
 main() {
     check
