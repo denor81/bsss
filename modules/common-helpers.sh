@@ -63,12 +63,13 @@ get_modules_by_type () {
 # @exit_code:   0 — всегда.
 get_ssh_ports() {
     ss -Hltnp | awk '
+        BEGIN { ORS="\0" }
         /"sshd"/ {
-            match($4, /:[0-9]+$/, m);
-            port = substr(m[0], 2)
-            print port
+            if (match($4, /:[0-9]+$/, m)) {
+                print substr(m[0], 2)
+            }
         }
-    ' | sort -nu | tr '\n' '\0'
+    ' | sort -zu
 }
 
 # @type:        Validator
