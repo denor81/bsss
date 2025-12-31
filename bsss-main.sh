@@ -56,7 +56,15 @@ source "${MAIN_DIR_PATH}/modules/common-helpers.sh"
 #     fi
 # }
 
-
+# @type:        Orchestrator
+# @description: Управляет поиском и последовательным запуском модулей определенного типа.
+#               Агрегирует статусы выхода модулей и прерывает выполнение при ошибках.
+# @params:      Использует глобальные переменные окружения для путей и масок.
+# @stdin:       Не используется (функция сама инициирует поток данных внутри себя).
+# @stdout:      Ничего (только запуск внешних процессов).
+# @stderr:      Отрисовка границ (draw_border), логи ошибок и диагностика запуска модулей.
+# @exit_code:   0 — все модули найдены и успешно выполнены.
+#               1 — модули не найдены или хотя бы один модуль вернул ошибку.
 run_modules_polling() {
     local err=0
     local found=0
@@ -69,12 +77,19 @@ run_modules_polling() {
         fi
     done < <(get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
     | get_modules_paths_w_type \
-    | get_modules_by_type "$MODULE_TYPE_CHECK")
+    | get_modules_by_type "$MODULE_TYPE_CHECK") # Получаю пути модулей с типом  check
 
     (( found == 0 )) && { log_error "Запуск не возможен, Модули не найдены"; draw_border; return 1; }
     (( err > 0 )) && { log_error "Запуск не возможен, один из модулей показывает ошибку"; draw_border; return 1; }
     draw_border
-    
+}
+
+run_modules_modify() {
+    while read -r -d '' m_path; do
+        bash "$m_path" || return "$?"
+    done < <(get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
+    | get_modules_paths_w_type \
+    | get_modules_by_type "$MODULE_TYPE_MODIFY") # Получаю пути модулей с типом  modify
 }
 
 
@@ -156,8 +171,8 @@ run_modules_polling() {
 # Основная функция
 main() {
     run_modules_polling
-    # _confirm_action "Запустить настройку?" "Запуск отменен" "Y" || return "$?"
-    # run_modules_modifying
+    confirm_action "Запустить настройку?" || return "$?"
+    run_modules_modify
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован

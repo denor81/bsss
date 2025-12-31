@@ -7,26 +7,27 @@ set -Eeuo pipefail
 readonly MODULES_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
+# ОТЛАДКА
 source "${MODULES_DIR_PATH}/../lib/vars.conf"
 source "${MODULES_DIR_PATH}/../lib/logging.sh"
 source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
-source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
+# ОТЛАДКА
 
-_dispatch_logic() {
+dispatch_logic() {
     local raw_paths
 
-    raw_paths=$(_get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")
+    raw_paths=$(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | tr '\0' '\n' )
 
     if [[ -z "$raw_paths" ]]; then
-        _branch_bsss_not_exists
+        bsss_config_not_exists
     else
-        _branch_bsss_exists "$raw_paths"
+        bsss_config_exists "$raw_paths"
     fi
 }
 
-_branch_bsss_not_exists() {
-    _action_install_port "" "1"
+bsss_config_not_exists() {
+    action_install_port "" "1"
 }
 
 _branch_bsss_exists() {
@@ -49,7 +50,7 @@ _branch_bsss_exists() {
 
     case "$user_action" in
         1) _action_restore_default "$raw_paths" ;;
-        2) _action_install_port "$raw_paths" "" ;;
+        2) action_install_port "$raw_paths" "" ;;
     esac
 }
 
@@ -68,7 +69,7 @@ _action_restore_default() {
     _actions_after_port_set
 }
 
-_action_install_port() {
+action_install_port() {
     local raw_paths="${1:-}"
     local create_only="${2:-0}"
     local suggested_port
@@ -76,11 +77,11 @@ _action_install_port() {
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
     suggested_port=$(_get_free_random_port)
-    new_port=$(_ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return "$?"
+    new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return "$?"
 
     if _is_port_busy "$new_port"; then
         log_error "Порт $new_port уже занят другим сервисом."
-        _action_install_port "$raw_paths" ""
+        action_install_port "$raw_paths" ""
         return $?
     fi
 
@@ -139,7 +140,7 @@ EOF
 }
 
 main() {
-    _dispatch_logic
+    dispatch_logic
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
