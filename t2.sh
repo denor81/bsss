@@ -51,4 +51,4 @@ get_modules_by_type () {
 }
 
 
-get_paths_by_mask "$MODULES_DIR" "$MODULES_MASK" | get_modules_paths_w_type | get_modules_by_type "$MODULE_TYPE_CHECK"
+get_paths_by_mask "$MODULES_DIR" "$MODULES_MASK" | get_modules_paths_w_type | get_modules_by_type "$MODULE_TYPE_MODIFY"

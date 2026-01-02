@@ -70,12 +70,12 @@ run_modules_polling() {
     local found=0
 
     draw_border
-    while read -r -d '' m_path; do
+    while read -r -d '' m_path <&3; do
         found=$((found + 1))
         if ! bash "$m_path"; then
             err=1
         fi
-    done < <(get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
+    done 3< <(get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
     | get_modules_paths_w_type \
     | get_modules_by_type "$MODULE_TYPE_CHECK") # Получаю пути модулей с типом  check
 
@@ -93,9 +93,9 @@ run_modules_polling() {
 # @exit_code:   0 — все модули найдены и успешно выполнены.
 #               ? — проброс кода ошибки от модуля.
 run_modules_modify() {
-    while read -r -d '' m_path; do
+    while read -r -d '' m_path <&3; do
         bash "$m_path" || return "$?"
-    done < <(get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
+    done 3< <(get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
     | get_modules_paths_w_type \
     | get_modules_by_type "$MODULE_TYPE_MODIFY") # Получаю пути модулей с типом  modify
 }
@@ -178,9 +178,9 @@ run_modules_modify() {
 
 # Основная функция
 main() {
-    run_modules_polling
+    run_modules_polling || return "$?"
     confirm_action "Запустить настройку?" || return "$?"
-    run_modules_modify
+    run_modules_modify || return "$?"
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован

@@ -25,10 +25,31 @@ dispatch_logic() {
 }
 
 bsss_config_not_exists() {
-    action_install_port "" "1"
+    action_install_port "" "1" || return "$?"
 }
 
-_branch_bsss_exists() {
+action_install_port() {
+    local raw_paths="${1:-}"
+    local create_only="${2:-0}"
+    local suggested_port
+    local new_port
+    local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+
+    suggested_port=$(get_free_random_port) || return "$?"
+    new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return "$?"
+
+    if is_port_busy "$new_port"; then
+        log_error "Порт $new_port уже занят другим сервисом."
+        action_install_port "$raw_paths" "" || return "$?"
+        return "$?" # Возвращаю код если будет несколько итераций
+    fi
+
+    (( create_only == 0 )) && delete_paths "$raw_paths"
+    create_new_ssh_config_file "$new_port" || return "$?"
+    actions_after_port_set || return "$?"
+}
+
+branch_bsss_exists() {
     local raw_paths="$1"
     local user_action
     local -a paths=()
@@ -47,46 +68,27 @@ _branch_bsss_exists() {
     user_action=$(_ask_value "Выберите" "" "^[12]$" "1/2") || return "$?"
 
     case "$user_action" in
-        1) _action_restore_default "$raw_paths" ;;
+        1) action_restore_default "$raw_paths" ;;
         2) action_install_port "$raw_paths" "" ;;
     esac
 }
 
-_actions_after_port_set() {
-    sleep 0.2
+actions_after_port_set() {
+    # sleep 0.2
     restart_services
-    check_active_ports
+    validate_ssh_ports
     # check_config_ports "$SSH_CONFIG_FILE" "$SSH_CONFIG_FILE_MASK" "SSH" # Проверка SSH портов во всех файлах
     # check_config_ports "" "$BSSS_SSH_CONFIG_FILE_MASK" "$UTIL_NAME" # Проверка BSSS правил
 }
 
-_action_restore_default() {
+action_restore_default() {
     local raw_paths="$1"
 
-    _delete_paths "$raw_paths"
-    _actions_after_port_set
+    delete_paths "$raw_paths"
+    actions_after_port_set
 }
 
-action_install_port() {
-    local raw_paths="${1:-}"
-    local create_only="${2:-0}"
-    local suggested_port
-    local new_port
-    local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
-    suggested_port=$(_get_free_random_port)
-    new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return "$?"
-
-    if _is_port_busy "$new_port"; then
-        log_error "Порт $new_port уже занят другим сервисом."
-        action_install_port "$raw_paths" ""
-        return $?
-    fi
-
-    (( create_only == 0 )) && _delete_paths "$raw_paths"
-    create_new_ssh_config_file "$new_port"
-    _actions_after_port_set
-}
 
 restart_services() {
     if sshd -t; then
@@ -98,17 +100,17 @@ restart_services() {
     fi
 }
 
-_is_port_busy() {
-    ss -tln | grep -qE ":$1([[:space:]]|$)"
+is_port_busy() {
+    ss -ltn | grep -qE ":$1([[:space:]]|$)"
 }
 
-_get_free_random_port() {
+get_free_random_port() {
     local port
     while true; do
         port=$(shuf -i 10000-65535 -n 1)
-        if ! _is_port_busy "$port"; then
-            echo "$port"
-            return 0
+        if ! is_port_busy "$port"; then
+            printf '%s' "$port"
+            return 0 # для выхода из цикла
         fi
     done
 }
