@@ -13,7 +13,7 @@ source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
 check() {
-    validate_ssh_ports "1" || return $?
+    validate_ssh_ports "1"
 }
 
 

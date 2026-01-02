@@ -94,7 +94,7 @@ run_modules_polling() {
 #               ? — проброс кода ошибки от модуля.
 run_modules_modify() {
     while read -r -d '' m_path <&3; do
-        bash "$m_path" || return "$?"
+        bash "$m_path" || return
     done 3< <(get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
     | get_modules_paths_w_type \
     | get_modules_by_type "$MODULE_TYPE_MODIFY") # Получаю пути модулей с типом  modify
@@ -178,9 +178,9 @@ run_modules_modify() {
 
 # Основная функция
 main() {
-    run_modules_polling || return "$?"
-    confirm_action "Запустить настройку?" || return "$?"
-    run_modules_modify || return "$?"
+    run_modules_polling
+    confirm_action "Запустить настройку?"
+    run_modules_modify
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован

@@ -14,8 +14,8 @@ source "${MODULES_DIR_PATH}/common-helpers.sh"
 
 dispatch_logic() {
     local raw_paths
-
-    raw_paths=$(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | tr '\0' '\n' )
+избегать прорасывания данных с разделителем - перенос строки - переделать везде на разделитель \0
+    raw_paths=$(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" )
 
     if [[ -z "$raw_paths" ]]; then
         bsss_config_not_exists
@@ -25,7 +25,7 @@ dispatch_logic() {
 }
 
 bsss_config_not_exists() {
-    action_install_port "" "1" || return "$?"
+    action_install_port "" "1"
 }
 
 action_install_port() {
@@ -35,26 +35,27 @@ action_install_port() {
     local new_port
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
-    suggested_port=$(get_free_random_port) || return "$?"
-    new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return "$?"
+    suggested_port=$(get_free_random_port) || return
+    new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
 
     if is_port_busy "$new_port"; then
         log_error "Порт $new_port уже занят другим сервисом."
-        action_install_port "$raw_paths" "" || return "$?"
-        return "$?" # Возвращаю код если будет несколько итераций
+        action_install_port "$raw_paths" ""
+        return "$?" # Возвращаю код если будет несколько итераций рекурсии
     fi
 
     (( create_only == 0 )) && delete_paths "$raw_paths"
-    create_new_ssh_config_file "$new_port" || return "$?"
-    actions_after_port_set || return "$?"
+    create_new_ssh_config_file "$new_port"
+    actions_after_port_install
 }
 
-branch_bsss_exists() {
+bsss_config_exists() {
     local raw_paths="$1"
     local user_action
     local -a paths=()
 
     mapfile -t paths < <(printf '%s' "$raw_paths")
+    echo "${paths[@]@Q}"
 
     log_info "Найдены правила ${UTIL_NAME^^}:"
 
@@ -65,7 +66,7 @@ branch_bsss_exists() {
     log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
     log_info_simple_tab "2. Переустановка (замена на новый порт)"
 
-    user_action=$(_ask_value "Выберите" "" "^[12]$" "1/2") || return "$?"
+    user_action=$(ask_value "Выберите" "" "^[12]$" "1/2") || return
 
     case "$user_action" in
         1) action_restore_default "$raw_paths" ;;
@@ -73,7 +74,7 @@ branch_bsss_exists() {
     esac
 }
 
-actions_after_port_set() {
+actions_after_port_install() {
     # sleep 0.2
     restart_services
     validate_ssh_ports
@@ -85,10 +86,25 @@ action_restore_default() {
     local raw_paths="$1"
 
     delete_paths "$raw_paths"
-    actions_after_port_set
+    actions_after_port_install
 }
 
+переписать удаление фалов с проверкой пути, что бы логировать ошибки путей или
+создать функцию проверки путей, что бы избегать
+[ ] [04-ssh-port-modify.sh] Удалено: /etc/ssh/sshd_config.d/40-bsss-ssh-port.conf/etc/ssh/sshd_config.d/50-bsss-ssh-port.conf
+delete_paths() {
+    local raw_paths="$1"
+    local path
+    local -a paths=()
 
+    mapfile -t paths < <(printf '%s' "$raw_paths")
+
+    for path in "${paths[@]}"; do
+        if rm -rf "$path"; then
+            log_info "Удалено: $path"
+        fi
+    done
+}
 
 restart_services() {
     if sshd -t; then

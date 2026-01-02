@@ -32,8 +32,8 @@ do_uninstall() {
 }
 
 
-_run_uninstall() {
-    _confirm_action "Удалить ${UTIL_NAME^^}?" "Удаление отменено пользователем" "N" || return "$?"
+run_uninstall() {
+    confirm_action "Удалить ${UTIL_NAME^^}?"
     check_uninstall_file
     
     log_info "Начинаю удаление установленных файлов..."
