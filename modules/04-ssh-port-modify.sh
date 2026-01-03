@@ -42,7 +42,7 @@ dispatch_logic() {
 # @stderr:      Зависит от вызываемой функции action_install_port.
 # @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
 bsss_config_not_exists() {
-    action_install_port "1"
+    action_install_port
 }
 
 # @type:        Action
@@ -56,25 +56,19 @@ bsss_config_not_exists() {
 # @stderr:      Логи процесса и сообщения об ошибках.
 # @exit_code:   0 — порт успешно установлен; 1+ — ошибка в процессе.
 action_install_port() {
-    local create_only="${1:-0}"
-    shift
-    local paths=("$@")
-
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
     local suggested_port
     suggested_port=$(get_free_random_port) || return
 
     local new_port
-    new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
-
-    if is_port_busy "$new_port"; then
+    while true; do
+        new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
+        is_port_busy "$new_port" || break
         log_error "Порт $new_port уже занят другим сервисом."
-        action_install_port "" "${paths[@]}"
-        return # Возвращаю код если будет несколько итераций рекурсии
-    fi
+    done
 
-    (( create_only == 0 )) && delete_paths "${paths[@]}"
+    printf '%s\0' "$@" | delete_paths # всегда удаляем старый(ые) файл настройки
     create_new_ssh_config_file "$new_port"
     actions_after_port_install
 }
@@ -88,11 +82,11 @@ action_install_port() {
 # @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
 show_bsss_configs() {
     log_info "Найдены правила ${UTIL_NAME^^}:"
-    local path
-    for path in "$@"; do
-        local port
+
+    printf '%s\0' "$@" \
+    | while IFS= read -r -d '' path; do
         port=$(printf '%s' "$path" | get_ssh_port_from_path)
-        log_info_simple_tab "$(path_and_port_template $path $port)"
+        log_info_simple_tab "$(path_and_port_template "$path" "$port")"
     done
 }
 
@@ -114,7 +108,7 @@ bsss_config_exists() {
 
     case "$user_action" in
         1) action_restore_default "$@" ;;
-        2) action_install_port "" "$@" ;;
+        2) action_install_port "$@" ;;
     esac
 }
 
@@ -138,23 +132,22 @@ actions_after_port_install() {
 # @stderr:      Зависит от вызываемых функций.
 # @exit_code:   0 — настройки успешно сброшены; 1+ — ошибка в процессе.
 action_restore_default() {
-    delete_paths "$@"
+    printf '%s\0' "$@" | delete_paths
     actions_after_port_install
 }
 
+# UPDATE
 # @type:        Action
 # @description: Удаляет указанные файлы и директории.
 # @params:      Список путей к файлам/директориям для удаления.
-# @stdin:       Не используется.
+# @stdin:       NUL-separated paths
 # @stdout:      Логи процесса удаления.
 # @stderr:      Ошибки удаления (если возникнут).
 # @exit_code:   Всегда 0 (ошибки не прерывают выполнение).
 delete_paths() {
-    local path
-    for path in "$@"; do
-        if rm -rf "$path"; then
-            log_info "Удалено: $path"
-        fi
+    xargs -r0 rm -rfv \
+    | while IFS= read -r line; do
+        [[ -n "$line" ]] && log_info "$line"
     done
 }
 
@@ -194,14 +187,13 @@ is_port_busy() {
 # @stderr:      Не используется.
 # @exit_code:   0 — порт успешно сгенерирован; 1+ — ошибка (теоретически невозможна).
 get_free_random_port() {
-    local port
-    while true; do
-        port=$(shuf -i 10000-65535 -n 1)
+    local i=0
+    while IFS= read -r port; do
         if ! is_port_busy "$port"; then
             printf '%s' "$port"
-            return # для выхода из цикла
+            return
         fi
-    done
+    done < <(shuf -i 10000-65535)
 }
 
 # @type:        Creator

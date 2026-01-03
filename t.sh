@@ -1,79 +1,159 @@
 #!/usr/bin/env bash
+# Изменяет SSH порт
+# MODULE_TYPE: modify
 
-source "./lib/vars.conf"
-readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+set -Eeuo pipefail
 
+readonly MODULES_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-_get_paths_by_mask() {
-    local dir="$1"
-    local mask="$2"
+source "${MODULES_DIR_PATH}/../lib/vars.conf"
+source "${MODULES_DIR_PATH}/../lib/logging.sh"
+source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
+source "${MODULES_DIR_PATH}/common-helpers.sh"
 
-    local -a paths
+dispatch_logic() {
+    local paths=()
+    mapfile -t -d '' paths < <(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")
 
-    [[ ! -d "$dir" ]] && { log_error "Директория $dir не найдена"; return 1; }
-
-    # Собираем файлы в массив (Bash сам их отсортирует)
-    shopt -s nullglob
-
-    # Важно: переменная $mask НЕ должна быть в кавычках здесь, 
-    # чтобы Bash мог её развернуть в список файлов.
-    paths=("${dir%/}/"$mask)
-    shopt -u nullglob
-
-    if (( ${#paths[@]} > 0 )); then
-        printf '%s\n' "${paths[@]}"
-    fi
-}
-
-# Return: path{\0}
-_get_paths_by_mask_updated() {
-    local dir=${1:-.}
-    local mask=${2:-*}
-
-    ( shopt -s nullglob; printf '%s\0' "${dir%/}"/$mask )
-}
-
-_get_all_modules_with_types() {
-    local raw_paths=""
-    local -a available_paths=()
-
-    raw_paths=$(_get_paths_by_mask_updated "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK") || return 1
-
-    if [[ -n "$raw_paths" ]]; then
-        mapfile -t available_paths < <(printf '%s' "$raw_paths")
-    fi
-
-    if (( ${#available_paths[@]} == 0 )); then
-        log_error "Модули не найдены, выполнение скрипта не возможно"
-        return 1
+    if (( ${#paths[@]} == 0 )); then
+        # Сценарий A: Конфигурация не найдена
+        bsss_config_not_exists
     else
-        awk -F': ' 'BEGIN { OFS="\t" } /^# MODULE_TYPE:/ { print FILENAME, $2; nextfile }' "${available_paths[@]}"
+        # Сценарий B: Конфигурация найдена, передаем список файлов аргументами
+        bsss_config_exists "${paths[@]}"
     fi
 }
 
-# Return: path{:}type{\0}
-_get_all_modules_with_types_pipe () {
-    xargs -r0 grep -HEi '(^|\s*)#\s*MODULE_TYPE:\s+' 2>/dev/null \
-    | sed -E 's/:\s*#\s*MODULE_TYPE\s*:\s*/:/I' \
-    | tr '\n' '\0'
+bsss_config_not_exists() {
+    action_install_port "1"
 }
 
-_get_all_modules_with_types_awk () {
-    xargs -r0 awk -F ':[[:space:]]' '
-        BEGIN { IGNORECASE=1; ORS="\0" }
-        /^# MODULE_TYPE:/ {
-            print FILENAME ":" $2
-            nextfile  
-        }
-    '
+action_install_port() {
+    local create_only="${1:-0}"
+    shift
+    local paths=("$@")
+
+    local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+
+    local suggested_port
+    suggested_port=$(get_free_random_port) || return
+
+    local new_port
+    new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
+
+    if is_port_busy "$new_port"; then
+        log_error "Порт $new_port уже занят другим сервисом."
+        action_install_port "" "${paths[@]}"
+        return # Возвращаю код если будет несколько итераций рекурсии
+    fi
+
+    (( create_only == 0 )) && delete_paths "${paths[@]}"
+    create_new_ssh_config_file "$new_port"
+    actions_after_port_install
 }
 
-get_modules_w_types() {
-    # _get_all_modules_with_types_updated "$SSH_CONFIGD_DIR" "$SSH_CONFIG_FILE_MASK"
-    # _get_all_modules_with_types_updated
-    _get_paths_by_mask_updated "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" | _get_all_modules_with_types_awk
-    echo
-    _get_paths_by_mask_updated "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" | _get_all_modules_with_types_pipe
+show_bsss_configs() {
+    log_info "Найдены правила ${UTIL_NAME^^}:"
+    local path
+    for path in "$@"; do
+        local port
+        port=$(printf '%s' "$path" | get_ssh_port_from_path)
+        log_info_simple_tab "$(path_and_port_template $path $port)"
+    done
 }
 
-get_modules_w_types
+bsss_config_exists() {
+    show_bsss_configs "$@"
+
+    log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
+    log_info_simple_tab "2. Переустановка (замена на новый порт)"
+
+    local user_action
+    user_action=$(ask_value "Выберите" "" "^[12]$" "1/2") || return
+
+    case "$user_action" in
+        1) action_restore_default "$@" ;;
+        2) action_install_port "" "$@" ;;
+    esac
+}
+
+actions_after_port_install() {
+    restart_services
+    validate_ssh_ports
+}
+
+action_restore_default() {
+    delete_paths "$@"
+    actions_after_port_install
+}
+
+delete_paths() {
+    local path
+    for path in "$@"; do
+        if rm -rf "$path"; then
+            log_info "Удалено: $path"
+        fi
+    done
+}
+
+restart_services() {
+    if sshd -t; then
+        systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
+        systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
+    else
+        log_error "Ошибка конфигурации ssh [sshd -t]"
+        return 1
+    fi
+}
+
+is_port_busy() {
+    ss -ltn | grep -qE ":$1([[:space:]]|$)"
+}
+
+get_free_random_port() {
+    local port
+    while true; do
+        port=$(shuf -i 10000-65535 -n 1)
+        if ! is_port_busy "$port"; then
+            printf '%s' "$port"
+            return # для выхода из цикла
+        fi
+    done
+}
+
+create_new_ssh_config_file() {
+    local port="$1"
+    local path="${SSH_CONFIGD_DIR%/}/$BSSS_SSH_CONFIG_FILE_NAME"
+    
+    if [[ -z "$port" ]]; then
+        log_error "Не указан порт для конфигурационного файла"
+        return 1
+    fi
+    
+    # Создаем файл с настройкой порта
+    if cat > "$path" << EOF
+# Generated by "${UTIL_NAME^^}"
+# SSH port configuration
+Port $port
+EOF
+    then
+        log_info "Правило создано: $(path_and_port_template $path $port)"
+    else
+        log_error "Не удалось создать правило: $path"
+        return 1
+    fi
+}
+
+path_and_port_template() {
+    printf '%s' "$1 Порт: $2"
+}
+
+main() {
+    dispatch_logic
+}
+
+# (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
