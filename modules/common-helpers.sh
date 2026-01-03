@@ -13,14 +13,18 @@ draw_border() {
 #   dir         [optional] Directory to search in (default: current directory).
 #   mask        [optional] Glob pattern (default: "*").
 # @stdin:       Ничего.
-# @stdout:      NUL-separated strings "path"
+# @stdout:      NUL-separated strings "path" or nothing.
 # @stderr:      Ничего.
 # @exit_code:   0 — всегда.
 get_paths_by_mask() {
     local dir=${1:-.}
     local mask=${2:-*}
 
-    ( shopt -s nullglob; printf '%s\0' "${dir%/}"/$mask )
+    (
+        shopt -s nullglob
+        local files=("${dir%/}/"$mask)
+        (( ${#files[@]} > 0 )) && printf '%s\0' "${files[@]}"
+    )
 }
 
 # @type:        Filter
@@ -70,6 +74,22 @@ get_ssh_ports() {
             }
         }
     ' | sort -zu
+}
+
+# @description: Получает первый порт из пути.
+# @params:      Нет.
+# @stdin:       string "path".
+# @stdout:      string "port"
+# @stderr:      Ничего.
+# @exit_code:   0 — всегда.
+get_ssh_port_from_path() {
+    xargs -r awk '
+        BEGIN { IGNORECASE=1 }
+        /^\s*Port\s+/ {
+            print $2
+            exit
+        }
+    '
 }
 
 # @type:        Validator

@@ -12,100 +12,159 @@ source "${MODULES_DIR_PATH}/../lib/logging.sh"
 source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
 
+# @type:        Dispatcher
+# @description: Определяет состояние конфигурации SSH (существует/отсутствует) 
+#               и переключает логику модуля на соответствующий сценарий.
+# @params:      Использует глобальные SSH_CONFIGD_DIR и BSSS_SSH_CONFIG_FILE_MASK.
+# @stdin:       Не используется.
+# @stdout:      Зависит от вызываемых функций (bsss_config_not_exists / bsss_config_exists).
+# @stderr:      Диагностика процесса поиска файлов.
+# @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних сценариях произошел сбой.
 dispatch_logic() {
-    local raw_paths
-избегать прорасывания данных с разделителем - перенос строки - переделать везде на разделитель \0
-    raw_paths=$(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" )
+    local paths=()
+    mapfile -t -d '' paths < <(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")
 
-    if [[ -z "$raw_paths" ]]; then
+    if (( ${#paths[@]} == 0 )); then
+        # Сценарий A: Конфигурация не найдена
         bsss_config_not_exists
     else
-        bsss_config_exists "$raw_paths"
+        # Сценарий B: Конфигурация найдена, передаем список файлов аргументами
+        bsss_config_exists "${paths[@]}"
     fi
 }
 
+# @type:        Dispatcher
+# @description: Обработчик сценария отсутствия конфигурации SSH.
+#               Запускает установку порта в режиме "только создание".
+# @params:      Не принимает параметры.
+# @stdin:       Не используется.
+# @stdout:      Зависит от вызываемой функции action_install_port.
+# @stderr:      Зависит от вызываемой функции action_install_port.
+# @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
 bsss_config_not_exists() {
-    action_install_port "" "1"
+    action_install_port "1"
 }
 
+# @type:        Action
+# @description: Основной функционал установки/изменения SSH порта.
+#               Запрашивает у пользователя порт, проверяет его доступность,
+#               удаляет старые конфигурации (если требуется) и создает новую.
+# @params:      $1 - флаг создания (1=только создание, 0=с удалением старых),
+#               $@ - список путей к существующим конфигурационным файлам.
+# @stdin:       Не используется.
+# @stdout:      Логи процесса в stderr.
+# @stderr:      Логи процесса и сообщения об ошибках.
+# @exit_code:   0 — порт успешно установлен; 1+ — ошибка в процессе.
 action_install_port() {
-    local raw_paths="${1:-}"
-    local create_only="${2:-0}"
-    local suggested_port
-    local new_port
+    local create_only="${1:-0}"
+    shift
+    local paths=("$@")
+
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
+    local suggested_port
     suggested_port=$(get_free_random_port) || return
+
+    local new_port
     new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
 
     if is_port_busy "$new_port"; then
         log_error "Порт $new_port уже занят другим сервисом."
-        action_install_port "$raw_paths" ""
-        return "$?" # Возвращаю код если будет несколько итераций рекурсии
+        action_install_port "" "${paths[@]}"
+        return # Возвращаю код если будет несколько итераций рекурсии
     fi
 
-    (( create_only == 0 )) && delete_paths "$raw_paths"
+    (( create_only == 0 )) && delete_paths "${paths[@]}"
     create_new_ssh_config_file "$new_port"
     actions_after_port_install
 }
 
-bsss_config_exists() {
-    local raw_paths="$1"
-    local user_action
-    local -a paths=()
-
-    mapfile -t paths < <(printf '%s' "$raw_paths")
-    echo "${paths[@]@Q}"
-
+# @type:        Reporter
+# @description: Выводит список найденных конфигураций и связанных с ними портов.
+# @params:      Список путей к файлам.
+# @stdin:       Не используется.
+# @stdout:      Текстовый отчет в stderr (логи).
+# @stderr:      Текстовый отчет в stderr (логи).
+# @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
+show_bsss_configs() {
     log_info "Найдены правила ${UTIL_NAME^^}:"
-
-    for path in "${paths[@]}"; do
-        log_info_simple_tab "Путь: $path"
+    local path
+    for path in "$@"; do
+        local port
+        port=$(printf '%s' "$path" | get_ssh_port_from_path)
+        log_info_simple_tab "$(path_and_port_template $path $port)"
     done
+}
+
+# @type:        Dispatcher
+# @description: Интерфейс выбора действий при наличии существующих конфигов.
+# @params:      Список путей к файлам.
+# @stdin:       Не используется.
+# @stdout:      Текстовый лог в stderr (логи).
+# @stderr:      Текстовый лог в stderr (логи).
+# @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
+bsss_config_exists() {
+    show_bsss_configs "$@"
 
     log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
     log_info_simple_tab "2. Переустановка (замена на новый порт)"
 
+    local user_action
     user_action=$(ask_value "Выберите" "" "^[12]$" "1/2") || return
 
     case "$user_action" in
-        1) action_restore_default "$raw_paths" ;;
-        2) action_install_port "$raw_paths" "" ;;
+        1) action_restore_default "$@" ;;
+        2) action_install_port "" "$@" ;;
     esac
 }
 
+# @type:        Action
+# @description: Выполняет действия после установки порта: перезапуск сервисов и валидация.
+# @params:      Не принимает параметры.
+# @stdin:       Не используется.
+# @stdout:      Зависит от вызываемых функций.
+# @stderr:      Зависит от вызываемых функций.
+# @exit_code:   0 — действия успешно выполнены; 1+ — ошибка в процессе.
 actions_after_port_install() {
-    # sleep 0.2
     restart_services
     validate_ssh_ports
-    # check_config_ports "$SSH_CONFIG_FILE" "$SSH_CONFIG_FILE_MASK" "SSH" # Проверка SSH портов во всех файлах
-    # check_config_ports "" "$BSSS_SSH_CONFIG_FILE_MASK" "$UTIL_NAME" # Проверка BSSS правил
 }
 
+# @type:        Action
+# @description: Восстанавливает настройки по умолчанию путем удаления конфигурационных файлов.
+# @params:      Список путей к файлам для удаления.
+# @stdin:       Не используется.
+# @stdout:      Зависит от вызываемых функций.
+# @stderr:      Зависит от вызываемых функций.
+# @exit_code:   0 — настройки успешно сброшены; 1+ — ошибка в процессе.
 action_restore_default() {
-    local raw_paths="$1"
-
-    delete_paths "$raw_paths"
+    delete_paths "$@"
     actions_after_port_install
 }
 
-переписать удаление фалов с проверкой пути, что бы логировать ошибки путей или
-создать функцию проверки путей, что бы избегать
-[ ] [04-ssh-port-modify.sh] Удалено: /etc/ssh/sshd_config.d/40-bsss-ssh-port.conf/etc/ssh/sshd_config.d/50-bsss-ssh-port.conf
+# @type:        Action
+# @description: Удаляет указанные файлы и директории.
+# @params:      Список путей к файлам/директориям для удаления.
+# @stdin:       Не используется.
+# @stdout:      Логи процесса удаления.
+# @stderr:      Ошибки удаления (если возникнут).
+# @exit_code:   Всегда 0 (ошибки не прерывают выполнение).
 delete_paths() {
-    local raw_paths="$1"
     local path
-    local -a paths=()
-
-    mapfile -t paths < <(printf '%s' "$raw_paths")
-
-    for path in "${paths[@]}"; do
+    for path in "$@"; do
         if rm -rf "$path"; then
             log_info "Удалено: $path"
         fi
     done
 }
 
+# @type:        Action
+# @description: Перезапускает SSH сервис после проверки конфигурации.
+# @params:      Не принимает параметры.
+# @stdin:       Не используется.
+# @stdout:      Логи процесса перезапуска.
+# @stderr:      Сообщения об ошибках конфигурации.
+# @exit_code:   0 — сервис успешно перезапущен; 1 — ошибка конфигурации.
 restart_services() {
     if sshd -t; then
         systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
@@ -116,25 +175,45 @@ restart_services() {
     fi
 }
 
+# @type:        Checker
+# @description: Проверяет, занят ли указанный порт.
+# @params:      $1 - номер порта для проверки.
+# @stdin:       Не используется.
+# @stdout:      Не используется.
+# @stderr:      Не используется.
+# @exit_code:   0 — порт свободен; 1 — порт занят.
 is_port_busy() {
     ss -ltn | grep -qE ":$1([[:space:]]|$)"
 }
 
+# @type:        Generator
+# @description: Генерирует случайный свободный порт в диапазоне 10000-65535.
+# @params:      Не принимает параметры.
+# @stdin:       Не используется.
+# @stdout:      Сгенерированный номер порта.
+# @stderr:      Не используется.
+# @exit_code:   0 — порт успешно сгенерирован; 1+ — ошибка (теоретически невозможна).
 get_free_random_port() {
     local port
     while true; do
         port=$(shuf -i 10000-65535 -n 1)
         if ! is_port_busy "$port"; then
             printf '%s' "$port"
-            return 0 # для выхода из цикла
+            return # для выхода из цикла
         fi
     done
 }
 
-# Создание нового конфигурационного файла
+# @type:        Creator
+# @description: Создает новый конфигурационный файл SSH с указанным портом.
+# @params:      $1 - номер порта для настройки.
+# @stdin:       Не используется.
+# @stdout:      Логи процесса создания.
+# @stderr:      Сообщения об ошибках.
+# @exit_code:   0 — файл успешно создан; 1 — ошибка создания.
 create_new_ssh_config_file() {
     local port="$1"
-    local path="$SSH_CONFIGD_DIR/$BSSS_SSH_CONFIG_FILE_NAME"
+    local path="${SSH_CONFIGD_DIR%/}/$BSSS_SSH_CONFIG_FILE_NAME"
     
     if [[ -z "$port" ]]; then
         log_error "Не указан порт для конфигурационного файла"
@@ -148,13 +227,31 @@ create_new_ssh_config_file() {
 Port $port
 EOF
     then
-        log_info "Правило создано [Port $port]: $path"
+        log_info "Правило создано: $(path_and_port_template $path $port)"
     else
         log_error "Не удалось создать правило: $path"
         return 1
     fi
 }
 
+# @type:        Formatter
+# @description: Форматирует строку для вывода пути к файлу и порта.
+# @params:      $1 - путь к файлу, $2 - номер порта.
+# @stdin:       Не используется.
+# @stdout:      Отформатированная строка.
+# @stderr:      Не используется.
+# @exit_code:   Всегда 0.
+path_and_port_template() {
+    printf '%s' "$1 Порт: $2"
+}
+
+# @type:        Entry point
+# @description: Основная точка входа в модуль.
+# @params:      Не принимает параметры.
+# @stdin:       Не используется.
+# @stdout:      Зависит от вызываемых функций.
+# @stderr:      Зависит от вызываемых функций.
+# @exit_code:   0 — модуль успешно отработал; 1+ — ошибка в процессе.
 main() {
     dispatch_logic
 }
