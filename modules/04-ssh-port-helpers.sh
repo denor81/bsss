@@ -2,112 +2,177 @@
 # MODULE_TYPE: helper
 # Использование: source "/modules/...sh"
 
+# @type:        Action
+# @description: Основной функционал установки/изменения SSH порта.
+#               Запрашивает у пользователя порт, проверяет его доступность,
+#               удаляет старые конфигурации (если требуется) и создает новую.
+# @params:      $@ — список путей к существующим конфигурационным файлам (передается в delete_paths через поток).
+# @stdin:       Не используется напрямую (но передает $@ через printf в delete_paths).
+# @stdout:      Логи процесса в stderr.
+# @stderr:      Логи процесса и сообщения об ошибках.
+# @exit_code:   0 — порт успешно установлен; 1+ — ошибка в процессе.
+action_restore_and_install_new_port() {
+    local new_port
+    new_port=$(get_new_port) || return
 
+    action_restore_default "$@"
 
+    printf '%s\n' "$new_port" | create_new_ssh_config_file
+}
 
+get_new_port() {
+    local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
+    local suggested_port
+    suggested_port=$(get_free_random_port) || return
 
-# _delete_paths() {
-#     local raw_paths="$1"
-#     local path
-#     local -a paths=()
+    local new_port
+    while true; do
+        new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
+        is_port_busy "$new_port" || { printf '%s\n' "$new_port"; break; }
+        log_error "Порт $new_port уже занят другим сервисом."
+    done
+}
 
-#     mapfile -t paths < <(printf '%s' "$raw_paths")
+# @type:        Reporter
+# @description: Выводит список найденных конфигураций и связанных с ними портов.
+# @params:      Список путей к файлам.
+# @stdin:       Не используется.
+# @stdout:      Текстовый отчет в stderr (логи).
+# @stderr:      Текстовый отчет в stderr (логи).
+# @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
+show_bsss_configs() {
+    log_info "Найдены правила ${UTIL_NAME^^}:"
 
-#     for path in "${paths[@]}"; do
-#         if rm -rf "$path"; then
-#             log_info "Удалено: $path"
-#         fi
-#     done
-# }
+    printf '%s\0' "$@" \
+    | while IFS= read -r -d '' path; do
+        port=$(printf '%s\n' "$path" | get_ssh_port_from_path)
+        log_info_simple_tab "$(path_and_port_template "$path" "$port")"
+    done
+}
 
-# Получение активных портов SSH из ss
-# Вернет: 22,888 or none
-# _get_active_ssh_ports() {
-#     local active_ssh_ports=""
-#     local -a ports=() # Объявляем заранее
+# @type:        Action
+# @description: Выполняет действия после установки порта: перезапуск сервисов и валидация.
+# @params:      Не принимает параметры.
+# @stdin:       Не используется.
+# @stdout:      Зависит от вызываемых функций.
+# @stderr:      Зависит от вызываемых функций.
+# @exit_code:   0 — действия успешно выполнены; 1+ — ошибка в процессе.
+actions_after_port_install() {
+    restart_services
+    validate_ssh_ports
+}
 
-#     active_ssh_ports=$(ss -Htlnp | awk '
-#         /users:.*"sshd"/ {
-#             if (match($4, /:[0-9]+$/)) {
-#                 print substr($4, RSTART + 1)
-#             }
-#         }' | sort -u) || return 1
+# @type:        Action
+# @description: Восстанавливает настройки по умолчанию путем удаления конфигурационных файлов.
+# @params:      Список путей к файлам для удаления.
+# @stdin:       Не используется.
+# @stdout:      Зависит от вызываемых функций.
+# @stderr:      Зависит от вызываемых функций.
+# @exit_code:   0 — настройки успешно сброшены; 1+ — ошибка в процессе.
+action_restore_default() {
+    printf '%s\0' "$@" | delete_paths
+}
 
-#     # Важно: наполняем только если не пусто, чтобы не было "пустого элемента"
-#     if [[ -n "$active_ssh_ports" ]]; then
-#         mapfile -t ports < <(printf '%s' "$active_ssh_ports")
-#     fi
+# UPDATE
+# @type:        Action
+# @description: Удаляет указанные файлы и директории.
+# @params:      Список путей к файлам/директориям для удаления.
+# @stdin:       NUL-separated paths
+# @stdout:      Логи процесса удаления.
+# @stderr:      Ошибки удаления (если возникнут).
+# @exit_code:   Всегда 0 (ошибки не прерывают выполнение).
+delete_paths() {
+    xargs -r0 rm -rfv \
+    | while IFS= read -r line; do
+        [[ -n "$line" ]] && log_info "$line"
+    done
+}
 
-#     if (( ${#ports[@]} == 0 )); then
-#         log_error "Не найдены активные порты SSH [ss -nlptu], работа модуля не может быть продолжена"
-#         return 1
-#     fi
+# @type:        Action
+# @description: Перезапускает SSH сервис после проверки конфигурации.
+# @params:      Не принимает параметры.
+# @stdin:       Не используется.
+# @stdout:      Логи процесса перезапуска.
+# @stderr:      Сообщения об ошибках конфигурации.
+# @exit_code:   0 — сервис успешно перезапущен; 1 — ошибка конфигурации.
+restart_services() {
+    if sshd -t; then
+        systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
+        systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
+    else
+        log_error "Ошибка конфигурации ssh [sshd -t]"
+        return 1
+    fi
+}
+
+# @type:        Checker
+# @description: Проверяет, занят ли указанный порт.
+# @params:      $1 - номер порта для проверки.
+# @stdin:       Не используется.
+# @stdout:      Не используется.
+# @stderr:      Не используется.
+# @exit_code:   0 — порт свободен; 1 — порт занят.
+is_port_busy() {
+    ss -ltn | grep -qE ":$1([[:space:]]|$)"
+}
+
+# @type:        Generator
+# @description: Генерирует случайный свободный порт в диапазоне 10000-65535.
+# @params:      Не принимает параметры.
+# @stdin:       Не используется.
+# @stdout:      Сгенерированный номер порта.
+# @stderr:      Не используется.
+# @exit_code:   0 — порт успешно сгенерирован; 1+ — ошибка (теоретически невозможна).
+get_free_random_port() {
+    while IFS= read -r port; do
+        if ! is_port_busy "$port"; then
+            printf '%s\n' "$port"
+            return
+        fi
+    done < <(shuf -i 10000-65535)
+}
+
+# @type:        Creator
+# @description: Создает новый конфигурационный файл SSH с указанным портом.
+# @params:      $1 - номер порта для настройки.
+# @stdin:       Не используется.
+# @stdout:      Логи процесса создания.
+# @stderr:      Сообщения об ошибках.
+# @exit_code:   0 — файл успешно создан; 1 — ошибка создания.
+create_new_ssh_config_file() {
+    local path="${SSH_CONFIGD_DIR%/}/$BSSS_SSH_CONFIG_FILE_NAME"
+    local port
+    read -r port
     
-#     (local IFS=","; echo "${ports[*]}")
-# }
+    if [[ -z "$port" ]]; then
+        log_error "Не указан порт для конфигурационного файла"
+        return 1
+    elif [[ ! "$port" =~ ^-?[0-9]+$ ]]; then
+        log_error "Порт не является числом [$port]"
+    fi
 
-# Получаю все конфиг файлы содержащие Port
-# Вернет: {path_to_file}\t{port}\n or none
-# _get_paths_and_port() {
-#     local additional_path="${1:-}"
-#     local mask="$2"
+    # Создаем файл с настройкой порта
+    if cat > "$path" << EOF
+# Generated by "${UTIL_NAME^^}"
+# SSH port configuration
+Port $port
+EOF
+    then
+        log_info "Правило создано: $(path_and_port_template $path $port)"
+    else
+        log_error "Не удалось создать правило: $path"
+        return 1
+    fi
+}
 
-#     local raw_paths=""
-#     local -a available_paths=()
-
-#     raw_paths=$(_get_paths_by_mask "${SSH_CONFIGD_DIR}" "$mask") || return 1
-
-#     if [[ -n "$raw_paths" ]]; then
-#         mapfile -t available_paths < <(printf '%s' "$raw_paths")
-#     fi
-
-#     if (( ${#available_paths[@]} > 0 )); then
-#         [[ -f "$additional_path" ]] && available_paths+=("$additional_path")
-        
-#         # awk выполнится успешно, даже если в файлах нет слова Port (вернет пустую строку)
-#         awk 'BEGIN { OFS="\t"; IGNORECASE=1 } /^[[:space:]]*Port[[:space:]]+/ { print FILENAME, $2 }' "${available_paths[@]}"
-#     fi
-# }
-
-# check_active_ports() {
-#     local active_ports=""
-
-#     # Ожидаем получение активных портов, если портов нет, то это значит, что не можем получить данные из ss -nlptu и продолжение не возможно
-#     active_ports=$(_get_active_ssh_ports) || return 1 # Пишем в переменну, что бы в случае > 0 остановить скрипт
-#     log_info "Активные SSH порты [ss -nlptu]: ${active_ports}"
-# }
-
-# Ищем все порты в файлах конфигурации /etc/ssh...
-# Возврат:
-# [ ] [04-ssh-port-check.sh] Активные SSH правила: 40
-# [ ] ---- /etc/ssh/sshd_config.d/40-bsss-ssh-port.conf 40
-
-# check_config_ports() {
-#     local additional_path="${1:-}"
-#     local mask="$2"
-#     local mask_name="$3"
-
-#     local raw_paths=""
-#     local ports_list
-#     local -a paths_with_ports=()
-#     local path_w_port
-
-#     # ожидаем получить список портов из каталога настроек SSH, если пусто, то портов нет, но скрипт может быть продолжен
-#     raw_paths=$(_get_paths_and_port "$additional_path" "$mask") || return 1
-#     mapfile -t paths_with_ports < <(printf '%s' "${raw_paths//$'\t'/ }") # Заменяю \t на пробел
-
-#     if (( "${#paths_with_ports[@]}" > 0 )); then
-
-#         # Берем только порты поссле \t в каждой строке
-#         ports_list=$(echo "$raw_paths" | cut -f2 | sort -u | paste -sd, -)
-
-#         log_info "Активные ${mask_name^^} правила: $ports_list"
-
-#         for path_w_port in "${paths_with_ports[@]}"; do
-#             log_info_simple_tab "$path_w_port"
-#         done
-#     else
-#         log_info "Нет активных правил ${mask_name^^} портов"
-#     fi
-# }
+# @type:        Formatter
+# @description: Форматирует строку для вывода пути к файлу и порта.
+# @params:      $1 - путь к файлу, $2 - номер порта.
+# @stdin:       Не используется.
+# @stdout:      Отформатированная строка.
+# @stderr:      Не используется.
+# @exit_code:   Всегда 0.
+path_and_port_template() {
+    printf '%s\n' "$1 Порт: $2"
+}
