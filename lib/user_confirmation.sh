@@ -23,7 +23,7 @@ ask_value() {
         choice=${choice:-$default}
         
         if [[ "$choice" =~ ^$pattern$ ]]; then
-            printf '%s' "$choice"
+            printf '%s\n' "$choice"
             break
         fi
         log_error "Ошибка ввода. Ожидается: $hint"

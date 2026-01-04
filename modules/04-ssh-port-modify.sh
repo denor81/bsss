@@ -43,19 +43,26 @@ dispatch_logic() {
 # @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
 bsss_config_not_exists() {
     action_install_port
+    actions_after_port_install
 }
 
 # @type:        Action
 # @description: Основной функционал установки/изменения SSH порта.
 #               Запрашивает у пользователя порт, проверяет его доступность,
 #               удаляет старые конфигурации (если требуется) и создает новую.
-# @params:      $1 - флаг создания (1=только создание, 0=с удалением старых),
-#               $@ - список путей к существующим конфигурационным файлам.
-# @stdin:       Не используется.
+# @params:      $@ — список путей к существующим конфигурационным файлам (передается в delete_paths через поток).
+# @stdin:       Не используется напрямую (но передает $@ через printf в delete_paths).
 # @stdout:      Логи процесса в stderr.
 # @stderr:      Логи процесса и сообщения об ошибках.
 # @exit_code:   0 — порт успешно установлен; 1+ — ошибка в процессе.
 action_install_port() {
+
+
+    printf '%s\0' "$@" | delete_paths # всегда удаляем старый(ые) файл настройки
+    create_new_ssh_config_file "$new_port"
+}
+
+get_new_port() {
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
     local suggested_port
@@ -67,10 +74,6 @@ action_install_port() {
         is_port_busy "$new_port" || break
         log_error "Порт $new_port уже занят другим сервисом."
     done
-
-    printf '%s\0' "$@" | delete_paths # всегда удаляем старый(ые) файл настройки
-    create_new_ssh_config_file "$new_port"
-    actions_after_port_install
 }
 
 # @type:        Reporter
@@ -85,7 +88,7 @@ show_bsss_configs() {
 
     printf '%s\0' "$@" \
     | while IFS= read -r -d '' path; do
-        port=$(printf '%s' "$path" | get_ssh_port_from_path)
+        port=$(printf '%s\n' "$path" | get_ssh_port_from_path)
         log_info_simple_tab "$(path_and_port_template "$path" "$port")"
     done
 }
@@ -190,7 +193,7 @@ get_free_random_port() {
     local i=0
     while IFS= read -r port; do
         if ! is_port_busy "$port"; then
-            printf '%s' "$port"
+            printf '%s\n' "$port"
             return
         fi
     done < <(shuf -i 10000-65535)
@@ -234,7 +237,7 @@ EOF
 # @stderr:      Не используется.
 # @exit_code:   Всегда 0.
 path_and_port_template() {
-    printf '%s' "$1 Порт: $2"
+    printf '%s\n' "$1 Порт: $2"
 }
 
 # @type:        Entry point
