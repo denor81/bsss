@@ -12,20 +12,20 @@ draw_border() {
 # @params:
 #   dir         [optional] Directory to search in (default: current directory).
 #   mask        [optional] Glob pattern (default: "*").
-# @stdin:       Ничего.
-# @stdout:      NUL-separated strings "path" or nothing.
-# @stderr:      Ничего.
-# @exit_code:   0 — всегда.
+# @stdin:       нет
+# @stdout:      path\0 (0..N)
+# @stderr:      нет
+# @exit_code:   0 - всегда.
 get_paths_by_mask() {
     local dir=${1:-.}
     local mask=${2:-*}
 
     (
         shopt -s nullglob
-        local files=("${dir%/}/"$mask)
-        (( ${#files[@]} > 0 )) && printf '%s\0' "${files[@]}"
+        printf '%s\0' "${dir%/}/"$mask
     )
 }
+
 
 # @type:        Filter
 # @description: Возвращает строку - путь с типом.

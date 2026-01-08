@@ -11,14 +11,12 @@
 # @stdout:      Логи процесса в stderr.
 # @stderr:      Логи процесса и сообщения об ошибках.
 # @exit_code:   0 — порт успешно установлен; 1+ — ошибка в процессе.
-action_restore_and_install_new_port() {
+ssh::install_new_port() {
     local new_port
     new_port=$(get_new_port) || return
 
-    action_restore_default "$@"
-
     printf '%s\0' "$new_port" | create_new_ssh_config_file
-    printf '%s\0' "$new_port" | ufw_add_bsss_rule
+    printf '%s\0' "$new_port" | ufw::add_bsss_rule
 }
 
 get_new_port() {
@@ -30,7 +28,7 @@ get_new_port() {
     local new_port
     while true; do
         new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
-        is_port_busy "$new_port" || { printf '%s\n' "$new_port"; break; }
+        is_port_busy "$new_port" || { printf '%s\0' "$new_port"; break; }
         log_error "Порт $new_port уже занят другим сервисом."
     done
 }
@@ -71,8 +69,8 @@ actions_after_port_install() {
 # @stderr:      Зависит от вызываемых функций.
 # @exit_code:   0 — настройки успешно сброшены; 1+ — ошибка в процессе.
 action_restore_default() {
-    ssh_delete_all_bsss_rules "$@"
-    ufw_delete_all_bsss_rules
+    ssh_delete_all_bsss_rules
+    ufw::delete_all_bsss_rules
 }
 
 ssh_delete_all_bsss_rules() {
@@ -177,7 +175,7 @@ path_and_port_template() {
     printf '%s\n' "$1 Порт: $2"
 }
 
-ufw_delete_all_bsss_rules() {
+ufw::delete_all_bsss_rules() {
     local found_any=0
 
     local rule_args
@@ -189,23 +187,25 @@ ufw_delete_all_bsss_rules() {
         else
             log_error "Ошибка при удалении правила ufw: ufw --force delete $rule_args"
         fi
-    done < <(
-        ufw show added \
-        | awk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
-            BEGIN { ORS="\0" }
-            $0 ~ marker {
-                sub(/^ufw[[:space:]]+/, "");
-                print $0;
-            }
-        '
-    )
+    done < <(ufw::get_all_bsss_rules)
 
     if (( found_any == 0 )); then
         log_info "Активных правил ${UTIL_NAME^^} для ufw не обнаружено, синхронизация не требуется."
     fi
 }
 
-ufw_add_bsss_rule() {
+ufw::get_all_bsss_rules() {
+    ufw show added \
+    | awk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
+        BEGIN { ORS="\0" }
+        $0 ~ marker {
+            sub(/^ufw[[:space:]]+/, "");
+            print $0;
+        }
+    '
+}
+
+ufw::add_bsss_rule() {
     local port
     while read -r -d '' port; do
         if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >> err.log 2>&1; then
