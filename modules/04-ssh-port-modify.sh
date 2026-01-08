@@ -24,11 +24,9 @@ source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 #               $? - код ошибки дочернего процесса
 dispatch_logic() {
 
-    if [[ -z "$(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")" ]]; then
-        log_info "Настройки ${UTIL_NAME^^} для SSH не найдены"
+    if [[ -z "$(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | tr -d '\0')" ]]; then
         bsss_config_not_exists
     else
-        log_info "Найдены настройки ${UTIL_NAME^^} для SSH"
         bsss_config_exists
     fi
 }
@@ -44,8 +42,7 @@ dispatch_logic() {
 # @exit_code:   0 — упешно
 #               $? — код ошибки дочернего процесса
 bsss_config_not_exists() {
-    # action_restore_default
-    get_new_port | ssh::install_new_port
+    get_new_port | ssh_ufw::reset_and_pass | ssh::install_new_port
     actions_after_port_install
 }
 
@@ -66,8 +63,8 @@ bsss_config_exists() {
     user_action=$(ask_value "Выберите" "" "^[12]$" "1/2") || return
 
     case "$user_action" in
-        1) action_restore_default ;;
-        2) ssh::install_new_port ;;
+        1) ssh_ufw::reset_and_pass ;;
+        2) get_new_port | ssh_ufw::reset_and_pass | ssh::install_new_port ;;
     esac
     actions_after_port_install
 }

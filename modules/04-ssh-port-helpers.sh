@@ -15,7 +15,7 @@ ssh::install_new_port() {
     local new_port
     # new_port=$(get_new_port) || return
     read -r -d '' new_port
-    # action_restore_default
+    # ssh_ufw::reset_and_pass
 
     printf '%s\0' "$new_port" | create_new_ssh_config_file
     printf '%s\0' "$new_port" | ufw::add_bsss_rule
@@ -43,10 +43,11 @@ get_new_port() {
 # @stderr:      Текстовый отчет в stderr (логи).
 # @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
 show_bsss_configs() {
-    log_info "Найдены правила ${UTIL_NAME^^}:"
+    log_info "Найдены правила ${UTIL_NAME^^} для SSH:"
 
-    printf '%s\0' "$@" | while IFS= read -r -d '' path; do
-        port=$(printf '%s\0' "$path" | get_ssh_port_from_path)
+    get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" \
+    | while IFS= read -r -d '' path; do
+        port=$(printf '%s\0' "$path" | get_ssh_port_from_path | tr -d '\0')
         log_info_simple_tab "$(path_and_port_template "$path" "$port")"
     done
 }
@@ -63,20 +64,23 @@ actions_after_port_install() {
     check_ssh_ports_availability
 }
 
-# @type:        Action
-# @description: Восстанавливает настройки по умолчанию путем удаления конфигурационных файлов.
-# @params:      Список путей к файлам для удаления.
-# @stdin:       Не используется.
-# @stdout:      Зависит от вызываемых функций.
-# @stderr:      Зависит от вызываемых функций.
-# @exit_code:   0 — настройки успешно сброшены; 1+ — ошибка в процессе.
-action_restore_default() {
-    ssh_delete_all_bsss_rules
+
+ssh_ufw::reset_and_pass() {
+    local port=""
+
+    # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
+    [[ ! -t 0 ]] && IFS= read -r -d '' port || true
+    
+    ssh::delete_all_bsss_rules
     ufw::delete_all_bsss_rules
+
+    # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
+    [[ -n "$port" ]] && printf '%s\0' "$port" || true
 }
 
-ssh_delete_all_bsss_rules() {
-    printf '%s\0' "$@" | delete_paths
+ssh::delete_all_bsss_rules() {
+    # || true нужен потому что get_paths_by_mask может возвращать пустоту и read зависает
+    get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | delete_paths || true
 }
 
 # UPDATE
@@ -88,11 +92,14 @@ ssh_delete_all_bsss_rules() {
 # @stderr:      Ошибки удаления (если возникнут).
 # @exit_code:   Всегда 0 (ошибки не прерывают выполнение).
 delete_paths() {
-    xargs -r0 rm -rfv \
-    | while IFS= read -r line; do
-        [[ -n "$line" ]] && log_info "Удален файл: $line"
+    while IFS= read -r -d '' path; do
+        local resp
+        resp=$(rm -rfv -- "$path" ) || return
+        log_info "Удалено: $resp"
     done
 }
+
+
 
 # @type:        Action
 # @description: Перезапускает SSH сервис после проверки конфигурации.
@@ -159,7 +166,7 @@ create_new_ssh_config_file() {
 Port $port
 EOF
     then
-        log_info "Правило SSH создано: $(path_and_port_template $path $port)"
+        log_info "Создано правило SSH: $(path_and_port_template $path $port)"
     else
         log_error "Не удалось создать правило SSH: $path"
         return 1
@@ -185,14 +192,14 @@ ufw::delete_all_bsss_rules() {
         found_any=1
 
         if printf '%s' "$rule_args" | xargs ufw --force delete >> err.log 2>&1; then
-            log_info "Удалено правило ufw: ufw --force delete $rule_args"
+            log_info "Удалено правило UFW: ufw --force delete $rule_args"
         else
-            log_error "Ошибка при удалении правила ufw: ufw --force delete $rule_args"
+            log_error "Ошибка при удалении правила UFW: ufw --force delete $rule_args"
         fi
     done < <(ufw::get_all_bsss_rules)
 
     if (( found_any == 0 )); then
-        log_info "Активных правил ${UTIL_NAME^^} для ufw не обнаружено, синхронизация не требуется."
+        log_info "Активных правил ${UTIL_NAME^^} для UFW не обнаружено, синхронизация не требуется."
     fi
 }
 
@@ -211,9 +218,9 @@ ufw::add_bsss_rule() {
     local port
     while read -r -d '' port; do
         if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >> err.log 2>&1; then
-            log_info "Добавлено правило ufw: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
+            log_info "Создано правило UFW: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
         else
-            log_info "Ошибка при добавлении правила ufw: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
+            log_info "Ошибка при добавлении правила UFW: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
         fi
     done
  
