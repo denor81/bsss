@@ -19,7 +19,7 @@ ask_value() {
     local choice
 
     while true; do
-        read -p "$QUESTION_PREFIX $question [$hint]: " -r choice
+        read -p "$QUESTION_PREFIX $question [$hint]: " -r choice </dev/tty
         choice=${choice:-$default}
         
         if [[ "$choice" =~ ^$pattern$ ]]; then

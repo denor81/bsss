@@ -24,9 +24,11 @@ source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 #               $? - код ошибки дочернего процесса
 dispatch_logic() {
 
-    if get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d ''; then
+    if [[ -z "$(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")" ]]; then
+        log_info "Настройки ${UTIL_NAME^^} для SSH не найдены"
         bsss_config_not_exists
     else
+        log_info "Найдены настройки ${UTIL_NAME^^} для SSH"
         bsss_config_exists
     fi
 }
@@ -42,8 +44,8 @@ dispatch_logic() {
 # @exit_code:   0 — упешно
 #               $? — код ошибки дочернего процесса
 bsss_config_not_exists() {
-    action_restore_default
-    ssh::install_new_port
+    # action_restore_default
+    get_new_port | ssh::install_new_port
     actions_after_port_install
 }
 

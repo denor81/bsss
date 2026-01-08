@@ -22,10 +22,10 @@ get_paths_by_mask() {
 
     (
         shopt -s nullglob
-        printf '%s\0' "${dir%/}/"$mask
+        local files=("${dir%/}/"$mask)
+        (( ${#files[@]} > 0 )) && printf '%s\0' "${files[@]}"
     )
 }
-
 
 # @type:        Filter
 # @description: Возвращает строку - путь с типом.
@@ -33,7 +33,7 @@ get_paths_by_mask() {
 # @stdin:       NUL-separated paths
 # @stdout:      NUL-separated strings "path:type"
 # @stderr:      Ничего.
-# @exit_code:   0 — всегда.
+# @exit_code:   0 - всегда.
 get_modules_paths_w_type () {
     xargs -r0 awk -F ':[[:space:]]' '
         BEGIN { IGNORECASE=1; ORS="\0" }

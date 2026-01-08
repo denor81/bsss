@@ -13,7 +13,9 @@
 # @exit_code:   0 — порт успешно установлен; 1+ — ошибка в процессе.
 ssh::install_new_port() {
     local new_port
-    new_port=$(get_new_port) || return
+    # new_port=$(get_new_port) || return
+    read -r -d '' new_port
+    # action_restore_default
 
     printf '%s\0' "$new_port" | create_new_ssh_config_file
     printf '%s\0' "$new_port" | ufw::add_bsss_rule
