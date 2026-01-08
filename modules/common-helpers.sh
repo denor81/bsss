@@ -65,7 +65,7 @@ get_modules_by_type () {
 # @stdout:      "port\0"
 # @stderr:      нет
 # @exit_code:   0 — всегда.
-get_ssh_ports_from_ss() {
+ssh::get_ports_from_ss() {
     ss -Hltnp | awk '
         BEGIN { ORS="\0" }
         /"sshd"/ {
@@ -83,7 +83,7 @@ get_ssh_ports_from_ss() {
 # @stdout:      "port\0"
 # @stderr:      нет
 # @exit_code:   0 - всегда
-get_ssh_port_from_path() {
+ssh::get_first_port_from_path() {
     xargs -r0 awk '
         BEGIN { IGNORECASE=1; ORS="\0"; }
         /^\s*Port\s+/ {
@@ -95,7 +95,7 @@ get_ssh_port_from_path() {
 
 # @type:        Validator
 # @description: Проверяет возможность определения активных портов.
-# @params:      Использует get_ssh_ports_from_ss.
+# @params:      Использует ssh::get_ports_from_ss.
 #   strict_mode [optional] Строгий режим вызывающий ошибку 1 при не доступности портов
 #               строгий режим выполняется при старте скрипта, что бы точно быть уверенным,
 #               что ss команда выполянется и порты определяются
@@ -103,11 +103,11 @@ get_ssh_port_from_path() {
 # @stdout:      Ничего.
 # @stderr:      Диагностические сообщения (log_info, log_error).
 # @exit_code:   0 — порты определены, 1 — порты не определены (выполнение не возможно).
-check_ssh_ports_availability() {
+ssh::log_active_ports_ss() {
     local strict_mode=${1:-0}
 
     local active_ports=""
-    active_ports=$(get_ssh_ports_from_ss | tr '\0' ',' | sed 's/,$//')
+    active_ports=$(ssh::get_ports_from_ss | tr '\0' ',' | sed 's/,$//')
 
     if [[ -z "$active_ports" ]]; then
         log_error "Активные порты не определены [ss -ltnp]"

@@ -5,7 +5,7 @@
 
 # @type:        Interactive
 # @description: Циклический опрос пользователя до получения валидного значения.
-# @params:      Использует get_ssh_ports_from_ss.
+# @params:      Использует ssh::get_ports_from_ss.
 #   question    Вопрос на ккоторый нужно получить ответ
 #   default     Значения по умолчанию - например "y" - "int"/"str"
 #   pattern     regex паттерн ожидаемого ввода - например "[yn]" - "str"
@@ -32,7 +32,7 @@ ask_value() {
 
 # @type:        Validator
 # @description: Ждет подтверждение действия. Доступны только y или n
-# @params:      Использует get_ssh_ports_from_ss.
+# @params:      Использует ssh::get_ports_from_ss.
 #   question    [optional]
 #   exit_msg    [optional]
 #   default     [optional] Значения по умолчанию - например y

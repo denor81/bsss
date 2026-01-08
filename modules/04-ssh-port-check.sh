@@ -13,7 +13,7 @@ source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
 check() {
-    check_ssh_ports_availability "1"
+    ssh::log_active_ports_ss "1"
 }
 
 

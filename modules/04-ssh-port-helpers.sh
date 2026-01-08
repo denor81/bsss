@@ -47,7 +47,7 @@ show_bsss_configs() {
 
     get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" \
     | while IFS= read -r -d '' path; do
-        port=$(printf '%s\0' "$path" | get_ssh_port_from_path | tr -d '\0')
+        port=$(printf '%s\0' "$path" | ssh::get_first_port_from_path | tr -d '\0')
         log_info_simple_tab "$(path_and_port_template "$path" "$port")"
     done
 }
@@ -61,7 +61,7 @@ show_bsss_configs() {
 # @exit_code:   0 — действия успешно выполнены; 1+ — ошибка в процессе.
 actions_after_port_install() {
     restart_services
-    check_ssh_ports_availability
+    ssh::log_active_ports_ss
 }
 
 
