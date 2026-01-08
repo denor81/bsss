@@ -45,7 +45,7 @@ get_new_port() {
 show_bsss_configs() {
     log_info "Найдены правила ${UTIL_NAME^^} для SSH:"
 
-    get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" \
+    sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" \
     | while IFS= read -r -d '' path; do
         port=$(printf '%s\0' "$path" | ssh::get_first_port_from_path | tr -d '\0')
         log_info_simple_tab "$(path_and_port_template "$path" "$port")"
@@ -61,7 +61,7 @@ show_bsss_configs() {
 # @exit_code:   0 — действия успешно выполнены; 1+ — ошибка в процессе.
 actions_after_port_install() {
     restart_services
-    ssh::log_active_ports_ss
+    ssh::log_active_ports_from_ss
 }
 
 
@@ -79,8 +79,8 @@ ssh_ufw::reset_and_pass() {
 }
 
 ssh::delete_all_bsss_rules() {
-    # || true нужен потому что get_paths_by_mask может возвращать пустоту и read зависает
-    get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | delete_paths || true
+    # || true нужен потому что sys::get_paths_by_mask может возвращать пустоту и read зависает
+    sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | delete_paths || true
 }
 
 # UPDATE

@@ -24,7 +24,7 @@ source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 #               $? - код ошибки дочернего процесса
 dispatch_logic() {
 
-    if [[ -z "$(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | tr -d '\0')" ]]; then
+    if [[ -z "$(sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | tr -d '\0')" ]]; then
         bsss_config_not_exists
     else
         bsss_config_exists

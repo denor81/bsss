@@ -13,7 +13,7 @@ source "${MAIN_DIR_PATH}/lib/user_confirmation.sh"
 source "${MAIN_DIR_PATH}/modules/common-helpers.sh"
 
 dispatch_logic() {
-    if [[ -z "$(get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")" ]]; then
+    if [[ -z "$(sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")" ]]; then
         log_info "Настройки SSH ${UTIL_NAME^^} не найдены"
         # bsss_config_not_exists
     else

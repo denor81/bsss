@@ -3,7 +3,7 @@
 # Использование: source "/modules/...sh"
 
 # @stdout:      # x 80
-draw_border() {
+log::draw_border() {
     printf '%.0s#' {1..80} >&2; echo >&2
 }
 
@@ -16,7 +16,7 @@ draw_border() {
 # @stdout:      path\0 (0..N)
 # @stderr:      нет
 # @exit_code:   0 - всегда.
-get_paths_by_mask() {
+sys::get_paths_by_mask() {
     local dir=${1:-.}
     local mask=${2:-*}
 
@@ -34,7 +34,7 @@ get_paths_by_mask() {
 # @stdout:      NUL-separated strings "path:type"
 # @stderr:      Ничего.
 # @exit_code:   0 - всегда.
-get_modules_paths_w_type () {
+sys::get_modules_paths_w_type () {
     xargs -r0 awk -F ':[[:space:]]' '
         BEGIN { IGNORECASE=1; ORS="\0" }
         /^# MODULE_TYPE:/ {
@@ -52,7 +52,7 @@ get_modules_paths_w_type () {
 # @stdout:      NUL-separated strings "path"
 # @stderr:      Ничего.
 # @exit_code:   0 — всегда.
-get_modules_by_type () {
+sys::get_modules_by_type () {
     awk -v type="$1" -v RS='\0' -F'<:>' '
         type == $2 { printf "%s\0", $1 }
     '
@@ -103,7 +103,7 @@ ssh::get_first_port_from_path() {
 # @stdout:      Ничего.
 # @stderr:      Диагностические сообщения (log_info, log_error).
 # @exit_code:   0 — порты определены, 1 — порты не определены (выполнение не возможно).
-ssh::log_active_ports_ss() {
+ssh::log_active_ports_from_ss() {
     local strict_mode=${1:-0}
 
     local active_ports=""
