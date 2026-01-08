@@ -100,7 +100,7 @@ get_ssh_port_from_path() {
 # @stdout:      Ничего.
 # @stderr:      Диагностические сообщения (log_info, log_error).
 # @exit_code:   0 — порты определены, 1 — порты не определены (выполнение не возможно).
-validate_ssh_ports() {
+check_ssh_ports_availability() {
     local strict_mode=${1:-0}
 
     local active_ports=""
