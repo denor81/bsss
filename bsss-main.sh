@@ -59,7 +59,7 @@ run_modules_modify() {
 
 main() {
     run_modules_polling
-    confirm_action "Запустить настройку?"
+    io::confirm_action "Запустить настройку?"
     run_modules_modify
 }
 

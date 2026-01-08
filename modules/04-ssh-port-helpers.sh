@@ -6,31 +6,29 @@
 # @description: Основной функционал установки/изменения SSH порта.
 #               Запрашивает у пользователя порт, проверяет его доступность,
 #               удаляет старые конфигурации (если требуется) и создает новую.
-# @params:      $@ — список путей к существующим конфигурационным файлам (передается в delete_paths через поток).
-# @stdin:       Не используется напрямую (но передает $@ через printf в delete_paths).
+# @params:      $@ — список путей к существующим конфигурационным файлам (передается в sys::delete_paths через поток).
+# @stdin:       Не используется напрямую (но передает $@ через printf в sys::delete_paths).
 # @stdout:      Логи процесса в stderr.
 # @stderr:      Логи процесса и сообщения об ошибках.
 # @exit_code:   0 — порт успешно установлен; 1+ — ошибка в процессе.
 ssh::install_new_port() {
     local new_port
-    # new_port=$(get_new_port) || return
     read -r -d '' new_port
-    # ssh_ufw::reset_and_pass
 
-    printf '%s\0' "$new_port" | create_new_ssh_config_file
+    printf '%s\0' "$new_port" | ssh::create_config_file
     printf '%s\0' "$new_port" | ufw::add_bsss_rule
 }
 
-get_new_port() {
+ssh::ask_new_port() {
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
     local suggested_port
-    suggested_port=$(get_free_random_port) || return
+    suggested_port=$(ssh::generate_free_random_port) || return
 
     local new_port
     while true; do
-        new_port=$(ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
-        is_port_busy "$new_port" || { printf '%s\0' "$new_port"; break; }
+        new_port=$(io::ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
+        ssh::is_port_busy "$new_port" || { printf '%s\0' "$new_port"; break; }
         log_error "Порт $new_port уже занят другим сервисом."
     done
 }
@@ -42,13 +40,13 @@ get_new_port() {
 # @stdout:      Текстовый отчет в stderr (логи).
 # @stderr:      Текстовый отчет в stderr (логи).
 # @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
-show_bsss_configs() {
+ssh::show_bsss_configs() {
     log_info "Найдены правила ${UTIL_NAME^^} для SSH:"
 
     sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" \
     | while IFS= read -r -d '' path; do
         port=$(printf '%s\0' "$path" | ssh::get_first_port_from_path | tr -d '\0')
-        log_info_simple_tab "$(path_and_port_template "$path" "$port")"
+        log_info_simple_tab "$(log::path_and_port_template "$path" "$port")"
     done
 }
 
@@ -59,19 +57,30 @@ show_bsss_configs() {
 # @stdout:      Зависит от вызываемых функций.
 # @stderr:      Зависит от вызываемых функций.
 # @exit_code:   0 — действия успешно выполнены; 1+ — ошибка в процессе.
-actions_after_port_install() {
-    restart_services
+orchestrator::actions_after_port_install() {
+    sys::restart_services
     ssh::log_active_ports_from_ss
 }
 
 
-ssh_ufw::reset_and_pass() {
+ssh::reset_and_pass() {
     local port=""
 
     # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
     [[ ! -t 0 ]] && IFS= read -r -d '' port || true
     
     ssh::delete_all_bsss_rules
+
+    # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
+    [[ -n "$port" ]] && printf '%s\0' "$port" || true
+}
+
+ufw::reset_and_pass() {
+    local port=""
+
+    # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
+    [[ ! -t 0 ]] && IFS= read -r -d '' port || true
+    
     ufw::delete_all_bsss_rules
 
     # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
@@ -80,7 +89,7 @@ ssh_ufw::reset_and_pass() {
 
 ssh::delete_all_bsss_rules() {
     # || true нужен потому что sys::get_paths_by_mask может возвращать пустоту и read зависает
-    sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | delete_paths || true
+    sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::delete_paths || true
 }
 
 # UPDATE
@@ -91,7 +100,7 @@ ssh::delete_all_bsss_rules() {
 # @stdout:      Логи процесса удаления.
 # @stderr:      Ошибки удаления (если возникнут).
 # @exit_code:   Всегда 0 (ошибки не прерывают выполнение).
-delete_paths() {
+sys::delete_paths() {
     while IFS= read -r -d '' path; do
         local resp
         resp=$(rm -rfv -- "$path" ) || return
@@ -108,7 +117,7 @@ delete_paths() {
 # @stdout:      Логи процесса перезапуска.
 # @stderr:      Сообщения об ошибках конфигурации.
 # @exit_code:   0 — сервис успешно перезапущен; 1 — ошибка конфигурации.
-restart_services() {
+sys::restart_services() {
     if sshd -t; then
         systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
         systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
@@ -125,7 +134,7 @@ restart_services() {
 # @stdout:      Не используется.
 # @stderr:      Не используется.
 # @exit_code:   0 — порт свободен; 1 — порт занят.
-is_port_busy() {
+ssh::is_port_busy() {
     ss -ltn | grep -qE ":$1([[:space:]]|$)"
 }
 
@@ -136,9 +145,9 @@ is_port_busy() {
 # @stdout:      Сгенерированный номер порта.
 # @stderr:      Не используется.
 # @exit_code:   0 — порт успешно сгенерирован; 1+ — ошибка (теоретически невозможна).
-get_free_random_port() {
+ssh::generate_free_random_port() {
     while IFS= read -r port; do
-        if ! is_port_busy "$port"; then
+        if ! ssh::is_port_busy "$port"; then
             printf '%s\n' "$port"
             return
         fi
@@ -152,13 +161,11 @@ get_free_random_port() {
 # @stdout:      Логи процесса создания.
 # @stderr:      Сообщения об ошибках.
 # @exit_code:   0 — файл успешно создан; 1 — ошибка создания.
-create_new_ssh_config_file() {
+ssh::create_config_file() {
     local path="${SSH_CONFIGD_DIR%/}/$BSSS_SSH_CONFIG_FILE_NAME"
     local port
     read -r -d '' port
     
-
-
     # Создаем файл с настройкой порта
     if cat > "$path" << EOF
 # $BSSS_MARKER_COMMENT
@@ -166,7 +173,7 @@ create_new_ssh_config_file() {
 Port $port
 EOF
     then
-        log_info "Создано правило SSH: $(path_and_port_template $path $port)"
+        log_info "Создано правило SSH: $(log::path_and_port_template $path $port)"
     else
         log_error "Не удалось создать правило SSH: $path"
         return 1
@@ -180,7 +187,7 @@ EOF
 # @stdout:      Отформатированная строка.
 # @stderr:      Не используется.
 # @exit_code:   Всегда 0.
-path_and_port_template() {
+log::path_and_port_template() {
     printf '%s\n' "$1 Порт: $2"
 }
 
@@ -226,11 +233,11 @@ ufw::add_bsss_rule() {
  
 }
 
-validate_ssh_port() {
-    if [[ -z "$port" ]]; then
-        log_error "Не указан порт SSH для конфигурационного файла"
-        return 1
-    elif [[ ! "$port" =~ ^-?[0-9]+$ ]]; then
-        log_error "Порт SSH не является числом [$port]"
-    fi
-}
+# validate_ssh_port() {
+#     if [[ -z "$port" ]]; then
+#         log_error "Не указан порт SSH для конфигурационного файла"
+#         return 1
+#     elif [[ ! "$port" =~ ^-?[0-9]+$ ]]; then
+#         log_error "Порт SSH не является числом [$port]"
+#     fi
+# }

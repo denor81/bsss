@@ -14,7 +14,7 @@
 # @stdout:      Единственная строка с валидированным значением (без \n).
 # @stderr:      Текст вопроса (через read -p) и сообщения об ошибках.
 # @exit_code:   0 — успешно получено значение.
-ask_value() {
+io::ask_value() {
     local question=$1 default=$2 pattern=$3 hint=$4
     local choice
 
@@ -40,13 +40,13 @@ ask_value() {
 # @stdout:      Ничего.
 # @stderr:      Диагностические сообщения (log_info).
 # @exit_code:   0 — успешно, 2 — отменено пользователем.
-confirm_action() {
+io::confirm_action() {
     local question=${1:-"Продолжить?"}
     local exit_msg=${2:-"Выход по запросу пользователя"}
     
     # Ждем [yn]
     local choice
-    choice=$(ask_value "$question" "y" "[yn]" "Y/n")
+    choice=$(io::ask_value "$question" "y" "[yn]" "Y/n")
 
     if [[ "$choice" == "n" ]]; then
         log_info "$exit_msg"

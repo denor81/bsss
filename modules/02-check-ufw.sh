@@ -16,7 +16,7 @@ check() {
         log_info "UFW установлен"
     else
         log_error "UFW не установлен"
-        if confirm_action "Установить UFW сейчас? [apt update && apt install ufw -y]" || return; then
+        if io::confirm_action "Установить UFW сейчас? [apt update && apt install ufw -y]" || return; then
             if ! (apt update && apt install ufw -y); then
                 log_error "Ошибка при установке UFW"
                 return 1

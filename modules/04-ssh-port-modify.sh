@@ -22,12 +22,13 @@ source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 # @stderr:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
-dispatch_logic() {
+orchestrator::dispatch_logic() {
 
     if [[ -z "$(sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | tr -d '\0')" ]]; then
-        bsss_config_not_exists
+        log_info "Активных правил ${UTIL_NAME^^} для SSH не обнаружено, синхронизация не требуется."
+        orchestrator::bsss_config_not_exists
     else
-        bsss_config_exists
+        orchestrator::bsss_config_exists
     fi
 }
 
@@ -41,9 +42,9 @@ dispatch_logic() {
 # @stderr:      нет
 # @exit_code:   0 — упешно
 #               $? — код ошибки дочернего процесса
-bsss_config_not_exists() {
-    get_new_port | ssh_ufw::reset_and_pass | ssh::install_new_port
-    actions_after_port_install
+orchestrator::bsss_config_not_exists() {
+    ssh::ask_new_port | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
+    orchestrator::actions_after_port_install
 }
 
 # @type:        Dispatcher
@@ -53,24 +54,24 @@ bsss_config_not_exists() {
 # @stdout:      Текстовый лог в stderr (логи).
 # @stderr:      Текстовый лог в stderr (логи).
 # @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
-bsss_config_exists() {
-    show_bsss_configs
+orchestrator::bsss_config_exists() {
+    ssh::show_bsss_configs
 
     log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
     log_info_simple_tab "2. Переустановка (замена на новый порт)"
 
     local user_action
-    user_action=$(ask_value "Выберите" "" "^[12]$" "1/2") || return
+    user_action=$(io::ask_value "Выберите" "" "^[12]$" "1/2") || return
 
     case "$user_action" in
-        1) ssh_ufw::reset_and_pass ;;
-        2) get_new_port | ssh_ufw::reset_and_pass | ssh::install_new_port ;;
+        1) ssh::reset_and_pass | ufw::reset_and_pass ;;
+        2) ssh::ask_new_port | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port ;;
     esac
-    actions_after_port_install
+    orchestrator::actions_after_port_install
 }
 
 main() {
-    dispatch_logic
+    orchestrator::dispatch_logic
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован

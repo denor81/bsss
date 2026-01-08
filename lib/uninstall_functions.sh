@@ -33,7 +33,7 @@ do_uninstall() {
 
 
 run_uninstall() {
-    confirm_action "Удалить ${UTIL_NAME^^}?"
+    io::confirm_action "Удалить ${UTIL_NAME^^}?"
     check_uninstall_file
     
     log_info "Начинаю удаление установленных файлов..."
