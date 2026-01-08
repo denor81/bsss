@@ -17,8 +17,8 @@ action_restore_and_install_new_port() {
 
     action_restore_default "$@"
 
-    printf '%s\n' "$new_port" | create_new_ssh_config_file
-    printf '%s\n' "$new_port" | ufw_add_bsss_rule
+    printf '%s\0' "$new_port" | create_new_ssh_config_file
+    printf '%s\0' "$new_port" | ufw_add_bsss_rule
 }
 
 get_new_port() {
@@ -45,9 +45,8 @@ get_new_port() {
 show_bsss_configs() {
     log_info "Найдены правила ${UTIL_NAME^^}:"
 
-    printf '%s\0' "$@" \
-    | while IFS= read -r -d '' path; do
-        port=$(printf '%s\n' "$path" | get_ssh_port_from_path)
+    printf '%s\0' "$@" | while IFS= read -r -d '' path; do
+        port=$(printf '%s\0' "$path" | get_ssh_port_from_path)
         log_info_simple_tab "$(path_and_port_template "$path" "$port")"
     done
 }
@@ -91,7 +90,7 @@ ssh_delete_all_bsss_rules() {
 delete_paths() {
     xargs -r0 rm -rfv \
     | while IFS= read -r line; do
-        [[ -n "$line" ]] && log_info "Успешно: $line"
+        [[ -n "$line" ]] && log_info "Удален файл: $line"
     done
 }
 
@@ -149,15 +148,15 @@ get_free_random_port() {
 create_new_ssh_config_file() {
     local path="${SSH_CONFIGD_DIR%/}/$BSSS_SSH_CONFIG_FILE_NAME"
     local port
-    read -r port
+    read -r -d '' port
     
 
 
     # Создаем файл с настройкой порта
     if cat > "$path" << EOF
-# "$BSSS_MARKER_COMMENT"
+# $BSSS_MARKER_COMMENT
 # SSH port configuration
-Port "$port"
+Port $port
 EOF
     then
         log_info "Правило SSH создано: $(path_and_port_template $path $port)"
@@ -186,13 +185,13 @@ ufw_delete_all_bsss_rules() {
         found_any=1
 
         if printf '%s' "$rule_args" | xargs ufw --force delete >> err.log 2>&1; then
-            log_info "Успешно: ufw --force delete $rule_args"
+            log_info "Удалено правило ufw: ufw --force delete $rule_args"
         else
-            log_error "Ошибка: ufw --force delete $rule_args"
+            log_error "Ошибка при удалении правила ufw: ufw --force delete $rule_args"
         fi
     done < <(
         ufw show added \
-        | awk -v marker="^ufw.*comment[[:space:]]+$BSSS_MARKER_COMMENT" '
+        | awk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
             BEGIN { ORS="\0" }
             $0 ~ marker {
                 sub(/^ufw[[:space:]]+/, "");
@@ -208,12 +207,11 @@ ufw_delete_all_bsss_rules() {
 
 ufw_add_bsss_rule() {
     local port
-    while read -r port; do
-        [[ ! "$port" =~ ^-?[0-9]+$ ]]
+    while read -r -d '' port; do
         if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >> err.log 2>&1; then
-            log_info "Успешно: ufw allow "${port}"/tcp comment $BSSS_MARKER_COMMENT"
+            log_info "Добавлено правило ufw: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
         else
-            log_info "Ошибка: ufw allow "${port}"/tcp comment $BSSS_MARKER_COMMENT"
+            log_info "Ошибка при добавлении правила ufw: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
         fi
     done
  

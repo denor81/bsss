@@ -60,12 +60,12 @@ get_modules_by_type () {
 
 # @type:        Source
 # @description: Получает активные SSH порты из ss.
-# @params:      Нет.
-# @stdin:       Нет.
-# @stdout:      NUL-separated strings "port"
-# @stderr:      Ничего.
+# @params:      нет
+# @stdin:       нет
+# @stdout:      "port\0"
+# @stderr:      нет
 # @exit_code:   0 — всегда.
-get_ssh_ports() {
+get_ssh_ports_from_ss() {
     ss -Hltnp | awk '
         BEGIN { ORS="\0" }
         /"sshd"/ {
@@ -76,15 +76,16 @@ get_ssh_ports() {
     ' | sort -zu
 }
 
-# @description: Получает первый порт из пути.
-# @params:      Нет.
-# @stdin:       string "path".
-# @stdout:      string "port"
-# @stderr:      Ничего.
-# @exit_code:   0 — всегда.
+# @type:        Source
+# @description: Получает первый порт из path
+# @params:      нет
+# @stdin:       "path\0"
+# @stdout:      "port\0"
+# @stderr:      нет
+# @exit_code:   0 - всегда
 get_ssh_port_from_path() {
-    xargs -r awk '
-        BEGIN { IGNORECASE=1 }
+    xargs -r0 awk '
+        BEGIN { IGNORECASE=1; ORS="\0"; }
         /^\s*Port\s+/ {
             print $2
             exit
@@ -94,8 +95,10 @@ get_ssh_port_from_path() {
 
 # @type:        Validator
 # @description: Проверяет возможность определения активных портов.
-# @params:      Использует get_ssh_ports.
-#   strict_mode [optional] If 1 - return 1 (default 0).
+# @params:      Использует get_ssh_ports_from_ss.
+#   strict_mode [optional] Строгий режим вызывающий ошибку 1 при не доступности портов
+#               строгий режим выполняется при старте скрипта, что бы точно быть уверенным,
+#               что ss команда выполянется и порты определяются
 # @stdin:       Не используется.
 # @stdout:      Ничего.
 # @stderr:      Диагностические сообщения (log_info, log_error).
@@ -104,7 +107,7 @@ check_ssh_ports_availability() {
     local strict_mode=${1:-0}
 
     local active_ports=""
-    active_ports=$(get_ssh_ports | tr '\0' ',' | sed 's/,$//')
+    active_ports=$(get_ssh_ports_from_ss | tr '\0' ',' | sed 's/,$//')
 
     if [[ -z "$active_ports" ]]; then
         log_error "Активные порты не определены [ss -ltnp]"
