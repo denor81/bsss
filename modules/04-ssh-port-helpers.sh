@@ -57,9 +57,28 @@ ssh::log_bsss_configs() {
 
     done < <(sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")
 
-    # (( found == 0 )) && log_info "Нет правил ${UTIL_NAME^^} для SSH"
     if (( found == 0 )); then
-        log_info "Нет правил ${UTIL_NAME^^} для SSH"
+        log_info "Нет правил ${UTIL_NAME^^} для SSH [$SSH_CONFIG_FILE]"
+    fi
+}
+
+ssh::log_all_configs_w_port() {
+    local grep_result
+    local found=0
+
+    while IFS= read -r grep_result || break; do
+
+        if (( found == 0 )); then
+            log_info "Есть сторонние правила SSH:"
+            found=$((found + 1))
+        fi
+
+        log_info_simple_tab "$(printf '%s' $grep_result)"
+
+    done < <(grep -EiH --exclude="${SSH_CONFIGD_DIR%/}"/$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR%/}"/$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
+
+    if (( found == 0 )); then
+        log_info "Нет сторонних правил SSH [$SSH_CONFIG_FILE]"
     fi
 }
 
@@ -94,7 +113,6 @@ ufw::log_active_ufw_rules() {
         log_info_simple_tab "$rule"
     done < <(ufw::get_all_rules)
 
-    # (( found == 0 )) && log_info "Нет правил UFW [ufw show added]"
     if (( found == 0 )); then
         log_info "Нет правил UFW [ufw show added]"
     fi

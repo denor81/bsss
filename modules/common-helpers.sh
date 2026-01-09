@@ -35,7 +35,7 @@ sys::get_paths_by_mask() {
 # @stderr:      Ничего.
 # @exit_code:   0 - всегда.
 sys::get_modules_paths_w_type () {
-    xargs -r0 awk -F ':[[:space:]]' '
+    xargs -r0 awk -F ':[[:space:]]+' '
         BEGIN { IGNORECASE=1; ORS="\0" }
         /^# MODULE_TYPE:/ {
             print FILENAME "<:>" $2
