@@ -14,6 +14,8 @@ source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
 check() {
     ssh::log_active_ports_from_ss "1"
+    ssh::log_bsss_configs
+    ufw::log_active_ufw_rules
 }
 
 

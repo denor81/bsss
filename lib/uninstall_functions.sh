@@ -17,7 +17,7 @@ check_uninstall_file() {
 do_uninstall() {
     local path=""
     # Читаем файл построчно и удаляем каждый путь
-    while IFS= read -r path; do
+    while IFS= read -r path || break; do
         # Проверяем существование пути или символической ссылки перед удалением
         if [[ -e "$path" || -L "$path" ]]; then
             log_info "Удаляю: $path"

@@ -27,27 +27,40 @@ ssh::ask_new_port() {
 
     local new_port
     while true; do
-        new_port=$(io::ask_value "Введите новый порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
+        new_port=$(io::ask_value "Введите новый SSH порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
         ssh::is_port_busy "$new_port" || { printf '%s\0' "$new_port"; break; }
-        log_error "Порт $new_port уже занят другим сервисом."
+        log_error "SSH порт $new_port уже занят другим сервисом."
     done
 }
 
-# @type:        Reporter
+# @type:        Source
 # @description: Выводит список найденных конфигураций и связанных с ними портов.
 # @params:      Список путей к файлам.
 # @stdin:       Не используется.
 # @stdout:      Текстовый отчет в stderr (логи).
 # @stderr:      Текстовый отчет в stderr (логи).
 # @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
-ssh::show_bsss_configs() {
-    log_info "Найдены правила ${UTIL_NAME^^} для SSH:"
+ssh::log_bsss_configs() {
+    local path
+    local port
+    local found=0
 
-    sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" \
-    | while IFS= read -r -d '' path; do
+    while IFS= read -r -d '' path || break; do
+
+        if (( found == 0 )); then
+            log_info "Есть правила ${UTIL_NAME^^} для SSH:"
+            found=$((found + 1))
+        fi
+
         port=$(printf '%s\0' "$path" | ssh::get_first_port_from_path | tr -d '\0')
         log_info_simple_tab "$(log::path_and_port_template "$path" "$port")"
-    done
+
+    done < <(sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")
+
+    # (( found == 0 )) && log_info "Нет правил ${UTIL_NAME^^} для SSH"
+    if (( found == 0 )); then
+        log_info "Нет правил ${UTIL_NAME^^} для SSH"
+    fi
 }
 
 # @type:        Action
@@ -59,8 +72,34 @@ ssh::show_bsss_configs() {
 # @exit_code:   0 — действия успешно выполнены; 1+ — ошибка в процессе.
 orchestrator::actions_after_port_install() {
     sys::restart_services
+
+    log::draw_border
+    log_info "Актуальная информация после внесения изменений"
     ssh::log_active_ports_from_ss
+    ssh::log_bsss_configs
+    ufw::log_active_ufw_rules
 }
+
+# @type:        Source
+ufw::log_active_ufw_rules() {
+    local rule
+    local found=0
+
+    while read -r -d '' rule || break; do
+
+        if (( found == 0 )); then
+            log_info "Есть правила UFW [ufw show added]"
+            found=$((found + 1))
+        fi
+        log_info_simple_tab "$rule"
+    done < <(ufw::get_all_rules)
+
+    # (( found == 0 )) && log_info "Нет правил UFW [ufw show added]"
+    if (( found == 0 )); then
+        log_info "Нет правил UFW [ufw show added]"
+    fi
+}
+
 
 
 ssh::reset_and_pass() {
@@ -101,7 +140,7 @@ ssh::delete_all_bsss_rules() {
 # @stderr:      Ошибки удаления (если возникнут).
 # @exit_code:   Всегда 0 (ошибки не прерывают выполнение).
 sys::delete_paths() {
-    while IFS= read -r -d '' path; do
+    while IFS= read -r -d '' path || break; do
         local resp
         resp=$(rm -rfv -- "$path" ) || return
         log_info "Удалено: $resp"
@@ -146,7 +185,7 @@ ssh::is_port_busy() {
 # @stderr:      Не используется.
 # @exit_code:   0 — порт успешно сгенерирован; 1+ — ошибка (теоретически невозможна).
 ssh::generate_free_random_port() {
-    while IFS= read -r port; do
+    while IFS= read -r port || break; do
         if ! ssh::is_port_busy "$port"; then
             printf '%s\n' "$port"
             return
@@ -195,7 +234,7 @@ ufw::delete_all_bsss_rules() {
     local found_any=0
 
     local rule_args
-    while IFS= read -r -d '' rule_args; do
+    while IFS= read -r -d '' rule_args || break; do
         found_any=1
 
         if printf '%s' "$rule_args" | xargs ufw --force delete >> err.log 2>&1; then
@@ -205,9 +244,9 @@ ufw::delete_all_bsss_rules() {
         fi
     done < <(ufw::get_all_bsss_rules)
 
-    if (( found_any == 0 )); then
-        log_info "Активных правил ${UTIL_NAME^^} для UFW не обнаружено, синхронизация не требуется."
-    fi
+    # if (( found_any == 0 )); then
+    #     log_info "Активных правил ${UTIL_NAME^^} для UFW не обнаружено, синхронизация не требуется."
+    # fi
 }
 
 ufw::get_all_bsss_rules() {
@@ -216,6 +255,16 @@ ufw::get_all_bsss_rules() {
         BEGIN { ORS="\0" }
         $0 ~ marker {
             sub(/^ufw[[:space:]]+/, "");
+            print $0;
+        }
+    '
+}
+
+ufw::get_all_rules() {
+    ufw show added \
+    | awk -v marker="^ufw.*" '
+        BEGIN { ORS="\0" }
+        $0 ~ marker {
             print $0;
         }
     '
@@ -232,6 +281,14 @@ ufw::add_bsss_rule() {
     done
  
 }
+
+
+# @exit_code:   0 - exist
+#               1 - not exist
+# ssh::is_bsss_config_for_ssh_exists() {
+#     sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _
+# }
+
 
 # validate_ssh_port() {
 #     if [[ -z "$port" ]]; then

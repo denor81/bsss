@@ -17,7 +17,7 @@ orchestrator::dispatch_logic() {
         log_info "Настройки SSH ${UTIL_NAME^^} не найдены"
         # orchestrator::bsss_config_not_exists
     else
-        log_info "Найдены настройки SSH ${UTIL_NAME^^}"
+        log_info "Настройки SSH ${UTIL_NAME^^}"
         # orchestrator::bsss_config_exists
     fi
 }

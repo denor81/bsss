@@ -24,13 +24,15 @@ source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 #               $? - код ошибки дочернего процесса
 orchestrator::dispatch_logic() {
 
-    if [[ -z "$(sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | tr -d '\0')" ]]; then
-        log_info "Активных правил ${UTIL_NAME^^} для SSH не обнаружено, синхронизация не требуется."
-        orchestrator::bsss_config_not_exists
-    else
+    if sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
         orchestrator::bsss_config_exists
+    else
+        # log_info "Нет активных правил ${UTIL_NAME^^} для SSH, синхронизация не требуется."
+        orchestrator::bsss_config_not_exists
     fi
 }
+
+
 
 # @type:        Caller
 # @description: Обработчик сценария отсутствия конфигурации SSH
@@ -55,7 +57,7 @@ orchestrator::bsss_config_not_exists() {
 # @stderr:      Текстовый лог в stderr (логи).
 # @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
 orchestrator::bsss_config_exists() {
-    ssh::show_bsss_configs
+    ssh::log_bsss_configs
 
     log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
     log_info_simple_tab "2. Переустановка (замена на новый порт)"

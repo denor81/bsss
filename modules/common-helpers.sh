@@ -110,10 +110,11 @@ ssh::log_active_ports_from_ss() {
     active_ports=$(ssh::get_ports_from_ss | tr '\0' ',' | sed 's/,$//')
 
     if [[ -z "$active_ports" ]]; then
-        log_error "Активные порты не определены [ss -ltnp]"
+        log_error "Нет активных SSH портов [ss -ltnp]"
         (( strict_mode == 1 )) && return 1
     else
-        log_info "Активные SSH порты [ss -ltnp]: ${active_ports}"
+        log_info "Есть активные SSH порты [ss -ltnp]: ${active_ports}"
     fi
 
 }
+
