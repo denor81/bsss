@@ -279,13 +279,15 @@ ufw::get_all_bsss_rules() {
 }
 
 ufw::get_all_rules() {
-    ufw show added \
-    | awk -v marker="^ufw.*" '
-        BEGIN { ORS="\0" }
-        $0 ~ marker {
-            print $0;
-        }
-    '
+    if command -v ufw > /dev/null 2>&1; then
+        ufw show added \
+        | awk -v marker="^ufw.*" '
+            BEGIN { ORS="\0" }
+            $0 ~ marker {
+                print $0;
+            }
+        '
+    fi
 }
 
 ufw::add_bsss_rule() {
