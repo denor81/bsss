@@ -13,13 +13,12 @@ source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
-# @type:        Dispatcher
+# @type:        Orchestrator
 # @description: Определяет состояние конфигурации SSH (существует/отсутствует) 
 #               и переключает логику модуля на соответствующий сценарий.
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @stderr:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
 orchestrator::dispatch_logic() {
@@ -27,21 +26,16 @@ orchestrator::dispatch_logic() {
     if sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
         orchestrator::bsss_config_exists
     else
-        # log_info "Нет активных правил ${UTIL_NAME^^} для SSH, синхронизация не требуется."
         orchestrator::bsss_config_not_exists
     fi
 }
 
-
-
-# @type:        Caller
+# @type:        Orchestrator
 # @description: Обработчик сценария отсутствия конфигурации SSH
-#               Установка порта
-#               Завершающие команды после установки порта
+#               Установка нового порта SSH и добавление правила в UFW
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @stderr:      нет
 # @exit_code:   0 — упешно
 #               $? — код ошибки дочернего процесса
 orchestrator::bsss_config_not_exists() {
@@ -49,13 +43,13 @@ orchestrator::bsss_config_not_exists() {
     orchestrator::actions_after_port_install
 }
 
-# @type:        Dispatcher
-# @description: Интерфейс выбора действий при наличии существующих конфигов.
-# @params:      Список путей к файлам.
-# @stdin:       Не используется.
-# @stdout:      Текстовый лог в stderr (логи).
-# @stderr:      Текстовый лог в stderr (логи).
-# @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
+# @type:        Orchestrator
+# @description: Интерфейс выбора действий при наличии существующих конфигов
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - код ошибки дочернего процесса
 orchestrator::bsss_config_exists() {
     ssh::log_bsss_configs
 
@@ -76,7 +70,6 @@ main() {
     orchestrator::dispatch_logic
 }
 
-# (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
 fi

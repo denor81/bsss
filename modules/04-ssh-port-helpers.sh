@@ -303,18 +303,3 @@ ufw::add_bsss_rule() {
 }
 
 
-# @exit_code:   0 - exist
-#               1 - not exist
-# ssh::is_bsss_config_for_ssh_exists() {
-#     sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _
-# }
-
-
-# validate_ssh_port() {
-#     if [[ -z "$port" ]]; then
-#         log_error "Не указан порт SSH для конфигурационного файла"
-#         return 1
-#     elif [[ ! "$port" =~ ^-?[0-9]+$ ]]; then
-#         log_error "Порт SSH не является числом [$port]"
-#     fi
-# }
