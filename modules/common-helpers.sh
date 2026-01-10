@@ -34,8 +34,8 @@ sys::get_paths_by_mask() {
 # @type:        Filter
 # @description: Возвращает строку - путь с типом
 # @params:      нет
-# @stdin:       NUL-separated paths
-# @stdout:      NUL-separated strings "path:type"
+# @stdin:       path\0 (0..N)
+# @stdout:      path:type\0 (0..N)
 # @exit_code:   0 - всегда
 sys::get_modules_paths_w_type () {
     xargs -r0 awk -F ':[[:space:]]+' '
@@ -51,8 +51,8 @@ sys::get_modules_paths_w_type () {
 # @description: Возвращает отфильтрованные по типу пути к модулям
 # @params:
 #   type        Module type
-# @stdin:       NUL-separated strings "path:type"
-# @stdout:      NUL-separated strings "path"
+# @stdin:       path:type\0 (0..N)
+# @stdout:      path\0 (0..N)
 # @exit_code:   0 - всегда
 sys::get_modules_by_type () {
     awk -v type="$1" -v RS='\0' -F'<:>' '
@@ -64,7 +64,7 @@ sys::get_modules_by_type () {
 # @description: Получает активные SSH порты из ss
 # @params:      нет
 # @stdin:       нет
-# @stdout:      "port\0"
+# @stdout:      port\0 (0..N)
 # @exit_code:   0 - всегда
 ssh::get_ports_from_ss() {
     ss -Hltnp | awk '
@@ -80,8 +80,8 @@ ssh::get_ports_from_ss() {
 # @type:        Filter
 # @description: Получает первый порт из path
 # @params:      нет
-# @stdin:       "path\0"
-# @stdout:      "port\0"
+# @stdin:       path\0
+# @stdout:      port\0
 # @exit_code:   0 - всегда
 ssh::get_first_port_from_path() {
     xargs -r0 awk '
