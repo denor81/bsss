@@ -2,15 +2,13 @@
 # MODULE_TYPE: helper
 # Использование: source "/modules/...sh"
 
-# @type:        Action
-# @description: Основной функционал установки/изменения SSH порта.
-#               Запрашивает у пользователя порт, проверяет его доступность,
-#               удаляет старые конфигурации (если требуется) и создает новую.
-# @params:      $@ — список путей к существующим конфигурационным файлам (передается в sys::delete_paths через поток).
-# @stdin:       Не используется напрямую (но передает $@ через printf в sys::delete_paths).
-# @stdout:      Логи процесса в stderr.
-# @stderr:      Логи процесса и сообщения об ошибках.
-# @exit_code:   0 — порт успешно установлен; 1+ — ошибка в процессе.
+# @type:        Filter
+# @description: Основной функционал установки/изменения SSH порта
+# @params:      нет
+# @stdin:       port\0
+# @stdout:      нет
+# @exit_code:   0 - порт успешно установлен
+#               $? - ошибка в процессе
 ssh::install_new_port() {
     local new_port
     read -r -d '' new_port
@@ -19,6 +17,13 @@ ssh::install_new_port() {
     printf '%s\0' "$new_port" | ufw::add_bsss_rule
 }
 
+# @type:        Source
+# @description: Запрашивает у пользователя новый SSH порт
+# @params:      нет
+# @stdin:       нет
+# @stdout:      port\0
+# @exit_code:   0 - успешно
+#               $? - ошибка
 ssh::ask_new_port() {
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
@@ -33,13 +38,13 @@ ssh::ask_new_port() {
     done
 }
 
-# @type:        Source
-# @description: Выводит список найденных конфигураций и связанных с ними портов.
-# @params:      Список путей к файлам.
-# @stdin:       Не используется.
-# @stdout:      Текстовый отчет в stderr (логи).
-# @stderr:      Текстовый отчет в stderr (логи).
-# @exit_code:   0 — логика успешно отработала; 1+ — если в дочерних функциях произошел сбой.
+# @type:        Orchestrator
+# @description: Выводит список найденных конфигураций и связанных с ними портов
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - логика успешно отработала
+#               $? - если в дочерних функциях произошел сбой
 ssh::log_bsss_configs() {
     local path
     local port
@@ -62,6 +67,12 @@ ssh::log_bsss_configs() {
     fi
 }
 
+# @type:        Orchestrator
+# @description: Выводит все сторонние конфигурации SSH с портами
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 ssh::log_all_configs_w_port() {
     local grep_result
     local found=0
@@ -82,13 +93,13 @@ ssh::log_all_configs_w_port() {
     fi
 }
 
-# @type:        Action
-# @description: Выполняет действия после установки порта: перезапуск сервисов и валидация.
-# @params:      Не принимает параметры.
-# @stdin:       Не используется.
-# @stdout:      Зависит от вызываемых функций.
-# @stderr:      Зависит от вызываемых функций.
-# @exit_code:   0 — действия успешно выполнены; 1+ — ошибка в процессе.
+# @type:        Orchestrator
+# @description: Выполняет действия после установки порта: перезапуск сервисов и валидация
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - действия успешно выполнены
+#               $? - ошибка в процессе
 orchestrator::actions_after_port_install() {
     sys::restart_services
 
@@ -99,7 +110,12 @@ orchestrator::actions_after_port_install() {
     ufw::log_active_ufw_rules
 }
 
-# @type:        Source
+# @type:        Orchestrator
+# @description: Выводит активные правила UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 ufw::log_active_ufw_rules() {
     local rule
     local found=0
@@ -111,6 +127,7 @@ ufw::log_active_ufw_rules() {
             found=$((found + 1))
         fi
         log_info_simple_tab "$rule"
+
     done < <(ufw::get_all_rules)
 
     if (( found == 0 )); then
@@ -119,7 +136,12 @@ ufw::log_active_ufw_rules() {
 }
 
 
-
+# @type:        Filter
+# @description: Удаляет все правила BSSS и передает порт дальше
+# @params:      нет
+# @stdin:       port\0 (опционально)
+# @stdout:      port\0 (опционально)
+# @exit_code:   0 - успешно
 ssh::reset_and_pass() {
     local port=""
 
@@ -132,6 +154,12 @@ ssh::reset_and_pass() {
     [[ -n "$port" ]] && printf '%s\0' "$port" || true
 }
 
+# @type:        Filter
+# @description: Удаляет все правила UFW BSSS и передает порт дальше
+# @params:      нет
+# @stdin:       port\0 (опционально)
+# @stdout:      port\0 (опционально)
+# @exit_code:   0 - успешно
 ufw::reset_and_pass() {
     local port=""
 
@@ -144,19 +172,23 @@ ufw::reset_and_pass() {
     [[ -n "$port" ]] && printf '%s\0' "$port" || true
 }
 
+# @type:        Orchestrator
+# @description: Удаляет все правила BSSS SSH
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 ssh::delete_all_bsss_rules() {
     # || true нужен потому что sys::get_paths_by_mask может возвращать пустоту и read зависает
     sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::delete_paths || true
 }
 
-# UPDATE
-# @type:        Action
-# @description: Удаляет указанные файлы и директории.
-# @params:      Список путей к файлам/директориям для удаления.
-# @stdin:       NUL-separated paths
-# @stdout:      Логи процесса удаления.
-# @stderr:      Ошибки удаления (если возникнут).
-# @exit_code:   Всегда 0 (ошибки не прерывают выполнение).
+# @type:        Filter
+# @description: Удаляет указанные файлы и директории
+# @params:      нет
+# @stdin:       path\0 (0..N)
+# @stdout:      нет
+# @exit_code:   0 - всегда
 sys::delete_paths() {
     while IFS= read -r -d '' path || break; do
         local resp
@@ -167,13 +199,13 @@ sys::delete_paths() {
 
 
 
-# @type:        Action
-# @description: Перезапускает SSH сервис после проверки конфигурации.
-# @params:      Не принимает параметры.
-# @stdin:       Не используется.
-# @stdout:      Логи процесса перезапуска.
-# @stderr:      Сообщения об ошибках конфигурации.
-# @exit_code:   0 — сервис успешно перезапущен; 1 — ошибка конфигурации.
+# @type:        Orchestrator
+# @description: Перезапускает SSH сервис после проверки конфигурации
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - сервис успешно перезапущен
+#               1 - ошибка конфигурации
 sys::restart_services() {
     if sshd -t; then
         systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
@@ -184,24 +216,25 @@ sys::restart_services() {
     fi
 }
 
-# @type:        Checker
-# @description: Проверяет, занят ли указанный порт.
-# @params:      $1 - номер порта для проверки.
-# @stdin:       Не используется.
-# @stdout:      Не используется.
-# @stderr:      Не используется.
-# @exit_code:   0 — порт свободен; 1 — порт занят.
+# @type:        Filter
+# @description: Проверяет, занят ли указанный порт
+# @params:
+#   port        Номер порта для проверки
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - порт свободен
+#               1 - порт занят
 ssh::is_port_busy() {
     ss -ltn | grep -qE ":$1([[:space:]]|$)"
 }
 
-# @type:        Generator
-# @description: Генерирует случайный свободный порт в диапазоне 10000-65535.
-# @params:      Не принимает параметры.
-# @stdin:       Не используется.
-# @stdout:      Сгенерированный номер порта.
-# @stderr:      Не используется.
-# @exit_code:   0 — порт успешно сгенерирован; 1+ — ошибка (теоретически невозможна).
+# @type:        Source
+# @description: Генерирует случайный свободный порт в диапазоне 10000-65535
+# @params:      нет
+# @stdin:       нет
+# @stdout:      port
+# @exit_code:   0 - порт успешно сгенерирован
+#               $? - ошибка
 ssh::generate_free_random_port() {
     while IFS= read -r port || break; do
         if ! ssh::is_port_busy "$port"; then
@@ -211,13 +244,13 @@ ssh::generate_free_random_port() {
     done < <(shuf -i 10000-65535)
 }
 
-# @type:        Creator
-# @description: Создает новый конфигурационный файл SSH с указанным портом.
-# @params:      $1 - номер порта для настройки.
-# @stdin:       Не используется.
-# @stdout:      Логи процесса создания.
-# @stderr:      Сообщения об ошибках.
-# @exit_code:   0 — файл успешно создан; 1 — ошибка создания.
+# @type:        Filter
+# @description: Создает новый конфигурационный файл SSH с указанным портом
+# @params:      нет
+# @stdin:       port\0
+# @stdout:      нет
+# @exit_code:   0 - файл успешно создан
+#               1 - ошибка создания
 ssh::create_config_file() {
     local path="${SSH_CONFIGD_DIR%/}/$BSSS_SSH_CONFIG_FILE_NAME"
     local port
@@ -237,17 +270,24 @@ EOF
     fi
 }
 
-# @type:        Formatter
-# @description: Форматирует строку для вывода пути к файлу и порта.
-# @params:      $1 - путь к файлу, $2 - номер порта.
-# @stdin:       Не используется.
-# @stdout:      Отформатированная строка.
-# @stderr:      Не используется.
-# @exit_code:   Всегда 0.
+# @type:        Filter
+# @description: Форматирует строку для вывода пути к файлу и порта
+# @params:
+#   path        Путь к файлу
+#   port        Номер порта
+# @stdin:       нет
+# @stdout:      Отформатированная строка
+# @exit_code:   0 - всегда
 log::path_and_port_template() {
     printf '%s\n' "$1 Порт: $2"
 }
 
+# @type:        Orchestrator
+# @description: Удаляет все правила UFW BSSS
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 ufw::delete_all_bsss_rules() {
     local found_any=0
 
@@ -267,6 +307,12 @@ ufw::delete_all_bsss_rules() {
     # fi
 }
 
+# @type:        Source
+# @description: Получает все правила UFW BSSS
+# @params:      нет
+# @stdin:       нет
+# @stdout:      rule\0 (0..N)
+# @exit_code:   0 - всегда
 ufw::get_all_bsss_rules() {
     ufw show added \
     | awk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
@@ -278,6 +324,12 @@ ufw::get_all_bsss_rules() {
     '
 }
 
+# @type:        Source
+# @description: Получает все правила UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      rule\0 (0..N)
+# @exit_code:   0 - всегда
 ufw::get_all_rules() {
     if command -v ufw > /dev/null 2>&1; then
         ufw show added \
@@ -290,6 +342,12 @@ ufw::get_all_rules() {
     fi
 }
 
+# @type:        Filter
+# @description: Добавляет правило UFW для BSSS
+# @params:      нет
+# @stdin:       port\0 (0..N)
+# @stdout:      нет
+# @exit_code:   0 - успешно
 ufw::add_bsss_rule() {
     local port
     while read -r -d '' port; do
