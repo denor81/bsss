@@ -2,20 +2,24 @@
 # MODULE_TYPE: helper
 # Использование: source "/modules/...sh"
 
-# @stdout:      # x 80
+# @type:        UNDEFINED
+# @description: Выводит разделитель из 80 символов '#'
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 log::draw_border() {
     printf '%.0s#' {1..80} >&2; echo >&2
 }
 
 # @type:        Source
-# @description: Получает список путей через нулевой разделитель.
+# @description: Получает список путей через нулевой разделитель
 # @params:
-#   dir         [optional] Directory to search in (default: current directory).
-#   mask        [optional] Glob pattern (default: "*").
+#   dir         [optional] Directory to search in (default: current directory)
+#   mask        [optional] Glob pattern (default: "*")
 # @stdin:       нет
 # @stdout:      path\0 (0..N)
-# @stderr:      нет
-# @exit_code:   0 - всегда.
+# @exit_code:   0 - всегда
 sys::get_paths_by_mask() {
     local dir=${1:-.}
     local mask=${2:-*}
@@ -28,30 +32,28 @@ sys::get_paths_by_mask() {
 }
 
 # @type:        Filter
-# @description: Возвращает строку - путь с типом.
-# @params:      нет.
+# @description: Возвращает строку - путь с типом
+# @params:      нет
 # @stdin:       NUL-separated paths
 # @stdout:      NUL-separated strings "path:type"
-# @stderr:      Ничего.
-# @exit_code:   0 - всегда.
+# @exit_code:   0 - всегда
 sys::get_modules_paths_w_type () {
     xargs -r0 awk -F ':[[:space:]]+' '
         BEGIN { IGNORECASE=1; ORS="\0" }
         /^# MODULE_TYPE:/ {
             print FILENAME "<:>" $2
-            nextfile  
+            nextfile
         }
     '
 }
 
 # @type:        Filter
-# @description: Возвращает отфильтрованные по типу пути к модулям.
-# @params:      
-#   type        Module type.
+# @description: Возвращает отфильтрованные по типу пути к модулям
+# @params:
+#   type        Module type
 # @stdin:       NUL-separated strings "path:type"
 # @stdout:      NUL-separated strings "path"
-# @stderr:      Ничего.
-# @exit_code:   0 — всегда.
+# @exit_code:   0 - всегда
 sys::get_modules_by_type () {
     awk -v type="$1" -v RS='\0' -F'<:>' '
         type == $2 { printf "%s\0", $1 }
@@ -59,12 +61,11 @@ sys::get_modules_by_type () {
 }
 
 # @type:        Source
-# @description: Получает активные SSH порты из ss.
+# @description: Получает активные SSH порты из ss
 # @params:      нет
 # @stdin:       нет
 # @stdout:      "port\0"
-# @stderr:      нет
-# @exit_code:   0 — всегда.
+# @exit_code:   0 - всегда
 ssh::get_ports_from_ss() {
     ss -Hltnp | awk '
         BEGIN { ORS="\0" }
@@ -76,12 +77,11 @@ ssh::get_ports_from_ss() {
     ' | sort -zu
 }
 
-# @type:        Source
+# @type:        Filter
 # @description: Получает первый порт из path
 # @params:      нет
 # @stdin:       "path\0"
 # @stdout:      "port\0"
-# @stderr:      нет
 # @exit_code:   0 - всегда
 ssh::get_first_port_from_path() {
     xargs -r0 awk '
@@ -93,16 +93,14 @@ ssh::get_first_port_from_path() {
     '
 }
 
-# @type:        Validator
-# @description: Проверяет возможность определения активных портов.
-# @params:      Использует ssh::get_ports_from_ss.
-#   strict_mode [optional] Строгий режим вызывающий ошибку 1 при не доступности портов
-#               строгий режим выполняется при старте скрипта, что бы точно быть уверенным,
-#               что ss команда выполянется и порты определяются
-# @stdin:       Не используется.
-# @stdout:      Ничего.
-# @stderr:      Диагностические сообщения (log_info, log_error).
-# @exit_code:   0 — порты определены, 1 — порты не определены (выполнение не возможно).
+# @type:        Orchestrator
+# @description: Проверяет возможность определения активных портов
+# @params:
+#   strict_mode [optional] Строгий режим вызывающий ошибку 1 при недоступности портов
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - порты определены
+#               1 - порты не определены
 ssh::log_active_ports_from_ss() {
     local strict_mode=${1:-0}
 
