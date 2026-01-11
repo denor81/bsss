@@ -12,13 +12,19 @@ source "${MODULES_DIR_PATH}/../lib/logging.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
+# @type:        Orchestrator
+# @description: Проверяет состояние SSH портов и правил
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка при проверке портов
 check() {
     ssh::log_active_ports_from_ss "1"
     ssh::log_bsss_configs
     ssh::log_all_configs_w_port
     ufw::log_active_ufw_rules
 }
-
 
 main() {
     check

@@ -10,20 +10,20 @@ readonly CURRENT_MODULE_NAME="$(basename "$0")"
 source "${MODULES_DIR_PATH}/../lib/vars.conf"
 source "${MODULES_DIR_PATH}/../lib/logging.sh"
 
-# @type:        Validator
-# @description: Проверяет необходимость перезагрузки системы.
-# @params:      Использует глобальные readonly REBOOT_REQUIRED_FILE_PATH.
-# @stdin:       Не используется.
-# @stdout:      Ничего.
-# @stderr:      Диагностические сообщения (log_info, log_error).
-# @exit_code:   0 — перезагрузка не требуется, 1 — необходима перезагрузка.
+# @type:        Orchestrator
+# @description: Проверяет необходимость перезагрузки системы
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - перезагрузка не требуется
+#               1 - необходима перезагрузка
 check() {
     if [[ -f "$REBOOT_REQUIRED_FILE_PATH" ]]; then
         log_error "Система нуждается в перезагрузке $REBOOT_REQUIRED_FILE_PATH"
         return 1
     else
         log_info "Перезагрузка не требуется"
-    fi   
+    fi
 }
 
 main() {

@@ -11,6 +11,13 @@ source "${MODULES_DIR_PATH}/../lib/vars.conf"
 source "${MODULES_DIR_PATH}/../lib/logging.sh"
 source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 
+# @type:        Orchestrator
+# @description: Проверяет наличие UFW и устанавливает при необходимости
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - UFW установлен или уже был установлен
+#               1 - ошибка установки или отказ от установки
 check() {
     if command -v ufw > /dev/null 2>&1; then
         log_info "UFW установлен"
@@ -31,7 +38,6 @@ check() {
         fi
     fi
 }
-
 
 main() {
     check
