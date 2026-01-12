@@ -101,7 +101,7 @@ orchestrator::install_new_port_w_guard() {
 
     # 3. Ожидание подтверждения
     log::draw_lite_border
-    log_info_simple_tab "Запуск таймера безопасности (5 минут)... [PID: $$watchdog_pid]"
+    log_info_simple_tab "Запуск таймера безопасности (5 минут)... [PID: $watchdog_pid]"
     log_info_simple_tab "ВНИМАНИЕ: Настройки применены."
     log_info_simple_tab "1. ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА."
     log_info_simple_tab "2. Попробуйте подключиться по новому порту."
@@ -110,7 +110,7 @@ orchestrator::install_new_port_w_guard() {
     if io::ask_value "Для подтверждения введите 'connected'" "" "^connected$" "слово 'connected'"; then
         # Если ввели верно - убиваем таймер
         kill "$watchdog_pid" 2>/dev/null || true
-        log_success "Изменения зафиксированы. Таймер отката отключен. [kill $$watchdog_pid]"
+        log_success "Изменения зафиксированы. Таймер отката отключен. [kill $watchdog_pid]"
     fi
 }
 
