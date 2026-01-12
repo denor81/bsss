@@ -18,8 +18,16 @@ source "${MAIN_DIR_PATH}/lib/vars.conf"
 source "${MAIN_DIR_PATH}/lib/logging.sh"
 source "${MAIN_DIR_PATH}/lib/uninstall_functions.sh"
 
-# Парсинг параметров запуска с использованием getopts
-_parse_params() {
+# @type:        Filter
+# @description: Парсинг параметров запуска с использованием getopts
+# @params:
+#   allowed_params [optional] Разрешенные параметры (default: $ALLOWED_PARAMS)
+#   @            Остальные параметры для парсинга
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - некорректный параметр
+parse_params() {
     # Всегда используем дефолтный ALLOWED_PARAMS
     local allowed_params="${1:-$ALLOWED_PARAMS}"
     shift
@@ -34,30 +42,55 @@ _parse_params() {
     done
 }
 
-_check_permissions() {
+# @type:        Filter
+# @description: Проверяет права доступа для запуска скрипта
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - права root есть
+#               1 - недостаточно прав
+check_permissions() {
     if [[ $EUID -ne 0 ]]; then
         log_error "Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
         return 1
     fi
 }
 
-_show_help() {
+# @type:        Sink
+# @description: Выводит справочную информацию
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+show_help() {
     log_info "Доступны короткие параметры $ALLOWED_PARAMS $ALLOWED_PARAMS_HELP"
 }
 
-_run_default() {
+# @type:        Orchestrator
+# @description: Запускает основной скрипт
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   не возвращается (exec)
+run_default() {
     exec bash "${MAIN_DIR_PATH%/}/$MAIN_FILE"
 }
 
-# Основная функция
+# @type:        Orchestrator
+# @description: Основная точка входа
+# @params:      @ - параметры командной строки
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка проверки прав или параметров
 main() {
-    _check_permissions
-    _parse_params "$ALLOWED_PARAMS" "$@"
+    check_permissions
+    parse_params "$ALLOWED_PARAMS" "$@"
 
     case "$ACTION" in
-        help)      _show_help ;;
-        uninstall) _run_uninstall ;;
-        *)         _run_default ;;
+        help)      show_help ;;
+        uninstall) run_uninstall ;;
+        *)         run_default ;;
     esac
 }
 
