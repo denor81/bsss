@@ -71,36 +71,6 @@ orchestrator::bsss_config_not_exists() {
 }
 
 # @type:        Orchestrator
-# @description: Полная очистка системы от следов BSSS и деактивация UFW.
-#               Вызывается при критическом сбое или таймауте.
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда
-orchestrator::total_rollback() {
-    log_warn "ROLLBACK: Инициирован полный демонтаж настроек BSSS..."
-
-    ssh::delete_all_bsss_rules
-    ufw::force_disable
-    ufw::delete_all_bsss_rules
-    orchestrator::actions_after_port_change
-    
-    log_success "ROLLBACK: Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
-}
-
-# @type:        Orchestrator
-# @description: Фоновый процесс-таймер. Не зависит от жизни родительской сессии.
-# @params:      $1 - PID родителя (скрипта)
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда
-orchestrator::watchdog_timer() {
-    sleep 10
-    kill "$1" 2>/dev/null || true
-    orchestrator::total_rollback
-}
-
-# @type:        Orchestrator
 # @description: Применение изменений с защитным таймером
 # @params:      нет
 # @stdin:       нет
@@ -116,27 +86,31 @@ orchestrator::install_new_port_w_guard() {
                    ssh::delete_all_bsss_rules ufw::force_disable ufw::delete_all_bsss_rules \
                    orchestrator::actions_after_port_change log_warn log_success)
 
+    local watchdog_cmd
+    watchdog_cmd="source "${MODULES_DIR_PATH}/../lib/vars.conf"; \
+                    source "${MODULES_DIR_PATH}/../lib/logging.sh"; \
+                    source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"; \
+                    source "${MODULES_DIR_PATH}/common-helpers.sh"; \
+                    source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"; \
+                    orchestrator::watchdog_timer $current_pid;"
+
     orchestrator::install_new_port
-    log_info "Запуск таймера безопасности (5 минут)..."
-    nohup bash -c "$watchdog_init; orchestrator::watchdog_timer $current_pid" >"~/bsss/bsss_watchdog.log" 2>&1 &
+    nohup bash -c "$watchdog_cmd">bsss_watchdog.log 2>&1 &
     local watchdog_pid=$!
-    log_info "WATCH_DOG_PID: $watchdog_pid"
+    orchestrator::actions_after_port_change
 
     # 3. Ожидание подтверждения
     log::draw_lite_border
-    log_info "ВНИМАНИЕ: Настройки применены."
-    log_info "1. ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА."
-    log_info "2. Попробуйте подключиться по новому порту."
-    log_info "Если вы не подтвердите связь, через 5 минут произойдет ОТКАТ."
+    log_info_simple_tab "Запуск таймера безопасности (5 минут)... [PID: $$watchdog_pid]"
+    log_info_simple_tab "ВНИМАНИЕ: Настройки применены."
+    log_info_simple_tab "1. ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА."
+    log_info_simple_tab "2. Попробуйте подключиться по новому порту."
+    log_info_simple_tab "Если вы не подтвердите связь, через 5 минут произойдет ОТКАТ."
     
     if io::ask_value "Для подтверждения введите 'connected'" "" "^connected$" "слово 'connected'"; then
         # Если ввели верно - убиваем таймер
         kill "$watchdog_pid" 2>/dev/null || true
-        log_success "Изменения зафиксированы. Таймер отката отключен."
-    else
-        # Сработает, если скрипт прервется или введут не то
-        kill "$watchdog_pid" 2>/dev/null || true
-        orchestrator::total_rollback
+        log_success "Изменения зафиксированы. Таймер отката отключен. [kill $$watchdog_pid]"
     fi
 }
 

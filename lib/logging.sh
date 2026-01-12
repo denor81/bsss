@@ -5,22 +5,22 @@
 
 # Символы для обозначения статуса сообщений
 # shellcheck disable=SC2034
-readonly SYMBOL_SUCCESS="[V]"
+readonly SYMBOL_SUCCESS="[v]"
 readonly SYMBOL_QUESTION="[?]" # Используется в lib/user_confirmation.sh
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_WARN="[!]"
-readonly SYMBOL_ERROR="[X]"
+readonly SYMBOL_ERROR="[x]"
 
 readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
 
 # Функции логирования
-# Выводит успешное сообщение с символом [V]
+# Выводит успешное сообщение с символом [v]
 # Все логи отправляем в stderr, что бы сохранять stdout пустым
 log_success() {
     echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2
 }
 
-# Выводит сообщение об ошибке с символом [X] в stderr
+# Выводит сообщение об ошибке с символом [x] в stderr
 log_error() {
     echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
 }
