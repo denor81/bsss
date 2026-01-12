@@ -100,10 +100,10 @@ ssh::log_all_configs_w_port() {
 # @stdout:      нет
 # @exit_code:   0 - действия успешно выполнены
 #               $? - ошибка в процессе
-orchestrator::actions_after_port_install() {
+orchestrator::actions_after_port_change() {
     sys::restart_services
 
-    log::draw_border
+    log::draw_lite_border
     log_info "Актуальная информация после внесения изменений"
     ssh::log_active_ports_from_ss
     ssh::log_bsss_configs
@@ -289,11 +289,11 @@ log::path_and_port_template() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::delete_all_bsss_rules() {
-    local found_any=0
+    # local found_any=0
 
     local rule_args
     while IFS= read -r -d '' rule_args || break; do
-        found_any=1
+        # found_any=1
 
         if printf '%s' "$rule_args" | xargs ufw --force delete >> err.log 2>&1; then
             log_info "Удалено правило UFW: ufw --force delete $rule_args"
@@ -358,6 +358,17 @@ ufw::add_bsss_rule() {
         fi
     done
  
+}
+
+# @type:        Filter
+# @description: Деактивирует UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::force_disable() {
+    ufw --force disable >/dev/null 2>&1
+    log_success "UFW: Полностью деактивирован [ufw --force disable]"
 }
 
 

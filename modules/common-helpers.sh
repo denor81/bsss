@@ -2,16 +2,6 @@
 # MODULE_TYPE: helper
 # Использование: source "/modules/...sh"
 
-# @type:        UNDEFINED
-# @description: Выводит разделитель из 80 символов '#'
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-log::draw_border() {
-    printf '%.0s#' {1..80} >&2; echo >&2
-}
-
 # @type:        Source
 # @description: Получает список путей через нулевой разделитель
 # @params:

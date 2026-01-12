@@ -43,7 +43,7 @@ bash
 #               $? — код ошибки дочернего процесса
 orchestrator::bsss_config_not_exists() {
     ssh::ask_new_port | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
-    orchestrator::actions_after_port_install
+    orchestrator::actions_after_port_change
 }
 ```
  - Фильтр

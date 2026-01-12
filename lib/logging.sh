@@ -8,6 +8,7 @@
 readonly SYMBOL_SUCCESS="[V]"
 readonly SYMBOL_QUESTION="[?]" # Используется в lib/user_confirmation.sh
 readonly SYMBOL_INFO="[ ]"
+readonly SYMBOL_WARN="[!]"
 readonly SYMBOL_ERROR="[X]"
 
 readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
@@ -26,11 +27,35 @@ log_error() {
 
 # Выводит информационное сообщение с символом [ ]
 log_info() {
-    local symbol=${2:-$SYMBOL_INFO}
-    echo -e "$symbol [$CURRENT_MODULE_NAME] $1" >&2
+    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
+}
+
+# Выводит предупреждение с символом [!]
+log_warn() {
+    echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $1" >&2
 }
 
 # Выводит информационное сообщение с символом [ ]
 log_info_simple_tab() {
     echo -e "$SYMBOL_INFO    $1" >&2
+}
+
+# @type:        UNDEFINED
+# @description: Выводит разделитель из 80 символов '#'
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+log::draw_border() {
+    printf '%.0s#' {1..80} >&2; echo >&2
+}
+
+# @type:        UNDEFINED
+# @description: Выводит разделитель из 80 символов '#'
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+log::draw_lite_border() {
+    printf '%.0s-' {1..80} >&2; echo >&2
 }
