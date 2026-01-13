@@ -13,6 +13,12 @@ source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
+trap 'orchestrator::rollback' SIGUSR1 SIGTERM
+
+orchestrator::rollback() {
+    log_info "Запущен ROLLBACK"
+}
+
 # @type:        Orchestrator
 # @description: Определяет состояние конфигурации SSH (существует/отсутствует) 
 #               и переключает логику модуля на соответствующий сценарий.
@@ -89,20 +95,21 @@ orchestrator::install_new_port_w_guard() {
                     source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"; \
                     export CURRENT_MODULE_NAME='${CURRENT_MODULE_NAME}'; \
                     orchestrator::watchdog_timer $current_pid;"
+
     local port
     port=$(orchestrator::install_new_port | tr -d '\0') || return
+
     nohup bash -c "$watchdog_cmd">"${MODULES_DIR_PATH}/../bsss_watchdog.log" 2>&1 &
     local watchdog_pid=$!
+
     orchestrator::actions_after_port_change
 
-    # 3. Ожидание подтверждения
     log::draw_lite_border
     log_info "Запуск таймера безопасности (5 минут)... [PID: $watchdog_pid]"
     log_info "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и подключитесь через порт $port"
     
     local resp
-    if resp=$(io::ask_value "Для подтверждения введите 'connected'" "" "^connected$" "слово 'connected'") || return; then
-        # Если ввели верно - убиваем таймер
+    if resp=$(io::ask_value "Для подтверждения введите 'connected'" "" "^connected$" "слово 'connected'" | tr -d '\0') || return; then
         kill "$watchdog_pid" 2>/dev/null || true
         log_success "Изменения зафиксированы. Таймер отката отключен. [kill $watchdog_pid]"
     fi

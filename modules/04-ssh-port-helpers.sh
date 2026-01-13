@@ -397,7 +397,10 @@ orchestrator::total_rollback() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 orchestrator::watchdog_timer() {
-    sleep "$ROLLBACK_TIMER"
-    kill "$1" 2>/dev/null || true
+    local main_script_process_id="$1"
+    log_info "watchdog: ожидание $ROLLBACK_TIMER_SECONDS сек..."
+    sleep "$ROLLBACK_TIMER_SECONDS"
+    log_info "watchdog: останавливаем процесс $main_script_process_id"
+    kill "$main_script_process_id" 2>/dev/null || true
     orchestrator::total_rollback
 }
