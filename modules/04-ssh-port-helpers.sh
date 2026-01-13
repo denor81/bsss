@@ -369,38 +369,5 @@ ufw::add_bsss_rule() {
 # @exit_code:   0 - успешно
 ufw::force_disable() {
     ufw --force disable >/dev/null 2>&1
-    log_success "UFW: Полностью деактивирован [ufw --force disable]"
-}
-
-# @type:        Orchestrator
-# @description: Полная очистка системы от следов BSSS и деактивация UFW.
-#               Вызывается при критическом сбое или таймауте.
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда
-orchestrator::total_rollback() {
-    log_warn "ROLLBACK: Инициирован полный демонтаж настроек BSSS..."
-
-    ssh::delete_all_bsss_rules
-    ufw::force_disable
-    ufw::delete_all_bsss_rules
-    orchestrator::actions_after_port_change
-    
-    log_success "ROLLBACK: Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
-}
-
-# @type:        Orchestrator
-# @description: Фоновый процесс-таймер. Не зависит от жизни родительской сессии.
-# @params:      $1 - PID родителя (скрипта)
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда
-orchestrator::watchdog_timer() {
-    local main_script_process_id="$1"
-    log_info "watchdog: ожидание $ROLLBACK_TIMER_SECONDS сек..."
-    sleep "$ROLLBACK_TIMER_SECONDS"
-    log_info "watchdog: останавливаем процесс $main_script_process_id"
-    kill "$main_script_process_id" 2>/dev/null || true
-    orchestrator::total_rollback
+    log_info "UFW: Полностью деактивирован [ufw --force disable]"
 }

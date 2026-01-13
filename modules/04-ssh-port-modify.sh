@@ -13,10 +13,23 @@ source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
-trap 'orchestrator::rollback' SIGUSR1 SIGTERM
+declare WATCHDOG_PID
 
-orchestrator::rollback() {
-    log_info "Запущен ROLLBACK"
+trap 'orchestrator::log_rollback_in_main_script' SIGUSR1
+
+orchestrator::log_rollback_in_main_script() {
+    printf '\n' >&2
+    log_info "Время истекло - запущен ROLLBACK"
+
+    # читаем лог в реальном времени
+    tail -n +1 -f --pid="$WATCHDOG_PID" "${MODULES_DIR_PATH}/../bsss_watchdog.log" | awk '
+        {
+            if ($0 ~ /EOF/) exit 0;
+            print $0;
+            fflush();
+        }
+    ' >&2 || true
+    exit 0
 }
 
 # @type:        Orchestrator
@@ -87,31 +100,20 @@ orchestrator::install_new_port_w_guard() {
     local current_pid=$$
     log_info "BSSS_PID: $current_pid"
 
-    local watchdog_cmd
-    watchdog_cmd="source "${MODULES_DIR_PATH}/../lib/vars.conf"; \
-                    source "${MODULES_DIR_PATH}/../lib/logging.sh"; \
-                    source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"; \
-                    source "${MODULES_DIR_PATH}/common-helpers.sh"; \
-                    source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"; \
-                    export CURRENT_MODULE_NAME='${CURRENT_MODULE_NAME}'; \
-                    orchestrator::watchdog_timer $current_pid;"
-
     local port
     port=$(orchestrator::install_new_port | tr -d '\0') || return
-
-    nohup bash -c "$watchdog_cmd">"${MODULES_DIR_PATH}/../bsss_watchdog.log" 2>&1 &
-    local watchdog_pid=$!
-
+    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/rollback.sh" "$current_pid">"${MODULES_DIR_PATH}/../bsss_watchdog.log" 2>&1 &
+    WATCHDOG_PID=$!
     orchestrator::actions_after_port_change
 
     log::draw_lite_border
-    log_info "Запуск таймера безопасности (5 минут)... [PID: $watchdog_pid]"
-    log_info "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и подключитесь через порт $port"
+    log_info "Запуск таймера безопасности (5 минут)..."
+    log_attantion "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и подключитесь через порт $port"
     
-    local resp
-    if resp=$(io::ask_value "Для подтверждения введите 'connected'" "" "^connected$" "слово 'connected'" | tr -d '\0') || return; then
-        kill "$watchdog_pid" 2>/dev/null || true
-        log_success "Изменения зафиксированы. Таймер отката отключен. [kill $watchdog_pid]"
+    if io::ask_value "Для подтверждения введите connected" "" "^connected$" "connected" >/dev/null || return; then
+        kill -USR1 "$WATCHDOG_PID" 2>/dev/null || true
+        wait "$WATCHDOG_PID" 2>/dev/null || true
+        log_success "Изменения зафиксированы. Таймер отката отключен."
     fi
 }
 
