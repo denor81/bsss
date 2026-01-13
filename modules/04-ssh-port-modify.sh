@@ -44,7 +44,7 @@ orchestrator::bsss_config_exists() {
     log_info_simple_tab "2. Переустановка (замена на новый порт)"
 
     local user_action
-    user_action=$(io::ask_value "Выберите" "" "^[12]$" "1/2") || return
+    user_action=$(io::ask_value "Выберите" "" "^[12]$" "1/2" | tr -d '\0') || return
 
     case "$user_action" in
         1) ssh::reset_and_pass | ufw::reset_and_pass ;;
@@ -81,33 +81,27 @@ orchestrator::install_new_port_w_guard() {
     local current_pid=$$
     log_info "BSSS_PID: $current_pid"
 
-    local watchdog_init
-    watchdog_init=$(declare -f orchestrator::watchdog_timer orchestrator::total_rollback \
-                   ssh::delete_all_bsss_rules ufw::force_disable ufw::delete_all_bsss_rules \
-                   orchestrator::actions_after_port_change log_warn log_success)
-
     local watchdog_cmd
     watchdog_cmd="source "${MODULES_DIR_PATH}/../lib/vars.conf"; \
                     source "${MODULES_DIR_PATH}/../lib/logging.sh"; \
                     source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"; \
                     source "${MODULES_DIR_PATH}/common-helpers.sh"; \
                     source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"; \
+                    export CURRENT_MODULE_NAME='${CURRENT_MODULE_NAME}'; \
                     orchestrator::watchdog_timer $current_pid;"
-
-    orchestrator::install_new_port
-    nohup bash -c "$watchdog_cmd">bsss_watchdog.log 2>&1 &
+    local port
+    port=$(orchestrator::install_new_port | tr -d '\0') || return
+    nohup bash -c "$watchdog_cmd">"${MODULES_DIR_PATH}/../bsss_watchdog.log" 2>&1 &
     local watchdog_pid=$!
     orchestrator::actions_after_port_change
 
     # 3. Ожидание подтверждения
     log::draw_lite_border
-    log_info_simple_tab "Запуск таймера безопасности (5 минут)... [PID: $watchdog_pid]"
-    log_info_simple_tab "ВНИМАНИЕ: Настройки применены."
-    log_info_simple_tab "1. ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА."
-    log_info_simple_tab "2. Попробуйте подключиться по новому порту."
-    log_info_simple_tab "Если вы не подтвердите связь, через 5 минут произойдет ОТКАТ."
+    log_info "Запуск таймера безопасности (5 минут)... [PID: $watchdog_pid]"
+    log_info "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и подключитесь через порт $port"
     
-    if io::ask_value "Для подтверждения введите 'connected'" "" "^connected$" "слово 'connected'"; then
+    local resp
+    if resp=$(io::ask_value "Для подтверждения введите 'connected'" "" "^connected$" "слово 'connected'") || return; then
         # Если ввели верно - убиваем таймер
         kill "$watchdog_pid" 2>/dev/null || true
         log_success "Изменения зафиксированы. Таймер отката отключен. [kill $watchdog_pid]"

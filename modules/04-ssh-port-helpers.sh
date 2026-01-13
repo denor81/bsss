@@ -6,15 +6,16 @@
 # @description: Основной функционал установки/изменения SSH порта
 # @params:      нет
 # @stdin:       port\0
-# @stdout:      нет
+# @stdout:      port\0
 # @exit_code:   0 - порт успешно установлен
 #               $? - ошибка в процессе
 ssh::install_new_port() {
     local new_port
     read -r -d '' new_port
 
-    printf '%s\0' "$new_port" | ssh::create_config_file
+    printf '%s\0' "$new_port" | ssh::create_bsss_config_file
     printf '%s\0' "$new_port" | ufw::add_bsss_rule
+    printf '%s\0' "$new_port"
 }
 
 # @type:        Source
@@ -32,7 +33,7 @@ ssh::ask_new_port() {
 
     local new_port
     while true; do
-        new_port=$(io::ask_value "Введите новый SSH порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port") || return
+        new_port=$(io::ask_value "Введите новый SSH порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port" | tr -d '\0') || return
         ssh::is_port_busy "$new_port" || { printf '%s\0' "$new_port"; break; }
         log_error "SSH порт $new_port уже занят другим сервисом."
     done
@@ -251,7 +252,7 @@ ssh::generate_free_random_port() {
 # @stdout:      нет
 # @exit_code:   0 - файл успешно создан
 #               1 - ошибка создания
-ssh::create_config_file() {
+ssh::create_bsss_config_file() {
     local path="${SSH_CONFIGD_DIR%/}/$BSSS_SSH_CONFIG_FILE_NAME"
     local port
     read -r -d '' port
@@ -396,7 +397,7 @@ orchestrator::total_rollback() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 orchestrator::watchdog_timer() {
-    sleep 30
+    sleep "$ROLLBACK_TIMER"
     kill "$1" 2>/dev/null || true
     orchestrator::total_rollback
 }

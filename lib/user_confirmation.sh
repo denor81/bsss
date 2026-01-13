@@ -23,7 +23,7 @@ io::ask_value() {
         choice=${choice:-$default}
         
         if [[ "$choice" =~ ^$pattern$ ]]; then
-            printf '%s\n' "$choice"
+            printf '%s\0' "$choice"
             break
         fi
         log_error "Ошибка ввода. Ожидается: $hint"
@@ -46,7 +46,7 @@ io::confirm_action() {
     
     # Ждем [yn]
     local choice
-    choice=$(io::ask_value "$question" "y" "[yn]" "Y/n")
+    choice=$(io::ask_value "$question" "y" "[yn]" "Y/n" | tr -d '\0') || return
 
     if [[ "$choice" == "n" ]]; then
         log_info "$exit_msg"
