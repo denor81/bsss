@@ -15,7 +15,6 @@ ssh::install_new_port() {
 
     printf '%s\0' "$new_port" | ssh::create_bsss_config_file
     printf '%s\0' "$new_port" | ufw::add_bsss_rule
-    printf '%s\0' "$new_port"
 }
 
 # @type:        Source

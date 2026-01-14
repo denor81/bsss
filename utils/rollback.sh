@@ -5,7 +5,6 @@ set -Eeuo pipefail
 
 readonly UTILS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
-readonly MAIN_SCRIPT_PID="$1"
 
 source "${UTILS_DIR_PATH}/../lib/vars.conf"
 source "${UTILS_DIR_PATH}/../lib/logging.sh"
@@ -21,23 +20,38 @@ orchestrator::stop_rollback() {
     log_info "Sleep остановлен [PID: $SLEEP_PID]"
     log_info "Watchdog остановлен"
     [[ -n "$SLEEP_PID" ]] && kill "$SLEEP_PID" 2>/dev/null
+    log_info "$CURRENT_MODULE_NAME завершен [PID: $$]" 2>&3
     exit 0
 }
 
 orchestrator::watchdog_timer() {
+    local main_script_pid="$1"
+    local watchdog_fifo="$2"
+    local main_script_name="$3"
+    # Используем анонимный дескриптор для вывода в FIFO, 
+    # переданный вторым аргументом $2
+    exec 3<> "$watchdog_fifo"
+
     # Запускаю в фоне, что бы можно было в любой момент сбросить таймер
     # Иначе sleep блокирует выполнение до истечения
     sleep "$ROLLBACK_TIMER_SECONDS" &
     SLEEP_PID=$!
 
     # Теперь ожидаем процесс sleep - тут можно прервать выполнение сигналом USR1
-    wait "$SLEEP_PID" 2>/dev/null
+    if wait "$SLEEP_PID" 2>/dev/null; then
+        # Если sleep дожил до конца — рубим основной скрипт
+        echo >&3
+        log_info "Время истекло - выполняется ОТКАТ" 2>&3
+        orchestrator::total_rollback 2>&3
 
-    log_info "Останавливаем главный процесс $MAIN_SCRIPT_PID"
-    kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
-    wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
-    log_info "Главный процесс остановлен $MAIN_SCRIPT_PID"
-    orchestrator::total_rollback
+        if kill -0 "$main_script_pid" 2>/dev/null; then
+            kill -USR1 "$main_script_pid" 2>/dev/null || true
+            log_info "$main_script_name завершен [PID: $main_script_pid]" 2>&3
+        fi
+        
+    fi
+    log_info "$CURRENT_MODULE_NAME завершен [PID: $$]" 2>&3
+    exec 3>&-
 }
 
 # @type:        Orchestrator
@@ -48,19 +62,19 @@ orchestrator::watchdog_timer() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 orchestrator::total_rollback() {
-    log_warn "ROLLBACK: Инициирован полный демонтаж настроек BSSS..."
+    log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
 
-    ssh::delete_all_bsss_rules
-    ufw::force_disable
-    ufw::delete_all_bsss_rules
-    orchestrator::actions_after_port_change
+    ssh::delete_all_bsss_rules 2>&3
+    ufw::force_disable 2>&3
+    ufw::delete_all_bsss_rules 2>&3
+    orchestrator::actions_after_port_change 2>&3
     
-    log_success "ROLLBACK: Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
-    printf "EOF\n"
+    log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
 }
 
 main() {
-    orchestrator::watchdog_timer
+    log_info "PID: $$"
+    orchestrator::watchdog_timer "$@"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

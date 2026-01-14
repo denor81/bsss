@@ -13,24 +13,11 @@ source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
-declare WATCHDOG_PID
+readonly WATCHDOG_FIFO="/tmp/bsss_watchdog_$$.fifo"
+FIFO_READER_PID=""
 
-trap 'orchestrator::log_rollback_in_main_script' SIGUSR1
-
-orchestrator::log_rollback_in_main_script() {
-    printf '\n' >&2
-    log_info "Время истекло - запущен ROLLBACK"
-
-    # читаем лог в реальном времени
-    tail -n +1 -f --pid="$WATCHDOG_PID" "${MODULES_DIR_PATH}/../bsss_watchdog.log" | awk '
-        {
-            if ($0 ~ /EOF/) exit 0;
-            print $0;
-            fflush();
-        }
-    ' >&2 || true
-    exit 0
-}
+# Сработает при откате изменений при сигнале USR1
+trap 'exit 0' SIGUSR1
 
 # @type:        Orchestrator
 # @description: Определяет состояние конфигурации SSH (существует/отсутствует) 
@@ -72,10 +59,6 @@ orchestrator::bsss_config_exists() {
     
 }
 
-orchestrator::install_new_port() {
-    ssh::ask_new_port | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
-}
-
 # @type:        Orchestrator
 # @description: Обработчик сценария отсутствия конфигурации SSH
 #               Установка нового порта SSH и добавление правила в UFW
@@ -88,6 +71,15 @@ orchestrator::bsss_config_not_exists() {
     orchestrator::install_new_port_w_guard
 }
 
+# orchestrator::log_rollback_in_main_script() {
+#     # log_info "ROLLBACK: Получен сигнал отката"
+#     # kill "$FIFO_READER_PID" 2>/dev/null || true 
+#     # wait "$FIFO_READER_PID" 2>/dev/null || true
+#     # cat "$WATCHDOG_FIFO_PATH"
+#     # rm -f "$WATCHDOG_FIFO_PATH"
+#     exit 0
+# }
+
 # @type:        Orchestrator
 # @description: Применение изменений с защитным таймером
 # @params:      нет
@@ -96,13 +88,19 @@ orchestrator::bsss_config_not_exists() {
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
 orchestrator::install_new_port_w_guard() {
-    local current_pid=$$
-    log_info "BSSS_PID: $current_pid"
 
+    local watchdog_pid
     local port
-    port=$(orchestrator::install_new_port | tr -d '\0') || return
-    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/rollback.sh" "$current_pid">"${MODULES_DIR_PATH}/../bsss_watchdog.log" 2>&1 &
-    WATCHDOG_PID=$!
+    port=$(ssh::ask_new_port | tr -d '\0') || return
+
+    printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
+
+    mkfifo "$WATCHDOG_FIFO"
+    cat "$WATCHDOG_FIFO" >&2 & 
+    # FIFO_READER_PID=$!
+
+    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/rollback.sh" "$$" "$WATCHDOG_FIFO" "$CURRENT_MODULE_NAME" >/tmp/rollback.debug 2>&1 &
+    watchdog_pid=$!
     orchestrator::actions_after_port_change
 
     log::draw_lite_border
@@ -111,13 +109,16 @@ orchestrator::install_new_port_w_guard() {
     log_attention "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и проверьте возможность подключения через порт $port"
     
     if io::ask_value "Для подтверждения введите connected" "" "^connected$" "connected" >/dev/null || return; then
-        kill -USR1 "$WATCHDOG_PID" 2>/dev/null || true
-        wait "$WATCHDOG_PID" 2>/dev/null || true
+        kill -USR1 "$watchdog_pid" 2>/dev/null || true
+        wait "$watchdog_pid" 2>/dev/null || true
+        # kill "$FIFO_READER_PID" 2>/dev/null || true 
+        # wait "$FIFO_READER_PID" 2>/dev/null || true
         log_success "Изменения зафиксированы. Таймер отката отключен."
     fi
 }
 
 main() {
+    log_info "PID: $$"
     orchestrator::dispatch_logic
 }
 
