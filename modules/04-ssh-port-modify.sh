@@ -104,7 +104,7 @@ orchestrator::install_new_port_w_guard() {
     orchestrator::actions_after_port_change
 
     log::draw_lite_border
-    log_info "Запуск таймера отката (5 минут)..."
+    log_info "rollback.sh таймер отката запущен (5 минут)... [PID: $watchdog_pid]"
     log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
     log_attention "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и проверьте возможность подключения через порт $port"
     
@@ -113,7 +113,8 @@ orchestrator::install_new_port_w_guard() {
         wait "$watchdog_pid" 2>/dev/null || true
         # kill "$FIFO_READER_PID" 2>/dev/null || true 
         # wait "$FIFO_READER_PID" 2>/dev/null || true
-        log_success "Изменения зафиксированы. Таймер отката отключен."
+        log_success "Изменения зафиксированы"
+        log_info "rollback.sh остановлен [PID: $watchdog_pid]"
     fi
 }
 

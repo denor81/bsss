@@ -17,10 +17,7 @@ SLEEP_PID=""
 trap 'orchestrator::stop_rollback' SIGUSR1
 
 orchestrator::stop_rollback() {
-    log_info "Sleep остановлен [PID: $SLEEP_PID]"
-    log_info "Watchdog остановлен"
-    [[ -n "$SLEEP_PID" ]] && kill "$SLEEP_PID" 2>/dev/null
-    log_info "$CURRENT_MODULE_NAME завершен [PID: $$]" 2>&3
+    kill "$SLEEP_PID" 2>/dev/null
     exit 0
 }
 
