@@ -47,7 +47,7 @@ orchestrator::watchdog_timer() {
         fi
         
     fi
-    log_info "$CURRENT_MODULE_NAME завершен [PID: $$]" 2>&3
+    log_info ">> завершен [PID: $$]" 2>&3
     exec 3>&-
 }
 
@@ -70,7 +70,7 @@ orchestrator::total_rollback() {
 }
 
 main() {
-    log_info "PID: $$"
+    log_info ">> PID: $$"
     orchestrator::watchdog_timer "$@"
 }
 

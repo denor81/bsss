@@ -56,7 +56,8 @@ orchestrator::bsss_config_exists() {
         1) ssh::reset_and_pass | ufw::reset_and_pass | orchestrator::actions_after_port_change ;;
         2) orchestrator::install_new_port_w_guard ;;
     esac
-    
+    log_info ">> завершен [PID: $$]"
+
 }
 
 # @type:        Orchestrator
@@ -69,16 +70,9 @@ orchestrator::bsss_config_exists() {
 #               $? — код ошибки дочернего процесса
 orchestrator::bsss_config_not_exists() {
     orchestrator::install_new_port_w_guard
-}
+    log_info ">> завершен [PID: $$]"
 
-# orchestrator::log_rollback_in_main_script() {
-#     # log_info "ROLLBACK: Получен сигнал отката"
-#     # kill "$FIFO_READER_PID" 2>/dev/null || true 
-#     # wait "$FIFO_READER_PID" 2>/dev/null || true
-#     # cat "$WATCHDOG_FIFO_PATH"
-#     # rm -f "$WATCHDOG_FIFO_PATH"
-#     exit 0
-# }
+}
 
 # @type:        Orchestrator
 # @description: Применение изменений с защитным таймером
@@ -96,8 +90,7 @@ orchestrator::install_new_port_w_guard() {
     printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
 
     mkfifo "$WATCHDOG_FIFO"
-    cat "$WATCHDOG_FIFO" >&2 & 
-    # FIFO_READER_PID=$!
+    cat "$WATCHDOG_FIFO" >&2 &
 
     nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/rollback.sh" "$$" "$WATCHDOG_FIFO" "$CURRENT_MODULE_NAME" >/tmp/rollback.debug 2>&1 &
     watchdog_pid=$!
@@ -111,15 +104,13 @@ orchestrator::install_new_port_w_guard() {
     if io::ask_value "Для подтверждения введите connected" "" "^connected$" "connected" >/dev/null || return; then
         kill -USR1 "$watchdog_pid" 2>/dev/null || true
         wait "$watchdog_pid" 2>/dev/null || true
-        # kill "$FIFO_READER_PID" 2>/dev/null || true 
-        # wait "$FIFO_READER_PID" 2>/dev/null || true
         log_success "Изменения зафиксированы"
         log_info "rollback.sh остановлен [PID: $watchdog_pid]"
     fi
 }
 
 main() {
-    log_info "PID: $$"
+    log_info ">> PID: $$"
     orchestrator::dispatch_logic
 }
 
