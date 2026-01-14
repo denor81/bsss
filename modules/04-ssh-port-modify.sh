@@ -66,10 +66,10 @@ orchestrator::bsss_config_exists() {
     user_action=$(io::ask_value "Выберите" "" "^[12]$" "1/2" | tr -d '\0') || return
 
     case "$user_action" in
-        1) ssh::reset_and_pass | ufw::reset_and_pass ;;
+        1) ssh::reset_and_pass | ufw::reset_and_pass | orchestrator::actions_after_port_change ;;
         2) orchestrator::install_new_port_w_guard ;;
     esac
-    orchestrator::actions_after_port_change
+    
 }
 
 orchestrator::install_new_port() {
@@ -86,7 +86,6 @@ orchestrator::install_new_port() {
 #               $? — код ошибки дочернего процесса
 orchestrator::bsss_config_not_exists() {
     orchestrator::install_new_port_w_guard
-    orchestrator::actions_after_port_change
 }
 
 # @type:        Orchestrator
@@ -107,8 +106,9 @@ orchestrator::install_new_port_w_guard() {
     orchestrator::actions_after_port_change
 
     log::draw_lite_border
-    log_info "Запуск таймера безопасности (5 минут)..."
-    log_attantion "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и подключитесь через порт $port"
+    log_info "Запуск таймера отката (5 минут)..."
+    log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
+    log_attention "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и проверьте возможность подключения через порт $port"
     
     if io::ask_value "Для подтверждения введите connected" "" "^connected$" "connected" >/dev/null || return; then
         kill -USR1 "$WATCHDOG_PID" 2>/dev/null || true

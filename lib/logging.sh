@@ -9,7 +9,7 @@ readonly SYMBOL_SUCCESS="[v]"
 readonly SYMBOL_QUESTION="[?]" # Используется в lib/user_confirmation.sh
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_WARN="[!]"
-readonly SYMBOL_ATTANTION="[A]"
+readonly SYMBOL_ATTENTION="[A]"
 readonly SYMBOL_ERROR="[x]"
 
 readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
@@ -36,12 +36,11 @@ log_warn() {
     echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $1" >&2
 }
 
-log_attantion() {
-    echo >&2
-    printf '%.0s>' {1..80} >&2; echo >&2
-    echo -e "$SYMBOL_ATTANTION $1" >&2
-    printf '%.0s<' {1..80} >&2; echo >&2
-    echo >&2
+log_attention() {
+    # local color_red='\e[31m'
+    local color_red='\e[41;37m'
+    local color_reset='\e[0m'
+    printf "${color_red}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$1" >&2
 }
 
 # Выводит информационное сообщение с символом [ ]

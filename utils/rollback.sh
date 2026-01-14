@@ -13,16 +13,26 @@ source "${UTILS_DIR_PATH}/../lib/user_confirmation.sh"
 source "${UTILS_DIR_PATH}/../modules/common-helpers.sh"
 source "${UTILS_DIR_PATH}/../modules/04-ssh-port-helpers.sh"
 
+SLEEP_PID=""
+
 trap 'orchestrator::stop_rollback' SIGUSR1
 
 orchestrator::stop_rollback() {
+    log_info "Sleep остановлен [PID: $SLEEP_PID]"
     log_info "Watchdog остановлен"
+    [[ -n "$SLEEP_PID" ]] && kill "$SLEEP_PID" 2>/dev/null
     exit 0
 }
 
 orchestrator::watchdog_timer() {
-    разобраться со sleep - блокирует trap
-    sleep "$ROLLBACK_TIMER_SECONDS"
+    # Запускаю в фоне, что бы можно было в любой момент сбросить таймер
+    # Иначе sleep блокирует выполнение до истечения
+    sleep "$ROLLBACK_TIMER_SECONDS" &
+    SLEEP_PID=$!
+
+    # Теперь ожидаем процесс sleep - тут можно прервать выполнение сигналом USR1
+    wait "$SLEEP_PID" 2>/dev/null
+
     log_info "Останавливаем главный процесс $MAIN_SCRIPT_PID"
     kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
     wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
