@@ -16,8 +16,7 @@ readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
 
 # @type:        Sink
 # @description: Выводит успешное сообщение с символом [v]
-# @params:
-#   message     Сообщение для вывода
+# @params:      message - Сообщение для вывода
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -27,8 +26,7 @@ log_success() {
 
 # @type:        Sink
 # @description: Выводит сообщение об ошибке с символом [x]
-# @params:
-#   message     Сообщение об ошибке
+# @params:      message - Сообщение об ошибке
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -38,8 +36,7 @@ log_error() {
 
 # @type:        Sink
 # @description: Выводит информационное сообщение с символом [ ]
-# @params:
-#   message     Информационное сообщение
+# @params:      message - Информационное сообщение
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -49,8 +46,7 @@ log_info() {
 
 # @type:        Sink
 # @description: Выводит предупреждение с символом [!]
-# @params:
-#   message     Предупреждающее сообщение
+# @params:      message - Предупреждающее сообщение
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -60,8 +56,7 @@ log_warn() {
 
 # @type:        Sink
 # @description: Выводит важное сообщение с символом [A]
-# @params:
-#   message     Важное сообщение
+# @params:      message - Важное сообщение
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -73,8 +68,7 @@ log_attention() {
 
 # @type:        Sink
 # @description: Выводит информационное сообщение с отступом
-# @params:
-#   message     Сообщение для вывода
+# @params:      message - Сообщение для вывода
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -84,8 +78,8 @@ log_info_simple_tab() {
 
 # @type:        Sink
 # @description: Выводит информационное сообщение о запуске процесса
-# @params:
-#   message     Сообщение для вывода
+# @params:      module_name - Имя модуля (опционально, по умолчанию $CURRENT_MODULE_NAME)
+#               pid - PID процесса (опционально, по умолчанию $$)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -95,8 +89,8 @@ log_start() {
 
 # @type:        Sink
 # @description: Выводит информационное сообщение о остановке процесса
-# @params:
-#   message     Сообщение для вывода
+# @params:      module_name - Имя модуля (опционально, по умолчанию $CURRENT_MODULE_NAME)
+#               pid - PID процесса (опционально, по умолчанию $$)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -104,7 +98,7 @@ log_stop() {
     echo -e "$SYMBOL_INFO [${1:-$CURRENT_MODULE_NAME}]>>stop>>[PID: ${2:-$$}]" >&2
 }
 
-# @type:        UNDEFINED
+# @type:        Sink
 # @description: Выводит разделитель из 80 символов '#'
 # @params:      нет
 # @stdin:       нет
@@ -114,8 +108,8 @@ log::draw_border() {
     printf '%.0s#' {1..80} >&2; echo >&2
 }
 
-# @type:        UNDEFINED
-# @description: Выводит разделитель из 80 символов '#'
+# @type:        Sink
+# @description: Выводит разделитель из 80 символов '-'
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
