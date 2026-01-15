@@ -22,7 +22,7 @@ trap log_stop EXIT
 # @exit_code:   0 - успешно
 #               1 - apt не найден
 sys::get_update_command() {
-    if ! command -v apts-get >/dev/null 2>&1; then
+    if ! command -v apt-get >/dev/null 2>&1; then
         log_error "Менеджер пакетов apt-get не найден"
         return 1
     fi

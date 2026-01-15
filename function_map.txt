@@ -1,5 +1,6 @@
 run_modules_polling()<:>Orchestrator<:>Поиск и запуск модулей с типом 'check'<:>./bsss-main.sh
-run_modules_modify()<:>Orchestrator<:>Поиск и запуск модулей с типом 'modify'<:>./bsss-main.sh
+orchestrator::select_modify_module()<:>Filter<:>Отображает нумерованное меню модулей для выбора<:>./bsss-main.sh
+run_modules_modify()<:>Orchestrator<:>Поиск и запуск модулей с типом 'modify' в циклическом меню<:>./bsss-main.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./bsss-main.sh
 main()<:>Orchestrator<:>Создает архив проекта<:>./build-archive.sh
 find_bash_files()<:>Source<:>Находит все bash файлы в проекте<:>./generate_function_map.sh
