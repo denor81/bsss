@@ -49,6 +49,7 @@ orchestrator::watchdog_timer() {
     fi
     log_info ">> завершен [PID: $$]" 2>&3
     exec 3>&-
+    printf '%s\0' "$watchdog_fifo" | sys::delete_paths 2>/dev/null
 }
 
 # @type:        Orchestrator

@@ -92,7 +92,7 @@ orchestrator::install_new_port_w_guard() {
     mkfifo "$WATCHDOG_FIFO"
     cat "$WATCHDOG_FIFO" >&2 &
 
-    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/rollback.sh" "$$" "$WATCHDOG_FIFO" "$CURRENT_MODULE_NAME" >/tmp/rollback.debug 2>&1 &
+    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/rollback.sh" "$$" "$WATCHDOG_FIFO" "$CURRENT_MODULE_NAME" >/dev/null 2>&1 &
     watchdog_pid=$!
     orchestrator::actions_after_port_change
 
@@ -107,6 +107,7 @@ orchestrator::install_new_port_w_guard() {
         log_success "Изменения зафиксированы"
         log_info "rollback.sh остановлен [PID: $watchdog_pid]"
     fi
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths 2>/dev/null
 }
 
 main() {
