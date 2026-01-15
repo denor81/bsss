@@ -1,0 +1,85 @@
+run_modules_polling()<:>Orchestrator<:>Поиск и запуск модулей с типом 'check'<:>./bsss-main.sh
+run_modules_modify()<:>Orchestrator<:>Поиск и запуск модулей с типом 'modify'<:>./bsss-main.sh
+main()<:>Orchestrator<:>Основная точка входа<:>./bsss-main.sh
+main()<:>Orchestrator<:>Создает архив проекта<:>./build-archive.sh
+find_bash_files()<:>Source<:>Находит все bash файлы в проекте<:>./generate_function_map.sh
+extract_functions_from_file()<:>Filter<:>Извлекает функции и их контракты из bash файла<:>./generate_function_map.sh
+main()<:>Orchestrator<:>Основная точка входа для генерации карты функций<:>./generate_function_map.sh
+log_success()<:>Sink<:>Выводит успешное сообщение с символом [v]<:>./lib/logging.sh
+log_error()<:>Sink<:>Выводит сообщение об ошибке с символом [x]<:>./lib/logging.sh
+log_info()<:>Sink<:>Выводит информационное сообщение с символом [ ]<:>./lib/logging.sh
+log_warn()<:>Sink<:>Выводит предупреждение с символом [!]<:>./lib/logging.sh
+log_attention()<:>Sink<:>Выводит важное сообщение с символом [A]<:>./lib/logging.sh
+log_info_simple_tab()<:>Sink<:>Выводит информационное сообщение с отступом<:>./lib/logging.sh
+log::draw_border()<:>UNDEFINED<:>Выводит разделитель из 80 символов '#'<:>./lib/logging.sh
+log::draw_lite_border()<:>UNDEFINED<:>Выводит разделитель из 80 символов '#'<:>./lib/logging.sh
+check_uninstall_file()<:>Filter<:>Проверяет наличие файла с путями для удаления<:>./lib/uninstall_functions.sh
+do_uninstall()<:>Orchestrator<:>Выполняет удаление файлов из файла лога<:>./lib/uninstall_functions.sh
+run_uninstall()<:>Orchestrator<:>Запускает процесс удаления с подтверждением<:>./lib/uninstall_functions.sh
+io::ask_value()<:>Interactive<:>Циклический опрос пользователя до получения валидного значения.<:>./lib/user_confirmation.sh
+io::confirm_action()<:>Validator<:>Ждет подтверждение действия. Доступны только y или n<:>./lib/user_confirmation.sh
+parse_params()<:>Filter<:>Парсинг параметров запуска с использованием getopts<:>./local-runner.sh
+check_permissions()<:>Filter<:>Проверяет права доступа для запуска скрипта<:>./local-runner.sh
+show_help()<:>Sink<:>Выводит справочную информацию<:>./local-runner.sh
+run_default()<:>Orchestrator<:>Запускает основной скрипт<:>./local-runner.sh
+main()<:>Orchestrator<:>Основная точка входа<:>./local-runner.sh
+sys::update_system()<:>Orchestrator<:>Проверяет доступность менеджера пакетов и обновляет систему<:>./modules/00-update-system.sh
+main()<:>Orchestrator<:>Основная точка входа модуля обновления системы<:>./modules/00-update-system.sh
+_get_os_id()<:>Filter<:>Получает строку ID текущей системы<:>./modules/01-check-os.sh
+check()<:>Orchestrator<:>Проверяет совместимость текущей ОС с разрешенной<:>./modules/01-check-os.sh
+check()<:>Orchestrator<:>Проверяет наличие UFW и устанавливает при необходимости<:>./modules/02-check-ufw.sh
+check()<:>Orchestrator<:>Проверяет необходимость перезагрузки системы<:>./modules/03-check-sys-reload.sh
+check()<:>Orchestrator<:>Проверяет состояние SSH портов и правил<:>./modules/04-ssh-port-check.sh
+ssh::install_new_port()<:>Filter<:>Основной функционал установки/изменения SSH порта<:>./modules/04-ssh-port-helpers.sh
+ssh::ask_new_port()<:>Source<:>Запрашивает у пользователя новый SSH порт<:>./modules/04-ssh-port-helpers.sh
+ssh::log_bsss_configs()<:>Orchestrator<:>Выводит список найденных конфигураций и связанных с ними портов<:>./modules/04-ssh-port-helpers.sh
+ssh::log_all_configs_w_port()<:>Orchestrator<:>Выводит все сторонние конфигурации SSH с портами<:>./modules/04-ssh-port-helpers.sh
+orchestrator::actions_after_port_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/04-ssh-port-helpers.sh
+ufw::log_active_ufw_rules()<:>Orchestrator<:>Выводит активные правила UFW<:>./modules/04-ssh-port-helpers.sh
+ssh::reset_and_pass()<:>Filter<:>Удаляет все правила BSSS и передает порт дальше<:>./modules/04-ssh-port-helpers.sh
+ufw::reset_and_pass()<:>Filter<:>Удаляет все правила UFW BSSS и передает порт дальше<:>./modules/04-ssh-port-helpers.sh
+ssh::delete_all_bsss_rules()<:>Orchestrator<:>Удаляет все правила BSSS SSH<:>./modules/04-ssh-port-helpers.sh
+sys::delete_paths()<:>Filter<:>Удаляет указанные файлы и директории<:>./modules/04-ssh-port-helpers.sh
+sys::restart_services()<:>Orchestrator<:>Перезапускает SSH сервис после проверки конфигурации<:>./modules/04-ssh-port-helpers.sh
+ssh::is_port_busy()<:>Filter<:>Проверяет, занят ли указанный порт<:>./modules/04-ssh-port-helpers.sh
+ssh::generate_free_random_port()<:>Source<:>Генерирует случайный свободный порт в диапазоне 10000-65535<:>./modules/04-ssh-port-helpers.sh
+ssh::create_bsss_config_file()<:>Filter<:>Создает новый конфигурационный файл SSH с указанным портом<:>./modules/04-ssh-port-helpers.sh
+log::path_and_port_template()<:>Filter<:>Форматирует строку для вывода пути к файлу и порта<:>./modules/04-ssh-port-helpers.sh
+ufw::delete_all_bsss_rules()<:>Orchestrator<:>Удаляет все правила UFW BSSS<:>./modules/04-ssh-port-helpers.sh
+ufw::get_all_bsss_rules()<:>Source<:>Получает все правила UFW BSSS<:>./modules/04-ssh-port-helpers.sh
+ufw::get_all_rules()<:>Source<:>Получает все правила UFW<:>./modules/04-ssh-port-helpers.sh
+ufw::add_bsss_rule()<:>Filter<:>Добавляет правило UFW для BSSS<:>./modules/04-ssh-port-helpers.sh
+ufw::force_disable()<:>Filter<:>Деактивирует UFW<:>./modules/04-ssh-port-helpers.sh
+orchestrator::dispatch_logic()<:>Orchestrator<:>Определяет состояние конфигурации SSH (существует/отсутствует)<:>./modules/04-ssh-port-modify.sh
+orchestrator::bsss_config_exists()<:>Orchestrator<:>Интерфейс выбора действий при наличии существующих конфигов<:>./modules/04-ssh-port-modify.sh
+orchestrator::bsss_config_not_exists()<:>Orchestrator<:>Обработчик сценария отсутствия конфигурации SSH<:>./modules/04-ssh-port-modify.sh
+orchestrator::install_new_port_w_guard()<:>Orchestrator<:>Применение изменений с защитным таймером<:>./modules/04-ssh-port-modify.sh
+sys::get_paths_by_mask()<:>Source<:>Получает список путей через нулевой разделитель<:>./modules/common-helpers.sh
+sys::get_modules_paths_w_type<:>Filter<:>Возвращает строку - путь с типом<:>./modules/common-helpers.sh
+sys::get_modules_by_type<:>Filter<:>Возвращает отфильтрованные по типу пути к модулям<:>./modules/common-helpers.sh
+ssh::get_ports_from_ss()<:>Source<:>Получает активные SSH порты из ss<:>./modules/common-helpers.sh
+ssh::get_first_port_from_path()<:>Filter<:>Получает первый порт из path<:>./modules/common-helpers.sh
+ssh::log_active_ports_from_ss()<:>Orchestrator<:>Проверяет возможность определения активных портов<:>./modules/common-helpers.sh
+is_sourced()<:>Filter<:>Проверяет, был ли скрипт вызван через source<:>./oneline-runner.sh
+log_success()<:>Sink<:>Выводит успешное сообщение с символом [V]<:>./oneline-runner.sh
+log_error()<:>Sink<:>Выводит сообщение об ошибке с символом [X]<:>./oneline-runner.sh
+log_info()<:>Sink<:>Выводит информационное сообщение с символом [ ]<:>./oneline-runner.sh
+cleanup_handler()<:>Orchestrator<:>Очистка временных файлов<:>./oneline-runner.sh
+hello()<:>Sink<:>Выводит приветственное сообщение<:>./oneline-runner.sh
+check_root_permissions()<:>Filter<:>Проверяет права root<:>./oneline-runner.sh
+_create_tmp_dir()<:>Source<:>Создаёт временную директорию<:>./oneline-runner.sh
+_download_archive()<:>Source<:>Скачивает архив во временный файл<:>./oneline-runner.sh
+_unpack_archive()<:>Filter<:>Распаковывает архив<:>./oneline-runner.sh
+_check_archive_unpacking()<:>Filter<:>Проверяет успешность распаковки во временную директорию<:>./oneline-runner.sh
+_add_uninstall_path()<:>Sink<:>Добавляет путь в файл лога установки для последующего удаления<:>./oneline-runner.sh
+_check_symlink_exists()<:>Filter<:>Проверяет наличие символической ссылки<:>./oneline-runner.sh
+_create_install_directory()<:>Orchestrator<:>Создание директории установки<:>./oneline-runner.sh
+_copy_installation_files()<:>Orchestrator<:>Копирование файлов установки<:>./oneline-runner.sh
+_create_symlink()<:>Orchestrator<:>Создание символической ссылки<:>./oneline-runner.sh
+_set_execution_permissions()<:>Orchestrator<:>Установка прав на выполнение<:>./oneline-runner.sh
+install_to_system()<:>Orchestrator<:>Функция установки в систему<:>./oneline-runner.sh
+main()<:>Orchestrator<:>Основная точка входа<:>./oneline-runner.sh
+orchestrator::stop_rollback()<:>Orchestrator<:>Останавливает процесс отката<:>./utils/rollback.sh
+orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автоматического отката<:>./utils/rollback.sh
+orchestrator::total_rollback()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
+main()<:>Orchestrator<:>Основная точка входа<:>./utils/rollback.sh
