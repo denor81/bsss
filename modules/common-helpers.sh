@@ -105,4 +105,3 @@ ssh::log_active_ports_from_ss() {
     fi
 
 }
-

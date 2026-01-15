@@ -82,6 +82,28 @@ log_info_simple_tab() {
     echo -e "$SYMBOL_INFO    $1" >&2
 }
 
+# @type:        Sink
+# @description: Выводит информационное сообщение о запуске процесса
+# @params:
+#   message     Сообщение для вывода
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log_start() {
+    echo -e "$SYMBOL_INFO [${1:-$CURRENT_MODULE_NAME}]>>start>>[PID: ${2:-$$}]" >&2
+}
+
+# @type:        Sink
+# @description: Выводит информационное сообщение о остановке процесса
+# @params:
+#   message     Сообщение для вывода
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log_stop() {
+    echo -e "$SYMBOL_INFO [${1:-$CURRENT_MODULE_NAME}]>>stop>>[PID: ${2:-$$}]" >&2
+}
+
 # @type:        UNDEFINED
 # @description: Выводит разделитель из 80 символов '#'
 # @params:      нет

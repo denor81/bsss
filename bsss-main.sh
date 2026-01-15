@@ -49,7 +49,9 @@ run_modules_polling() {
 #               $? - проброс кода ошибки от модуля
 run_modules_modify() {
     while read -r -d '' m_path <&3; do
-        bash "$m_path" || return
+        if ! bash "$m_path"; then
+            log_error "Ошибка в модуле [$m_path]"
+        fi
     done 3< <(sys::get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
     | sys::get_modules_paths_w_type \
     | sys::get_modules_by_type "$MODULE_TYPE_MODIFY")

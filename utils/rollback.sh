@@ -24,6 +24,7 @@ trap 'orchestrator::stop_rollback' SIGUSR1
 # @exit_code:   0 - всегда
 orchestrator::stop_rollback() {
     kill "$SLEEP_PID" 2>/dev/null
+    log_stop 2>&3
     exit 0
 }
 
@@ -43,6 +44,8 @@ orchestrator::watchdog_timer() {
     # Используем анонимный дескриптор для вывода в FIFO,
     # переданный вторым аргументом $2
     exec 3<> "$watchdog_fifo"
+    log_start 2>&3
+    log_info "Фоновый таймер запущен на $ROLLBACK_TIMER_SECONDS сек..." 2>&3
 
     # Запускаю в фоне, что бы можно было в любой момент сбросить таймер
     # Иначе sleep блокирует выполнение до истечения
@@ -62,7 +65,8 @@ orchestrator::watchdog_timer() {
         fi
         
     fi
-    log_info ">> завершен [PID: $$]" 2>&3
+    # log_info ">> завершен [PID: $$]" 2>&3
+    log_stop 2>&3
     exec 3>&-
     printf '%s\0' "$watchdog_fifo" | sys::delete_paths 2>/dev/null
 }
@@ -92,7 +96,6 @@ orchestrator::total_rollback() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 main() {
-    log_info ">> запущен PID: $$"
     orchestrator::watchdog_timer "$@"
 }
 

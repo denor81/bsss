@@ -18,6 +18,7 @@ FIFO_READER_PID=""
 
 # Сработает при откате изменений при сигнале USR1
 trap 'exit 0' SIGUSR1
+trap log_stop EXIT
 
 # @type:        Orchestrator
 # @description: Определяет состояние конфигурации SSH (существует/отсутствует) 
@@ -56,8 +57,6 @@ orchestrator::bsss_config_exists() {
         1) ssh::reset_and_pass | ufw::reset_and_pass | orchestrator::actions_after_port_change ;;
         2) orchestrator::install_new_port_w_guard ;;
     esac
-    log_info ">> завершен [PID: $$]"
-
 }
 
 # @type:        Orchestrator
@@ -70,8 +69,6 @@ orchestrator::bsss_config_exists() {
 #               $? — код ошибки дочернего процесса
 orchestrator::bsss_config_not_exists() {
     orchestrator::install_new_port_w_guard
-    log_info ">> завершен [PID: $$]"
-
 }
 
 # @type:        Orchestrator
@@ -95,25 +92,27 @@ orchestrator::install_new_port_w_guard() {
 
     nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/$rollback_module_name" "$$" "$WATCHDOG_FIFO" "$CURRENT_MODULE_NAME" >/dev/null 2>&1 &
     watchdog_pid=$!
-    orchestrator::actions_after_port_change
 
     log::draw_lite_border
-    log_info "Таймер отката запущен [$rollback_module_name] [$ROLLBACK_TIMER_SECONDS сек] [PID: $watchdog_pid]"
     log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
     log_attention "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и проверьте возможность подключения через порт $port"
+
+    orchestrator::actions_after_port_change
     
     if io::ask_value "Для подтверждения введите connected" "" "^connected$" "connected" >/dev/null || return; then
         kill -USR1 "$watchdog_pid" 2>/dev/null || true
         wait "$watchdog_pid" 2>/dev/null || true
         log_success "Изменения зафиксированы"
-        log_info ">> [$rollback_module_name] завершен [PID: $watchdog_pid]"
     fi
     printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths 2>/dev/null
 }
 
 main() {
-    log_info ">> запущен PID: $$"
-    orchestrator::dispatch_logic
+    log_start
+    
+    if io::confirm_action "Изменить конфигурацию SSH порта?"; then
+        orchestrator::dispatch_logic
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
