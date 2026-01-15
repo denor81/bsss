@@ -6,6 +6,13 @@
 source "${MAIN_DIR_PATH}/lib/user_confirmation.sh"
 UNINSTALL_FILE_PATH=$MAIN_DIR_PATH/$UNINSTALL_PATHS
 
+# @type:        Filter
+# @description: Проверяет наличие файла с путями для удаления
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - файл найден
+#               1 - файл не найден
 check_uninstall_file() {
     # Проверяем наличие файла с путями для удаления
     if [[ ! -f "$UNINSTALL_FILE_PATH" ]]; then
@@ -14,6 +21,13 @@ check_uninstall_file() {
     fi
 }
 
+# @type:        Orchestrator
+# @description: Выполняет удаление файлов из файла лога
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка удаления
 do_uninstall() {
     local path=""
     # Читаем файл построчно и удаляем каждый путь
@@ -32,6 +46,13 @@ do_uninstall() {
 }
 
 
+# @type:        Orchestrator
+# @description: Запускает процесс удаления с подтверждением
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка удаления
 run_uninstall() {
     io::confirm_action "Удалить ${UTIL_NAME^^}?"
     check_uninstall_file

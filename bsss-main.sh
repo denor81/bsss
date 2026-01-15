@@ -18,7 +18,6 @@ source "${MAIN_DIR_PATH}/modules/common-helpers.sh"
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @stderr:      нет
 # @exit_code:   0 - модули найдены и все успешно выполнены
 #               1 - в случае отсутствия модулей
 #               2 - в случае ошибки одного из модулей
@@ -46,9 +45,8 @@ run_modules_polling() {
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @stderr:      нет
 # @exit_code:   0 - модули найдены и все успешно выполнены
-#               return $? - проброс кода ошибки от модуля
+#               $? - проброс кода ошибки от модуля
 run_modules_modify() {
     while read -r -d '' m_path <&3; do
         bash "$m_path" || return
@@ -57,6 +55,13 @@ run_modules_modify() {
     | sys::get_modules_by_type "$MODULE_TYPE_MODIFY")
 }
 
+# @type:        Orchestrator
+# @description: Основная точка входа
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка выполнения модулей
 main() {
     run_modules_polling
     io::confirm_action "Запустить настройку?"

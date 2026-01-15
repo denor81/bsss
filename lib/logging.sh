@@ -14,36 +14,70 @@ readonly SYMBOL_ERROR="[x]"
 
 readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
 
-# Функции логирования
-# Выводит успешное сообщение с символом [v]
-# Все логи отправляем в stderr, что бы сохранять stdout пустым
+# @type:        Sink
+# @description: Выводит успешное сообщение с символом [v]
+# @params:
+#   message     Сообщение для вывода
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_success() {
     echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2
 }
 
-# Выводит сообщение об ошибке с символом [x] в stderr
+# @type:        Sink
+# @description: Выводит сообщение об ошибке с символом [x]
+# @params:
+#   message     Сообщение об ошибке
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_error() {
     echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
 }
 
-# Выводит информационное сообщение с символом [ ]
+# @type:        Sink
+# @description: Выводит информационное сообщение с символом [ ]
+# @params:
+#   message     Информационное сообщение
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_info() {
     echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
 }
 
-# Выводит предупреждение с символом [!]
+# @type:        Sink
+# @description: Выводит предупреждение с символом [!]
+# @params:
+#   message     Предупреждающее сообщение
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_warn() {
     echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $1" >&2
 }
 
-# Выводит предупреждение с символом [A]
+# @type:        Sink
+# @description: Выводит важное сообщение с символом [A]
+# @params:
+#   message     Важное сообщение
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_attention() {
     local color_red='\e[41;37m'
     local color_reset='\e[0m'
     printf "${color_red}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$1" >&2
 }
 
-# Выводит информационное сообщение с символом [ ]
+# @type:        Sink
+# @description: Выводит информационное сообщение с отступом
+# @params:
+#   message     Сообщение для вывода
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_info_simple_tab() {
     echo -e "$SYMBOL_INFO    $1" >&2
 }

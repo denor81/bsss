@@ -16,16 +16,31 @@ SLEEP_PID=""
 
 trap 'orchestrator::stop_rollback' SIGUSR1
 
+# @type:        Orchestrator
+# @description: Останавливает процесс отката
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 orchestrator::stop_rollback() {
     kill "$SLEEP_PID" 2>/dev/null
     exit 0
 }
 
+# @type:        Orchestrator
+# @description: Таймер для автоматического отката
+# @params:
+#   main_script_pid PID основного скрипта
+#   watchdog_fifo FIFO для коммуникации
+#   main_script_name Имя основного скрипта
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 orchestrator::watchdog_timer() {
     local main_script_pid="$1"
     local watchdog_fifo="$2"
     local main_script_name="$3"
-    # Используем анонимный дескриптор для вывода в FIFO, 
+    # Используем анонимный дескриптор для вывода в FIFO,
     # переданный вторым аргументом $2
     exec 3<> "$watchdog_fifo"
 
@@ -70,6 +85,12 @@ orchestrator::total_rollback() {
     log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
 }
 
+# @type:        Orchestrator
+# @description: Основная точка входа
+# @params:      @ - параметры для watchdog_timer
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 main() {
     log_info ">> запущен PID: $$"
     orchestrator::watchdog_timer "$@"

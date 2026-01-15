@@ -3,7 +3,13 @@
 # Загрузчик для установки проекта одной командой
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh)
 
-# Функция для определения, был ли скрипт вызван через source
+# @type:        Filter
+# @description: Проверяет, был ли скрипт вызван через source
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - скрипт вызван через source
+#               1 - скрипт запущен напрямую
 is_sourced() {
     [[ "${BASH_SOURCE[0]}" != "${0}" ]]
 }
@@ -42,30 +48,51 @@ readonly SYMBOL_QUESTION="[?]" # Используется в read (read -p "$SYM
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_ERROR="[X]"
 
-# Функции логирования
-# Выводит успешное сообщение с символом [V]
-# Все логи отправляем в stderr, что бы сохранять stdout пустым
+# @type:        Sink
+# @description: Выводит успешное сообщение с символом [V]
+# @params:
+#   message     Сообщение для вывода
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_success() {
     echo "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2
 }
 
-# Выводит сообщение об ошибке с символом [X] в stderr
+# @type:        Sink
+# @description: Выводит сообщение об ошибке с символом [X]
+# @params:
+#   message     Сообщение об ошибке
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_error() {
     echo "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
 }
 
-# Выводит информационное сообщение с символом [ ]
+# @type:        Sink
+# @description: Выводит информационное сообщение с символом [ ]
+# @params:
+#   message     Информационное сообщение
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_info() {
     echo "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
 }
 
-# Очистка временных файлов
-# shellcheck disable=SC2329
+# @type:        Orchestrator
+# @description: Очистка временных файлов
+# @params:
+#   reason      Причина очистки
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 cleanup_handler() {
     if [ "$CLEANUP_DONE_FLAG" -eq 1 ]; then
         return 0 # Уже запускали, выходим
     fi
-    local reason="$1" 
+    local reason="$1"
     log_info "Запуск процедуры очистки по причине: $reason..."
     
     # Если команд нет, то очистка не требуется
@@ -90,11 +117,23 @@ cleanup_handler() {
 trap 'cleanup_handler EXIT' EXIT
 trap 'cleanup_handler ERR' ERR
 
+# @type:        Sink
+# @description: Выводит приветственное сообщение
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 hello() {
     log_info "Basic Server Security Setup (${UTIL_NAME^^}) - oneline запуск..."
 }
 
-# Проверяем права root
+# @type:        Filter
+# @description: Проверяет права root
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - права root есть
+#               1 - недостаточно прав
 check_root_permissions() {
     if [[ $EUID -ne 0 ]]; then
         log_error "Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
@@ -142,7 +181,15 @@ ask_user_how_to_run() {
     fi
 }
 
-# Создаём временную директорию
+# @type:        Source
+# @description: Создаёт временную директорию
+# @params:
+#   util_name   [optional] Имя утилиты для префикса (default: $UTIL_NAME)
+#   add_to_cleanup [optional] Добавлять в CLEANUP_COMMANDS (default: true)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка создания
 _create_tmp_dir() {
     local util_name="${1:-$UTIL_NAME}"  # Имя утилиты для префикса временной директории
     local add_to_cleanup="${2:-true}"  # Добавлять ли директорию в CLEANUP_COMMANDS
@@ -161,7 +208,16 @@ _create_tmp_dir() {
     log_info "Создана временная директория $temp_dir"
 }
 
-# Скачиваем архив во временный файл
+# @type:        Source
+# @description: Скачивает архив во временный файл
+# @params:
+#   archive_url [optional] URL архива (default: $ARCHIVE_URL)
+#   tmparchive  [optional] Путь к временному файлу
+#   add_to_cleanup [optional] Добавлять в CLEANUP_COMMANDS (default: true)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка загрузки
 _download_archive() {
     local archive_url="${1:-$ARCHIVE_URL}"  # URL архива для скачивания
     local tmparchive="${2:-}"  # Путь к временному файлу архива (если не указан, будет создан)
@@ -194,6 +250,15 @@ _download_archive() {
     TMPARCHIVE="$tmparchive"
 }
 
+# @type:        Filter
+# @description: Распаковывает архив
+# @params:
+#   tmparchive  [optional] Путь к архиву (default: $TMPARCHIVE)
+#   temp_project_dir [optional] Директория для распаковки (default: $TEMP_PROJECT_DIR)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка распаковки
 _unpack_archive() {
     local tmparchive="${1:-$TMPARCHIVE}"  # Берет параметр, либо дефолтную переменную
     local temp_project_dir="${2:-$TEMP_PROJECT_DIR}"  # Берет параметр, либо дефолтную переменную
@@ -208,7 +273,16 @@ _unpack_archive() {
     log_info "Архив распакован в $temp_project_dir (размер: $dir_size)"
 }
 
-# Проверяем успешность распаковки во временную директорию
+# @type:        Filter
+# @description: Проверяет успешность распаковки во временную директорию
+# @params:
+#   temp_project_dir [optional] Директория с проектом (default: $TEMP_PROJECT_DIR)
+#   local_runner_file_name [optional] Имя файла (default: $LOCAL_RUNNER_FILE_NAME)
+#   tmp_local_runner_path [optional] Путь к файлу (computed if not provided)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - файл найден
+#               1 - файл не найден
 _check_archive_unpacking() {
     local temp_project_dir="${1:-$TEMP_PROJECT_DIR}"  # Берет параметр, либо дефолтную переменную
     local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"  # Берет параметр, либо дефолтную переменную
@@ -223,7 +297,15 @@ _check_archive_unpacking() {
 
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ УСТАНОВКИ
 
-# Добавляет путь в файл лога установки для последующего удаления
+# @type:        Sink
+# @description: Добавляет путь в файл лога установки для последующего удаления
+# @params:
+#   uninstall_path Путь для добавления в лог удаления
+#   install_log_path [optional] Путь к файлу лога (default: $INSTALL_DIR/$INSTALL_LOG_FILE_NAME)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - путь не указан
 _add_uninstall_path() {
     local uninstall_path="${1:-}"  # Путь для добавления в лог удаления
     local install_log_path="${2:-$INSTALL_DIR/$INSTALL_LOG_FILE_NAME}"  # Путь к файлу лога удаления
@@ -241,7 +323,14 @@ _add_uninstall_path() {
     fi
 }
 
-# Проверка символической ссылки
+# @type:        Filter
+# @description: Проверяет наличие символической ссылки
+# @params:
+#   symlink_path [optional] Путь к ссылке (default: $SYMBOL_LINK_PATH)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - ссылка не существует
+#               1 - ссылка уже существует
 _check_symlink_exists() {
     local symlink_path="${1:-$SYMBOL_LINK_PATH}"  # Берет параметр, либо дефолтную переменную
     
@@ -251,7 +340,14 @@ _check_symlink_exists() {
     fi
 }
 
-# Создание директории установки
+# @type:        Orchestrator
+# @description: Создание директории установки
+# @params:
+#   install_dir [optional] Директория установки (default: $INSTALL_DIR)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка создания
 _create_install_directory() {
     local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     
@@ -263,7 +359,15 @@ _create_install_directory() {
     _add_uninstall_path "$install_dir"
 }
 
-# Копирование файлов установки
+# @type:        Orchestrator
+# @description: Копирование файлов установки
+# @params:
+#   tmp_dir_path [optional] Временная директория (computed from TMP_LOCAL_RUNNER_PATH if not provided)
+#   install_dir [optional] Директория установки (default: $INSTALL_DIR)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка копирования
 _copy_installation_files() {
     local tmp_dir_path="${1:-$(dirname "$TMP_LOCAL_RUNNER_PATH")}"  # Берет параметр, либо вычисляет из TMP_LOCAL_RUNNER_PATH
     local install_dir="${2:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
@@ -276,7 +380,17 @@ _copy_installation_files() {
     }
 }
 
-# Создание символической ссылки
+# @type:        Orchestrator
+# @description: Создание символической ссылки
+# @params:
+#   install_dir [optional] Директория установки (default: $INSTALL_DIR)
+#   local_runner_file_name [optional] Имя файла (default: $LOCAL_RUNNER_FILE_NAME)
+#   symbol_link_path [optional] Путь к ссылке (default: $SYMBOL_LINK_PATH)
+#   util_name [optional] Имя утилиты (default: $UTIL_NAME)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка создания ссылки
 _create_symlink() {
     local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"  # Берет параметр, либо дефолтную переменную
@@ -294,7 +408,13 @@ _create_symlink() {
     _add_uninstall_path "$symbol_link_path"
 }
 
-# Установка прав на выполнение
+# @type:        Orchestrator
+# @description: Установка прав на выполнение
+# @params:
+#   install_dir [optional] Директория установки (default: $INSTALL_DIR)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 _set_execution_permissions() {
     local install_dir="${1:-$INSTALL_DIR}"  # Берет параметр, либо дефолтную переменную
     
@@ -303,7 +423,13 @@ _set_execution_permissions() {
     # Возвращаем 0 даже если нет .sh файлов - это нормально
 }
 
-# Функция установки в систему
+# @type:        Orchestrator
+# @description: Функция установки в систему
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка установки
 install_to_system() {
     log_info "Устанавливаю ${UTIL_NAME^^} в систему..."
     
@@ -318,6 +444,13 @@ install_to_system() {
     log_info "Используйте для запуска: sudo $UTIL_NAME, для удаления: sudo $UTIL_NAME -u"
 }
 
+# @type:        Orchestrator
+# @description: Основная точка входа
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка выполнения
 main() {
     hello
     check_root_permissions
