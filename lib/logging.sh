@@ -36,8 +36,8 @@ log_warn() {
     echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $1" >&2
 }
 
+# Выводит предупреждение с символом [A]
 log_attention() {
-    # local color_red='\e[31m'
     local color_red='\e[41;37m'
     local color_reset='\e[0m'
     printf "${color_red}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$1" >&2

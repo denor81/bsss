@@ -85,6 +85,7 @@ orchestrator::install_new_port_w_guard() {
 
     local watchdog_pid
     local port
+    local rollback_module_name="rollback.sh"
     port=$(ssh::ask_new_port | tr -d '\0') || return
 
     printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
@@ -92,12 +93,12 @@ orchestrator::install_new_port_w_guard() {
     mkfifo "$WATCHDOG_FIFO"
     cat "$WATCHDOG_FIFO" >&2 &
 
-    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/rollback.sh" "$$" "$WATCHDOG_FIFO" "$CURRENT_MODULE_NAME" >/dev/null 2>&1 &
+    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/$rollback_module_name" "$$" "$WATCHDOG_FIFO" "$CURRENT_MODULE_NAME" >/dev/null 2>&1 &
     watchdog_pid=$!
     orchestrator::actions_after_port_change
 
     log::draw_lite_border
-    log_info "rollback.sh таймер отката запущен (5 минут)... [PID: $watchdog_pid]"
+    log_info "Таймер отката запущен [$rollback_module_name] [$ROLLBACK_TIMER_SECONDS сек] [PID: $watchdog_pid]"
     log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
     log_attention "ОТКРОЙТЕ НОВОЕ ОКНО ТЕРМИНАЛА и проверьте возможность подключения через порт $port"
     
@@ -105,13 +106,13 @@ orchestrator::install_new_port_w_guard() {
         kill -USR1 "$watchdog_pid" 2>/dev/null || true
         wait "$watchdog_pid" 2>/dev/null || true
         log_success "Изменения зафиксированы"
-        log_info "rollback.sh остановлен [PID: $watchdog_pid]"
+        log_info ">> [$rollback_module_name] завершен [PID: $watchdog_pid]"
     fi
     printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths 2>/dev/null
 }
 
 main() {
-    log_info ">> PID: $$"
+    log_info ">> запущен PID: $$"
     orchestrator::dispatch_logic
 }
 

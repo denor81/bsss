@@ -43,7 +43,7 @@ orchestrator::watchdog_timer() {
 
         if kill -0 "$main_script_pid" 2>/dev/null; then
             kill -USR1 "$main_script_pid" 2>/dev/null || true
-            log_info "$main_script_name завершен [PID: $main_script_pid]" 2>&3
+            log_info ">> [$main_script_name] завершен [PID: $main_script_pid]" 2>&3
         fi
         
     fi
@@ -71,7 +71,7 @@ orchestrator::total_rollback() {
 }
 
 main() {
-    log_info ">> PID: $$"
+    log_info ">> запущен PID: $$"
     orchestrator::watchdog_timer "$@"
 }
 
