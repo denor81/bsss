@@ -110,32 +110,6 @@ orchestrator::actions_after_port_change() {
     ufw::log_active_ufw_rules
 }
 
-# @type:        Orchestrator
-# @description: Выводит активные правила UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::log_active_ufw_rules() {
-    local rule
-    local found=0
-
-    while read -r -d '' rule || break; do
-
-        if (( found == 0 )); then
-            log_info "Есть правила UFW [ufw show added]"
-            found=$((found + 1))
-        fi
-        log_info_simple_tab "$rule"
-
-    done < <(ufw::get_all_rules)
-
-    if (( found == 0 )); then
-        log_info "Нет правил UFW [ufw show added]"
-    fi
-}
-
-
 # @type:        Filter
 # @description: Удаляет все правила BSSS и передает порт дальше
 # @params:      нет
@@ -149,24 +123,6 @@ ssh::reset_and_pass() {
     [[ ! -t 0 ]] && IFS= read -r -d '' port || true
     
     ssh::delete_all_bsss_rules
-
-    # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
-    [[ -n "$port" ]] && printf '%s\0' "$port" || true
-}
-
-# @type:        Filter
-# @description: Удаляет все правила UFW BSSS и передает порт дальше
-# @params:      нет
-# @stdin:       port\0 (опционально)
-# @stdout:      port\0 (опционально)
-# @exit_code:   0 - успешно
-ufw::reset_and_pass() {
-    local port=""
-
-    # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
-    [[ ! -t 0 ]] && IFS= read -r -d '' port || true
-    
-    ufw::delete_all_bsss_rules
 
     # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
     [[ -n "$port" ]] && printf '%s\0' "$port" || true
@@ -196,8 +152,6 @@ sys::delete_paths() {
         log_info "Удалено: $resp"
     done
 }
-
-
 
 # @type:        Orchestrator
 # @description: Перезапускает SSH сервис после проверки конфигурации
@@ -280,107 +234,4 @@ EOF
 # @exit_code:   0 - всегда
 log::path_and_port_template() {
     printf '%s\n' "$1 Порт: $2"
-}
-
-# @type:        Orchestrator
-# @description: Удаляет все правила UFW BSSS
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::delete_all_bsss_rules() {
-    # local found_any=0
-
-    local rule_args
-    while IFS= read -r -d '' rule_args || break; do
-        # found_any=1
-
-        if printf '%s' "$rule_args" | xargs ufw --force delete >> err.log 2>&1; then
-            log_info "Удалено правило UFW: ufw --force delete $rule_args"
-        else
-            log_error "Ошибка при удалении правила UFW: ufw --force delete $rule_args"
-        fi
-    done < <(ufw::get_all_bsss_rules)
-
-    # if (( found_any == 0 )); then
-    #     log_info "Активных правил ${UTIL_NAME^^} для UFW не обнаружено, синхронизация не требуется."
-    # fi
-}
-
-# @type:        Source
-# @description: Получает все правила UFW BSSS
-# @params:      нет
-# @stdin:       нет
-# @stdout:      rule\0 (0..N)
-# @exit_code:   0 - всегда
-ufw::get_all_bsss_rules() {
-    ufw show added \
-    | awk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
-        BEGIN { ORS="\0" }
-        $0 ~ marker {
-            sub(/^ufw[[:space:]]+/, "");
-            print $0;
-        }
-    '
-}
-
-# @type:        Source
-# @description: Получает все правила UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      rule\0 (0..N)
-# @exit_code:   0 - всегда
-ufw::get_all_rules() {
-    if command -v ufw > /dev/null 2>&1; then
-        ufw show added \
-        | awk -v marker="^ufw.*" '
-            BEGIN { ORS="\0" }
-            $0 ~ marker {
-                print $0;
-            }
-        '
-    fi
-}
-
-# @type:        Filter
-# @description: Добавляет правило UFW для BSSS
-# @params:      нет
-# @stdin:       port\0 (0..N)
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::add_bsss_rule() {
-    local port
-    while read -r -d '' port; do
-        if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >> err.log 2>&1; then
-            log_info "Создано правило UFW: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
-        else
-            log_info "Ошибка при добавлении правила UFW: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
-        fi
-    done
- 
-}
-
-# @type:        Filter
-# @description: Деактивирует UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::force_disable() {
-    ufw --force disable >/dev/null 2>&1
-    log_info "UFW: Полностью деактивирован [ufw --force disable]"
-}
-
-# @type:        Filter
-# @description: Активирует UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::enable() {
-    if ufw --force enable >> err.log 2>&1; then
-        log_info "UFW: Активирован [ufw --force enable]"
-    else
-        log_error "Ошибка при активации [ufw --force enable]"
-    fi
 }

@@ -11,7 +11,6 @@ source "${MODULES_DIR_PATH}/../lib/vars.conf"
 source "${MODULES_DIR_PATH}/../lib/logging.sh"
 source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
-source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
 trap log_stop EXIT
 
