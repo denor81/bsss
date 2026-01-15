@@ -11,8 +11,10 @@ log_info()<:>Sink<:>Выводит информационное сообщени
 log_warn()<:>Sink<:>Выводит предупреждение с символом [!]<:>./lib/logging.sh
 log_attention()<:>Sink<:>Выводит важное сообщение с символом [A]<:>./lib/logging.sh
 log_info_simple_tab()<:>Sink<:>Выводит информационное сообщение с отступом<:>./lib/logging.sh
-log::draw_border()<:>UNDEFINED<:>Выводит разделитель из 80 символов '#'<:>./lib/logging.sh
-log::draw_lite_border()<:>UNDEFINED<:>Выводит разделитель из 80 символов '#'<:>./lib/logging.sh
+log_start()<:>Sink<:>Выводит информационное сообщение о запуске процесса<:>./lib/logging.sh
+log_stop()<:>Sink<:>Выводит информационное сообщение о остановке процесса<:>./lib/logging.sh
+log::draw_border()<:>Sink<:>Выводит разделитель из 80 символов '#'<:>./lib/logging.sh
+log::draw_lite_border()<:>Sink<:>Выводит разделитель из 80 символов '-'<:>./lib/logging.sh
 check_uninstall_file()<:>Filter<:>Проверяет наличие файла с путями для удаления<:>./lib/uninstall_functions.sh
 do_uninstall()<:>Orchestrator<:>Выполняет удаление файлов из файла лога<:>./lib/uninstall_functions.sh
 run_uninstall()<:>Orchestrator<:>Запускает процесс удаления с подтверждением<:>./lib/uninstall_functions.sh
@@ -23,7 +25,9 @@ check_permissions()<:>Filter<:>Проверяет права доступа дл
 show_help()<:>Sink<:>Выводит справочную информацию<:>./local-runner.sh
 run_default()<:>Orchestrator<:>Запускает основной скрипт<:>./local-runner.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./local-runner.sh
-sys::update_system()<:>Orchestrator<:>Проверяет доступность менеджера пакетов и обновляет систему<:>./modules/00-update-system.sh
+sys::get_update_command()<:>Source<:>Генерирует команду обновления системы для apt<:>./modules/00-update-system.sh
+sys::execute_update()<:>Sink<:>Выполняет обновление системы используя переданную команду<:>./modules/00-update-system.sh
+sys::update_system()<:>Orchestrator<:>Оркестратор процесса обновления системы<:>./modules/00-update-system.sh
 main()<:>Orchestrator<:>Основная точка входа модуля обновления системы<:>./modules/00-update-system.sh
 _get_os_id()<:>Filter<:>Получает строку ID текущей системы<:>./modules/01-check-os.sh
 check()<:>Orchestrator<:>Проверяет совместимость текущей ОС с разрешенной<:>./modules/01-check-os.sh

@@ -33,14 +33,12 @@ orchestrator::stop_rollback() {
 # @params:
 #   main_script_pid PID основного скрипта
 #   watchdog_fifo FIFO для коммуникации
-#   main_script_name Имя основного скрипта
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 orchestrator::watchdog_timer() {
     local main_script_pid="$1"
     local watchdog_fifo="$2"
-    local main_script_name="$3"
     # Используем анонимный дескриптор для вывода в FIFO,
     # переданный вторым аргументом $2
     exec 3<> "$watchdog_fifo"
@@ -61,7 +59,6 @@ orchestrator::watchdog_timer() {
 
         if kill -0 "$main_script_pid" 2>/dev/null; then
             kill -USR1 "$main_script_pid" 2>/dev/null || true
-            log_info ">> [$main_script_name] завершен [PID: $main_script_pid]" 2>&3
         fi
         
     fi

@@ -13,9 +13,6 @@ source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
-readonly WATCHDOG_FIFO="/tmp/bsss_watchdog_$$.fifo"
-FIFO_READER_PID=""
-
 # Сработает при откате изменений при сигнале USR1
 trap 'exit 0' SIGUSR1
 trap log_stop EXIT
@@ -79,7 +76,7 @@ orchestrator::bsss_config_not_exists() {
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
 orchestrator::install_new_port_w_guard() {
-
+    local watchdog_fifo="/tmp/bsss_watchdog_$$.fifo"
     local watchdog_pid
     local port
     local rollback_module_name="rollback.sh"
@@ -87,10 +84,10 @@ orchestrator::install_new_port_w_guard() {
 
     printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
 
-    mkfifo "$WATCHDOG_FIFO"
-    cat "$WATCHDOG_FIFO" >&2 &
+    mkfifo "$watchdog_fifo"
+    cat "$watchdog_fifo" >&2 &
 
-    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/$rollback_module_name" "$$" "$WATCHDOG_FIFO" "$CURRENT_MODULE_NAME" >/dev/null 2>&1 &
+    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/$rollback_module_name" "$$" "$watchdog_fifo">/dev/null 2>&1 &
     watchdog_pid=$!
 
     log::draw_lite_border
@@ -104,7 +101,7 @@ orchestrator::install_new_port_w_guard() {
         wait "$watchdog_pid" 2>/dev/null || true
         log_success "Изменения зафиксированы"
     fi
-    printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths 2>/dev/null
+    printf '%s\0' "$watchdog_fifo" | sys::delete_paths 2>/dev/null
 }
 
 main() {

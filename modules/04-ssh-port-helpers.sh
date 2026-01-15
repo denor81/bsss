@@ -370,3 +370,17 @@ ufw::force_disable() {
     ufw --force disable >/dev/null 2>&1
     log_info "UFW: Полностью деактивирован [ufw --force disable]"
 }
+
+# @type:        Filter
+# @description: Активирует UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::enable() {
+    if ufw --force enable >> err.log 2>&1; then
+        log_info "UFW: Активирован [ufw --force enable]"
+    else
+        log_error "Ошибка при активации [ufw --force enable]"
+    fi
+}
