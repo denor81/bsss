@@ -11,6 +11,7 @@ source "${MODULES_DIR_PATH}/../lib/vars.conf"
 source "${MODULES_DIR_PATH}/../lib/logging.sh"
 source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
+source "${MODULES_DIR_PATH}/05-ufw-helpers.sh"
 
 trap log_stop EXIT
 
@@ -23,16 +24,10 @@ trap log_stop EXIT
 #               >0 - ошибка в процессе
 orchestrator::dispatch_logic() {
     ufw::log_active_ufw_rules
-    log_info_simple_tab "1. Включить UFW"
-    log_info_simple_tab "2. Деактивировать UFW"
-
-    local user_action
-    user_action=$(io::ask_value "Выберите действие" "" "^[12]$" "1/2" | tr -d '\0') || return
-
-    case "$user_action" in
-        1) ufw::enable ;;
-        2) ufw::force_disable ;;
-    esac
+    
+    # Потоковая обработка: генерация меню → отображение → выбор → выполнение
+    # Используем tee для однократной генерации меню
+    ufw::get_menu_items | tee >(ufw::display_menu) | ufw::select_action | ufw::execute_action
 }
 
 # @type:        Orchestrator
