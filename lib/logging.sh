@@ -115,5 +115,6 @@ log::draw_border() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 log::draw_lite_border() {
-    printf '%.0s-' {1..80} >&2; echo >&2
+    # printf '%.0s-' {1..80} >&2; echo >&2
+    echo >&2
 }

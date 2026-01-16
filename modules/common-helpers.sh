@@ -227,12 +227,27 @@ ufw::add_bsss_rule() {
 }
 
 # @type:        Filter
-# @description: Деактивирует UFW
+# @description: Проверяет, активен ли UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - UFW активен
+#               1 - UFW неактивен
+ufw::is_active() {
+    ufw status | grep -q "^Status: active"
+}
+
+# @type:        Filter
+# @description: Деактивирует UFW (пропускает если уже деактивирован)
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::force_disable() {
+    if ! ufw::is_active; then
+        log_info "UFW: Уже деактивирован, действие пропущено"
+        return 0
+    fi
     ufw --force disable >/dev/null 2>&1
     log_info "UFW: Полностью деактивирован [ufw --force disable]"
 }

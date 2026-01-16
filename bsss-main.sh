@@ -47,7 +47,9 @@ run_modules_polling() {
 # @description: Отображает нумерованное меню модулей для выбора
 # @params:      нет
 # @stdin:       path\0 (0..N) - пути к модулям modify
-# @stdout:      path\0 (0..1) - выбранный путь к модулю или пусто (если выбран выход)
+# @stdout:      path\0 (0..1) - выбранный путь к модулю
+#               CHECK\0 - если выбрана проверка системы (00)
+#               пусто - если выбран выход (0)
 # @exit_code:   0 - успешно
 #               1 - нет доступных модулей
 orchestrator::select_modify_module() {
@@ -72,15 +74,19 @@ orchestrator::select_modify_module() {
         log_info_simple_tab "$((i + 1)). $module_name"
     done
     log_info_simple_tab "0. Выход"
+    log_info_simple_tab "00. Проверка системы (check)"
     log::draw_lite_border
 
     # Запрашиваем выбор пользователя
     local selection
-    selection=$(io::ask_value "Выберите модуль" "" "^[0-$(( ${#module_paths[@]} ))]$" "0-${#module_paths[@]}" | tr -d '\0') || return
+    selection=$(io::ask_value "Выберите модуль" "" "^(00|[0-$(( ${#module_paths[@]} ))])$" "0-${#module_paths[@]}" | tr -d '\0')
 
-    # Если выбран 0 - выход, ничего не выводим
     if [[ "$selection" == "0" ]]; then
         log_info "Выход из меню настройки"
+        printf '%s\0' "EXIT"
+        return 0
+    elif [[ "$selection" == "00" ]]; then
+        printf '%s\0' "CHECK"
         return 0
     fi
 
@@ -105,14 +111,27 @@ run_modules_modify() {
             | sys::get_modules_by_type "$MODULE_TYPE_MODIFY" \
             | orchestrator::select_modify_module | tr -d '\0') || return
 
-        # Если модуль выбран (не пустой), запускаем его
-        if [[ -n "$selected_module" ]]; then
-            if ! bash "$selected_module"; then
-                log_error "Ошибка в модуле [$selected_module]"
-            fi
-        else
-            # Выбран выход (0) - завершаем цикл
+        # Обработка выбора пользователя
+        if [[ "$selected_module" == "CHECK" ]]; then
+            run_modules_polling
+        elif [[ "$selected_module" == "EXIT" ]]; then
             break
+        elif [[ -n "$selected_module" ]]; then
+            bash "$selected_module" && exit_code=0 || exit_code=$?
+
+            case "$exit_code" in
+                0)
+                    # Успешное завершение
+                    ;;
+                2)
+                    # Наш специфический код: отмена пользователем
+                    log_info "Модуль завершен пользователем (Skip)"
+                    ;;
+                *)
+                    # Все остальные коды считаем критической ошибкой
+                    log_error "Ошибка в модуле [$selected_module] (Exit code: $exit_code)"
+                    ;;
+            esac
         fi
     done
 }

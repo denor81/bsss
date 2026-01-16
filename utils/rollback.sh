@@ -54,6 +54,7 @@ orchestrator::watchdog_timer() {
     if wait "$SLEEP_PID" 2>/dev/null; then
         # Если sleep дожил до конца — рубим основной скрипт
         echo >&3
+        log::draw_lite_border 2>&3
         log_info "Время истекло - выполняется ОТКАТ" 2>&3
         orchestrator::total_rollback 2>&3
 

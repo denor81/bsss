@@ -30,9 +30,11 @@ ssh::ask_new_port() {
     local suggested_port
     suggested_port=$(ssh::generate_free_random_port) || return
 
+    log_info "Доступные действия:"
+    log_info_simple_tab "0. Выход"
     local new_port
     while true; do
-        new_port=$(io::ask_value "Введите новый SSH порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port" | tr -d '\0') || return
+        new_port=$(io::ask_value "Введите новый SSH порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port" "0" | tr -d '\0') || return
         ssh::is_port_busy "$new_port" || { printf '%s\0' "$new_port"; break; }
         log_error "SSH порт $new_port уже занят другим сервисом."
     done

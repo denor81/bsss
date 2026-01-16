@@ -2,17 +2,6 @@
 # MODULE_TYPE: helper
 # Использование: source "/modules/...sh"
 
-# @type:        Filter
-# @description: Проверяет, активен ли UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - UFW активен
-#               1 - UFW неактивен
-ufw::is_active() {
-    ufw status | grep -q "^Status: active"
-}
-
 # @type:        Source
 # @description: Генерирует список доступных пунктов меню на основе текущего состояния
 # @params:      нет

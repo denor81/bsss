@@ -15,13 +15,18 @@
 # @stderr:      Текст вопроса (через read -p) и сообщения об ошибках.
 # @exit_code:   0 — успешно получено значение.
 io::ask_value() {
-    local question=$1 default=$2 pattern=$3 hint=$4
+    local question=$1 default=$2 pattern=$3 hint=$4 cancel_keyword=${5:-}
     local choice
 
     while true; do
         read -p "$QUESTION_PREFIX $question [$hint]: " -r choice </dev/tty
         choice=${choice:-$default}
-        
+
+        if [[ -n "$cancel_keyword" && "$choice" == "$cancel_keyword" ]]; then
+            log_info "Операция отменена пользователем"
+            return 2
+        fi
+
         if [[ "$choice" =~ ^$pattern$ ]]; then
             printf '%s\0' "$choice"
             break
