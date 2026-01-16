@@ -10,6 +10,7 @@ readonly CURRENT_MODULE_NAME="$(basename "$0")"
 source "${MODULES_DIR_PATH}/../lib/vars.conf"
 source "${MODULES_DIR_PATH}/../lib/logging.sh"
 source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
+source "${MODULES_DIR_PATH}/common-helpers.sh"
 
 # @type:        Orchestrator
 # @description: Проверяет наличие UFW и устанавливает при необходимости
@@ -36,6 +37,12 @@ check() {
                 fi
             fi
         fi
+    fi
+
+    if ufw::is_active; then
+        log_info "UFW активен"
+    else
+        log_info "UFW выключен"
     fi
 }
 
