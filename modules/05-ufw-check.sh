@@ -21,7 +21,11 @@ source "${MODULES_DIR_PATH}/common-helpers.sh"
 #               1 - ошибка установки или отказ от установки
 check() {
     if command -v ufw > /dev/null 2>&1; then
-        log_info "UFW установлен"
+        if ufw::is_active; then
+            log_info "UFW активен"
+        else
+            log_info "UFW выключен"
+        fi
     else
         log_error "UFW не установлен"
         if io::confirm_action "Установить UFW сейчас? [apt update && apt install ufw -y]" || return; then
@@ -39,11 +43,7 @@ check() {
         fi
     fi
 
-    if ufw::is_active; then
-        log_info "UFW активен"
-    else
-        log_info "UFW выключен"
-    fi
+
 }
 
 main() {
