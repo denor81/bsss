@@ -67,7 +67,7 @@ sys::update_system() {
 main() {
     log_start
     
-    if io::confirm_action "Обновить системные пакеты?"; then
+    if io::confirm_action "Обновить системные пакеты? [apt-get update && apt-get upgrade -y]"; then
         sys::update_system
     fi
 }

@@ -13,6 +13,8 @@ source "${MAIN_DIR_PATH}/lib/logging.sh"
 source "${MAIN_DIR_PATH}/lib/user_confirmation.sh"
 source "${MAIN_DIR_PATH}/modules/common-helpers.sh"
 
+trap log_stop EXIT
+
 # @type:        Orchestrator
 # @description: Поиск и запуск модулей с типом 'check'
 # @params:      нет
@@ -80,18 +82,12 @@ orchestrator::select_modify_module() {
     # Запрашиваем выбор пользователя
     local selection
     selection=$(io::ask_value "Выберите модуль" "" "^(00|[0-$(( ${#module_paths[@]} ))])$" "0-${#module_paths[@]}" | tr -d '\0')
-
-    if [[ "$selection" == "0" ]]; then
-        log_info "Выход из меню настройки"
-        printf '%s\0' "EXIT"
-        return 0
-    elif [[ "$selection" == "00" ]]; then
-        printf '%s\0' "CHECK"
-        return 0
-    fi
-
-    # Выводим выбранный путь
-    printf '%s\0' "${module_paths[$((selection - 1))]}"
+    
+    case "$selection" in
+        0) log_info "Выход из меню настройки"; printf '%s\0' "EXIT" ;;
+        00) printf '%s\0' "CHECK" ;;
+        *)  printf '%s\0' "${module_paths[$((selection - 1))]}" ;;
+    esac
 }
 
 # @type:        Orchestrator
@@ -103,6 +99,7 @@ orchestrator::select_modify_module() {
 #               $? - проброс кода ошибки от модуля
 run_modules_modify() {
     while true; do
+        local exit_code=0
         local selected_module
 
         # Получаем выбранный модуль через пайплайн
@@ -111,26 +108,21 @@ run_modules_modify() {
             | sys::get_modules_by_type "$MODULE_TYPE_MODIFY" \
             | orchestrator::select_modify_module | tr -d '\0') || return
 
-        # Обработка выбора пользователя
+        # Обработка главного меню
         if [[ "$selected_module" == "CHECK" ]]; then
             run_modules_polling
         elif [[ "$selected_module" == "EXIT" ]]; then
             break
-        elif [[ -n "$selected_module" ]]; then
-            bash "$selected_module" && exit_code=0 || exit_code=$?
+        fi 
+
+        # Обработка результата выполнения модуля
+        if [[ -n "$selected_module" ]]; then
+            bash "$selected_module" || exit_code=$?
 
             case "$exit_code" in
-                0)
-                    # Успешное завершение
-                    ;;
-                2)
-                    # Наш специфический код: отмена пользователем
-                    log_info "Модуль завершен пользователем (Skip)"
-                    ;;
-                *)
-                    # Все остальные коды считаем критической ошибкой
-                    log_error "Ошибка в модуле [$selected_module] (Exit code: $exit_code)"
-                    ;;
+                0) log_info "Модуль успешно завершен [Code: $exit_code]" ;; # код 0
+                2|130) log_info "Модуль завершен пользователем [Code: $exit_code]" ;; # код 2
+                *) log_error "Ошибка в модуле [$selected_module] [Code: $exit_code]" ;; # код $?
             esac
         fi
     done
@@ -144,6 +136,8 @@ run_modules_modify() {
 # @exit_code:   0 - успешно
 #               $? - ошибка выполнения модулей
 main() {
+    log_start
+
     run_modules_polling
     io::confirm_action "Запустить настройку?"
     run_modules_modify

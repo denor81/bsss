@@ -246,10 +246,10 @@ ufw::is_active() {
 ufw::force_disable() {
     if ! ufw::is_active; then
         log_info "UFW: Уже деактивирован, действие пропущено"
-        return 0
+    else
+        ufw --force disable >/dev/null 2>&1
+        log_info "UFW: Полностью деактивирован [ufw --force disable]"
     fi
-    ufw --force disable >/dev/null 2>&1
-    log_info "UFW: Полностью деактивирован [ufw --force disable]"
 }
 
 # @type:        Filter

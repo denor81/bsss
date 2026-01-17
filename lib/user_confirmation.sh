@@ -6,14 +6,16 @@
 # @type:        Interactive
 # @description: Циклический опрос пользователя до получения валидного значения.
 # @params:      Использует ssh::get_ports_from_ss.
-#   question    Вопрос на ккоторый нужно получить ответ
-#   default     Значения по умолчанию - например "y" - "int"/"str"
-#   pattern     regex паттерн ожидаемого ввода - например "[yn]" - "str"
-#   hint        Подсказка каие значения ожидаются - например "Y/n" -"str"
+#   question        Вопрос на ккоторый нужно получить ответ
+#   default         Значения по умолчанию - например "y" - "int"/"str"
+#   pattern         regex паттерн ожидаемого ввода - например "[yn]" - "str"
+#   hint            Подсказка каие значения ожидаются - например "Y/n" -"str"
+#   cancel_keyword  [optional] Ключевое слово для отмены ввода - например "cancel" - "str"
 # @stdin:       Ожидает ввод пользователя (TTY).
 # @stdout:      Единственная строка с валидированным значением (без \n).
 # @stderr:      Текст вопроса (через read -p) и сообщения об ошибках.
-# @exit_code:   0 — успешно получено значение.
+# @exit_code:   0 — успешно получено значение
+#               2 — отменено пользователем.
 io::ask_value() {
     local question=$1 default=$2 pattern=$3 hint=$4 cancel_keyword=${5:-}
     local choice
@@ -22,10 +24,8 @@ io::ask_value() {
         read -p "$QUESTION_PREFIX $question [$hint]: " -r choice </dev/tty
         choice=${choice:-$default}
 
-        if [[ -n "$cancel_keyword" && "$choice" == "$cancel_keyword" ]]; then
-            log_info "Операция отменена пользователем"
-            return 2
-        fi
+        # Возвращаем код 2 при отмене
+        [[ -n "$cancel_keyword" && "$choice" == "$cancel_keyword" ]] && return 2
 
         if [[ "$choice" =~ ^$pattern$ ]]; then
             printf '%s\0' "$choice"
@@ -39,22 +39,19 @@ io::ask_value() {
 # @description: Ждет подтверждение действия. Доступны только y или n
 # @params:      Использует ssh::get_ports_from_ss.
 #   question    [optional]
-#   exit_msg    [optional]
 #   default     [optional] Значения по умолчанию - например y
 # @stdin:       Ожидает ввод пользователя (TTY).
 # @stdout:      Ничего.
-# @stderr:      Диагностические сообщения (log_info).
-# @exit_code:   0 — успешно, 2 — отменено пользователем.
+# @exit_code:   0 — успешно
+#               2 — отменено пользователем.
 io::confirm_action() {
     local question=${1:-"Продолжить?"}
-    local exit_msg=${2:-"Выход по запросу пользователя"}
     
     # Ждем [yn]
     local choice
     choice=$(io::ask_value "$question" "y" "[yn]" "Y/n" | tr -d '\0') || return
 
     if [[ "$choice" == "n" ]]; then
-        log_info "$exit_msg"
         return 2
     fi
 }

@@ -15,19 +15,18 @@ source "${MODULES_DIR_PATH}/05-ufw-helpers.sh"
 
 trap log_stop EXIT
 
-# @type:        Orchestrator
-# @description: Интерфейс управления состоянием UFW: показ текущих правил и выбор действия
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               >0 - ошибка в процессе
-orchestrator::dispatch_logic() {
-    ufw::log_active_ufw_rules
+orchestrator::run_ufw_module() {
     
-    # Потоковая обработка: генерация меню → отображение → выбор → выполнение
-    # Используем tee для однократной генерации меню
-    ufw::get_menu_items | tee >(ufw::display_menu) | ufw::select_action | ufw::execute_action
+    # вернет код 2 при выходе 0 [ufw::select_action->io::ask_value->return 2]
+    if ufw::get_menu_items | tee >(ufw::display_menu) | ufw::select_action | ufw::execute_action; then
+        log_success "Успешно [Code: $?]"
+    else
+        local exit_code=$?
+        case "$exit_code" in
+            2) log_info "Выход [Code: $exit_code]"; return "$exit_code" ;;
+            *) log_error "Сбой в цепочке UFW [Code: $exit_code]"; return "$exit_code" ;;
+        esac
+    fi
 }
 
 # @type:        Orchestrator
@@ -40,7 +39,7 @@ main() {
     log_start
 
     if io::confirm_action "Изменить состояние UFW?"; then
-        orchestrator::dispatch_logic
+        orchestrator::run_ufw_module
     fi
 }
 

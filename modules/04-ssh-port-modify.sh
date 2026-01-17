@@ -80,6 +80,8 @@ orchestrator::install_new_port_w_guard() {
     local watchdog_pid
     local port
     local rollback_module_name="rollback.sh"
+
+    ssh::display_menu
     port=$(ssh::ask_new_port | tr -d '\0') || return
 
     printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port

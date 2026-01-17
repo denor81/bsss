@@ -95,6 +95,7 @@ log_start() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_stop() {
+    echo >&2
     echo -e "$SYMBOL_INFO [${1:-$CURRENT_MODULE_NAME}]>>stop>>[PID: ${2:-$$}]" >&2
 }
 

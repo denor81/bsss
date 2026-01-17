@@ -30,8 +30,6 @@ ssh::ask_new_port() {
     local suggested_port
     suggested_port=$(ssh::generate_free_random_port) || return
 
-    log_info "Доступные действия:"
-    log_info_simple_tab "0. Выход"
     local new_port
     while true; do
         new_port=$(io::ask_value "Введите новый SSH порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port" "0" | tr -d '\0') || return
@@ -224,6 +222,18 @@ EOF
         log_error "Не удалось создать правило SSH: $path"
         return 1
     fi
+}
+
+# @type:        Sink
+# @description: Отображает пункты меню пользователю
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ssh::display_menu() {
+    log::draw_lite_border
+    log_info "Доступные действия:"
+    log_info_simple_tab "0. Выход"
 }
 
 # @type:        Filter

@@ -32,6 +32,7 @@ ufw::display_menu() {
     local text
     
     log::draw_lite_border
+    ufw::log_active_ufw_rules
     log_info "Доступные действия:"
     
     while IFS='|' read -r -d '' id_text || break; do
@@ -50,7 +51,7 @@ ufw::display_menu() {
 # @stdin:       id|text\0 (0..N)
 # @stdout:      id\0 (0..1) - выбранный ID или 0 (выход)
 # @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
+#               2 - выход по запросу пользователя [io::ask_value]
 ufw::select_action() {
     local -a menu_items=()
     local max_id=0
@@ -63,20 +64,12 @@ ufw::select_action() {
         (( id > max_id )) && max_id=$id
     done
     
-    # Формируем паттерн для валидации
     local pattern="^[0-$max_id]$"
     
-    # Запрашиваем выбор
     local selection
-    selection=$(io::ask_value "Выберите действие" "" "$pattern" "0-$max_id" | tr -d '\0') || return
+    # Вернет код 2 при выборе 0
+    selection=$(io::ask_value "Выберите действие" "" "$pattern" "0-$max_id" "0" | tr -d '\0') || return
     
-    # Если выбран 0 - выход
-    if [[ "$selection" == "0" ]]; then
-        log_info "Выход из меню"
-        return 2
-    fi
-    
-    # Выводим выбранный ID
     printf '%s\0' "$selection"
 }
 
@@ -89,10 +82,11 @@ ufw::select_action() {
 #               $? - код ошибки от действия
 ufw::execute_action() {
     local action_id
-    read -r -d '' action_id
+    read -r -d '' action_id || return 0
     
     case "$action_id" in
         1) ufw::toggle ;;
+        *) log_error "Неверный ID действия: [$action_id]"; return 1 ;;
     esac
 }
 
