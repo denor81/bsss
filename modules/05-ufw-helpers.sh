@@ -32,6 +32,7 @@ ufw::display_menu() {
     local text
     
     log::draw_lite_border
+    ufw::log_status
     ufw::log_active_ufw_rules
     log_info "Доступные действия:"
     
