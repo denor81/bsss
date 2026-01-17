@@ -42,7 +42,7 @@ orchestrator::dispatch_logic() {
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
 orchestrator::bsss_config_exists() {
-    ssh::log_bsss_configs
+    ssh::log_bsss_configs_w_port
 
     log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
     log_info_simple_tab "2. Переустановка (замена на новый порт)"
@@ -51,7 +51,7 @@ orchestrator::bsss_config_exists() {
     user_action=$(io::ask_value "Выберите" "" "^[12]$" "1/2" | tr -d '\0') || return
 
     case "$user_action" in
-        1) ssh::reset_and_pass | ufw::reset_and_pass | orchestrator::actions_after_port_change ;;
+        1) ssh::reset_and_pass | ufw::reset_and_pass; orchestrator::actions_after_port_change ;;
         2) orchestrator::install_new_port_w_guard ;;
     esac
 }
@@ -98,7 +98,7 @@ orchestrator::install_new_port_w_guard() {
 
     orchestrator::actions_after_port_change
     
-    if io::ask_value "Для подтверждения введите connected" "" "^connected$" "connected" >/dev/null || return; then
+    if io::ask_value "Подтвердите успешное подключение - введите $port" "" "^$port$" "$port" >/dev/null || return; then
         kill -USR1 "$watchdog_pid" 2>/dev/null || true
         wait "$watchdog_pid" 2>/dev/null || true
         log_success "Изменения зафиксированы"

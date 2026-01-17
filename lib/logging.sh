@@ -10,6 +10,7 @@ readonly SYMBOL_QUESTION="[?]" # Используется в lib/user_confirmati
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_WARN="[!]"
 readonly SYMBOL_ATTENTION="[A]"
+readonly SYMBOL_ACTUAL_INFO="[i]"
 readonly SYMBOL_ERROR="[x]"
 
 readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
@@ -45,6 +46,18 @@ log_info() {
 }
 
 # @type:        Sink
+# @description: Выводит информационное сообщение с символом [ ]
+# @params:      message - Приоритетное информационное сообщение
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log_bold_info() {
+    local color='\e[1m'
+    local color_reset='\e[0m'
+    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
+}
+
+# @type:        Sink
 # @description: Выводит предупреждение с символом [!]
 # @params:      message - Предупреждающее сообщение
 # @stdin:       нет
@@ -61,9 +74,21 @@ log_warn() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_attention() {
-    local color_red='\e[41;37m'
+    local color='\e[41;37m'
     local color_reset='\e[0m'
-    printf "${color_red}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$1" >&2
+    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$1" >&2
+}
+
+# @type:        Sink
+# @description: Выводит важное сообщение с символом [i]
+# @params:      message - актуальная информация
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log_actual_info() {
+    local color='\e[37;42m'
+    local color_reset='\e[0m'
+    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
 }
 
 # @type:        Sink

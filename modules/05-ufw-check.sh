@@ -11,6 +11,7 @@ source "${MODULES_DIR_PATH}/../lib/vars.conf"
 source "${MODULES_DIR_PATH}/../lib/logging.sh"
 source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
+source "${MODULES_DIR_PATH}/05-ufw-helpers.sh"
 
 # @type:        Orchestrator
 # @description: Проверяет наличие UFW и устанавливает при необходимости
@@ -21,11 +22,8 @@ source "${MODULES_DIR_PATH}/common-helpers.sh"
 #               1 - ошибка установки или отказ от установки
 check() {
     if command -v ufw > /dev/null 2>&1; then
-        if ufw::is_active; then
-            log_info "UFW активен"
-        else
-            log_info "UFW выключен"
-        fi
+        ufw::log_status
+        ufw::log_active_ufw_rules
     else
         log_error "UFW не установлен"
         if io::confirm_action "Установить UFW сейчас? [apt update && apt install ufw -y]" || return; then

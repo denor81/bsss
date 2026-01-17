@@ -120,6 +120,8 @@ ufw::log_active_ufw_rules() {
 
         if (( found == 0 )); then
             log_info "Есть правила UFW [ufw show added]"
+            log_bold_info "Правила UFW синхронизированы с настройками ${UTIL_NAME^^} для SSH порта"
+            log_bold_info "Удаляя правила SSH, также будут удалены связанные правила UFW"
             found=$((found + 1))
         fi
         log_info_simple_tab "$rule"

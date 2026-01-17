@@ -23,7 +23,6 @@ check() {
     ssh::log_active_ports_from_ss "1"
     ssh::log_bsss_configs_w_port
     ssh::log_other_configs_w_port
-    ufw::log_active_ufw_rules
 }
 
 main() {

@@ -104,3 +104,31 @@ ufw::toggle() {
         ufw::enable
     fi
 }
+
+# @type:        Sink
+# @description: Логирует состояние UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::log_status() {
+    if ufw::is_active; then
+        log_info "UFW ВКЛ"
+    else
+        log_info "UFW ВЫКЛ"
+    fi
+}
+
+# @type:        Orchestrator
+# @description: Выполняет действия после установки порта: перезапуск сервисов и валидация
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - действия успешно выполнены
+#               $? - ошибка в процессе
+orchestrator::actions_after_ufw_change() {
+    log::draw_lite_border
+    log_actual_info "Актуальная информация после внесения изменений"
+    ufw::log_status
+    ufw::log_active_ufw_rules
+}

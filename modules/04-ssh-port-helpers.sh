@@ -130,7 +130,7 @@ orchestrator::actions_after_port_change() {
     sys::restart_services
 
     log::draw_lite_border
-    log_info "Актуальная информация после внесения изменений"
+    log_actual_info "Актуальная информация после внесения изменений"
     ssh::log_active_ports_from_ss
     ssh::log_bsss_configs_w_port
     ufw::log_active_ufw_rules

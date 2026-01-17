@@ -19,7 +19,8 @@ orchestrator::run_ufw_module() {
     
     # вернет код 2 при выходе 0 [ufw::select_action->io::ask_value->return 2]
     if ufw::get_menu_items | tee >(ufw::display_menu) | ufw::select_action | ufw::execute_action; then
-        log_success "Успешно [Code: $?]"
+        # log_info "Успешно [Code: $?]"
+        orchestrator::actions_after_ufw_change
     else
         local exit_code=$?
         case "$exit_code" in
