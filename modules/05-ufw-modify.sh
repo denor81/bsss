@@ -38,8 +38,11 @@ orchestrator::run_ufw_module() {
 main() {
     log_start
 
+    # Запуск или возврат кода 2 при отказе пользователя
     if io::confirm_action "Изменить состояние UFW?"; then
         orchestrator::run_ufw_module
+    else
+        return
     fi
 }
 

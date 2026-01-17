@@ -47,11 +47,11 @@ io::ask_value() {
 io::confirm_action() {
     local question=${1:-"Продолжить?"}
     
-    # Ждем [yn]
     local choice
-    choice=$(io::ask_value "$question" "y" "[yn]" "Y/n" | tr -d '\0') || return
+    # при выборе n возвращаем 2
+    choice=$(io::ask_value "$question" "y" "[yn]" "Y/n" "n"| tr -d '\0') || return
 
-    if [[ "$choice" == "n" ]]; then
-        return 2
-    fi
+    # if [[ "$choice" == "n" ]]; then
+    #     return 2
+    # fi
 }

@@ -67,8 +67,11 @@ sys::update_system() {
 main() {
     log_start
     
+    # Запуск или возврат кода 2 при отказе пользователя
     if io::confirm_action "Обновить системные пакеты? [apt-get update && apt-get upgrade -y]"; then
         sys::update_system
+    else
+        return
     fi
 }
 

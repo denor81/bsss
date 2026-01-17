@@ -109,8 +109,11 @@ orchestrator::install_new_port_w_guard() {
 main() {
     log_start
     
+    # Запуск или возврат кода 2 при отказе пользователя
     if io::confirm_action "Изменить конфигурацию SSH порта?"; then
         orchestrator::dispatch_logic
+    else
+        return
     fi
 }
 
