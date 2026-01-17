@@ -219,9 +219,9 @@ ufw::add_bsss_rule() {
     local port
     while read -r -d '' port; do
         if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >/dev/null 2>&1; then
-            log_info "Создано правило UFW: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
+            log_info "Создано правило UFW: [ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT]"
         else
-            log_info "Ошибка при добавлении правила UFW: ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT"
+            log_info "Ошибка при добавлении правила UFW: [ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT]"
         fi
     done
 }

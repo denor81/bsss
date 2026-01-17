@@ -36,8 +36,8 @@ check()<:>Orchestrator<:>Проверяет необходимость пере�
 check()<:>Orchestrator<:>Проверяет состояние SSH портов и правил<:>./modules/04-ssh-port-check.sh
 ssh::install_new_port()<:>Filter<:>Основной функционал установки/изменения SSH порта<:>./modules/04-ssh-port-helpers.sh
 ssh::ask_new_port()<:>Source<:>Запрашивает у пользователя новый SSH порт<:>./modules/04-ssh-port-helpers.sh
-ssh::log_bsss_configs()<:>Orchestrator<:>Выводит список найденных конфигураций и связанных с ними портов<:>./modules/04-ssh-port-helpers.sh
-ssh::log_all_configs_w_port()<:>Orchestrator<:>Выводит все сторонние конфигурации SSH с портами<:>./modules/04-ssh-port-helpers.sh
+ssh::log_bsss_configs_w_port()<:>Orchestrator<:>Выводит список найденных конфигураций и связанных с ними портов<:>./modules/04-ssh-port-helpers.sh
+ssh::log_other_configs_w_port()<:>Orchestrator<:>Выводит все сторонние конфигурации SSH с портами<:>./modules/04-ssh-port-helpers.sh
 orchestrator::actions_after_port_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/04-ssh-port-helpers.sh
 ssh::reset_and_pass()<:>Filter<:>Удаляет все правила BSSS и передает порт дальше<:>./modules/04-ssh-port-helpers.sh
 ssh::delete_all_bsss_rules()<:>Orchestrator<:>Удаляет все правила BSSS SSH<:>./modules/04-ssh-port-helpers.sh

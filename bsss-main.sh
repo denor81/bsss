@@ -116,7 +116,7 @@ run_modules_modify() {
         fi 
 
         # Обработка результата выполнения модуля
-        if [[ -n "$selected_module" ]]; then
+        if [[ -f "$selected_module" ]]; then
             bash "$selected_module" || exit_code=$?
 
             case "$exit_code" in

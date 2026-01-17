@@ -45,22 +45,48 @@ ssh::ask_new_port() {
 # @stdout:      нет
 # @exit_code:   0 - логика успешно отработала
 #               $? - если в дочерних функциях произошел сбой
-ssh::log_bsss_configs() {
-    local path
-    local port
+# ssh::log_bsss_configs_w_port() {
+#     local path
+#     local port
+#     local found=0
+
+#     while IFS= read -r -d '' path || break; do
+
+#         if (( found == 0 )); then
+#             log_info "Есть правила ${UTIL_NAME^^} для SSH:"
+#             found=$((found + 1))
+#         fi
+
+#         port=$(printf '%s\0' "$path" | ssh::get_first_port_from_path | tr -d '\0')
+#         log_info_simple_tab "$(log::path_and_port_template "$path" "$port")"
+
+#     done < <(sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")
+
+#     if (( found == 0 )); then
+#         log_info "Нет правил ${UTIL_NAME^^} для SSH [$SSH_CONFIG_FILE]"
+#     fi
+# }
+
+# @type:        Orchestrator
+# @description: Выводит все BSSS конфигурации SSH с портами
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ssh::log_bsss_configs_w_port() {
+    local grep_result
     local found=0
 
-    while IFS= read -r -d '' path || break; do
+    while IFS= read -r grep_result || break; do
 
         if (( found == 0 )); then
             log_info "Есть правила ${UTIL_NAME^^} для SSH:"
             found=$((found + 1))
         fi
 
-        port=$(printf '%s\0' "$path" | ssh::get_first_port_from_path | tr -d '\0')
-        log_info_simple_tab "$(log::path_and_port_template "$path" "$port")"
+        log_info_simple_tab "$grep_result"
 
-    done < <(sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")
+    done < <(grep -EiHs '^\s*port\b' "${SSH_CONFIGD_DIR%/}/"$BSSS_SSH_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
         log_info "Нет правил ${UTIL_NAME^^} для SSH [$SSH_CONFIG_FILE]"
@@ -73,7 +99,7 @@ ssh::log_bsss_configs() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::log_all_configs_w_port() {
+ssh::log_other_configs_w_port() {
     local grep_result
     local found=0
 
@@ -84,9 +110,9 @@ ssh::log_all_configs_w_port() {
             found=$((found + 1))
         fi
 
-        log_info_simple_tab "$(printf '%s' $grep_result)"
+        log_info_simple_tab "$grep_result"
 
-    done < <(grep -EiH --exclude="${SSH_CONFIGD_DIR%/}"/$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR%/}"/$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
+    done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR%/}/"$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR%/}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
 
     if (( found == 0 )); then
         log_info "Нет сторонних правил SSH [$SSH_CONFIG_FILE]"
@@ -106,7 +132,7 @@ orchestrator::actions_after_port_change() {
     log::draw_lite_border
     log_info "Актуальная информация после внесения изменений"
     ssh::log_active_ports_from_ss
-    ssh::log_bsss_configs
+    ssh::log_bsss_configs_w_port
     ufw::log_active_ufw_rules
 }
 
@@ -217,7 +243,7 @@ ssh::create_bsss_config_file() {
 Port $port
 EOF
     then
-        log_info "Создано правило SSH: $(log::path_and_port_template $path $port)"
+        log_info "Создано правило ${UTIL_NAME^^} для SSH: [$path:$port]"
     else
         log_error "Не удалось создать правило SSH: $path"
         return 1
@@ -234,16 +260,4 @@ ssh::display_menu() {
     log::draw_lite_border
     log_info "Доступные действия:"
     log_info_simple_tab "0. Выход"
-}
-
-# @type:        Filter
-# @description: Форматирует строку для вывода пути к файлу и порта
-# @params:
-#   path        Путь к файлу
-#   port        Номер порта
-# @stdin:       нет
-# @stdout:      Отформатированная строка
-# @exit_code:   0 - всегда
-log::path_and_port_template() {
-    printf '%s\n' "$1 Порт: $2"
 }
