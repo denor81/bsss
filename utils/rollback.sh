@@ -27,7 +27,7 @@ trap 'orchestrator::immediate_rollback' SIGUSR2
 # @exit_code:   0 - всегда
 orchestrator::stop_rollback() {
     kill "$SLEEP_PID" 2>/dev/null
-    log_stop 2>&3
+    # log_stop 2>&3
     exit 0
 }
 

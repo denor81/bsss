@@ -13,8 +13,11 @@ source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
 source "${MODULES_DIR_PATH}/common-helpers.sh"
 source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 
+WATCHDOG_FIFO="$MODULES_DIR_PATH/../bsss_watchdog_$$.fifo"
+
 # Сработает при откате изменений при сигнале USR1
 trap log_stop EXIT
+trap stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
 # @description: Определяет состояние конфигурации SSH (существует/отсутствует) 
@@ -69,7 +72,6 @@ orchestrator::bsss_config_not_exists() {
 
 orchestrator::install_new_port_w_guard() {
     local port
-    local watchdog_fifo="$MODULES_DIR_PATH/../bsss_watchdog_$$.fifo"
     local watchdog_pid
     local reader_pid
 
@@ -81,10 +83,10 @@ orchestrator::install_new_port_w_guard() {
     printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
 
     # 3. Создаю FIFO и запускаю слушателя
-    make_fifo_and_start_reader "$watchdog_fifo"
+    make_fifo_and_start_reader
 
     # 4. Запуск Rollback
-    watchdog_pid=$(orchestrator::watchdog_start "$watchdog_fifo")
+    watchdog_pid=$(orchestrator::watchdog_start "$WATCHDOG_FIFO")
 
     # 5. Интерактивное подтверждение
     orchestrator::guard_ui_instructions "$port"
@@ -94,7 +96,6 @@ orchestrator::install_new_port_w_guard() {
     
     # 7. Проверка поднятия порта
     if ! ssh::wait_for_port_up "$port"; then
-        trap "stop_script_by_rollback_timer '$watchdog_fifo'" SIGUSR1
         kill -USR2 "$watchdog_pid" 2>/dev/null || true
         wait "$watchdog_pid" 2>/dev/null || true
 
@@ -109,25 +110,22 @@ orchestrator::install_new_port_w_guard() {
 }
 
 make_fifo_and_start_reader() {
-    local watchdog_fifo="$1"
-
-    mkfifo "$watchdog_fifo"
-    log_info "Создан FIFO: $watchdog_fifo"
-    cat "$watchdog_fifo" >&2 &
+    mkfifo "$WATCHDOG_FIFO"
+    log_info "Создан FIFO: $WATCHDOG_FIFO"
+    cat "$WATCHDOG_FIFO" >&2 &
 }
 
 stop_script_by_rollback_timer() {
-    printf '%s\0' "$1" | sys::delete_paths
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths
     exit 3
 }
 
 orchestrator::watchdog_start() {
-    local watchdog_fifo="$1"
     local rollback_module="${MODULES_DIR_PATH}/../${UTILS_DIR%/}/$ROLLBACK_MODULE_NAME"
 
     # Запускаем "Сторожа" отвязано от терминала
     # Передаем PID основного скрипта ($$) первым аргументом
-    nohup bash "$rollback_module" "$$" "$watchdog_fifo" >/dev/null 2>&1 &
+    nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
     printf '%s' "$!" # Возвращаем PID для оркестратора
 }
 
@@ -137,6 +135,7 @@ orchestrator::watchdog_stop() {
     kill -USR1 "$watchdog_pid" 2>/dev/null || true
     wait "$watchdog_pid" 2>/dev/null || true
     log_info "Изменения зафиксированы, Rollback отключен"
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths
 }
 
 orchestrator::guard_ui_instructions() {
