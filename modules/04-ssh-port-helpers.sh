@@ -39,35 +39,6 @@ ssh::ask_new_port() {
 }
 
 # @type:        Orchestrator
-# @description: Выводит список найденных конфигураций и связанных с ними портов
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - логика успешно отработала
-#               $? - если в дочерних функциях произошел сбой
-# ssh::log_bsss_configs_w_port() {
-#     local path
-#     local port
-#     local found=0
-
-#     while IFS= read -r -d '' path || break; do
-
-#         if (( found == 0 )); then
-#             log_info "Есть правила ${UTIL_NAME^^} для SSH:"
-#             found=$((found + 1))
-#         fi
-
-#         port=$(printf '%s\0' "$path" | ssh::get_first_port_from_path | tr -d '\0')
-#         log_info_simple_tab "$(log::path_and_port_template "$path" "$port")"
-
-#     done < <(sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK")
-
-#     if (( found == 0 )); then
-#         log_info "Нет правил ${UTIL_NAME^^} для SSH [$SSH_CONFIG_FILE]"
-#     fi
-# }
-
-# @type:        Orchestrator
 # @description: Выводит все BSSS конфигурации SSH с портами
 # @params:      нет
 # @stdin:       нет

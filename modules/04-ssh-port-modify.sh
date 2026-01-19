@@ -86,7 +86,7 @@ orchestrator::install_new_port_w_guard() {
     # 4. Запуск Rollback
     watchdog_pid=$(orchestrator::watchdog_start "$watchdog_fifo")
 
-    sleep 0.5 # Ждем немного, чтобы не гоняться за фоновыми процессами
+    # sleep 0.5 # Ждем немного, чтобы не гоняться за фоновыми процессами
 
     # 5. Интерактивное подтверждение
     orchestrator::guard_ui_instructions "$port"
