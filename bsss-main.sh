@@ -122,6 +122,7 @@ run_modules_modify() {
             case "$exit_code" in
                 0) log_info "Модуль успешно завершен [Code: $exit_code]" ;; # код 0
                 2|130) log_info "Модуль завершен пользователем [Code: $exit_code]" ;; # код 2
+                3) log_info "Модуль завершен откатом [Code: $exit_code]" ;; # код 3
                 *) log_error "Ошибка в модуле [$selected_module] [Code: $exit_code]" ;; # код $?
             esac
         fi

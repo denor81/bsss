@@ -17,7 +17,7 @@ SLEEP_PID=""
 trap 'orchestrator::stop_rollback' SIGUSR1
 
 # @type:        Orchestrator
-# @description: Останавливает процесс отката
+# @description: Останавливает процесс таймера отката и завершает скрипт
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
@@ -41,7 +41,7 @@ orchestrator::watchdog_timer() {
     local watchdog_fifo="$2"
     # Используем анонимный дескриптор для вывода в FIFO,
     # переданный вторым аргументом $2
-    exec 3<> "$watchdog_fifo"
+    exec 3> "$watchdog_fifo"
     log_start 2>&3
     log_info "Фоновый таймер запущен на $ROLLBACK_TIMER_SECONDS сек..." 2>&3
     log_bold_info "По истечению таймера будут сброшены настройки ${UTIL_NAME^^} для SSH порта и отключен UFW" 2>&3
@@ -63,12 +63,10 @@ orchestrator::watchdog_timer() {
         if kill -0 "$main_script_pid" 2>/dev/null; then
             kill -USR1 "$main_script_pid" 2>/dev/null || true
         fi
-        
+
     fi
-    # log_info ">> завершен [PID: $$]" 2>&3
     log_stop 2>&3
     exec 3>&-
-    printf '%s\0' "$watchdog_fifo" | sys::delete_paths 2>/dev/null
 }
 
 # @type:        Orchestrator
@@ -85,7 +83,7 @@ orchestrator::total_rollback() {
     ufw::force_disable 2>&3
     ufw::delete_all_bsss_rules 2>&3
     orchestrator::actions_after_port_change 2>&3
-    
+
     log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
 }
 
