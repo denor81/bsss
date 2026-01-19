@@ -36,7 +36,7 @@ sys::get_modules_paths_w_type () {
         }
     '
 }
-не работает корректное удаление фифо файла при откате ufw
+
 # @type:        Filter
 # @description: Возвращает отфильтрованные по типу пути к модулям
 # @params:
@@ -266,64 +266,4 @@ ufw::enable() {
     else
         log_error "Ошибка при активации [ufw --force enable]"
     fi
-}
-
-# ============================================================================
-# WATCHDOG - Функции для работы со сторожевым таймером
-# ============================================================================
-
-# @type:        Orchestrator
-# @description: Инициализирует и запускает сторожевой таймер
-# @params:
-#   rollback_type   Тип отката: ufw|full
-# @stdin:       нет
-# @stdout:      watchdog_pid\0 - PID процесса watchdog
-# @exit_code:   0 - успешно
-#               1 - ошибка инициализации
-orchestrator::start_watchdog() {
-    local rollback_type="$1"
-    local watchdog_fifo="/tmp/bsss_watchdog_$$.fifo"
-    local watchdog_pid
-    local watchdog_script="${MODULES_DIR_PATH}/../${UTILS_DIR%/}/watchdog.sh"
-
-    # Валидация типа отката
-    if [[ "$rollback_type" != "ufw" ]] && [[ "$rollback_type" != "full" ]]; then
-        log_error "Неизвестный тип отката: [$rollback_type]. Допустимые значения: ufw, full"
-        return 1
-    fi
-
-    # Создаем FIFO для коммуникации с watchdog
-    mkfifo "$watchdog_fifo"
-
-    # Запускаем cat для чтения из FIFO и перенаправления в stderr
-    # Это необходимо для того, чтобы FIFO не блокировался
-    cat "$watchdog_fifo" >&2 &
-
-    # Запускаем watchdog в фоне с nohup
-    nohup bash "$watchdog_script" "$$" "$watchdog_fifo" "$rollback_type" >/dev/null 2>&1 &
-    watchdog_pid=$!
-
-    # Возвращаем PID watchdog через stdout (NUL-разделитель)
-    printf '%s\0' "$watchdog_pid"
-}
-
-# @type:        Orchestrator
-# @description: Останавливает сторожевой таймер
-# @params:
-#   watchdog_pid   PID процесса watchdog
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда
-orchestrator::stop_watchdog() {
-    local watchdog_pid="$1"
-
-    # Отправляем сигнал USR1 для остановки watchdog
-    if [[ -n "$watchdog_pid" ]] && kill -0 "$watchdog_pid" 2>/dev/null; then
-        kill -USR1 "$watchdog_pid" 2>/dev/null || true
-        # Ждем завершения процесса
-        wait "$watchdog_pid" 2>/dev/null || true
-    fi
-
-    # FIFO удаляется самим watchdog при завершении
-    # Не удаляем здесь, чтобы избежать гонки процессов
 }

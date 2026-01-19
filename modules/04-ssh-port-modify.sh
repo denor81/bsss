@@ -79,14 +79,18 @@ orchestrator::install_new_port_w_guard() {
     local watchdog_fifo="/tmp/bsss_watchdog_$$.fifo"
     local watchdog_pid
     local port
+    local rollback_module_name="rollback.sh"
 
     ssh::display_menu
     port=$(ssh::ask_new_port | tr -d '\0') || return
 
     printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
 
-    # Запускаем сторожевой таймер с типом отката "full"
-    watchdog_pid=$(orchestrator::start_watchdog "full" | tr -d '\0') || return
+    mkfifo "$watchdog_fifo"
+    cat "$watchdog_fifo" >&2 &
+
+    nohup bash "${MODULES_DIR_PATH}/../${UTILS_DIR%/}/$rollback_module_name" "$$" "$watchdog_fifo">/dev/null 2>&1 &
+    watchdog_pid=$!
 
     log::draw_lite_border
     log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
@@ -95,9 +99,11 @@ orchestrator::install_new_port_w_guard() {
     orchestrator::actions_after_port_change
     
     if io::ask_value "Подтвердите успешное подключение - введите $port" "" "^$port$" "$port" >/dev/null || return; then
-        orchestrator::stop_watchdog "$watchdog_pid" "$watchdog_fifo"
+        kill -USR1 "$watchdog_pid" 2>/dev/null || true
+        wait "$watchdog_pid" 2>/dev/null || true
         log_success "Изменения зафиксированы"
     fi
+    printf '%s\0' "$watchdog_fifo" | sys::delete_paths 2>/dev/null
 }
 
 main() {
