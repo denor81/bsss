@@ -46,11 +46,13 @@ orchestrator::dispatch_logic() {
 orchestrator::bsss_config_exists() {
     ssh::log_bsss_configs_w_port
 
+    log_info "Доступные действия:"
     log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
     log_info_simple_tab "2. Переустановка (замена на новый порт)"
+    log_info_simple_tab "0. Выход"
 
     local user_action
-    user_action=$(io::ask_value "Выберите" "" "^[12]$" "1/2" | tr -d '\0') || return
+    user_action=$(io::ask_value "Выберите" "" "^[012]$" "0-2" "0" | tr -d '\0') || return
 
     case "$user_action" in
         1) ssh::reset_and_pass | ufw::reset_and_pass; orchestrator::actions_after_port_change ;;
