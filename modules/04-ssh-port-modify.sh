@@ -86,16 +86,21 @@ orchestrator::install_new_port_w_guard() {
     # 4. Запуск Rollback
     watchdog_pid=$(orchestrator::watchdog_start "$watchdog_fifo")
 
-    # sleep 0.5 # Ждем немного, чтобы не гоняться за фоновыми процессами
-
     # 5. Интерактивное подтверждение
     orchestrator::guard_ui_instructions "$port"
 
     # 6. Перезагрузка служб только после запука Rollback и инструкций
     orchestrator::actions_after_port_change
+    
+    # 7. Проверка поднятия порта
+    if ! ssh::wait_for_port_up "$port"; then
+        trap "stop_script_by_rollback_timer '$watchdog_fifo'" SIGUSR1
+        kill -USR2 "$watchdog_pid" 2>/dev/null || true
+        wait "$watchdog_pid" 2>/dev/null || true
 
-    # 7. Установка ловушки. Ожидаем сигнал SIGUSR1 при откате
-    trap "stop_script_by_rollback_timer '$watchdog_fifo'" SIGUSR1
+        # Заглушка для ожидания отката через сигнал от rollback.sh
+        while true; do sleep 1; done 
+    fi
 
     # 8. Подтверждение и остановка Rollback
     if io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null; then
@@ -121,6 +126,7 @@ orchestrator::watchdog_start() {
     local rollback_module="${MODULES_DIR_PATH}/../${UTILS_DIR%/}/$ROLLBACK_MODULE_NAME"
 
     # Запускаем "Сторожа" отвязано от терминала
+    # Передаем PID основного скрипта ($$) первым аргументом
     nohup bash "$rollback_module" "$$" "$watchdog_fifo" >/dev/null 2>&1 &
     printf '%s' "$!" # Возвращаем PID для оркестратора
 }

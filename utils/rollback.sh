@@ -13,8 +13,11 @@ source "${UTILS_DIR_PATH}/../modules/common-helpers.sh"
 source "${UTILS_DIR_PATH}/../modules/04-ssh-port-helpers.sh"
 
 SLEEP_PID=""
+MAIN_SCRIPT_PID=""
 
+trap 'log_stop 2>&3' EXIT
 trap 'orchestrator::stop_rollback' SIGUSR1
+trap 'orchestrator::immediate_rollback' SIGUSR2
 
 # @type:        Orchestrator
 # @description: Останавливает процесс таймера отката и завершает скрипт
@@ -29,6 +32,26 @@ orchestrator::stop_rollback() {
 }
 
 # @type:        Orchestrator
+# @description: Немедленно выполняет тотальный откат при получении SIGUSR2
+#               Вызывается, когда порт не поднялся после изменения
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+orchestrator::immediate_rollback() {
+    kill "$SLEEP_PID" 2>/dev/null
+    log::draw_lite_border 2>&3
+    orchestrator::total_rollback 2>&3
+
+    if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
+        kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
+        wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
+    fi
+
+    exit 0
+}
+
+# @type:        Orchestrator
 # @description: Таймер для автоматического отката
 # @params:
 #   main_script_pid PID основного скрипта
@@ -37,7 +60,7 @@ orchestrator::stop_rollback() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 orchestrator::watchdog_timer() {
-    local main_script_pid="$1"
+    MAIN_SCRIPT_PID="$1"
     local watchdog_fifo="$2"
     # Используем анонимный дескриптор для вывода в FIFO,
     # переданный вторым аргументом $2
@@ -60,8 +83,9 @@ orchestrator::watchdog_timer() {
         log_info "Время истекло - выполняется ОТКАТ" 2>&3
         orchestrator::total_rollback 2>&3
 
-        if kill -0 "$main_script_pid" 2>/dev/null; then
-            kill -USR1 "$main_script_pid" 2>/dev/null || true
+        if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
+            kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
+            wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
         fi
 
     fi

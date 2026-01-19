@@ -232,3 +232,39 @@ ssh::display_menu() {
     log_info "Доступные действия:"
     log_info_simple_tab "0. Выход"
 }
+
+# @type:        Filter
+# @description: Блокирующая проверка поднятия SSH порта после изменения
+#               Проверяет порт в цикле с интервалом 0.5 секунды
+#               При успешном обнаружении возвращает 0
+#               При истечении таймаута возвращает 1
+# @params:
+#   port        Номер порта для проверки
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - порт успешно поднят
+#               1 - порт не поднялся в течение таймаута
+ssh::wait_for_port_up() {
+    local port="$1"
+    local timeout="${SSH_PORT_CHECK_TIMEOUT:-5}"
+    local elapsed=0
+    local interval=0.5
+    local attempts=0
+
+    log_info "Ожидание поднятия SSH порта $port (таймаут: ${timeout} сек)..."
+
+    while (( elapsed < timeout )); do
+        # Проверяем, есть ли порт в списке активных
+        if ssh::get_ports_from_ss | grep -qzxF "$port"; then
+            log_info "SSH порт $port успешно поднят"
+            return 0
+        fi
+
+        sleep "$interval"
+        elapsed=$((elapsed + 1))
+        attempts=$((attempts + 1))
+    done
+
+    log_error "ПОРТ $port НЕ ПОДНЯЛСЯ [$attempts попыток в течение ${timeout} сек]"
+    return 1
+}
