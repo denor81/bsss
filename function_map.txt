@@ -61,6 +61,12 @@ ufw::execute_action()<:>Orchestrator<:>Выполняет выбранное д�
 ufw::toggle()<:>Sink<:>Переключает состояние UFW<:>./modules/05-ufw-helpers.sh
 ufw::log_status()<:>Sink<:>Логирует состояние UFW<:>./modules/05-ufw-helpers.sh
 orchestrator::actions_after_ufw_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/05-ufw-helpers.sh
+orchestrator::run_ufw_module()<:>Orchestrator<:>Запускает модуль UFW с механизмом rollback<:>./modules/05-ufw-modify.sh
+make_fifo_and_start_reader()<:>Orchestrator<:>Создает FIFO и запускает слушатель для коммуникации с rollback<:>./modules/05-ufw-modify.sh
+stop_script_by_rollback_timer()<:>Orchestrator<:>Обработчик сигнала SIGUSR1 - останавливает скрипт при откате<:>./modules/05-ufw-modify.sh
+orchestrator::watchdog_start()<:>Orchestrator<:>Запускает фоновый процесс rollback (watchdog)<:>./modules/05-ufw-modify.sh
+orchestrator::watchdog_stop()<:>Orchestrator<:>Останавливает процесс rollback (watchdog) по PID<:>./modules/05-ufw-modify.sh
+orchestrator::guard_ui_instructions()<:>Sink<:>Отображает инструкции пользователю для проверки подключения<:>./modules/05-ufw-modify.sh
 main()<:>Orchestrator<:>Основная точка входа для модуля изменения состояния UFW<:>./modules/05-ufw-modify.sh
 sys::get_paths_by_mask()<:>Source<:>Получает список путей через нулевой разделитель<:>./modules/common-helpers.sh
 sys::get_modules_paths_w_type<:>Filter<:>Возвращает строку - путь с типом<:>./modules/common-helpers.sh
@@ -99,5 +105,6 @@ main()<:>Orchestrator<:>Основная точка входа<:>./oneline-runne
 orchestrator::stop_rollback()<:>Orchestrator<:>Останавливает процесс таймера отката и завершает скрипт<:>./utils/rollback.sh
 orchestrator::immediate_rollback()<:>Orchestrator<:>Немедленно выполняет тотальный откат при получении SIGUSR2<:>./utils/rollback.sh
 orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автоматического отката<:>./utils/rollback.sh
+orchestrator::ufw_rollback()<:>Orchestrator<:>Простой откат для UFW модуля - только отключение UFW<:>./utils/rollback.sh
 orchestrator::total_rollback()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./utils/rollback.sh

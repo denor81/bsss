@@ -61,7 +61,7 @@ orchestrator::bsss_config_exists() {
 }
 
 # @type:        Orchestrator
-# @description: Обработчик сценария отсутствия конфигурации SSH
+# @description: Обработчик сценария отсутствия конфигурации SSH 
 #               Установка нового порта SSH и добавление правила в UFW
 # @params:      нет
 # @stdin:       нет
@@ -81,9 +81,6 @@ orchestrator::install_new_port_w_guard() {
     ssh::display_menu
     port=$(ssh::ask_new_port | tr -d '\0') || return
 
-    # 2. Модификация
-    printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
-
     # 3. Создаю FIFO и запускаю слушателя
     make_fifo_and_start_reader
 
@@ -92,6 +89,9 @@ orchestrator::install_new_port_w_guard() {
 
     # 5. Интерактивное подтверждение
     orchestrator::guard_ui_instructions "$port"
+
+    # 2. Модификация
+    printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
 
     # 6. Перезагрузка служб только после запука Rollback и инструкций
     orchestrator::actions_after_port_change

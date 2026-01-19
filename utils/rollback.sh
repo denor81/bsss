@@ -11,9 +11,11 @@ source "${UTILS_DIR_PATH}/../lib/logging.sh"
 source "${UTILS_DIR_PATH}/../lib/user_confirmation.sh"
 source "${UTILS_DIR_PATH}/../modules/common-helpers.sh"
 source "${UTILS_DIR_PATH}/../modules/04-ssh-port-helpers.sh"
+source "${UTILS_DIR_PATH}/../modules/05-ufw-helpers.sh"
 
 SLEEP_PID=""
-MAIN_SCRIPT_PID=""
+MAIN_SCRIPT=""
+ROLLBACK_TYPE="${ROLLBACK_TYPE:-ssh}"
 
 trap 'log_stop 2>&3' EXIT
 trap 'orchestrator::stop_rollback' SIGUSR1
@@ -93,6 +95,19 @@ orchestrator::watchdog_timer() {
 }
 
 # @type:        Orchestrator
+# @description: Простой откат для UFW модуля - только отключение UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+orchestrator::ufw_rollback() {
+    log_warn "Выполняется откат UFW..."
+    ufw::force_disable 2>&3
+    orchestrator::actions_after_ufw_change 2>&3
+    log_success "UFW отключен. Проверьте доступ к серверу."
+}
+
+# @type:        Orchestrator
 # @description: Полная очистка системы от следов BSSS и деактивация UFW.
 #               Вызывается при критическом сбое или таймауте.
 # @params:      нет
@@ -100,14 +115,23 @@ orchestrator::watchdog_timer() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 orchestrator::total_rollback() {
-    log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
-
-    ssh::delete_all_bsss_rules 2>&3
-    ufw::force_disable 2>&3
-    ufw::delete_all_bsss_rules 2>&3
-    orchestrator::actions_after_port_change 2>&3
-
-    log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
+    case "$ROLLBACK_TYPE" in
+        "ssh")
+            log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
+            ssh::delete_all_bsss_rules 2>&3
+            ufw::force_disable 2>&3
+            ufw::delete_all_bsss_rules 2>&3
+            orchestrator::actions_after_port_change 2>&3
+            log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
+            ;;
+        "ufw")
+            orchestrator::ufw_rollback
+            ;;
+        *)
+            log_error "Неизвестный тип отката: $ROLLBACK_TYPE"
+            return 1
+            ;;
+    esac
 }
 
 # @type:        Orchestrator
