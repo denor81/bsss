@@ -23,8 +23,9 @@ ssh::install_new_port() {
 # @stdin:       нет
 # @stdout:      port\0
 # @exit_code:   0 - успешно
+#               2 - выход по запросу пользователя
 #               $? - ошибка
-ssh::ask_new_port() {
+ssh::get_user_choice() {
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
     local suggested_port
@@ -217,6 +218,32 @@ ssh::display_menu() {
     log::draw_lite_border
     log_info "Доступные действия:"
     log_info_simple_tab "0. Выход"
+}
+
+# @type:        Filter
+# @description: Применяет изменения SSH порта (сброс старых правил и установка новых)
+# @params:
+#   port        Номер порта для установки
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка в процессе
+ssh::apply_changes() {
+    local port="$1"
+    printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
+}
+
+# @type:        Filter
+# @description: Запрашивает подтверждение успешного подключения
+# @params:
+#   port        Номер порта для проверки
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - подтверждение получено
+#               2 - выход по запросу пользователя
+ssh::confirm_success() {
+    local port="$1"
+    io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null || return $?
 }
 
 # @type:        Filter

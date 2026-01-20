@@ -25,33 +25,35 @@ trap stop_script_by_rollback_timer SIGUSR1
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
+#               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
 orchestrator::run_ufw_module() {
     local watchdog_pid
-    
-    # 1. Отображение меню и выбор действия
-    if ! ufw::get_menu_items | tee >(ufw::display_menu) | ufw::select_action | ufw::execute_action; then
-        local exit_code=$?
-        case "$exit_code" in
-            2) log_info "Выход [Code: $exit_code]"; return "$exit_code" ;;
-            *) log_error "Сбой в цепочке UFW [Code: $exit_code]"; return "$exit_code" ;;
-        esac
-    fi
+    local action_id
 
-    # 2. Создаю FIFO и запускаю слушателя
+    # 1. Отображение меню
+    ufw::display_menu
+
+    # 2. Получение выбора пользователя (точка возврата кода 2)
+    action_id=$(ufw::get_user_choice | tr -d '\0') || return
+
+    # 3. Создание FIFO и запуск слушателя
     make_fifo_and_start_reader
 
-    # 3. Запуск Rollback
+    # 4. Запуск Rollback (ДО внесения изменений!)
     watchdog_pid=$(orchestrator::watchdog_start "$WATCHDOG_FIFO")
 
-    # 4. Интерактивное подтверждение
+    # 5. Интерактивные инструкции
     orchestrator::guard_ui_instructions
 
-    # 5. Действия после изменений (логирование статуса)
+    # 6. Внесение изменений
+    ufw::apply_changes "$action_id"
+
+    # 7. Действия после изменений
     orchestrator::actions_after_ufw_change
 
-    # 6. Подтверждение и остановка Rollback
-    if io::ask_value "Подтвердите работу UFW - введите confirmed" "" "^confirmed$" "confirmed" >/dev/null; then
+    # 8. Подтверждение и остановка Rollback
+    if ufw::confirm_success; then
         orchestrator::watchdog_stop "$watchdog_pid"
     fi
 }

@@ -15,7 +15,7 @@ source "${UTILS_DIR_PATH}/../modules/05-ufw-helpers.sh"
 
 SLEEP_PID=""
 MAIN_SCRIPT=""
-ROLLBACK_TYPE="${ROLLBACK_TYPE:-ssh}"
+ROLLBACK_TYPE="${ROLLBACK_TYPE:-}"
 
 trap 'log_stop 2>&3' EXIT
 trap 'orchestrator::stop_rollback' SIGUSR1
@@ -42,7 +42,7 @@ orchestrator::stop_rollback() {
 orchestrator::immediate_rollback() {
     kill "$SLEEP_PID" 2>/dev/null
     log::draw_lite_border 2>&3
-    orchestrator::total_rollback 2>&3
+    orchestrator::rollback 2>&3
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
         kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
@@ -50,6 +50,49 @@ orchestrator::immediate_rollback() {
     fi
 
     exit 0
+}
+
+# @type:        Orchestrator
+# @description: Полный откат для SSH модуля - сброс правил SSH и отключение UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+orchestrator::ssh_rollback() {
+    log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..." 2>&3
+    ssh::delete_all_bsss_rules 2>&3
+    ufw::force_disable 2>&3
+    ufw::delete_all_bsss_rules 2>&3
+    orchestrator::actions_after_port_change 2>&3
+    log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам." 2>&3
+}
+
+# @type:        Orchestrator
+# @description: Простой откат для UFW модуля - только отключение UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+orchestrator::ufw_rollback() {
+    log_warn "Выполняется откат UFW..." 2>&3
+    ufw::force_disable 2>&3
+    orchestrator::actions_after_ufw_change 2>&3
+    log_success "UFW отключен. Проверьте доступ к серверу." 2>&3
+}
+
+# @type:        Orchestrator
+# @description: Полная очистка системы от следов BSSS и деактивация UFW.
+#               Вызывается при критическом сбое или таймауте.
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+orchestrator::rollback() {
+    case "$ROLLBACK_TYPE" in
+        "ssh") orchestrator::ssh_rollback ;;
+        "ufw") orchestrator::ufw_rollback ;;
+        *) log_error "Неизвестный тип отката: $ROLLBACK_TYPE"; return 1 ;;
+    esac
 }
 
 # @type:        Orchestrator
@@ -82,7 +125,7 @@ orchestrator::watchdog_timer() {
         echo >&3
         log::draw_lite_border 2>&3
         log_info "Время истекло - выполняется ОТКАТ" 2>&3
-        orchestrator::total_rollback 2>&3
+        orchestrator::rollback 2>&3
 
         if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
             kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
@@ -92,46 +135,6 @@ orchestrator::watchdog_timer() {
     fi
     log_stop 2>&3
     exec 3>&-
-}
-
-# @type:        Orchestrator
-# @description: Простой откат для UFW модуля - только отключение UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда
-orchestrator::ufw_rollback() {
-    log_warn "Выполняется откат UFW..."
-    ufw::force_disable 2>&3
-    orchestrator::actions_after_ufw_change 2>&3
-    log_success "UFW отключен. Проверьте доступ к серверу."
-}
-
-# @type:        Orchestrator
-# @description: Полная очистка системы от следов BSSS и деактивация UFW.
-#               Вызывается при критическом сбое или таймауте.
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда
-orchestrator::total_rollback() {
-    case "$ROLLBACK_TYPE" in
-        "ssh")
-            log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
-            ssh::delete_all_bsss_rules 2>&3
-            ufw::force_disable 2>&3
-            ufw::delete_all_bsss_rules 2>&3
-            orchestrator::actions_after_port_change 2>&3
-            log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
-            ;;
-        "ufw")
-            orchestrator::ufw_rollback
-            ;;
-        *)
-            log_error "Неизвестный тип отката: $ROLLBACK_TYPE"
-            return 1
-            ;;
-    esac
 }
 
 # @type:        Orchestrator

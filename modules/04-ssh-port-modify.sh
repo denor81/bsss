@@ -72,42 +72,49 @@ orchestrator::bsss_config_not_exists() {
     orchestrator::install_new_port_w_guard
 }
 
+# @type:        Orchestrator
+# @description: Запускает модуль SSH с механизмом rollback
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               2 - выход по запросу пользователя
+#               $? - код ошибки дочернего процесса
 orchestrator::install_new_port_w_guard() {
-    local port
     local watchdog_pid
-    local reader_pid
+    local port
 
-    # 1. Сбор данных
+    # 1. Отображение меню
     ssh::display_menu
-    # Вернет порт либо выбросит код 2 при отказе пользователя
-    port=$(ssh::ask_new_port | tr -d '\0') || return
 
-    # 3. Создаю FIFO и запускаю слушателя
+    # 2. Получение выбора пользователя (точка возврата кода 2)
+    port=$(ssh::get_user_choice | tr -d '\0') || return
+
+    # 3. Создание FIFO и запуск слушателя
     make_fifo_and_start_reader
 
-    # 4. Запуск Rollback
+    # 4. Запуск Rollback (ДО внесения изменений!)
     watchdog_pid=$(orchestrator::watchdog_start "$WATCHDOG_FIFO")
 
-    # 5. Интерактивное подтверждение
+    # 5. Интерактивные инструкции
     orchestrator::guard_ui_instructions "$port"
 
-    # 2. Модификация
-    printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
+    # 6. Внесение изменений
+    ssh::apply_changes "$port"
 
-    # 6. Перезагрузка служб только после запука Rollback и инструкций
+    # 7. Действия после изменений
     orchestrator::actions_after_port_change
-    
-    # 7. Проверка поднятия порта
+
+    # 8. Проверка поднятия порта
     if ! ssh::wait_for_port_up "$port"; then
         kill -USR2 "$watchdog_pid" 2>/dev/null || true
         wait "$watchdog_pid" 2>/dev/null || true
-
         # Заглушка для ожидания отката через сигнал от rollback.sh
-        while true; do sleep 1; done 
+        while true; do sleep 1; done
     fi
 
-    # 8. Подтверждение и остановка Rollback
-    if io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null; then
+    # 9. Подтверждение и остановка Rollback
+    if ssh::confirm_success "$port"; then
         orchestrator::watchdog_stop "$watchdog_pid"
     fi
 }
@@ -128,7 +135,7 @@ orchestrator::watchdog_start() {
 
     # Запускаем "Сторожа" отвязано от терминала
     # Передаем PID основного скрипта ($$) первым аргументом
-    nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
+    ROLLBACK_TYPE="ssh" nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
     printf '%s' "$!" # Возвращаем PID для оркестратора
 }
 

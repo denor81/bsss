@@ -23,53 +23,53 @@ ufw::get_menu_items() {
 # @type:        Sink
 # @description: Отображает пункты меню пользователю (вывод только в stderr)
 # @params:      нет
-# @stdin:       id|text\0 (0..N)
+# @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::display_menu() {
     local id_text
     local id
     local text
-    
+
     log::draw_lite_border
     ufw::log_active_ufw_rules
     log_info "Доступные действия:"
-    
+
     while IFS='|' read -r -d '' id_text || break; do
         id="${id_text%%|*}"
         text="${id_text#*|}"
         log_info_simple_tab "$id. $text"
-    done
-    
+    done < <(ufw::get_menu_items)
+
     log_info_simple_tab "0. Выход"
     log::draw_lite_border
 }
 
-# @type:        Filter
+# @type:        Source
 # @description: Запрашивает выбор пользователя и возвращает выбранный ID
 # @params:      нет
-# @stdin:       id|text\0 (0..N)
+# @stdin:       нет
 # @stdout:      id\0 (0..1) - выбранный ID или 0 (выход)
 # @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя [io::ask_value]
-ufw::select_action() {
+#               2 - выход по запросу пользователя
+ufw::get_user_choice() {
     local -a menu_items=()
     local max_id=0
     local id_text
-    
+
     # Читаем все пункты в массив
     while IFS= read -r -d '' id_text || break; do
         menu_items+=("$id_text")
         local id="${id_text%%|*}"
         (( id > max_id )) && max_id=$id
-    done
-    
+    done < <(ufw::get_menu_items)
+
     local pattern="^[0-$max_id]$"
-    
+
     local selection
     # Вернет код 2 при выборе 0
     selection=$(io::ask_value "Выберите действие" "" "$pattern" "0-$max_id" "0" | tr -d '\0') || return
-    
+
     printf '%s\0' "$selection"
 }
 
@@ -131,4 +131,32 @@ orchestrator::actions_after_ufw_change() {
     log_actual_info "Актуальная информация после внесения изменений"
     ufw::log_status
     ufw::log_active_ufw_rules
+}
+
+# @type:        Filter
+# @description: Применяет изменения UFW на основе выбранного действия
+# @params:
+#   action_id   ID выбранного действия
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка в процессе
+ufw::apply_changes() {
+    local action_id="$1"
+
+    case "$action_id" in
+        1) ufw::toggle ;;
+        *) log_error "Неверный ID действия: [$action_id]"; return 1 ;;
+    esac
+}
+
+# @type:        Filter
+# @description: Запрашивает подтверждение успешной работы UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - подтверждение получено
+#               2 - выход по запросу пользователя
+ufw::confirm_success() {
+    io::ask_value "Подтвердите работу UFW - введите confirmed" "" "^confirmed$" "confirmed" >/dev/null || return $?
 }
