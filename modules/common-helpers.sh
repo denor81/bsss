@@ -50,6 +50,20 @@ sys::get_modules_by_type () {
     '
 }
 
+# @type:        Filter
+# @description: Удаляет указанные файлы и директории
+# @params:      нет
+# @stdin:       path\0 (0..N)
+# @stdout:      нет
+# @exit_code:   0 - всегда
+sys::delete_paths() {
+    while IFS= read -r -d '' path || break; do
+        local resp
+        resp=$(rm -rfv -- "$path" ) || return
+        log_info "Удалено: $resp"
+    done
+}
+
 # @type:        Source
 # @description: Получает активные SSH порты из ss
 # @params:      нет

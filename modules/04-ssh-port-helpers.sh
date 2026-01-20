@@ -136,20 +136,6 @@ ssh::delete_all_bsss_rules() {
     sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::delete_paths || true
 }
 
-# @type:        Filter
-# @description: Удаляет указанные файлы и директории
-# @params:      нет
-# @stdin:       path\0 (0..N)
-# @stdout:      нет
-# @exit_code:   0 - всегда
-sys::delete_paths() {
-    while IFS= read -r -d '' path || break; do
-        local resp
-        resp=$(rm -rfv -- "$path" ) || return
-        log_info "Удалено: $resp"
-    done
-}
-
 # @type:        Orchestrator
 # @description: Перезапускает SSH сервис после проверки конфигурации
 # @params:      нет

@@ -28,7 +28,7 @@ trap stop_script_by_rollback_timer SIGUSR1
 #               $? - код ошибки дочернего процесса
 orchestrator::run_ufw_module() {
     local watchdog_pid
-здесь сделано не так как в ssh нуно перенести execute action позже запуска rollback
+    
     # 1. Отображение меню и выбор действия
     if ! ufw::get_menu_items | tee >(ufw::display_menu) | ufw::select_action | ufw::execute_action; then
         local exit_code=$?

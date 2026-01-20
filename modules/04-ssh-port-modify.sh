@@ -79,6 +79,7 @@ orchestrator::install_new_port_w_guard() {
 
     # 1. Сбор данных
     ssh::display_menu
+    # Вернет порт либо выбросит код 2 при отказе пользователя
     port=$(ssh::ask_new_port | tr -d '\0') || return
 
     # 3. Создаю FIFO и запускаю слушателя
