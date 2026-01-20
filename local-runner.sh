@@ -8,8 +8,8 @@ set -Eeuo pipefail
 # Константы
 readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly MAIN_FILE="bsss-main.sh"
-readonly ALLOWED_PARAMS="hu"
-readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление]"
+readonly ALLOWED_PARAMS="hut"
+readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление | -t тестовый режим]"
 readonly CURRENT_MODULE_NAME="$(basename "$0")" # Used in logging
 
 ACTION=""
@@ -36,6 +36,7 @@ parse_params() {
         case "${opt}" in
             h)  ACTION="help" ;;
             u)  ACTION="uninstall" ;;
+            t)  ACTION="test" ;;
             \?) log_error "Некорректный параметр -$OPTARG, доступны: $allowed_params"; return 1 ;;
             :)  log_error "Параметр -$OPTARG требует значение"; return 1 ;;
         esac
@@ -77,6 +78,42 @@ run_default() {
 }
 
 # @type:        Orchestrator
+# @description: Запускает основной скрипт в тестовом режиме
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   не возвращается (exec)
+run_test_mode() {
+    # Set test mode environment variables
+    export TEST_MODE="true"
+    export LOG_MODE="both"
+    
+    # Generate log file path if not set
+    if [[ -z "${LOG_FILE:-}" ]]; then
+        local timestamp
+        timestamp="$(date '+%Y%m%d_%H%M%S')"
+        local scenario_name="${TEST_SCENARIO:-default}"
+        export LOG_FILE="${TEST_LOG_DIR}/bsss-${scenario_name}-${timestamp}.log"
+    fi
+    
+    # Ensure log directory exists
+    local log_dir
+    log_dir="$(dirname "$LOG_FILE")"
+    if [[ ! -d "$log_dir" ]]; then
+        mkdir -p "$log_dir" || {
+            log_error "Не удалось создать директорию логов: $log_dir"
+            return 1
+        }
+    fi
+    
+    log_info "Запуск в тестовом режиме"
+    log_info "Лог файл: $LOG_FILE"
+    
+    # Execute main script
+    exec bash "${MAIN_DIR_PATH}/$MAIN_FILE"
+}
+
+# @type:        Orchestrator
 # @description: Основная точка входа
 # @params:      @ - параметры командной строки
 # @stdin:       нет
@@ -90,6 +127,7 @@ main() {
     case "$ACTION" in
         help)      show_help ;;
         uninstall) run_uninstall ;;
+        test)      run_test_mode ;;
         *)         run_default ;;
     esac
 }

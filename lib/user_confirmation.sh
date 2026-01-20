@@ -20,6 +20,19 @@ io::ask_value() {
     local question=$1 default=$2 pattern=$3 hint=$4 cancel_keyword=${5:-}
     local choice
 
+    # Test mode: return predefined value
+    if [[ "$TEST_MODE" == "true" ]]; then
+        # Check if this specific prompt should fail (for testing error paths)
+        if [[ -n "${TEST_FAIL_CONFIRMATION:-}" ]] && [[ "$question" == *"$TEST_FAIL_CONFIRMATION"* ]]; then
+            # Return 2 for cancellation (BSSS standard per AGENTS.md)
+            # CRITICAL: Do NOT output anything when returning code 2
+            return 2
+        fi
+        # Return default value with NUL delimiter
+        printf '%s\0' "$default"
+        return 0
+    fi
+
     while true; do
         read -p "$QUESTION_PREFIX $question [$hint]: " -r choice </dev/tty
         choice=${choice:-$default}
@@ -46,6 +59,16 @@ io::ask_value() {
 #               2 — отменено пользователем.
 io::confirm_action() {
     local question=${1:-"Продолжить?"}
+    
+    # Test mode: return success by default
+    if [[ "$TEST_MODE" == "true" ]]; then
+        # Check if this specific prompt should fail (for testing error paths)
+        if [[ -n "${TEST_FAIL_CONFIRMATION:-}" ]] && [[ "$question" == *"$TEST_FAIL_CONFIRMATION"* ]]; then
+            # Return 2 for cancellation (BSSS standard per AGENTS.md)
+            return 2
+        fi
+        return 0
+    fi
     
     local choice
     # при выборе n возвращаем 2

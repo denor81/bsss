@@ -13,6 +13,58 @@ readonly SYMBOL_ATTENTION="[A]"
 readonly SYMBOL_ACTUAL_INFO="[i]"
 readonly SYMBOL_ERROR="[x]"
 
+# ============================================================================
+# FILE LOGGING SUPPORT
+# ============================================================================
+
+# @type:        Sink
+# @description: Writes message to log file if LOG_FILE is set
+# @params:      message - Message to write
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log::to_file() {
+    local message="$1"
+    
+    # Only write to file if LOG_FILE is set and writable
+    if [[ -n "${LOG_FILE:-}" ]]; then
+        # Ensure log directory exists
+        local log_dir
+        log_dir="$(dirname "$LOG_FILE")"
+        if [[ ! -d "$log_dir" ]]; then
+            mkdir -p "$log_dir" 2>/dev/null || true
+        fi
+        
+        # Write to file using printf (safer than echo for special characters)
+        # Note: Concurrent writes may interleave - this is acceptable for test logs
+        printf '%s\n' "$message" >> "$LOG_FILE" 2>/dev/null || true
+    fi
+}
+
+# @type:        Sink
+# @description: Generates structured log entry with timestamp
+# @params:      level - Log level (INFO, WARN, ERROR, etc.)
+#               module - Module name
+#               pid - Process ID
+#               message - Log message
+# @stdin:       нет
+# @stdout:      Structured log string
+# @exit_code:   0 - всегда
+log::format_entry() {
+    local level="$1"
+    local module="$2"
+    local pid="$3"
+    local message="$4"
+    
+    # ISO 8601 timestamp with milliseconds
+    local timestamp
+    timestamp="$(date '+%Y-%m-%dT%H:%M:%S.%3NZ')"
+    
+    # Structured format: TIMESTAMP|LEVEL|MODULE|PID|MESSAGE
+    # CRITICAL: Must include \n at end for proper log file parsing
+    printf '%s|%s|%s|%s|%s\n' "$timestamp" "$level" "$module" "$pid" "$message"
+}
+
 readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
 
 # @type:        Sink
@@ -22,7 +74,18 @@ readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_success() {
-    echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2
+    local message="$1"
+    local terminal_message="$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $message"
+    
+    # Terminal output (existing behavior)
+    echo -e "$terminal_message" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "SUCCESS" "$CURRENT_MODULE_NAME" "$$" "$message")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
@@ -32,7 +95,18 @@ log_success() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_error() {
-    echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
+    local message="$1"
+    local terminal_message="$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $message"
+    
+    # Terminal output (existing behavior)
+    echo -e "$terminal_message" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "ERROR" "$CURRENT_MODULE_NAME" "$$" "$message")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
@@ -42,7 +116,18 @@ log_error() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info() {
-    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
+    local message="$1"
+    local terminal_message="$SYMBOL_INFO [$CURRENT_MODULE_NAME] $message"
+    
+    # Terminal output (existing behavior)
+    echo -e "$terminal_message" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "INFO" "$CURRENT_MODULE_NAME" "$$" "$message")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
@@ -52,9 +137,19 @@ log_info() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_bold_info() {
+    local message="$1"
     local color='\e[1m'
     local color_reset='\e[0m'
-    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
+    
+    # Terminal output (existing behavior)
+    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$message" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "INFO" "$CURRENT_MODULE_NAME" "$$" "$message")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
@@ -64,7 +159,18 @@ log_bold_info() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_warn() {
-    echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $1" >&2
+    local message="$1"
+    local terminal_message="$SYMBOL_WARN [$CURRENT_MODULE_NAME] $message"
+    
+    # Terminal output (existing behavior)
+    echo -e "$terminal_message" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "WARN" "$CURRENT_MODULE_NAME" "$$" "$message")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
@@ -74,9 +180,19 @@ log_warn() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_attention() {
+    local message="$1"
     local color='\e[41;37m'
     local color_reset='\e[0m'
-    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$1" >&2
+    
+    # Terminal output (existing behavior)
+    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$message" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "ATTENTION" "$CURRENT_MODULE_NAME" "$$" "$message")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
@@ -86,9 +202,19 @@ log_attention() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_actual_info() {
+    local message="$1"
     local color='\e[37;42m'
     local color_reset='\e[0m'
-    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
+    
+    # Terminal output (existing behavior)
+    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$message" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "INFO" "$CURRENT_MODULE_NAME" "$$" "$message")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
@@ -98,7 +224,18 @@ log_actual_info() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info_simple_tab() {
-    echo -e "$SYMBOL_INFO    $1" >&2
+    local message="$1"
+    local terminal_message="$SYMBOL_INFO    $message"
+    
+    # Terminal output (existing behavior)
+    echo -e "$terminal_message" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "INFO" "$CURRENT_MODULE_NAME" "$$" "$message")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
@@ -109,7 +246,19 @@ log_info_simple_tab() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_start() {
-    echo -e "$SYMBOL_INFO [${1:-$CURRENT_MODULE_NAME}]>>start>>[PID: ${2:-$$}]" >&2
+    local module_name="${1:-$CURRENT_MODULE_NAME}"
+    local pid="${2:-$$}"
+    local message="$SYMBOL_INFO [${module_name}]>>start>>[PID: ${pid}]"
+    
+    # Terminal output (existing behavior)
+    echo -e "$message" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "INFO" "$module_name" "$pid" ">>start>>")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
@@ -120,8 +269,19 @@ log_start() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_stop() {
+    local module_name="${1:-$CURRENT_MODULE_NAME}"
+    local pid="${2:-$$}"
+    
+    # Terminal output (existing behavior)
     echo >&2
-    echo -e "$SYMBOL_INFO [${1:-$CURRENT_MODULE_NAME}]>>stop>>[PID: ${2:-$$}]" >&2
+    echo -e "$SYMBOL_INFO [${module_name}]>>stop>>[PID: ${pid}]" >&2
+    
+    # File output (new)
+    if [[ "$LOG_MODE" == "file" ]] || [[ "$LOG_MODE" == "both" ]]; then
+        local structured_message
+        structured_message="$(log::format_entry "INFO" "$module_name" "$pid" ">>stop>>")"
+        log::to_file "$structured_message"
+    fi
 }
 
 # @type:        Sink
