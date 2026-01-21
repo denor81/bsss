@@ -126,6 +126,13 @@ run_modules_modify() {
                 *) log_error "Ошибка в модуле [$selected_module] [Code: $exit_code]" ;; # код $?
             esac
         fi
+
+        # Test mode: Exit after one module execution to prevent infinite loop
+        # When TEST_MODE is true and no specific module is set, break after first iteration
+        if [[ "$TEST_MODE" == "true" && -z "${TEST_MODULE:-}" ]]; then
+            log_info "Test mode: Exiting modify menu after first iteration"
+            break
+        fi
     done
 }
 
@@ -160,6 +167,7 @@ main() {
     fi
 
     # Normal mode: Display menu and work normally
+    # Note: In TEST_MODE without TEST_MODULE, run_modules_modify will exit after one iteration
     run_modules_polling
     io::confirm_action "Запустить настройку?"
     run_modules_modify

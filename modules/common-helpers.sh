@@ -197,7 +197,7 @@ ufw::delete_all_bsss_rules() {
 # @stdout:      rule\0 (0..N)
 # @exit_code:   0 - всегда
 ufw::get_all_bsss_rules() {
-    ufw show added \
+    sudo ufw show added \
     | awk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
         BEGIN { ORS="\0" }
         $0 ~ marker {
@@ -215,13 +215,13 @@ ufw::get_all_bsss_rules() {
 # @exit_code:   0 - всегда
 ufw::get_all_rules() {
     if command -v ufw > /dev/null 2>&1; then
-        ufw show added \
-        | awk -v marker="^ufw.*" '
-            BEGIN { ORS="\0" }
-            $0 ~ marker {
-                print $0;
-            }
-        '
+        sudo ufw show added \
+            | awk -v marker="^ufw.*" '
+                BEGIN { ORS="\0" }
+                $0 ~ marker {
+                    print $0;
+                }
+            '
     fi
 }
 

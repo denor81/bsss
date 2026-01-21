@@ -133,9 +133,11 @@ test::run() {
     # Set test mode environment variables
     # CRITICAL: TEST_MODE must be set to enable non-interactive mode
     # CRITICAL: LOG_MODE must be "both" or "file" to enable file logging
+    # CRITICAL: TEST_MODULE must be set to specify which module to test
     export TEST_MODE="true"
     export LOG_MODE="both"
     export TEST_SCENARIO="$TEST_NAME"
+    export TEST_MODULE="04-ssh-port-modify.sh"
     
     # CRITICAL: Set TEST_FAIL_CONFIRMATION to simulate timeout
     # This will make the connection confirmation prompt return code 2 (cancellation)
