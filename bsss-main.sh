@@ -139,6 +139,27 @@ run_modules_modify() {
 main() {
     log_start
 
+    # Test mode: Auto-select and execute specified module
+    if [[ -n "${TEST_MODULE:-}" ]]; then
+        local module_path="${MAIN_DIR_PATH%/}/${MODULES_DIR}/${TEST_MODULE}"
+        
+        # Validate module exists
+        if [[ ! -f "$module_path" ]]; then
+            log_error "Test module not found: ${module_path}"
+            return 1
+        fi
+        
+        log_info "Test mode: Auto-selecting module: ${TEST_MODULE}"
+        
+        # Execute the specified module directly
+        local exit_code=0
+        bash "$module_path" || exit_code=$?
+        
+        # Exit with the module's exit code
+        return $exit_code
+    fi
+
+    # Normal mode: Display menu and work normally
     run_modules_polling
     io::confirm_action "Запустить настройку?"
     run_modules_modify
