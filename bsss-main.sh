@@ -33,7 +33,7 @@ run_modules_polling() {
         if ! bash "$m_path"; then
             err=1
         fi
-    done 3< <(sys::get_paths_by_mask "${PROJECT_ROOT%/}/$MODULES_DIR" "$MODULES_MASK" \
+    done 3< <(sys::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
     | sys::get_modules_paths_w_type \
     | sys::get_modules_by_type "$MODULE_TYPE_CHECK")
 
@@ -103,7 +103,7 @@ run_modules_modify() {
         local selected_module
 
         # Получаем выбранный модуль через пайплайн
-        selected_module=$(sys::get_paths_by_mask "${PROJECT_ROOT%/}/$MODULES_DIR" "$MODULES_MASK" \
+        selected_module=$(sys::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
             | sys::get_modules_paths_w_type \
             | sys::get_modules_by_type "$MODULE_TYPE_MODIFY" \
             | orchestrator::select_modify_module | tr -d '\0') || return

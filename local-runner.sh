@@ -73,7 +73,7 @@ show_help() {
 # @stdout:      нет
 # @exit_code:   не возвращается (exec)
 run_default() {
-    exec bash "${PROJECT_ROOT%/}/$MAIN_FILE"
+    exec bash "${PROJECT_ROOT}/$MAIN_FILE"
 }
 
 # @type:        Orchestrator
