@@ -18,6 +18,11 @@ source "${MAIN_DIR_PATH}/lib/vars.conf"
 source "${MAIN_DIR_PATH}/lib/logging.sh"
 source "${MAIN_DIR_PATH}/lib/uninstall_functions.sh"
 
+# Logging initialization
+mkdir -p "${MAIN_DIR_PATH}/logs"
+readonly LOG_FILE="${MAIN_DIR_PATH}/logs/$(date +%Y-%m-%d_%H-%M-%S).log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
 # @type:        Filter
 # @description: Парсинг параметров запуска с использованием getopts
 # @params:
