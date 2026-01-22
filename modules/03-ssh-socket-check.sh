@@ -4,13 +4,13 @@
 
 set -Eeuo pipefail
 
-readonly MODULES_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-source "${MODULES_DIR_PATH}/../lib/vars.conf"
-source "${MODULES_DIR_PATH}/../lib/logging.sh"
-source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
-source "${MODULES_DIR_PATH}/03-ssh-socket-helpers.sh"
+source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/lib/user_confirmation.sh"
+source "${PROJECT_ROOT}/modules/03-ssh-socket-helpers.sh"
 
 # @type:        Orchestrator
 # @description: Проверяет режим запуска SSH и переключает на service если нужно

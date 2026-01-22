@@ -27,9 +27,9 @@
 Использование `readonly` для LOG_FILE гарантирует неизменяемость пути.
 
 ```bash
-# После source "${MAIN_DIR_PATH}/lib/uninstall_functions.sh"
-mkdir -p "${MAIN_DIR_PATH}/logs"
-readonly LOG_FILE="${MAIN_DIR_PATH}/logs/$(date +%Y-%m-%d_%H-%M-%S).log"
+# После source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
+mkdir -p "${PROJECT_ROOT}/logs"
+readonly LOG_FILE="${PROJECT_ROOT}/logs/$(date +%Y-%m-%d_%H-%M-%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 ```
 

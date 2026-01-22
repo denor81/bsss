@@ -58,7 +58,7 @@ ssh::log_bsss_configs_w_port() {
 
         log_info_simple_tab "$grep_result"
 
-    done < <(grep -EiHs '^\s*port\b' "${SSH_CONFIGD_DIR%/}/"$BSSS_SSH_CONFIG_FILE_MASK || true)
+    done < <(grep -EiHs '^\s*port\b' "${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
         log_info "Нет правил ${UTIL_NAME^^} для SSH [$SSH_CONFIG_FILE]"
@@ -84,7 +84,7 @@ ssh::log_other_configs_w_port() {
 
         log_info_simple_tab "$grep_result"
 
-    done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR%/}/"$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR%/}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
+    done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
 
     if (( found == 0 )); then
         log_info "Нет сторонних правил SSH [$SSH_CONFIG_FILE]"
@@ -190,7 +190,7 @@ ssh::generate_free_random_port() {
 # @exit_code:   0 - файл успешно создан
 #               1 - ошибка создания
 ssh::create_bsss_config_file() {
-    local path="${SSH_CONFIGD_DIR%/}/$BSSS_SSH_CONFIG_FILE_NAME"
+    local path="${SSH_CONFIGD_DIR}/$BSSS_SSH_CONFIG_FILE_NAME"
     local port
     read -r -d '' port
     

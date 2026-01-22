@@ -5,13 +5,13 @@
 set -Eeuo pipefail
 
 # Константы
-readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-source "${MAIN_DIR_PATH}/lib/vars.conf"
-source "${MAIN_DIR_PATH}/lib/logging.sh"
-source "${MAIN_DIR_PATH}/lib/user_confirmation.sh"
-source "${MAIN_DIR_PATH}/modules/common-helpers.sh"
+source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/lib/user_confirmation.sh"
+source "${PROJECT_ROOT}/modules/common-helpers.sh"
 
 trap log_stop EXIT
 
@@ -33,7 +33,7 @@ run_modules_polling() {
         if ! bash "$m_path"; then
             err=1
         fi
-    done 3< <(sys::get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
+    done 3< <(sys::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
     | sys::get_modules_paths_w_type \
     | sys::get_modules_by_type "$MODULE_TYPE_CHECK")
 
@@ -103,7 +103,7 @@ run_modules_modify() {
         local selected_module
 
         # Получаем выбранный модуль через пайплайн
-        selected_module=$(sys::get_paths_by_mask "${MAIN_DIR_PATH%/}/$MODULES_DIR" "$MODULES_MASK" \
+        selected_module=$(sys::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
             | sys::get_modules_paths_w_type \
             | sys::get_modules_by_type "$MODULE_TYPE_MODIFY" \
             | orchestrator::select_modify_module | tr -d '\0') || return

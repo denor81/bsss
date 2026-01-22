@@ -6,7 +6,7 @@
 set -Eeuo pipefail
 
 # Константы
-readonly MAIN_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
 readonly MAIN_FILE="bsss-main.sh"
 readonly ALLOWED_PARAMS="hu"
 readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление]"
@@ -14,13 +14,13 @@ readonly CURRENT_MODULE_NAME="$(basename "$0")" # Used in logging
 
 ACTION=""
 
-source "${MAIN_DIR_PATH}/lib/vars.conf"
-source "${MAIN_DIR_PATH}/lib/logging.sh"
-source "${MAIN_DIR_PATH}/lib/uninstall_functions.sh"
+source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
 
 # Logging initialization
-mkdir -p "${MAIN_DIR_PATH}/logs"
-readonly LOG_FILE="${MAIN_DIR_PATH}/logs/$(date +%Y-%m-%d_%H-%M-%S).log"
+mkdir -p "${PROJECT_ROOT}/logs"
+readonly LOG_FILE="${PROJECT_ROOT}/logs/$(date +%Y-%m-%d_%H-%M-%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # @type:        Filter
@@ -78,7 +78,7 @@ show_help() {
 # @stdout:      нет
 # @exit_code:   не возвращается (exec)
 run_default() {
-    exec bash "${MAIN_DIR_PATH%/}/$MAIN_FILE"
+    exec bash "${PROJECT_ROOT}/$MAIN_FILE"
 }
 
 # @type:        Orchestrator

@@ -4,11 +4,11 @@
 
 set -Eeuo pipefail
 
-readonly MODULES_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-source "${MODULES_DIR_PATH}/../lib/vars.conf"
-source "${MODULES_DIR_PATH}/../lib/logging.sh"
+source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/logging.sh"
 
 # @type:        Orchestrator
 # @description: Проверяет необходимость перезагрузки системы

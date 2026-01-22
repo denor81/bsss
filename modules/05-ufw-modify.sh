@@ -4,16 +4,16 @@
 
 set -Eeuo pipefail
 
-readonly MODULES_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-source "${MODULES_DIR_PATH}/../lib/vars.conf"
-source "${MODULES_DIR_PATH}/../lib/logging.sh"
-source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
-source "${MODULES_DIR_PATH}/common-helpers.sh"
-source "${MODULES_DIR_PATH}/05-ufw-helpers.sh"
+source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/lib/user_confirmation.sh"
+source "${PROJECT_ROOT}/modules/common-helpers.sh"
+source "${PROJECT_ROOT}/modules/05-ufw-helpers.sh"
 
-WATCHDOG_FIFO="$MODULES_DIR_PATH/../bsss_watchdog_$$.fifo"
+WATCHDOG_FIFO="$PROJECT_ROOT/bsss_watchdog_$$.fifo"
 
 # Сработает при откате изменений при сигнале USR1
 trap log_stop EXIT
@@ -90,7 +90,7 @@ stop_script_by_rollback_timer() {
 # @stdout:      PID процесса watchdog
 # @exit_code:   0 - успешно
 orchestrator::watchdog_start() {
-    local rollback_module="${MODULES_DIR_PATH}/../${UTILS_DIR%/}/$ROLLBACK_MODULE_NAME"
+    local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
 
     # Запускаем "Сторожа" отвязано от терминала
     # Передаем PID основного скрипта ($$) первым аргументом
