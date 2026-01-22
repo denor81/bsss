@@ -109,7 +109,8 @@ install_to_system()<:>Orchestrator<:>Функция установки в сис
 main()<:>Orchestrator<:>Основная точка входа<:>./oneline-runner.sh
 orchestrator::stop_rollback()<:>Orchestrator<:>Останавливает процесс таймера отката и завершает скрипт<:>./utils/rollback.sh
 orchestrator::immediate_rollback()<:>Orchestrator<:>Немедленно выполняет тотальный откат при получении SIGUSR2<:>./utils/rollback.sh
-orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автоматического отката<:>./utils/rollback.sh
+orchestrator::ssh_rollback()<:>Orchestrator<:>Полный откат для SSH модуля - сброс правил SSH и отключение UFW<:>./utils/rollback.sh
 orchestrator::ufw_rollback()<:>Orchestrator<:>Простой откат для UFW модуля - только отключение UFW<:>./utils/rollback.sh
-orchestrator::total_rollback()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
+orchestrator::rollback()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
+orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автоматического отката<:>./utils/rollback.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./utils/rollback.sh
