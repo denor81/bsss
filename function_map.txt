@@ -35,6 +35,10 @@ sys::execute_update()<:>Sink<:>Выполняет обновление сист�
 sys::update_system()<:>Orchestrator<:>Оркестратор процесса обновления системы<:>./modules/02-update-system.sh
 main()<:>Orchestrator<:>Основная точка входа модуля обновления системы<:>./modules/02-update-system.sh
 check()<:>Orchestrator<:>Проверяет необходимость перезагрузки системы<:>./modules/03-sys-reload-check.sh
+check()<:>Orchestrator<:>Проверяет режим запуска SSH и переключает на service если нужно<:>./modules/03-ssh-socket-check.sh
+ssh::is_socket_mode()<:>Filter<:>Проверяет, активен ли ssh.socket (socket-активация)<:>./modules/03-ssh-socket-helpers.sh
+ssh::is_service_mode()<:>Filter<:>Проверяет, активен ли ssh.service<:>./modules/03-ssh-socket-helpers.sh
+ssh::switch_to_service_mode()<:>Orchestrator<:>Переключает SSH с socket на service режим<:>./modules/03-ssh-socket-helpers.sh
 check()<:>Orchestrator<:>Проверяет состояние SSH портов и правил<:>./modules/04-ssh-port-check.sh
 ssh::install_new_port()<:>Filter<:>Основной функционал установки/изменения SSH порта<:>./modules/04-ssh-port-helpers.sh
 ssh::get_user_choice()<:>Source<:>Запрашивает у пользователя новый SSH порт<:>./modules/04-ssh-port-helpers.sh
@@ -113,3 +117,12 @@ orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автома
 orchestrator::ufw_rollback()<:>Orchestrator<:>Простой откат для UFW модуля - только отключение UFW<:>./utils/rollback.sh
 orchestrator::total_rollback()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./utils/rollback.sh
+ssh::switch_to_socket_mode()<:>Orchestrator<:>Переключает SSH с service на socket режим (для тестирования)<:>./utils/test-ssh-modes.sh
+ssh::validate_config()<:>Filter<:>Проверяет конфигурацию sshd на валидность<:>./utils/test-ssh-modes.sh
+ssh::reset_failed_services()<:>Filter<:>Сбрасывает счетчики ошибок сервисов systemd<:>./utils/test-ssh-modes.sh
+show_current_mode()<:>Orchestrator<:>Отображает текущий режим SSH<:>./utils/test-ssh-modes.sh
+switch_to_socket()<:>Orchestrator<:>Переключает на socket режим<:>./utils/test-ssh-modes.sh
+switch_to_service()<:>Orchestrator<:>Переключает на service режим<:>./utils/test-ssh-modes.sh
+reset_failed()<:>Orchestrator<:>Сбрасывает счетчики ошибок сервисов<:>./utils/test-ssh-modes.sh
+validate_sshd()<:>Orchestrator<:>Валидация конфигурации sshd<:>./utils/test-ssh-modes.sh
+main()<:>Orchestrator<:>Основная точка входа<:>./utils/test-ssh-modes.sh
