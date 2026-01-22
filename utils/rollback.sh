@@ -3,15 +3,15 @@
 
 set -Eeuo pipefail
 
-readonly UTILS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-source "${UTILS_DIR_PATH}/../lib/vars.conf"
-source "${UTILS_DIR_PATH}/../lib/logging.sh"
-source "${UTILS_DIR_PATH}/../lib/user_confirmation.sh"
-source "${UTILS_DIR_PATH}/../modules/common-helpers.sh"
-source "${UTILS_DIR_PATH}/../modules/04-ssh-port-helpers.sh"
-source "${UTILS_DIR_PATH}/../modules/05-ufw-helpers.sh"
+source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/lib/user_confirmation.sh"
+source "${PROJECT_ROOT}/modules/common-helpers.sh"
+source "${PROJECT_ROOT}/modules/04-ssh-port-helpers.sh"
+source "${PROJECT_ROOT}/modules/05-ufw-helpers.sh"
 
 SLEEP_PID=""
 MAIN_SCRIPT=""
