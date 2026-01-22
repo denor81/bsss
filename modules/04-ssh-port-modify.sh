@@ -121,6 +121,7 @@ orchestrator::install_new_port_w_guard() {
 
 make_fifo_and_start_reader() {
     mkfifo "$WATCHDOG_FIFO"
+    log::new_line
     log_info "Создан FIFO: $WATCHDOG_FIFO"
     cat "$WATCHDOG_FIFO" >&2 &
 }

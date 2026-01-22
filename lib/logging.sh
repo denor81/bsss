@@ -16,6 +16,16 @@ readonly SYMBOL_ERROR="[x]"
 readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
 
 # @type:        Sink
+# @description: Новая строка
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+log::new_line() {
+    echo >&2
+}
+
+# @type:        Sink
 # @description: Выводит успешное сообщение с символом [v]
 # @params:      message - Сообщение для вывода
 # @stdin:       нет
@@ -142,5 +152,5 @@ log::draw_border() {
 # @exit_code:   0 - успешно
 log::draw_lite_border() {
     # printf '%.0s-' {1..80} >&2; echo >&2
-    echo >&2
+    log::new_line >&2
 }
