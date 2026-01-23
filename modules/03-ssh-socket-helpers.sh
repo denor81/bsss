@@ -4,6 +4,12 @@
 
 set -Eeuo pipefail
 
+# @type:        Filter
+# @description: Проверяет, настроен ли SSH в service mode
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - SSH уже настроен в service mode
+#               1 - требуется настройка
 ssh::is_already_configured() {
     # Если сервис активен И сокет замаскирован — значит, мы уже всё настроили
     if systemctl is-active --quiet ssh.service && [[ "$(systemctl is-enabled ssh.socket 2>/dev/null)" == "masked" ]]; then
@@ -12,6 +18,12 @@ ssh::is_already_configured() {
     return 1 # Нужно вмешательство
 }
 
+# @type:        Orchestrator
+# @description: Принудительно переключает SSH в service mode
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - SSH успешно переведен в service mode
+#               1 - ошибка при запуске SSH
 ssh::force_service_mode() {
     local units_to_stop=("ssh.socket" "ssh.service")
     
