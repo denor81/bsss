@@ -4,90 +4,42 @@
 
 set -Eeuo pipefail
 
-# @type:        Filter
-# @description: Проверяет, активен ли ssh.socket (socket-активация)
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - ssh.socket активен
-#               1 - ssh.socket не активен
-ssh::is_socket_mode() {
-    systemctl is-active --quiet ssh.socket
-}
-
-# @type:        Filter
-# @description: Проверяет, активен ли ssh.service
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - ssh.service активен
-#               1 - ssh.service не активен
-ssh::is_service_mode() {
-    systemctl is-active --quiet ssh.service
-}
-
-# @type:        Orchestrator
-# @description: Переключает SSH с socket на service режим
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно переключен
-#               1 - ошибка переключения
-ssh::switch_to_service_mode() {
-    if ssh::is_socket_mode; then
-        log_info "Отключение ssh.socket..."
-        if systemctl disable --now ssh.socket; then
-            log_info "Включение ssh.service..."
-            if systemctl enable --now ssh.service; then
-                if ssh::is_service_mode; then
-                    log_success "ssh.service успешно запущен"
-                    log_info "Перезагрузка systemd..."
-                    systemctl daemon-reload
-                    return 0
-                else
-                    log_error "ssh.service не запущен"
-                    return 1
-                fi
-            else
-                log_error "Ошибка включения ssh.service"
-                return 1
-            fi
-        else
-            log_error "Ошибка отключения ssh.socket"
-            return 1
-        fi
-    else
-        log_info "SSH уже работает в режиме service"
-        return 0
+ssh::is_already_configured() {
+    # Если сервис активен И сокет замаскирован — значит, мы уже всё настроили
+    if systemctl is-active --quiet ssh.service && [[ "$(systemctl is-enabled ssh.socket 2>/dev/null)" == "masked" ]]; then
+        return 0 # Всё уже как надо
     fi
+    return 1 # Нужно вмешательство
 }
 
-# @type:        Orchestrator
-# @description: Переключает SSH с service на socket режим
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно переключен
-#               1 - ошибка переключения
-ssh::switch_to_socket_mode() {
-    if ssh::is_service_mode; then
-        log_info "Отключение ssh.service..."
-        if systemctl disable --now ssh.service; then
-            log_info "Включение ssh.socket..."
-            if systemctl enable --now ssh.socket; then
-                log_info "Перезагрузка systemd..."
-                systemctl daemon-reload
-                return 0
-            else
-                log_error "Ошибка включения ssh.socket"
-                return 1
-            fi
-        else
-            log_error "Ошибка отключения ssh.service"
-            return 1
+ssh::force_service_mode() {
+    local units_to_stop=("ssh.socket" "ssh.service")
+    
+    log_info "Принудительный перевод SSH в Service Mode..."
+
+    # 1. Сначала жестко останавливаем всё, что связано с SSH
+    # Это очищает порты и убивает возможные конфликты
+    for unit in "${units_to_stop[@]}"; do
+        systemctl stop "$unit" >/dev/null 2>&1
+    done
+
+    # 2. Отключаем сокет полностью (Masking — лучший способ избежать автозапуска)
+    systemctl disable ssh.socket >/dev/null 2>&1
+    systemctl mask ssh.socket >/dev/null 2>&1
+
+    # 3. Настраиваем и запускаем сервис
+    systemctl unmask ssh.service >/dev/null 2>&1
+    systemctl enable ssh.service >/dev/null 2>&1
+    
+    if systemctl start ssh.service; then
+        # 4. Проверка результата по факту, а не по процессу
+        if systemctl is-active --quiet ssh.service; then
+            log_success "SSH гарантированно запущен как сервис [ssh.service]"
+            return 0
         fi
-    else
-        log_info "SSH уже работает в режиме socket"
-        return 0
     fi
+
+    log_error "Критическая ошибка при запуске SSH"
+    return 1
 }
+
