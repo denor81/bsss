@@ -8,47 +8,7 @@ readonly CURRENT_MODULE_NAME="test-ssh-modes"
 
 source "${PROJECT_DIR}/modules/03-ssh-socket-helpers.sh"
 source "${PROJECT_DIR}/lib/logging.sh"
-
-# @type:        Orchestrator
-# @description: Переключает SSH с service на socket режим (для тестирования)
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно переключен
-#               1 - ошибка переключения
-ssh::switch_to_socket_mode() {
-    if ssh::is_service_mode; then
-        log_info "Отключение ssh.service..."
-        if systemctl disable --now ssh.service; then
-            log_info "Включение ssh.socket..."
-            if systemctl enable --now ssh.socket; then
-                log_info "Перезагрузка systemd..."
-                systemctl daemon-reload
-                return 0
-            else
-                log_error "Ошибка включения ssh.socket"
-                return 1
-            fi
-        else
-            log_error "Ошибка отключения ssh.service"
-            return 1
-        fi
-    else
-        log_info "SSH уже работает в режиме socket"
-        return 0
-    fi
-}
-
-# @type:        Filter
-# @description: Проверяет конфигурацию sshd на валидность
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - конфигурация валидна
-#               1 - ошибка в конфигурации
-ssh::validate_config() {
-    sshd -t
-}
+source "${PROJECT_DIR}/modules/common-helpers.sh"
 
 # @type:        Filter
 # @description: Сбрасывает счетчики ошибок сервисов systemd
@@ -114,7 +74,7 @@ reset_failed() {
 validate_sshd() {
     log::draw_border
     log_info "Проверка конфигурации sshd..."
-    if ssh::validate_config; then
+    if sys::validate_sshd_config; then
         log_success "Конфигурация валидна"
     else
         log_error "Конфигурация содержит ошибки"

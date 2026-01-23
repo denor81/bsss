@@ -39,9 +39,15 @@ ssh::switch_to_service_mode() {
         if systemctl disable --now ssh.socket; then
             log_info "Включение ssh.service..."
             if systemctl enable --now ssh.service; then
-                log_info "Перезагрузка systemd..."
-                systemctl daemon-reload
-                return 0
+                if ssh::is_service_mode; then
+                    log_success "ssh.service успешно запущен"
+                    log_info "Перезагрузка systemd..."
+                    systemctl daemon-reload
+                    return 0
+                else
+                    log_error "ssh.service не запущен"
+                    return 1
+                fi
             else
                 log_error "Ошибка включения ssh.service"
                 return 1
@@ -56,4 +62,32 @@ ssh::switch_to_service_mode() {
     fi
 }
 
-
+# @type:        Orchestrator
+# @description: Переключает SSH с service на socket режим
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно переключен
+#               1 - ошибка переключения
+ssh::switch_to_socket_mode() {
+    if ssh::is_service_mode; then
+        log_info "Отключение ssh.service..."
+        if systemctl disable --now ssh.service; then
+            log_info "Включение ssh.socket..."
+            if systemctl enable --now ssh.socket; then
+                log_info "Перезагрузка systemd..."
+                systemctl daemon-reload
+                return 0
+            else
+                log_error "Ошибка включения ssh.socket"
+                return 1
+            fi
+        else
+            log_error "Ошибка отключения ssh.service"
+            return 1
+        fi
+    else
+        log_info "SSH уже работает в режиме socket"
+        return 0
+    fi
+}

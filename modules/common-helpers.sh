@@ -281,3 +281,27 @@ ufw::enable() {
         log_error "Ошибка при активации [ufw --force enable]"
     fi
 }
+
+# @type:        Filter
+# @description: Проверяет конфигурацию sshd на валидность
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - конфигурация валидна
+#               1 - ошибка в конфигурации
+sys::validate_sshd_config() {
+    local output
+    output=$(sshd -t 2>&1)
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
+        return 0
+    fi
+    
+    if [[ "$output" == *"Missing privilege separation directory"* ]]; then
+        return 0
+    fi
+    
+    echo "$output" >&2
+    return $exit_code
+}

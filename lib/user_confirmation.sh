@@ -50,8 +50,4 @@ io::confirm_action() {
     local choice
     # при выборе n возвращаем 2
     choice=$(io::ask_value "$question" "y" "[yn]" "Y/n" "n"| tr -d '\0') || return
-
-    # if [[ "$choice" == "n" ]]; then
-    #     return 2
-    # fi
 }

@@ -12,6 +12,7 @@ source "${UTILS_DIR_PATH}/../lib/user_confirmation.sh"
 source "${UTILS_DIR_PATH}/../modules/common-helpers.sh"
 source "${UTILS_DIR_PATH}/../modules/04-ssh-port-helpers.sh"
 source "${UTILS_DIR_PATH}/../modules/05-ufw-helpers.sh"
+source "${UTILS_DIR_PATH}/../modules/03-ssh-socket-helpers.sh"
 
 SLEEP_PID=""
 MAIN_SCRIPT=""
@@ -81,6 +82,18 @@ orchestrator::ufw_rollback() {
 }
 
 # @type:        Orchestrator
+# @description: Откат SSH на socket режим
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+orchestrator::ssh_socket_rollback() {
+    log_warn "Откат на socket-режим..." 2>&3
+    ssh::switch_to_socket_mode 2>&3
+    log_success "SSH возвращен в socket-режим" 2>&3
+}
+
+# @type:        Orchestrator
 # @description: Полная очистка системы от следов BSSS и деактивация UFW.
 #               Вызывается при критическом сбое или таймауте.
 # @params:      нет
@@ -91,6 +104,7 @@ orchestrator::rollback() {
     case "$ROLLBACK_TYPE" in
         "ssh") orchestrator::ssh_rollback ;;
         "ufw") orchestrator::ufw_rollback ;;
+        "ssh_socket") orchestrator::ssh_socket_rollback ;;
         *) log_error "Неизвестный тип отката: $ROLLBACK_TYPE"; return 1 ;;
     esac
 }
@@ -106,22 +120,34 @@ orchestrator::rollback() {
 orchestrator::watchdog_timer() {
     MAIN_SCRIPT_PID="$1"
     local watchdog_fifo="$2"
-    # Используем анонимный дескриптор для вывода в FIFO,
-    # переданный вторым аргументом $2
+    local timeout="${SSH_SOCKET_ROLLBACK_TIMER_SECONDS:-$ROLLBACK_TIMER_SECONDS}"
     exec 3> "$watchdog_fifo"
     log_start 2>&3
-    log_info "Фоновый таймер запущен на $ROLLBACK_TIMER_SECONDS сек..." 2>&3
-    log_bold_info "По истечению таймера будут сброшены настройки ${UTIL_NAME^^} для SSH порта и отключен UFW" 2>&3
-    log_bold_info "В случае разрыва текущей сессии подключайтесь к серверу по старым портам после истечения таймера" 2>&3
+    log_info "Фоновый таймер запущен на $timeout сек..." 2>&3
+    
+    local rollback_message
+    case "$ROLLBACK_TYPE" in
+        "ssh")
+            rollback_message="будут сброшены настройки ${UTIL_NAME^^} для SSH порта и отключен UFW"
+            ;;
+        "ufw")
+            rollback_message="будет отключен UFW"
+            ;;
+        "ssh_socket")
+            rollback_message="SSH будет возвращен в socket-режим"
+            ;;
+        *)
+            rollback_message="будут сброшены настройки"
+            ;;
+    esac
+    
+    log_bold_info "По истечению таймера $rollback_message" 2>&3
+    log_bold_info "В случае разрыва текущей сессии подключайтесь к серверу по старым параметрам после истечения таймера" 2>&3
 
-    # Запускаю в фоне, что бы можно было в любой момент сбросить таймер
-    # Иначе sleep блокирует выполнение до истечения
-    sleep "$ROLLBACK_TIMER_SECONDS" &
+    sleep "$timeout" &
     SLEEP_PID=$!
 
-    # Теперь ожидаем процесс sleep - тут можно прервать выполнение сигналом USR1
     if wait "$SLEEP_PID" 2>/dev/null; then
-        # Если sleep дожил до конца — рубим основной скрипт
         log::new_line >&3
         log::draw_lite_border 2>&3
         log_info "Время истекло - выполняется ОТКАТ" 2>&3
@@ -131,7 +157,6 @@ orchestrator::watchdog_timer() {
             kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
             wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
         fi
-
     fi
     log_stop 2>&3
     exec 3>&-

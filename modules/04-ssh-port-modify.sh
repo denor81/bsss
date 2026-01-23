@@ -114,7 +114,7 @@ orchestrator::install_new_port_w_guard() {
     fi
 
     # 9. Подтверждение и остановка Rollback
-    if ssh::confirm_success "$port"; then
+    if io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null; then
         orchestrator::watchdog_stop "$watchdog_pid"
     fi
 }

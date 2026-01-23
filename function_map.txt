@@ -6,6 +6,7 @@ main()<:>Orchestrator<:>Создает архив проекта<:>./build-archi
 find_bash_files()<:>Source<:>Находит все bash файлы в проекте<:>./generate_function_map.sh
 extract_functions_from_file()<:>Filter<:>Извлекает функции и их контракты из bash файла<:>./generate_function_map.sh
 main()<:>Orchestrator<:>Основная точка входа для генерации карты функций<:>./generate_function_map.sh
+log::new_line()<:>Sink<:>Новая строка<:>./lib/logging.sh
 log_success()<:>Sink<:>Выводит успешное сообщение с символом [v]<:>./lib/logging.sh
 log_error()<:>Sink<:>Выводит сообщение об ошибке с символом [x]<:>./lib/logging.sh
 log_info()<:>Sink<:>Выводит информационное сообщение с символом [ ]<:>./lib/logging.sh
@@ -34,11 +35,18 @@ sys::get_update_command()<:>Source<:>Генерирует команду обн�
 sys::execute_update()<:>Sink<:>Выполняет обновление системы используя переданную команду<:>./modules/02-update-system.sh
 sys::update_system()<:>Orchestrator<:>Оркестратор процесса обновления системы<:>./modules/02-update-system.sh
 main()<:>Orchestrator<:>Основная точка входа модуля обновления системы<:>./modules/02-update-system.sh
-check()<:>Orchestrator<:>Проверяет необходимость перезагрузки системы<:>./modules/03-sys-reload-check.sh
 check()<:>Orchestrator<:>Проверяет режим запуска SSH и переключает на service если нужно<:>./modules/03-ssh-socket-check.sh
+make_fifo_and_start_reader()<:>Orchestrator<:>Создает FIFO и запускает слушатель для коммуникации с rollback<:>./modules/03-ssh-socket-check.sh
+stop_script_by_rollback_timer()<:>Orchestrator<:>Обработчик сигнала SIGUSR1 - останавливает скрипт при откате<:>./modules/03-ssh-socket-check.sh
+orchestrator::watchdog_start()<:>Orchestrator<:>Запускает фоновый процесс rollback (watchdog)<:>./modules/03-ssh-socket-check.sh
+orchestrator::watchdog_stop()<:>Orchestrator<:>Останавливает процесс rollback (watchdog) по PID<:>./modules/03-ssh-socket-check.sh
+orchestrator::guard_ui_instructions()<:>Sink<:>Отображает инструкции пользователю для проверки подключения<:>./modules/03-ssh-socket-check.sh
+orchestrator::switch_to_service_with_guard()<:>Orchestrator<:>Переключает SSH на service с механизмом отката<:>./modules/03-ssh-socket-check.sh
 ssh::is_socket_mode()<:>Filter<:>Проверяет, активен ли ssh.socket (socket-активация)<:>./modules/03-ssh-socket-helpers.sh
 ssh::is_service_mode()<:>Filter<:>Проверяет, активен ли ssh.service<:>./modules/03-ssh-socket-helpers.sh
 ssh::switch_to_service_mode()<:>Orchestrator<:>Переключает SSH с socket на service режим<:>./modules/03-ssh-socket-helpers.sh
+ssh::switch_to_socket_mode()<:>Orchestrator<:>Переключает SSH с service на socket режим<:>./modules/03-ssh-socket-helpers.sh
+check()<:>Orchestrator<:>Проверяет необходимость перезагрузки системы<:>./modules/03-sys-reload-check.sh
 check()<:>Orchestrator<:>Проверяет состояние SSH портов и правил<:>./modules/04-ssh-port-check.sh
 ssh::install_new_port()<:>Filter<:>Основной функционал установки/изменения SSH порта<:>./modules/04-ssh-port-helpers.sh
 ssh::get_user_choice()<:>Source<:>Запрашивает у пользователя новый SSH порт<:>./modules/04-ssh-port-helpers.sh
@@ -92,6 +100,7 @@ ufw::add_bsss_rule()<:>Filter<:>Добавляет правило UFW для BSS
 ufw::is_active()<:>Filter<:>Проверяет, активен ли UFW<:>./modules/common-helpers.sh
 ufw::force_disable()<:>Filter<:>Деактивирует UFW (пропускает если уже деактивирован)<:>./modules/common-helpers.sh
 ufw::enable()<:>Filter<:>Активирует UFW<:>./modules/common-helpers.sh
+sys::validate_sshd_config()<:>Filter<:>Проверяет конфигурацию sshd на валидность<:>./modules/common-helpers.sh
 is_sourced()<:>Filter<:>Проверяет, был ли скрипт вызван через source<:>./oneline-runner.sh
 log_success()<:>Sink<:>Выводит успешное сообщение с символом [V]<:>./oneline-runner.sh
 log_error()<:>Sink<:>Выводит сообщение об ошибке с символом [X]<:>./oneline-runner.sh
@@ -113,16 +122,15 @@ install_to_system()<:>Orchestrator<:>Функция установки в сис
 main()<:>Orchestrator<:>Основная точка входа<:>./oneline-runner.sh
 orchestrator::stop_rollback()<:>Orchestrator<:>Останавливает процесс таймера отката и завершает скрипт<:>./utils/rollback.sh
 orchestrator::immediate_rollback()<:>Orchestrator<:>Немедленно выполняет тотальный откат при получении SIGUSR2<:>./utils/rollback.sh
-orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автоматического отката<:>./utils/rollback.sh
+orchestrator::ssh_rollback()<:>Orchestrator<:>Полный откат для SSH модуля - сброс правил SSH и отключение UFW<:>./utils/rollback.sh
 orchestrator::ufw_rollback()<:>Orchestrator<:>Простой откат для UFW модуля - только отключение UFW<:>./utils/rollback.sh
-orchestrator::total_rollback()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
+orchestrator::ssh_socket_rollback()<:>Orchestrator<:>Откат SSH на socket режим<:>./utils/rollback.sh
+orchestrator::rollback()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
+orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автоматического отката<:>./utils/rollback.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./utils/rollback.sh
-ssh::switch_to_socket_mode()<:>Orchestrator<:>Переключает SSH с service на socket режим (для тестирования)<:>./utils/test-ssh-modes.sh
-ssh::validate_config()<:>Filter<:>Проверяет конфигурацию sshd на валидность<:>./utils/test-ssh-modes.sh
 ssh::reset_failed_services()<:>Filter<:>Сбрасывает счетчики ошибок сервисов systemd<:>./utils/test-ssh-modes.sh
 show_current_mode()<:>Orchestrator<:>Отображает текущий режим SSH<:>./utils/test-ssh-modes.sh
 switch_to_socket()<:>Orchestrator<:>Переключает на socket режим<:>./utils/test-ssh-modes.sh
 switch_to_service()<:>Orchestrator<:>Переключает на service режим<:>./utils/test-ssh-modes.sh
-reset_failed()<:>Orchestrator<:>Сбрасывает счетчики ошибок сервисов<:>./utils/test-ssh-modes.sh
+reset_failed()<:>Orchestrator<:>Сбрасывает счетчики ошибок<:>./utils/test-ssh-modes.sh
 validate_sshd()<:>Orchestrator<:>Валидация конфигурации sshd<:>./utils/test-ssh-modes.sh
-main()<:>Orchestrator<:>Основная точка входа<:>./utils/test-ssh-modes.sh

@@ -234,19 +234,6 @@ ssh::apply_changes() {
 }
 
 # @type:        Filter
-# @description: Запрашивает подтверждение успешного подключения
-# @params:
-#   port        Номер порта для проверки
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - подтверждение получено
-#               2 - выход по запросу пользователя
-ssh::confirm_success() {
-    local port="$1"
-    io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null || return $?
-}
-
-# @type:        Filter
 # @description: Блокирующая проверка поднятия SSH порта после изменения
 #               Проверяет порт в цикле с интервалом 0.5 секунды
 #               При успешном обнаружении возвращает 0
