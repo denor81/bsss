@@ -55,7 +55,7 @@ ssh::orchestrator::config_exists() {
     user_action=$(io::ask_value "Выберите" "" "^[012]$" "0-2" "0" | tr -d '\0') || return
 
     case "$user_action" in
-        1) ssh::reset_and_pass | ufw::reset_and_pass; orchestrator::actions_after_port_change ;;
+        1) ssh::reset_and_pass | ufw::reset_and_pass; ssh::orchestrator::actions_after_port_change ;;
         2) ssh::orchestrator::install_port_with_guard ;;
     esac
 }
@@ -103,7 +103,7 @@ ssh::orchestrator::install_port_with_guard() {
     ssh::apply_changes "$port"
 
     # 7. Действия после изменений
-    orchestrator::actions_after_port_change
+    ssh::orchestrator::actions_after_port_change
 
     # 8. Проверка поднятия порта
     if ! ssh::wait_for_port_up "$port"; then

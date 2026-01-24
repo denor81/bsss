@@ -140,7 +140,7 @@ ufw::ui::log_status() {
 # @stdout:      нет
 # @exit_code:   0 - действия успешно выполнены
 #               $? - ошибка в процессе
-orchestrator::actions_after_ufw_change() {
+ufw::orchestrator::actions_after_ufw_change() {
     log::draw_lite_border
     log_actual_info "Актуальная информация после внесения изменений"
     ufw::ui::log_status

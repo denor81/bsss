@@ -52,7 +52,7 @@ ufw::orchestrator::run_module() {
     ufw::apply_changes "$action_id"
 
     # 5. Действия после изменений
-    orchestrator::actions_after_ufw_change
+    ufw::orchestrator::actions_after_ufw_change
 
     # 6. Подтверждение и остановка Rollback (только при включении UFW)
     if [[ "$watchdog_started" == true ]]; then

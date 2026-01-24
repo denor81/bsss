@@ -98,7 +98,7 @@ ssh::config::log_other_with_ports() {
 # @stdout:      нет
 # @exit_code:   0 - действия успешно выполнены
 #               $? - ошибка в процессе
-orchestrator::actions_after_port_change() {
+ssh::orchestrator::actions_after_port_change() {
     sys::restart_services
 
     log::draw_lite_border

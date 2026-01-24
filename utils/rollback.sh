@@ -65,7 +65,7 @@ rollback::orchestrator::ssh() {
     ssh::delete_all_bsss_rules
     ufw::force_disable
     ufw::delete_all_bsss_rules
-    orchestrator::actions_after_port_change
+    ssh::orchestrator::actions_after_port_change
     log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
 }
 
@@ -78,7 +78,7 @@ rollback::orchestrator::ssh() {
 rollback::orchestrator::ufw() {
     log_warn "Выполняется откат UFW..."
     ufw::force_disable
-    orchestrator::actions_after_ufw_change
+    ufw::orchestrator::actions_after_ufw_change
     log_success "UFW отключен. Проверьте доступ к серверу."
 }
 

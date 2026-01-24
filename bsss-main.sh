@@ -54,7 +54,7 @@ run_modules_polling() {
 #               пусто - если выбран выход (0)
 # @exit_code:   0 - успешно
 #               1 - нет доступных модулей
-orchestrator::select_modify_module() {
+runner::module::select_modify() {
     local -a module_paths=()
     local module_name
 
@@ -106,7 +106,7 @@ run_modules_modify() {
         selected_module=$(sys::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
             | sys::get_modules_paths_w_type \
             | sys::get_modules_by_type "$MODULE_TYPE_MODIFY" \
-            | orchestrator::select_modify_module | tr -d '\0') || return
+            | runner::module::select_modify | tr -d '\0') || return
 
         # Обработка главного меню
         if [[ "$selected_module" == "CHECK" ]]; then
