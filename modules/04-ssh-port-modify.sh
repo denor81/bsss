@@ -137,7 +137,7 @@ rollback::orchestrator::watchdog_start() {
 
     # Запускаем "Сторожа" отвязано от терминала
     # Передаем PID основного скрипта ($$) первым аргументом
-    ROLLBACK_TYPE="ssh" nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >wd.log 2>&1 &
+    ROLLBACK_TYPE="ssh" nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
     printf '%s' "$!" # Возвращаем PID для оркестратора
 }
 
