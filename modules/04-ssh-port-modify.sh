@@ -27,7 +27,7 @@ trap stop_script_by_rollback_timer SIGUSR1
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
-ssh::ssh::orchestrator::dispatch_logic() {
+ssh::orchestrator::dispatch_logic() {
 
     if sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
         ssh::orchestrator::config_exists

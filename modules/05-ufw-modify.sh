@@ -93,7 +93,7 @@ stop_script_by_rollback_timer() {
 # @stdin:       нет
 # @stdout:      PID процесса watchdog
 # @exit_code:   0 - успешно
-rollback::rollback::orchestrator::watchdog_start() {
+rollback::orchestrator::watchdog_start() {
     local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
 
     # Запускаем "Сторожа" отвязано от терминала
@@ -109,7 +109,7 @@ rollback::rollback::orchestrator::watchdog_start() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-rollback::rollback::orchestrator::watchdog_stop() {
+rollback::orchestrator::watchdog_stop() {
     local watchdog_pid="$1"
     # Посылаем сигнал успешного завершения (USR1)
     kill -USR1 "$watchdog_pid" 2>/dev/null || true

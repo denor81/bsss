@@ -1,6 +1,6 @@
-run_modules_polling()<:>Orchestrator<:>Поиск и запуск модулей с типом 'check'<:>./bsss-main.sh
-orchestrator::select_modify_module()<:>Filter<:>Отображает нумерованное меню модулей для выбора<:>./bsss-main.sh
-run_modules_modify()<:>Orchestrator<:>Поиск и запуск модулей с типом 'modify' в циклическом меню<:>./bsss-main.sh
+runner::module::run_check()<:>Orchestrator<:>Поиск и запуск модулей с типом 'check'<:>./bsss-main.sh
+runner::module::select_modify()<:>Filter<:>Отображает нумерованное меню модулей для выбора<:>./bsss-main.sh
+runner::module::run_modify()<:>Orchestrator<:>Поиск и запуск модулей с типом 'modify' в циклическом меню<:>./bsss-main.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./bsss-main.sh
 main()<:>Orchestrator<:>Создает архив проекта<:>./build-archive.sh
 log::new_line()<:>Sink<:>Новая строка<:>./lib/logging.sh
@@ -28,74 +28,74 @@ run_default()<:>Orchestrator<:>Запускает основной скрипт<
 main()<:>Orchestrator<:>Основная точка входа<:>./local-runner.sh
 _get_os_id()<:>Filter<:>Получает строку ID текущей системы<:>./modules/01-os-check.sh
 check()<:>Orchestrator<:>Проверяет совместимость текущей ОС с разрешенной<:>./modules/01-os-check.sh
-sys::get_update_command()<:>Source<:>Генерирует команду обновления системы для apt<:>./modules/02-update-system.sh
-sys::execute_update()<:>Sink<:>Выполняет обновление системы используя переданную команду<:>./modules/02-update-system.sh
-sys::update_system()<:>Orchestrator<:>Оркестратор процесса обновления системы<:>./modules/02-update-system.sh
+sys::update::get_command()<:>Source<:>Генерирует команду обновления системы для apt<:>./modules/02-update-system.sh
+sys::update::execute()<:>Sink<:>Выполняет обновление системы используя переданную команду<:>./modules/02-update-system.sh
+sys::update::orchestrator()<:>Orchestrator<:>Оркестратор процесса обновления системы<:>./modules/02-update-system.sh
 main()<:>Orchestrator<:>Основная точка входа модуля обновления системы<:>./modules/02-update-system.sh
 check()<:>Orchestrator<:>Настраивает SSH в service режим, если это необходимо<:>./modules/03-ssh-socket-check.sh
-ssh::is_already_configured()<:>Filter<:>Проверяет, настроен ли SSH в service mode<:>./modules/03-ssh-socket-helpers.sh
-ssh::force_service_mode()<:>Orchestrator<:>Принудительно переключает SSH в service mode<:>./modules/03-ssh-socket-helpers.sh
+ssh::socket::is_already_configured()<:>Filter<:>Проверяет, настроен ли SSH в service mode<:>./modules/03-ssh-socket-helpers.sh
+ssh::socket::force_service_mode()<:>Orchestrator<:>Принудительно переключает SSH в service mode<:>./modules/03-ssh-socket-helpers.sh
 check()<:>Orchestrator<:>Проверяет необходимость перезагрузки системы<:>./modules/03-sys-reload-check.sh
 check()<:>Orchestrator<:>Проверяет состояние SSH портов и правил<:>./modules/04-ssh-port-check.sh
-ssh::install_new_port()<:>Filter<:>Основной функционал установки/изменения SSH порта<:>./modules/04-ssh-port-helpers.sh
-ssh::get_user_choice()<:>Source<:>Запрашивает у пользователя новый SSH порт<:>./modules/04-ssh-port-helpers.sh
-ssh::log_bsss_configs_w_port()<:>Orchestrator<:>Выводит все BSSS конфигурации SSH с портами<:>./modules/04-ssh-port-helpers.sh
-ssh::log_other_configs_w_port()<:>Orchestrator<:>Выводит все сторонние конфигурации SSH с портами<:>./modules/04-ssh-port-helpers.sh
-orchestrator::actions_after_port_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/04-ssh-port-helpers.sh
-ssh::reset_and_pass()<:>Filter<:>Удаляет все правила BSSS и передает порт дальше<:>./modules/04-ssh-port-helpers.sh
-ssh::delete_all_bsss_rules()<:>Orchestrator<:>Удаляет все правила BSSS SSH<:>./modules/04-ssh-port-helpers.sh
+ssh::port::install_new()<:>Filter<:>Основной функционал установки/изменения SSH порта<:>./modules/04-ssh-port-helpers.sh
+ssh::ui::get_new_port()<:>Source<:>Запрашивает у пользователя новый SSH порт<:>./modules/04-ssh-port-helpers.sh
+ssh::config::log_bsss_with_ports()<:>Orchestrator<:>Выводит все BSSS конфигурации SSH с портами<:>./modules/04-ssh-port-helpers.sh
+ssh::config::log_other_with_ports()<:>Orchestrator<:>Выводит все сторонние конфигурации SSH с портами<:>./modules/04-ssh-port-helpers.sh
+ssh::orchestrator::actions_after_port_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/04-ssh-port-helpers.sh
+ssh::rule::reset_and_pass()<:>Filter<:>Удаляет все правила BSSS и передает порт дальше<:>./modules/04-ssh-port-helpers.sh
+ssh::rule::delete_all_bsss()<:>Orchestrator<:>Удаляет все правила BSSS SSH<:>./modules/04-ssh-port-helpers.sh
 sys::restart_services()<:>Orchestrator<:>Перезапускает SSH сервис после проверки конфигурации<:>./modules/04-ssh-port-helpers.sh
-ssh::is_port_busy()<:>Filter<:>Проверяет, занят ли указанный порт<:>./modules/04-ssh-port-helpers.sh
-ssh::generate_free_random_port()<:>Source<:>Генерирует случайный свободный порт в диапазоне 10000-65535<:>./modules/04-ssh-port-helpers.sh
-ssh::create_bsss_config_file()<:>Filter<:>Создает новый конфигурационный файл SSH с указанным портом<:>./modules/04-ssh-port-helpers.sh
-ssh::display_menu()<:>Sink<:>Отображает пункты меню пользователю<:>./modules/04-ssh-port-helpers.sh
-ssh::apply_changes()<:>Filter<:>Применяет изменения SSH порта (сброс старых правил и установка новых)<:>./modules/04-ssh-port-helpers.sh
-ssh::wait_for_port_up()<:>Filter<:>Блокирующая проверка поднятия SSH порта после изменения<:>./modules/04-ssh-port-helpers.sh
-orchestrator::dispatch_logic()<:>Orchestrator<:>Определяет состояние конфигурации SSH (существует/отсутствует)<:>./modules/04-ssh-port-modify.sh
-orchestrator::bsss_config_exists()<:>Orchestrator<:>Интерфейс выбора действий при наличии существующих конфигов<:>./modules/04-ssh-port-modify.sh
-orchestrator::bsss_config_not_exists()<:>Orchestrator<:>Обработчик сценария отсутствия конфигурации SSH<:>./modules/04-ssh-port-modify.sh
-orchestrator::install_new_port_w_guard()<:>Orchestrator<:>Запускает модуль SSH с механизмом rollback<:>./modules/04-ssh-port-modify.sh
+ssh::port::is_port_busy()<:>Filter<:>Проверяет, занят ли указанный порт<:>./modules/04-ssh-port-helpers.sh
+ssh::port::generate_free_random_port()<:>Source<:>Генерирует случайный свободный порт в диапазоне 10000-65535<:>./modules/04-ssh-port-helpers.sh
+ssh::config::create_bsss_file()<:>Filter<:>Создает новый конфигурационный файл SSH с указанным портом<:>./modules/04-ssh-port-helpers.sh
+ssh::ui::display_menu()<:>Sink<:>Отображает пункты меню пользователю<:>./modules/04-ssh-port-helpers.sh
+ssh::rule::apply_changes()<:>Filter<:>Применяет изменения SSH порта (сброс старых правил и установка новых)<:>./modules/04-ssh-port-helpers.sh
+ssh::port::wait_for_up()<:>Filter<:>Блокирующая проверка поднятия SSH порта после изменения<:>./modules/04-ssh-port-helpers.sh
+ssh::ssh::orchestrator::dispatch_logic()<:>Orchestrator<:>Определяет состояние конфигурации SSH (существует/отсутствует)<:>./modules/04-ssh-port-modify.sh
+ssh::orchestrator::config_exists()<:>Orchestrator<:>Интерфейс выбора действий при наличии существующих конфигов<:>./modules/04-ssh-port-modify.sh
+ssh::orchestrator::config_not_exists()<:>Orchestrator<:>Обработчик сценария отсутствия конфигурации SSH<:>./modules/04-ssh-port-modify.sh
+ssh::orchestrator::install_port_with_guard()<:>Orchestrator<:>Запускает модуль SSH с механизмом rollback<:>./modules/04-ssh-port-modify.sh
 check()<:>Orchestrator<:>Проверяет наличие UFW и устанавливает при необходимости<:>./modules/05-ufw-check.sh
-ufw::get_menu_items()<:>Source<:>Генерирует список доступных пунктов меню на основе текущего состояния<:>./modules/05-ufw-helpers.sh
-ufw::display_menu()<:>Sink<:>Отображает пункты меню пользователю (вывод только в stderr)<:>./modules/05-ufw-helpers.sh
-ufw::get_user_choice()<:>Source<:>Запрашивает выбор пользователя и возвращает выбранный ID<:>./modules/05-ufw-helpers.sh
-ufw::execute_action()<:>Orchestrator<:>Выполняет выбранное действие на основе ID<:>./modules/05-ufw-helpers.sh
-ufw::toggle()<:>Sink<:>Переключает состояние UFW<:>./modules/05-ufw-helpers.sh
-ufw::log_status()<:>Sink<:>Логирует состояние UFW<:>./modules/05-ufw-helpers.sh
-orchestrator::actions_after_ufw_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/05-ufw-helpers.sh
-ufw::apply_changes()<:>Filter<:>Применяет изменения UFW на основе выбранного действия<:>./modules/05-ufw-helpers.sh
-ufw::confirm_success()<:>Filter<:>Запрашивает подтверждение успешной работы UFW<:>./modules/05-ufw-helpers.sh
+ufw::menu::get_items()<:>Source<:>Генерирует список доступных пунктов меню на основе текущего состояния<:>./modules/05-ufw-helpers.sh
+ufw::menu::display()<:>Sink<:>Отображает пункты меню пользователю (вывод только в stderr)<:>./modules/05-ufw-helpers.sh
+ufw::menu::get_user_choice()<:>Source<:>Запрашивает выбор пользователя и возвращает выбранный ID<:>./modules/05-ufw-helpers.sh
+ufw::orchestrator::execute_action()<:>Orchestrator<:>Выполняет выбранное действие на основе ID<:>./modules/05-ufw-helpers.sh
+ufw::ui::toggle()<:>Sink<:>Переключает состояние UFW<:>./modules/05-ufw-helpers.sh
+ufw::ui::log_status()<:>Sink<:>Логирует состояние UFW<:>./modules/05-ufw-helpers.sh
+ufw::orchestrator::actions_after_ufw_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/05-ufw-helpers.sh
+ufw::rule::apply_changes()<:>Filter<:>Применяет изменения UFW на основе выбранного действия<:>./modules/05-ufw-helpers.sh
+ufw::ui::confirm_success()<:>Filter<:>Запрашивает подтверждение успешной работы UFW<:>./modules/05-ufw-helpers.sh
 ufw::ping::is_configured()<:>Filter<:>Проверяет, существует ли бэкап файл настроек PING<:>./modules/05-ufw-helpers.sh
 ufw::ping::backup_file()<:>Filter<:>Создает бэкап файла before.rules<:>./modules/05-ufw-helpers.sh
-ufw::ping::disable()<:>Transformer<:>Заменяет ACCEPT на DROP в ICMP правилах через awk<:>./modules/05-ufw-helpers.sh
+ufw::ping::disable_in_rules()<:>Transformer<:>Заменяет ACCEPT на DROP в ICMP правилах через awk<:>./modules/05-ufw-helpers.sh
 ufw::ping::restore()<:>Filter<:>Восстанавливает файл before.rules из бэкапа и удаляет бэкап<:>./modules/05-ufw-helpers.sh
 ufw::ping::reload()<:>Sink<:>Выполняет ufw reload для применения изменений<:>./modules/05-ufw-helpers.sh
 ufw::ping::disable_ping()<:>Orchestrator<:>Отключает пинг через UFW (бэкап + трансформация + reload)<:>./modules/05-ufw-helpers.sh
 ufw::ping::restore_ping()<:>Orchestrator<:>Восстанавливает настройки PING по умолчанию (восстановление + reload)<:>./modules/05-ufw-helpers.sh
-orchestrator::run_ufw_module()<:>Orchestrator<:>Запускает модуль UFW с механизмом rollback только при включении UFW<:>./modules/05-ufw-modify.sh
+ufw::orchestrator::run_module()<:>Orchestrator<:>Запускает модуль UFW с механизмом rollback только при включении UFW<:>./modules/05-ufw-modify.sh
 make_fifo_and_start_reader()<:>Orchestrator<:>Создает FIFO и запускает слушатель для коммуникации с rollback<:>./modules/05-ufw-modify.sh
 stop_script_by_rollback_timer()<:>Orchestrator<:>Обработчик сигнала SIGUSR1 - останавливает скрипт при откате<:>./modules/05-ufw-modify.sh
-orchestrator::watchdog_start()<:>Orchestrator<:>Запускает фоновый процесс rollback (watchdog)<:>./modules/05-ufw-modify.sh
-orchestrator::watchdog_stop()<:>Orchestrator<:>Останавливает процесс rollback (watchdog) по PID<:>./modules/05-ufw-modify.sh
-orchestrator::guard_ui_instructions()<:>Sink<:>Отображает инструкции пользователю для проверки подключения<:>./modules/05-ufw-modify.sh
+rollback::rollback::orchestrator::watchdog_start()<:>Orchestrator<:>Запускает фоновый процесс rollback (watchdog)<:>./modules/05-ufw-modify.sh
+rollback::rollback::orchestrator::watchdog_stop()<:>Orchestrator<:>Останавливает процесс rollback (watchdog) по PID<:>./modules/05-ufw-modify.sh
+rollback::orchestrator::guard_ui_instructions()<:>Sink<:>Отображает инструкции пользователю для проверки подключения<:>./modules/05-ufw-modify.sh
 main()<:>Orchestrator<:>Основная точка входа для модуля изменения состояния UFW<:>./modules/05-ufw-modify.sh
-sys::get_paths_by_mask()<:>Source<:>Получает список путей через нулевой разделитель<:>./modules/common-helpers.sh
+sys::file::get_paths_by_mask()<:>Source<:>Получает список путей через нулевой разделитель<:>./modules/common-helpers.sh
 sys::get_modules_paths_w_type<:>Filter<:>Возвращает строку - путь с типом<:>./modules/common-helpers.sh
 sys::get_modules_by_type<:>Filter<:>Возвращает отфильтрованные по типу пути к модулям<:>./modules/common-helpers.sh
-sys::delete_paths()<:>Filter<:>Удаляет указанные файлы и директории<:>./modules/common-helpers.sh
+sys::file::delete()<:>Filter<:>Удаляет указанные файлы и директории<:>./modules/common-helpers.sh
 ssh::get_ports_from_ss()<:>Source<:>Получает активные SSH порты из ss<:>./modules/common-helpers.sh
 ssh::get_first_port_from_path()<:>Filter<:>Получает первый порт из path<:>./modules/common-helpers.sh
 ssh::log_active_ports_from_ss()<:>Orchestrator<:>Проверяет возможность определения активных портов<:>./modules/common-helpers.sh
-ufw::log_active_ufw_rules()<:>Orchestrator<:>Выводит активные правила UFW<:>./modules/common-helpers.sh
-ufw::reset_and_pass()<:>Filter<:>Удаляет все правила UFW BSSS и передает порт дальше<:>./modules/common-helpers.sh
-ufw::delete_all_bsss_rules()<:>Orchestrator<:>Удаляет все правила UFW BSSS<:>./modules/common-helpers.sh
-ufw::get_all_bsss_rules()<:>Source<:>Получает все правила UFW BSSS<:>./modules/common-helpers.sh
-ufw::get_all_rules()<:>Source<:>Получает все правила UFW<:>./modules/common-helpers.sh
-ufw::add_bsss_rule()<:>Filter<:>Добавляет правило UFW для BSSS<:>./modules/common-helpers.sh
-ufw::is_active()<:>Filter<:>Проверяет, активен ли UFW<:>./modules/common-helpers.sh
-ufw::force_disable()<:>Filter<:>Деактивирует UFW (пропускает если уже деактивирован)<:>./modules/common-helpers.sh
-ufw::enable()<:>Filter<:>Активирует UFW<:>./modules/common-helpers.sh
-sys::validate_sshd_config()<:>Filter<:>Проверяет конфигурацию sshd на валидность<:>./modules/common-helpers.sh
+ufw::rule::log_active()<:>Orchestrator<:>Выводит активные правила UFW<:>./modules/common-helpers.sh
+ufw::rule::reset_and_pass()<:>Filter<:>Удаляет все правила UFW BSSS и передает порт дальше<:>./modules/common-helpers.sh
+ufw::rule::delete_all_bsss()<:>Orchestrator<:>Удаляет все правила UFW BSSS<:>./modules/common-helpers.sh
+ufw::rule::get_all_bsss()<:>Source<:>Получает все правила UFW BSSS<:>./modules/common-helpers.sh
+ufw::rule::get_all()<:>Source<:>Получает все правила UFW<:>./modules/common-helpers.sh
+ufw::rule::add_bsss()<:>Filter<:>Добавляет правило UFW для BSSS<:>./modules/common-helpers.sh
+ufw::rule::is_active()<:>Filter<:>Проверяет, активен ли UFW<:>./modules/common-helpers.sh
+ufw::rule::force_disable()<:>Filter<:>Деактивирует UFW (пропускает если уже деактивирован)<:>./modules/common-helpers.sh
+ufw::rule::enable()<:>Filter<:>Активирует UFW<:>./modules/common-helpers.sh
+sys::file::validate_sshd_config()<:>Filter<:>Проверяет конфигурацию sshd на валидность<:>./modules/common-helpers.sh
 is_sourced()<:>Filter<:>Проверяет, был ли скрипт вызван через source<:>./oneline-runner.sh
 log_success()<:>Sink<:>Выводит успешное сообщение с символом [V]<:>./oneline-runner.sh
 log_error()<:>Sink<:>Выводит сообщение об ошибке с символом [X]<:>./oneline-runner.sh
@@ -118,10 +118,10 @@ main()<:>Orchestrator<:>Основная точка входа<:>./oneline-runne
 find_bash_files()<:>Source<:>Находит все bash файлы в проекте<:>./utils/generate_function_map.sh
 extract_functions_from_file()<:>Filter<:>Извлекает функции и их контракты из bash файла<:>./utils/generate_function_map.sh
 main()<:>Orchestrator<:>Основная точка входа для генерации карты функций<:>./utils/generate_function_map.sh
-orchestrator::stop_rollback()<:>Orchestrator<:>Останавливает процесс таймера отката и завершает скрипт<:>./utils/rollback.sh
-orchestrator::immediate_rollback()<:>Orchestrator<:>Немедленно выполняет тотальный откат при получении SIGUSR2<:>./utils/rollback.sh
-orchestrator::ssh_rollback()<:>Orchestrator<:>Полный откат для SSH модуля - сброс правил SSH и отключение UFW<:>./utils/rollback.sh
-orchestrator::ufw_rollback()<:>Orchestrator<:>Простой откат для UFW модуля - только отключение UFW<:>./utils/rollback.sh
-orchestrator::rollback()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
-orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автоматического отката<:>./utils/rollback.sh
+rollback::orchestrator::stop()<:>Orchestrator<:>Останавливает процесс таймера отката и завершает скрипт<:>./utils/rollback.sh
+rollback::orchestrator::immediate()<:>Orchestrator<:>Немедленно выполняет тотальный откат при получении SIGUSR2<:>./utils/rollback.sh
+rollback::orchestrator::ssh()<:>Orchestrator<:>Полный откат для SSH модуля - сброс правил SSH и отключение UFW<:>./utils/rollback.sh
+rollback::orchestrator::ufw()<:>Orchestrator<:>Простой откат для UFW модуля - только отключение UFW<:>./utils/rollback.sh
+rollback::orchestrator::full()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
+rollback::orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автоматического отката<:>./utils/rollback.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./utils/rollback.sh
