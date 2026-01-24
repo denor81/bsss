@@ -87,9 +87,9 @@
 # @stdout:      нет
 # @exit_code:   0 — упешно
 #               $? — код ошибки дочернего процесса
-orchestrator::bsss_config_not_exists() {
-    ssh::ask_new_port | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
-    orchestrator::actions_after_port_change
+ssh::orchestrator::config_not_exists() {
+    ssh::ui::get_new_port | ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ssh::port::install_new
+    ssh::orchestrator::actions_after_port_change
 }
 ```
  - Фильтр
@@ -100,13 +100,13 @@ orchestrator::bsss_config_not_exists() {
 # @stdin:       port\0 (опционально)
 # @stdout:      port\0 (опционально)
 # @exit_code:   0 - успешно
-ufw::reset_and_pass() {
+ufw::rule::reset_and_pass() {
     local port=""
 
     # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
     [[ ! -t 0 ]] && IFS= read -r -d '' port || true
     
-    ufw::delete_all_bsss_rules
+    ufw::rule::delete_all_bsss
 
     # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
     [[ -n "$port" ]] && printf '%s\0' "$port" || true
@@ -121,9 +121,9 @@ ufw::reset_and_pass() {
 # @stdout:      port
 # @exit_code:   0 - порт успешно сгенерирован
 #               $? - ошибка
-ssh::generate_free_random_port() {
+ssh::port::generate_free_random_port() {
     while IFS= read -r port || break; do
-        if ! ssh::is_port_busy "$port"; then
+        if ! ssh::port::is_port_busy "$port"; then
             printf '%s\n' "$port"
             return
         fi
@@ -158,3 +158,39 @@ ssh::generate_free_random_port() {
  - Критический аудит: Если видишь возврат к императивному стилю (массивы там, где нужен поток), мягко возвращай к «поточной» архитектуре.
  - Инструментарий 2026: Используй современные стандарты GNU Coreutils (mapfile -d '', read -d '', sort -z, awk ORS="\0").
  - Текущее состояние проекта: Мы разработали модульный фреймворк для настройки системных параметров (на примере SSH). Реализована динамическая система обнаружения модулей по типам (check, modify, helper) с использованием метаданных в заголовках файлов. Система построена на базе «Умных источников» и «Диспетчеров», которые управляют логикой установки и сброса конфигураций.
+
+ 13. Стандарт нейминга функций
+  - Фундаментальные принципы:
+    * Иерархия: domain::subdomain::action (максимум 3 уровня)
+    * Субдомены обязательны для всех функций кроме самых простых
+    * Читаемость превыше краткости
+
+  - Правила для action:
+    * Дублирование ДОПУСТИМО, если:
+      - Без него теряется смысл: ssh::port::generate_free_random_port (не generate_free_random)
+      - Повышает однозначность: ssh::port::is_port_busy (лучше чем is_busy)
+      - Существительное — важная часть действия
+    * Дублирование НЕ обязательно, если:
+      - Субдомен уже однозначно указывает объект: ufw::ping::is_configured (не is_ping_configured)
+      - Действие очевидно из контекста
+
+  - Примеры нейминга:
+    * Оркестраторы: ssh::ssh::orchestrator::actions_after_port_change, ufw::orchestrator::run_module
+    * UI меню: ufw::menu::display, ufw::menu::get_user_choice
+    * UI интерактивные: ssh::ui::get_new_port, ufw::ui::toggle
+    * Проверки: ssh::port::is_port_busy, ssh::socket::is_configured
+    * Генерация: ssh::port::generate_free_random_port, ssh::config::create_bsss_file
+    * Удаление/сброс: ufw::rule::delete_all_bsss, ssh::rule::reset_and_pass
+    * Системные: sys::file::validate_sshd_config, sys::service::restart
+    * Запуск модулей: runner::module::run_check, runner::module::select_modify
+    * Rollback: rollback::orchestrator::immediate, rollback::orchestrator::ssh
+
+  - Домены и субдомены:
+    * ufw: menu, ui, ping, rule
+    * ssh: port, config, socket, ui
+    * sys: file, service, process, update
+    * io: confirm, input
+    * log: border, message
+    * orchestrator: только внутри домена (domain::orchestrator::action)
+    * runner: module
+    * rollback: orchestrator
