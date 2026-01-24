@@ -8,7 +8,7 @@
 # @stdin:       нет
 # @stdout:      id|text\0 (0..N)
 # @exit_code:   0 - успешно
-ufw::get_menu_items() {
+ufw::menu::get_items() {
     local id=1
     
     # Пункт для переключения UFW
@@ -33,7 +33,7 @@ ufw::get_menu_items() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::display_menu() {
+ufw::menu::display() {
     local id_text
     local id
     local text
@@ -46,7 +46,7 @@ ufw::display_menu() {
         id="${id_text%%|*}"
         text="${id_text#*|}"
         log_info_simple_tab "$id. $text"
-    done < <(ufw::get_menu_items)
+    done < <(ufw::menu::get_items)
 
     log_info_simple_tab "0. Выход"
     log::draw_lite_border
@@ -59,7 +59,7 @@ ufw::display_menu() {
 # @stdout:      id\0 (0..2) - выбранный ID или 0 (выход)
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
-ufw::get_user_choice() {
+ufw::menu::get_user_choice() {
     local -a menu_items=()
     local max_id=0
     local id_text
@@ -69,7 +69,7 @@ ufw::get_user_choice() {
         menu_items+=("$id_text")
         local id="${id_text%%|*}"
         (( id > max_id )) && max_id=$id
-    done < <(ufw::get_menu_items)
+    done < <(ufw::menu::get_items)
 
     local pattern="^[0-$max_id]$"
 
@@ -87,12 +87,12 @@ ufw::get_user_choice() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки от действия
-ufw::execute_action() {
+ufw::orchestrator::execute_action() {
     local action_id
     read -r -d '' action_id || return 0
 
     case "$action_id" in
-        1) ufw::toggle ;;
+        1) ufw::ui::toggle ;;
         2)
             if ufw::ping::is_configured; then
                 ufw::ping::restore_ping
@@ -111,7 +111,7 @@ ufw::execute_action() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки от ufw
-ufw::toggle() {
+ufw::ui::toggle() {
     if ufw::is_active; then
         ufw::force_disable
     else
@@ -125,7 +125,7 @@ ufw::toggle() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::log_status() {
+ufw::ui::log_status() {
     if ufw::is_active; then
         log_info "UFW ВКЛ"
     else
@@ -143,7 +143,7 @@ ufw::log_status() {
 orchestrator::actions_after_ufw_change() {
     log::draw_lite_border
     log_actual_info "Актуальная информация после внесения изменений"
-    ufw::log_status
+    ufw::ui::log_status
     ufw::log_active_ufw_rules
 }
 
@@ -155,11 +155,11 @@ orchestrator::actions_after_ufw_change() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - ошибка в процессе
-ufw::apply_changes() {
+ufw::rule::apply_changes() {
     local action_id="$1"
 
     case "$action_id" in
-        1) ufw::toggle ;;
+        1) ufw::ui::toggle ;;
         2)
             if ufw::ping::is_configured; then
                 ufw::ping::restore_ping
@@ -178,7 +178,7 @@ ufw::apply_changes() {
 # @stdout:      нет
 # @exit_code:   0 - подтверждение получено
 #               2 - выход по запросу пользователя
-ufw::confirm_success() {
+ufw::ui::confirm_success() {
     io::ask_value "Подтвердите работу UFW - введите confirmed" "" "^confirmed$" "confirmed" >/dev/null || return $?
 }
 
@@ -214,7 +214,7 @@ ufw::ping::backup_file() {
 # @stdout:      преобразованный content (ACCEPT → DROP для ICMP)
 # @exit_code:   0 - успешно
 # @exit_code:   $? - код ошибки awk
-ufw::ping::disable() {
+ufw::ping::disable_in_rules() {
     awk '
     BEGIN {
         IGNORECASE = 1
@@ -295,7 +295,7 @@ ufw::ping::disable_ping() {
     local tmp_file="${UFW_BEFORE_RULES}.tmp"
 
     ufw::ping::backup_file
-    ufw::ping::disable < "$UFW_BEFORE_RULES" > "$tmp_file" && mv "$tmp_file" "$UFW_BEFORE_RULES" || { log_error "Не удалось применить изменения"; [[ -f "$tmp_file" ]] && rm "$tmp_file"; return $?; }
+    ufw::ping::disable_in_rules < "$UFW_BEFORE_RULES" > "$tmp_file" && mv "$tmp_file" "$UFW_BEFORE_RULES" || { log_error "Не удалось применить изменения"; [[ -f "$tmp_file" ]] && rm "$tmp_file"; return $?; }
     [[ -f "$tmp_file" ]] && rm "$tmp_file"
     ufw::ping::reload
 }

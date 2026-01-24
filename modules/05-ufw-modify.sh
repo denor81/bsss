@@ -27,7 +27,7 @@ trap stop_script_by_rollback_timer SIGUSR1
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
-orchestrator::run_ufw_module() {
+ufw::orchestrator::run_module() {
     local watchdog_pid=""
     local action_id
     local watchdog_started=false
@@ -43,9 +43,9 @@ orchestrator::run_ufw_module() {
     #    Управление PING (action_id=2) не является критическим
     if [[ "$action_id" == "1" ]] && ! ufw::is_active; then
         make_fifo_and_start_reader
-        watchdog_pid=$(orchestrator::watchdog_start "$WATCHDOG_FIFO")
+        watchdog_pid=$(rollback::orchestrator::watchdog_start "$WATCHDOG_FIFO")
         watchdog_started=true
-        orchestrator::guard_ui_instructions
+        rollback::orchestrator::guard_ui_instructions
     fi
 
     # 4. Внесение изменений
@@ -57,7 +57,7 @@ orchestrator::run_ufw_module() {
     # 6. Подтверждение и остановка Rollback (только при включении UFW)
     if [[ "$watchdog_started" == true ]]; then
         if ufw::confirm_success; then
-            orchestrator::watchdog_stop "$watchdog_pid"
+            rollback::orchestrator::watchdog_stop "$watchdog_pid"
         fi
     fi
 }
@@ -93,7 +93,7 @@ stop_script_by_rollback_timer() {
 # @stdin:       нет
 # @stdout:      PID процесса watchdog
 # @exit_code:   0 - успешно
-orchestrator::watchdog_start() {
+rollback::rollback::orchestrator::watchdog_start() {
     local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
 
     # Запускаем "Сторожа" отвязано от терминала
@@ -109,7 +109,7 @@ orchestrator::watchdog_start() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-orchestrator::watchdog_stop() {
+rollback::rollback::orchestrator::watchdog_stop() {
     local watchdog_pid="$1"
     # Посылаем сигнал успешного завершения (USR1)
     kill -USR1 "$watchdog_pid" 2>/dev/null || true
@@ -124,7 +124,7 @@ orchestrator::watchdog_stop() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-orchestrator::guard_ui_instructions() {
+rollback::orchestrator::guard_ui_instructions() {
     log::draw_lite_border
     log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
     log_attention "Проверьте доступ к серверу после включения UFW"
@@ -141,7 +141,7 @@ main() {
 
     # Запуск или возврат кода 2 при отказе пользователя
     if io::confirm_action "Изменить состояние UFW?"; then
-        orchestrator::run_ufw_module
+        ufw::orchestrator::run_module
     else
         return
     fi
