@@ -133,8 +133,8 @@ ssh::rule::reset_and_pass() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ssh::rule::delete_all_bsss() {
-    # || true нужен потому что sys::get_paths_by_mask может возвращать пустоту и read зависает
-    sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::delete_paths || true
+    # || true нужен потому что sys::file::get_paths_by_mask может возвращать пустоту и read зависает
+    sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::file::delete || true
 }
 
 # @type:        Orchestrator
