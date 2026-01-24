@@ -10,7 +10,7 @@
 # @stdin:       нет
 # @stdout:      path\0 (0..N)
 # @exit_code:   0 - всегда
-sys::get_paths_by_mask() {
+sys::file::get_paths_by_mask() {
     local dir=${1:-.}
     local mask=${2:-*}
 
@@ -56,7 +56,7 @@ sys::get_modules_by_type () {
 # @stdin:       path\0 (0..N)
 # @stdout:      нет
 # @exit_code:   0 - всегда
-sys::delete_paths() {
+sys::file::delete() {
     while IFS= read -r -d '' path || break; do
         local resp
         resp=$(rm -rfv -- "$path" ) || return
@@ -126,7 +126,7 @@ ssh::log_active_ports_from_ss() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::log_active_ufw_rules() {
+ufw::rule::log_active() {
     local rule
     local found=0
 
@@ -140,7 +140,7 @@ ufw::log_active_ufw_rules() {
         fi
         log_info_simple_tab "$rule"
 
-    done < <(ufw::get_all_rules)
+    done < <(ufw::rule::get_all)
 
     if (( found == 0 )); then
         log_info "Нет правил UFW [ufw show added]"
@@ -153,13 +153,13 @@ ufw::log_active_ufw_rules() {
 # @stdin:       port\0 (опционально)
 # @stdout:      port\0 (опционально)
 # @exit_code:   0 - успешно
-ufw::reset_and_pass() {
+ufw::rule::reset_and_pass() {
     local port=""
 
     # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
     [[ ! -t 0 ]] && IFS= read -r -d '' port || true
     
-    ufw::delete_all_bsss_rules
+    ufw::rule::delete_all_bsss
 
     # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
     [[ -n "$port" ]] && printf '%s\0' "$port" || true
@@ -171,7 +171,7 @@ ufw::reset_and_pass() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::delete_all_bsss_rules() {
+ufw::rule::delete_all_bsss() {
     # local found_any=0
 
     local rule_args
@@ -183,7 +183,7 @@ ufw::delete_all_bsss_rules() {
         else
             log_error "Ошибка при удалении правила UFW: ufw --force delete $rule_args"
         fi
-    done < <(ufw::get_all_bsss_rules)
+    done < <(ufw::rule::get_all_bsss)
 
     # if (( found_any == 0 )); then
     #     log_info "Активных правил ${UTIL_NAME^^} для UFW не обнаружено, синхронизация не требуется."
@@ -196,7 +196,7 @@ ufw::delete_all_bsss_rules() {
 # @stdin:       нет
 # @stdout:      rule\0 (0..N)
 # @exit_code:   0 - всегда
-ufw::get_all_bsss_rules() {
+ufw::rule::get_all_bsss() {
     ufw show added \
     | awk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
         BEGIN { ORS="\0" }
@@ -213,7 +213,7 @@ ufw::get_all_bsss_rules() {
 # @stdin:       нет
 # @stdout:      rule\0 (0..N)
 # @exit_code:   0 - всегда
-ufw::get_all_rules() {
+ufw::rule::get_all() {
     if command -v ufw > /dev/null 2>&1; then
         ufw show added \
         | awk -v marker="^ufw.*" '
@@ -231,7 +231,7 @@ ufw::get_all_rules() {
 # @stdin:       port\0 (0..N)
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::add_bsss_rule() {
+ufw::rule::add_bsss() {
     local port
     while read -r -d '' port; do
         if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >/dev/null 2>&1; then
@@ -249,7 +249,7 @@ ufw::add_bsss_rule() {
 # @stdout:      нет
 # @exit_code:   0 - UFW активен
 #               1 - UFW неактивен
-ufw::is_active() {
+ufw::rule::is_active() {
     ufw status | grep -q "^Status: active"
 }
 
@@ -259,8 +259,8 @@ ufw::is_active() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::force_disable() {
-    if ! ufw::is_active; then
+ufw::rule::force_disable() {
+    if ! ufw::rule::is_active; then
         log_info "UFW: Уже деактивирован, действие пропущено"
     else
         ufw --force disable >/dev/null 2>&1
@@ -274,10 +274,34 @@ ufw::force_disable() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::enable() {
+ufw::rule::enable() {
     if ufw --force enable >/dev/null 2>&1; then
         log_info "UFW: Активирован [ufw --force enable]"
     else
         log_error "Ошибка при активации [ufw --force enable]"
     fi
+}
+
+# @type:        Filter
+# @description: Проверяет конфигурацию sshd на валидность
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - конфигурация валидна
+#               1 - ошибка в конфигурации
+sys::file::validate_sshd_config() {
+    local output
+    output=$(sshd -t 2>&1)
+    local exit_code=$?
+    
+    if [[ $exit_code -eq 0 ]]; then
+        return 0
+    fi
+    
+    if [[ "$output" == *"Missing privilege separation directory"* ]]; then
+        return 0
+    fi
+    
+    echo "$output" >&2
+    return $exit_code
 }

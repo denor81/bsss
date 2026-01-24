@@ -4,57 +4,61 @@
 
 set -Eeuo pipefail
 
-readonly MODULES_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-source "${MODULES_DIR_PATH}/../lib/vars.conf"
-source "${MODULES_DIR_PATH}/../lib/logging.sh"
-source "${MODULES_DIR_PATH}/../lib/user_confirmation.sh"
-source "${MODULES_DIR_PATH}/common-helpers.sh"
-source "${MODULES_DIR_PATH}/05-ufw-helpers.sh"
+source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/lib/user_confirmation.sh"
+source "${PROJECT_ROOT}/modules/common-helpers.sh"
+source "${PROJECT_ROOT}/modules/05-ufw-helpers.sh"
 
-WATCHDOG_FIFO="$MODULES_DIR_PATH/../bsss_watchdog_$$.fifo"
+WATCHDOG_FIFO="$PROJECT_ROOT/bsss_watchdog_$$.fifo"
 
 # Сработает при откате изменений при сигнале USR1
 trap log_stop EXIT
 trap stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
-# @description: Запускает модуль UFW с механизмом rollback
+# @description: Запускает модуль UFW с механизмом rollback только при включении UFW
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
-orchestrator::run_ufw_module() {
-    local watchdog_pid
+ufw::orchestrator::run_module() {
+    local watchdog_pid=""
     local action_id
+    local watchdog_started=false
 
     # 1. Отображение меню
-    ufw::display_menu
+    ufw::menu::display
 
     # 2. Получение выбора пользователя (точка возврата кода 2)
-    action_id=$(ufw::get_user_choice | tr -d '\0') || return
+    action_id=$(ufw::menu::get_user_choice | tr -d '\0') || return
 
-    # 3. Создание FIFO и запуск слушателя
-    make_fifo_and_start_reader
+    # 3. Rollback только при включении UFW (action_id=1 и UFW сейчас выключен)
+    #    Отключение UFW безопасно и не требует rollback
+    #    Управление PING (action_id=2) не является критическим
+    if [[ "$action_id" == "1" ]] && ! ufw::rule::is_active; then
+        make_fifo_and_start_reader
+        watchdog_pid=$(rollback::orchestrator::watchdog_start "$WATCHDOG_FIFO")
+        watchdog_started=true
+        rollback::orchestrator::guard_ui_instructions
+    fi
 
-    # 4. Запуск Rollback (ДО внесения изменений!)
-    watchdog_pid=$(orchestrator::watchdog_start "$WATCHDOG_FIFO")
+    # 4. Внесение изменений
+    ufw::rule::apply_changes "$action_id"
 
-    # 5. Интерактивные инструкции
-    orchestrator::guard_ui_instructions
+    # 5. Действия после изменений
+    ufw::orchestrator::actions_after_ufw_change
 
-    # 6. Внесение изменений
-    ufw::apply_changes "$action_id"
-
-    # 7. Действия после изменений
-    orchestrator::actions_after_ufw_change
-
-    # 8. Подтверждение и остановка Rollback
-    if ufw::confirm_success; then
-        orchestrator::watchdog_stop "$watchdog_pid"
+    # 6. Подтверждение и остановка Rollback (только при включении UFW)
+    if [[ "$watchdog_started" == true ]]; then
+        if ufw::ui::confirm_success; then
+            rollback::orchestrator::watchdog_stop "$watchdog_pid"
+        fi
     fi
 }
 
@@ -66,6 +70,7 @@ orchestrator::run_ufw_module() {
 # @exit_code:   0 - успешно
 make_fifo_and_start_reader() {
     mkfifo "$WATCHDOG_FIFO"
+    log::new_line
     log_info "Создан FIFO: $WATCHDOG_FIFO"
     cat "$WATCHDOG_FIFO" >&2 &
 }
@@ -88,8 +93,8 @@ stop_script_by_rollback_timer() {
 # @stdin:       нет
 # @stdout:      PID процесса watchdog
 # @exit_code:   0 - успешно
-orchestrator::watchdog_start() {
-    local rollback_module="${MODULES_DIR_PATH}/../${UTILS_DIR%/}/$ROLLBACK_MODULE_NAME"
+rollback::orchestrator::watchdog_start() {
+    local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
 
     # Запускаем "Сторожа" отвязано от терминала
     # Передаем PID основного скрипта ($$) первым аргументом
@@ -104,7 +109,7 @@ orchestrator::watchdog_start() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-orchestrator::watchdog_stop() {
+rollback::orchestrator::watchdog_stop() {
     local watchdog_pid="$1"
     # Посылаем сигнал успешного завершения (USR1)
     kill -USR1 "$watchdog_pid" 2>/dev/null || true
@@ -119,7 +124,7 @@ orchestrator::watchdog_stop() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-orchestrator::guard_ui_instructions() {
+rollback::orchestrator::guard_ui_instructions() {
     log::draw_lite_border
     log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
     log_attention "Проверьте доступ к серверу после включения UFW"
@@ -136,7 +141,7 @@ main() {
 
     # Запуск или возврат кода 2 при отказе пользователя
     if io::confirm_action "Изменить состояние UFW?"; then
-        orchestrator::run_ufw_module
+        ufw::orchestrator::run_module
     else
         return
     fi

@@ -4,13 +4,13 @@
 
 set -Eeuo pipefail
 
-readonly MODULES_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-source "${MODULES_DIR_PATH}/../lib/vars.conf"
-source "${MODULES_DIR_PATH}/../lib/logging.sh"
-source "${MODULES_DIR_PATH}/common-helpers.sh"
-source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
+source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/modules/common-helpers.sh"
+source "${PROJECT_ROOT}/modules/04-ssh-port-helpers.sh"
 
 # @type:        Orchestrator
 # @description: Проверяет состояние SSH портов и правил
@@ -21,8 +21,8 @@ source "${MODULES_DIR_PATH}/04-ssh-port-helpers.sh"
 #               $? - ошибка при проверке портов
 check() {
     ssh::log_active_ports_from_ss "1"
-    ssh::log_bsss_configs_w_port
-    ssh::log_other_configs_w_port
+    ssh::config::log_bsss_with_ports
+    ssh::config::log_other_with_ports
 }
 
 main() {
