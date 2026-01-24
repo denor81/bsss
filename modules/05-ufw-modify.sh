@@ -82,7 +82,7 @@ make_fifo_and_start_reader() {
 # @stdout:      нет
 # @exit_code:   3 - код завершения при откате
 stop_script_by_rollback_timer() {
-    printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     exit 3
 }
 
@@ -115,7 +115,7 @@ rollback::orchestrator::watchdog_stop() {
     kill -USR1 "$watchdog_pid" 2>/dev/null || true
     wait "$watchdog_pid" 2>/dev/null || true
     log_info "Изменения зафиксированы, Rollback отключен"
-    printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
 }
 
 # @type:        Sink

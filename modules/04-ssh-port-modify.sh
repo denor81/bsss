@@ -29,7 +29,7 @@ trap stop_script_by_rollback_timer SIGUSR1
 #               $? - код ошибки дочернего процесса
 ssh::orchestrator::dispatch_logic() {
 
-    if sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
+    if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
         ssh::orchestrator::config_exists
     else
         ssh::orchestrator::config_not_exists
@@ -128,7 +128,7 @@ make_fifo_and_start_reader() {
 }
 
 stop_script_by_rollback_timer() {
-    printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     exit 3
 }
 
@@ -146,7 +146,7 @@ rollback::orchestrator::watchdog_stop() {
     # Посылаем сигнал успешного завершения (USR1)
     kill -USR1 "$watchdog_pid" 2>/dev/null || true
     wait "$watchdog_pid" 2>/dev/null || true
-    printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
 }
 
 orchestrator::guard_ui_instructions() {
