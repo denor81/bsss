@@ -65,7 +65,14 @@ ufw::log_status()<:>Sink<:>Логирует состояние UFW<:>./modules/0
 orchestrator::actions_after_ufw_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/05-ufw-helpers.sh
 ufw::apply_changes()<:>Filter<:>Применяет изменения UFW на основе выбранного действия<:>./modules/05-ufw-helpers.sh
 ufw::confirm_success()<:>Filter<:>Запрашивает подтверждение успешной работы UFW<:>./modules/05-ufw-helpers.sh
-orchestrator::run_ufw_module()<:>Orchestrator<:>Запускает модуль UFW с механизмом rollback<:>./modules/05-ufw-modify.sh
+ufw::ping::is_configured()<:>Filter<:>Проверяет, существует ли бэкап файл настроек PING<:>./modules/05-ufw-helpers.sh
+ufw::ping::backup_file()<:>Filter<:>Создает бэкап файла before.rules<:>./modules/05-ufw-helpers.sh
+ufw::ping::disable()<:>Transformer<:>Заменяет ACCEPT на DROP в ICMP правилах через awk<:>./modules/05-ufw-helpers.sh
+ufw::ping::restore()<:>Filter<:>Восстанавливает файл before.rules из бэкапа и удаляет бэкап<:>./modules/05-ufw-helpers.sh
+ufw::ping::reload()<:>Sink<:>Выполняет ufw reload для применения изменений<:>./modules/05-ufw-helpers.sh
+ufw::ping::disable_ping()<:>Orchestrator<:>Отключает пинг через UFW (бэкап + трансформация + reload)<:>./modules/05-ufw-helpers.sh
+ufw::ping::restore_ping()<:>Orchestrator<:>Восстанавливает настройки PING по умолчанию (восстановление + reload)<:>./modules/05-ufw-helpers.sh
+orchestrator::run_ufw_module()<:>Orchestrator<:>Запускает модуль UFW с механизмом rollback только при включении UFW<:>./modules/05-ufw-modify.sh
 make_fifo_and_start_reader()<:>Orchestrator<:>Создает FIFO и запускает слушатель для коммуникации с rollback<:>./modules/05-ufw-modify.sh
 stop_script_by_rollback_timer()<:>Orchestrator<:>Обработчик сигнала SIGUSR1 - останавливает скрипт при откате<:>./modules/05-ufw-modify.sh
 orchestrator::watchdog_start()<:>Orchestrator<:>Запускает фоновый процесс rollback (watchdog)<:>./modules/05-ufw-modify.sh
@@ -115,7 +122,6 @@ orchestrator::stop_rollback()<:>Orchestrator<:>Останавливает про
 orchestrator::immediate_rollback()<:>Orchestrator<:>Немедленно выполняет тотальный откат при получении SIGUSR2<:>./utils/rollback.sh
 orchestrator::ssh_rollback()<:>Orchestrator<:>Полный откат для SSH модуля - сброс правил SSH и отключение UFW<:>./utils/rollback.sh
 orchestrator::ufw_rollback()<:>Orchestrator<:>Простой откат для UFW модуля - только отключение UFW<:>./utils/rollback.sh
-orchestrator::ssh_socket_rollback()<:>Orchestrator<:>Откат SSH на socket режим<:>./utils/rollback.sh
 orchestrator::rollback()<:>Orchestrator<:>Полная очистка системы от следов BSSS и деактивация UFW.<:>./utils/rollback.sh
 orchestrator::watchdog_timer()<:>Orchestrator<:>Таймер для автоматического отката<:>./utils/rollback.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./utils/rollback.sh

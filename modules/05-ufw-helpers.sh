@@ -18,6 +18,13 @@ ufw::get_menu_items() {
         printf '%s|%s\0' "$id" "Включить UFW"
     fi
     id=$((id + 1))
+
+    # Пункт для управления PING
+    if ufw::ping::is_configured; then
+        printf '%s|%s\0' "$id" "Вернуть настройки PING по умолчанию"
+    else
+        printf '%s|%s\0' "$id" "Отключить пинг через UFW"
+    fi
 }
 
 # @type:        Sink
@@ -49,7 +56,7 @@ ufw::display_menu() {
 # @description: Запрашивает выбор пользователя и возвращает выбранный ID
 # @params:      нет
 # @stdin:       нет
-# @stdout:      id\0 (0..1) - выбранный ID или 0 (выход)
+# @stdout:      id\0 (0..2) - выбранный ID или 0 (выход)
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
 ufw::get_user_choice() {
@@ -58,7 +65,7 @@ ufw::get_user_choice() {
     local id_text
 
     # Читаем все пункты в массив
-    while IFS= read -r -d '' id_text || break; do
+    while IFS='|' read -r -d '' id_text || break; do
         menu_items+=("$id_text")
         local id="${id_text%%|*}"
         (( id > max_id )) && max_id=$id
@@ -76,16 +83,23 @@ ufw::get_user_choice() {
 # @type:        Orchestrator
 # @description: Выполняет выбранное действие на основе ID
 # @params:      нет
-# @stdin:       id\0 (0..1)
+# @stdin:       id\0 (0..2)
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки от действия
 ufw::execute_action() {
     local action_id
     read -r -d '' action_id || return 0
-    
+
     case "$action_id" in
         1) ufw::toggle ;;
+        2)
+            if ufw::ping::is_configured; then
+                ufw::ping::restore_ping
+            else
+                ufw::ping::disable_ping
+            fi
+            ;;
         *) log_error "Неверный ID действия: [$action_id]"; return 1 ;;
     esac
 }
@@ -146,6 +160,13 @@ ufw::apply_changes() {
 
     case "$action_id" in
         1) ufw::toggle ;;
+        2)
+            if ufw::ping::is_configured; then
+                ufw::ping::restore_ping
+            else
+                ufw::ping::disable_ping
+            fi
+            ;;
         *) log_error "Неверный ID действия: [$action_id]"; return 1 ;;
     esac
 }
@@ -159,4 +180,134 @@ ufw::apply_changes() {
 #               2 - выход по запросу пользователя
 ufw::confirm_success() {
     io::ask_value "Подтвердите работу UFW - введите confirmed" "" "^confirmed$" "confirmed" >/dev/null || return $?
+}
+
+# @type:        Filter
+# @description: Проверяет, существует ли бэкап файл настроек PING
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - бэкап существует (PING отключен)
+#               1 - бэкап не существует (PING не отключен)
+ufw::ping::is_configured() {
+    [[ -f "$UFW_BEFORE_RULES_BACKUP" ]]
+}
+
+# @type:        Filter
+# @description: Создает бэкап файла before.rules
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - бэкап успешно создан
+#               $? - код ошибки команды cp
+ufw::ping::backup_file() {
+    if ! cp "$UFW_BEFORE_RULES" "$UFW_BEFORE_RULES_BACKUP"; then
+        log_error "Не удалось создать бэкап $UFW_BEFORE_RULES_BACKUP"
+        return $?
+    fi
+}
+
+# @type:        Transformer
+# @description: Заменяет ACCEPT на DROP в ICMP правилах через awk
+# @params:      нет
+# @stdin:       содержимое before.rules
+# @stdout:      преобразованный content (ACCEPT → DROP для ICMP)
+# @exit_code:   0 - успешно
+# @exit_code:   $? - код ошибки awk
+ufw::ping::disable() {
+    awk '
+    BEGIN {
+        IGNORECASE = 1
+        in_input_section = 0
+        in_forward_section = 0
+    }
+
+    /^#[[:space:]]*ok[[:space:]]+icmp[[:space:]]+codes?[[:space:]]+for[[:space:]]+INPUT$/ {
+        in_input_section = 1
+        print
+        next
+    }
+
+    /^#[[:space:]]*ok[[:space:]]+icmp[[:space:]]+code[[:space:]]+for[[:space:]]+FORWARD$/ {
+        in_forward_section = 1
+        print
+        next
+    }
+
+    /^#/ && !(in_input_section || in_forward_section) {
+        in_input_section = 0
+        in_forward_section = 0
+        print
+        next
+    }
+
+    (in_input_section || in_forward_section) && /^-[[:space:]]*A[[:space:]]+ufw-before-(input|forward)[[:space:]]+-p[[:space:]]+icmp/ {
+        gsub(/[[:space:]]+-j[[:space:]]+ACCEPT/, " -j DROP")
+        print
+        next
+    }
+
+    { print }
+    '
+}
+
+# @type:        Filter
+# @description: Восстанавливает файл before.rules из бэкапа и удаляет бэкап
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно восстановлено
+#               $? - код ошибки cp или rm
+ufw::ping::restore() {
+    if ! cp "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES"; then
+        log_error "Не удалось восстановить $UFW_BEFORE_RULES из бэкапа"
+        return $?
+    fi
+
+    if ! rm "$UFW_BEFORE_RULES_BACKUP"; then
+        log_error "Не удалось удалить бэкап файл $UFW_BEFORE_RULES_BACKUP"
+        return $?
+    fi
+}
+
+# @type:        Sink
+# @description: Выполняет ufw reload для применения изменений
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - код ошибки ufw reload
+ufw::ping::reload() {
+    if ! ufw reload >/dev/null; then
+        log_error "Не удалось выполнить ufw reload"
+        return $?
+    fi
+}
+
+# @type:        Orchestrator
+# @description: Отключает пинг через UFW (бэкап + трансформация + reload)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - код ошибки операции
+ufw::ping::disable_ping() {
+    local tmp_file="${UFW_BEFORE_RULES}.tmp"
+
+    ufw::ping::backup_file
+    ufw::ping::disable < "$UFW_BEFORE_RULES" > "$tmp_file" && mv "$tmp_file" "$UFW_BEFORE_RULES" || { log_error "Не удалось применить изменения"; [[ -f "$tmp_file" ]] && rm "$tmp_file"; return $?; }
+    [[ -f "$tmp_file" ]] && rm "$tmp_file"
+    ufw::ping::reload
+}
+
+# @type:        Orchestrator
+# @description: Восстанавливает настройки PING по умолчанию (восстановление + reload)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - код ошибки операции
+ufw::ping::restore_ping() {
+    ufw::ping::restore
+    ufw::ping::reload
 }

@@ -20,7 +20,7 @@ trap log_stop EXIT
 trap stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
-# @description: Запускает модуль UFW с механизмом rollback
+# @description: Запускает модуль UFW с механизмом rollback только при включении UFW
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
@@ -28,8 +28,9 @@ trap stop_script_by_rollback_timer SIGUSR1
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
 orchestrator::run_ufw_module() {
-    local watchdog_pid
+    local watchdog_pid=""
     local action_id
+    local watchdog_started=false
 
     # 1. Отображение меню
     ufw::display_menu
@@ -37,24 +38,27 @@ orchestrator::run_ufw_module() {
     # 2. Получение выбора пользователя (точка возврата кода 2)
     action_id=$(ufw::get_user_choice | tr -d '\0') || return
 
-    # 3. Создание FIFO и запуск слушателя
-    make_fifo_and_start_reader
+    # 3. Rollback только при включении UFW (action_id=1 и UFW сейчас выключен)
+    #    Отключение UFW безопасно и не требует rollback
+    #    Управление PING (action_id=2) не является критическим
+    if [[ "$action_id" == "1" ]] && ! ufw::is_active; then
+        make_fifo_and_start_reader
+        watchdog_pid=$(orchestrator::watchdog_start "$WATCHDOG_FIFO")
+        watchdog_started=true
+        orchestrator::guard_ui_instructions
+    fi
 
-    # 4. Запуск Rollback (ДО внесения изменений!)
-    watchdog_pid=$(orchestrator::watchdog_start "$WATCHDOG_FIFO")
-
-    # 5. Интерактивные инструкции
-    orchestrator::guard_ui_instructions
-
-    # 6. Внесение изменений
+    # 4. Внесение изменений
     ufw::apply_changes "$action_id"
 
-    # 7. Действия после изменений
+    # 5. Действия после изменений
     orchestrator::actions_after_ufw_change
 
-    # 8. Подтверждение и остановка Rollback
-    if ufw::confirm_success; then
-        orchestrator::watchdog_stop "$watchdog_pid"
+    # 6. Подтверждение и остановка Rollback (только при включении UFW)
+    if [[ "$watchdog_started" == true ]]; then
+        if ufw::confirm_success; then
+            orchestrator::watchdog_stop "$watchdog_pid"
+        fi
     fi
 }
 
