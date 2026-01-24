@@ -14,7 +14,7 @@ ssh::port::install_new() {
     read -r -d '' new_port
 
     printf '%s\0' "$new_port" | ssh::config::create_bsss_file
-    printf '%s\0' "$new_port" | ufw::add_bsss_rule
+    printf '%s\0' "$new_port" | ufw::rule::add_bsss
 }
 
 # @type:        Source
@@ -105,7 +105,7 @@ ssh::orchestrator::actions_after_port_change() {
     log_actual_info "Актуальная информация после внесения изменений"
     ssh::log_active_ports_from_ss
     ssh::config::log_bsss_with_ports
-    ufw::log_active_ufw_rules
+    ufw::rule::log_active
 }
 
 # @type:        Filter
@@ -230,7 +230,7 @@ ssh::ui::display_menu() {
 #               $? - ошибка в процессе
 ssh::rule::apply_changes() {
     local port="$1"
-    printf '%s\0' "$port" | ssh::rule::reset_and_pass | ufw::reset_and_pass | ssh::port::install_new
+    printf '%s\0' "$port" | ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ssh::port::install_new
 }
 
 # @type:        Filter

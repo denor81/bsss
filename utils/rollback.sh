@@ -20,7 +20,7 @@ ROLLBACK_TYPE="${ROLLBACK_TYPE:-}"
 
 trap "" INT TERM
 trap 'log_stop' EXIT
-trap 'orchestrator::stop_rollback' SIGUSR1
+trap 'rollback::orchestrator::stop' SIGUSR1
 trap 'rollback::orchestrator::immediate' SIGUSR2
 
 # @type:        Orchestrator
@@ -44,7 +44,7 @@ rollback::orchestrator::stop() {
 rollback::orchestrator::immediate() {
     kill "$SLEEP_PID" 2>/dev/null
     log::draw_lite_border
-    orchestrator::rollback
+    rollback::orchestrator::full
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
         kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
@@ -62,9 +62,9 @@ rollback::orchestrator::immediate() {
 # @exit_code:   0 - всегда
 rollback::orchestrator::ssh() {
     log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
-    ssh::delete_all_bsss_rules
-    ufw::force_disable
-    ufw::delete_all_bsss_rules
+    ssh::rule::delete_all_bsss
+    ufw::rule::force_disable
+    ufw::rule::delete_all_bsss
     ssh::orchestrator::actions_after_port_change
     log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
 }
@@ -77,7 +77,7 @@ rollback::orchestrator::ssh() {
 # @exit_code:   0 - всегда
 rollback::orchestrator::ufw() {
     log_warn "Выполняется откат UFW..."
-    ufw::force_disable
+    ufw::rule::force_disable
     ufw::orchestrator::actions_after_ufw_change
     log_success "UFW отключен. Проверьте доступ к серверу."
 }
@@ -136,7 +136,7 @@ rollback::orchestrator::watchdog_timer() {
         log::new_line
         log::draw_lite_border
         log_info "Время истекло - выполняется ОТКАТ"
-        orchestrator::rollback
+        rollback::orchestrator::full
 
         if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
             kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
@@ -153,7 +153,7 @@ rollback::orchestrator::watchdog_timer() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 main() {
-    orchestrator::watchdog_timer "$@"
+    rollback::orchestrator::watchdog_timer "$@"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

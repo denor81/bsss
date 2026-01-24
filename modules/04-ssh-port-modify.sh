@@ -44,7 +44,7 @@ ssh::orchestrator::dispatch_logic() {
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
 ssh::orchestrator::config_exists() {
-    ssh::log_bsss_configs_w_port
+    ssh::config::log_bsss_with_ports
 
     log_info "Доступные действия:"
     log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
@@ -55,7 +55,7 @@ ssh::orchestrator::config_exists() {
     user_action=$(io::ask_value "Выберите" "" "^[012]$" "0-2" "0" | tr -d '\0') || return
 
     case "$user_action" in
-        1) ssh::reset_and_pass | ufw::reset_and_pass; ssh::orchestrator::actions_after_port_change ;;
+        1) ssh::rule::reset_and_pass | ufw::rule::reset_and_pass; ssh::orchestrator::actions_after_port_change ;;
         2) ssh::orchestrator::install_port_with_guard ;;
     esac
 }
@@ -85,28 +85,28 @@ ssh::orchestrator::install_port_with_guard() {
     local port
 
     # 1. Отображение меню
-    ssh::display_menu
+    ssh::ui::display_menu
 
     # 2. Получение выбора пользователя (точка возврата кода 2)
-    port=$(ssh::get_user_choice | tr -d '\0') || return
+    port=$(ssh::ui::get_new_port | tr -d '\0') || return
 
     # 3. Создание FIFO и запуск слушателя
     make_fifo_and_start_reader
 
     # 4. Запуск Rollback (ДО внесения изменений!)
-    watchdog_pid=$(orchestrator::watchdog_start "$WATCHDOG_FIFO")
+    watchdog_pid=$(rollback::orchestrator::watchdog_start "$WATCHDOG_FIFO")
 
     # 5. Интерактивные инструкции
     orchestrator::guard_ui_instructions "$port"
 
     # 6. Внесение изменений
-    ssh::apply_changes "$port"
+    ssh::rule::apply_changes "$port"
 
     # 7. Действия после изменений
     ssh::orchestrator::actions_after_port_change
 
     # 8. Проверка поднятия порта
-    if ! ssh::wait_for_port_up "$port"; then
+    if ! ssh::port::wait_for_up "$port"; then
         kill -USR2 "$watchdog_pid" 2>/dev/null || true
         wait "$watchdog_pid" 2>/dev/null || true
         # Заглушка для ожидания отката через сигнал от rollback.sh
@@ -115,7 +115,7 @@ ssh::orchestrator::install_port_with_guard() {
 
     # 9. Подтверждение и остановка Rollback
     if io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null; then
-        orchestrator::watchdog_stop "$watchdog_pid"
+        rollback::orchestrator::watchdog_stop "$watchdog_pid"
         log_info "Изменения зафиксированы, Rollback отключен"
     fi
 }
@@ -132,7 +132,7 @@ stop_script_by_rollback_timer() {
     exit 3
 }
 
-orchestrator::watchdog_start() {
+rollback::orchestrator::watchdog_start() {
     local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
 
     # Запускаем "Сторожа" отвязано от терминала
@@ -141,7 +141,7 @@ orchestrator::watchdog_start() {
     printf '%s' "$!" # Возвращаем PID для оркестратора
 }
 
-orchestrator::watchdog_stop() {
+rollback::orchestrator::watchdog_stop() {
     local watchdog_pid="$1"
     # Посылаем сигнал успешного завершения (USR1)
     kill -USR1 "$watchdog_pid" 2>/dev/null || true

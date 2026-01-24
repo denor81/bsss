@@ -12,7 +12,7 @@ ufw::menu::get_items() {
     local id=1
     
     # Пункт для переключения UFW
-    if ufw::is_active; then
+    if ufw::rule::is_active; then
         printf '%s|%s\0' "$id" "Выключить UFW"
     else
         printf '%s|%s\0' "$id" "Включить UFW"
@@ -39,7 +39,7 @@ ufw::menu::display() {
     local text
 
     log::draw_lite_border
-    ufw::log_active_ufw_rules
+    ufw::rule::log_active
     log_info "Доступные действия:"
 
     while IFS='|' read -r -d '' id_text || break; do
@@ -112,10 +112,10 @@ ufw::orchestrator::execute_action() {
 # @exit_code:   0 - успешно
 #               $? - код ошибки от ufw
 ufw::ui::toggle() {
-    if ufw::is_active; then
-        ufw::force_disable
+    if ufw::rule::is_active; then
+        ufw::rule::force_disable
     else
-        ufw::enable
+        ufw::rule::enable
     fi
 }
 
@@ -126,7 +126,7 @@ ufw::ui::toggle() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::ui::log_status() {
-    if ufw::is_active; then
+    if ufw::rule::is_active; then
         log_info "UFW ВКЛ"
     else
         log_info "UFW ВЫКЛ"
@@ -144,7 +144,7 @@ ufw::orchestrator::actions_after_ufw_change() {
     log::draw_lite_border
     log_actual_info "Актуальная информация после внесения изменений"
     ufw::ui::log_status
-    ufw::log_active_ufw_rules
+    ufw::rule::log_active
 }
 
 # @type:        Filter

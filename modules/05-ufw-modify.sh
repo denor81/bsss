@@ -33,15 +33,15 @@ ufw::orchestrator::run_module() {
     local watchdog_started=false
 
     # 1. Отображение меню
-    ufw::display_menu
+    ufw::menu::display
 
     # 2. Получение выбора пользователя (точка возврата кода 2)
-    action_id=$(ufw::get_user_choice | tr -d '\0') || return
+    action_id=$(ufw::menu::get_user_choice | tr -d '\0') || return
 
     # 3. Rollback только при включении UFW (action_id=1 и UFW сейчас выключен)
     #    Отключение UFW безопасно и не требует rollback
     #    Управление PING (action_id=2) не является критическим
-    if [[ "$action_id" == "1" ]] && ! ufw::is_active; then
+    if [[ "$action_id" == "1" ]] && ! ufw::rule::is_active; then
         make_fifo_and_start_reader
         watchdog_pid=$(rollback::orchestrator::watchdog_start "$WATCHDOG_FIFO")
         watchdog_started=true
@@ -49,14 +49,14 @@ ufw::orchestrator::run_module() {
     fi
 
     # 4. Внесение изменений
-    ufw::apply_changes "$action_id"
+    ufw::rule::apply_changes "$action_id"
 
     # 5. Действия после изменений
     ufw::orchestrator::actions_after_ufw_change
 
     # 6. Подтверждение и остановка Rollback (только при включении UFW)
     if [[ "$watchdog_started" == true ]]; then
-        if ufw::confirm_success; then
+        if ufw::ui::confirm_success; then
             rollback::orchestrator::watchdog_stop "$watchdog_pid"
         fi
     fi
