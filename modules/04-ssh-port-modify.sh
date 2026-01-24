@@ -27,12 +27,12 @@ trap stop_script_by_rollback_timer SIGUSR1
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
-orchestrator::dispatch_logic() {
+ssh::ssh::orchestrator::dispatch_logic() {
 
     if sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
-        orchestrator::bsss_config_exists
+        ssh::orchestrator::config_exists
     else
-        orchestrator::bsss_config_not_exists
+        ssh::orchestrator::config_not_exists
     fi
 }
 
@@ -43,7 +43,7 @@ orchestrator::dispatch_logic() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
-orchestrator::bsss_config_exists() {
+ssh::orchestrator::config_exists() {
     ssh::log_bsss_configs_w_port
 
     log_info "Доступные действия:"
@@ -56,7 +56,7 @@ orchestrator::bsss_config_exists() {
 
     case "$user_action" in
         1) ssh::reset_and_pass | ufw::reset_and_pass; orchestrator::actions_after_port_change ;;
-        2) orchestrator::install_new_port_w_guard ;;
+        2) ssh::orchestrator::install_port_with_guard ;;
     esac
 }
 
@@ -68,8 +68,8 @@ orchestrator::bsss_config_exists() {
 # @stdout:      нет
 # @exit_code:   0 — упешно
 #               $? — код ошибки дочернего процесса
-orchestrator::bsss_config_not_exists() {
-    orchestrator::install_new_port_w_guard
+ssh::orchestrator::config_not_exists() {
+    ssh::orchestrator::install_port_with_guard
 }
 
 # @type:        Orchestrator
@@ -80,7 +80,7 @@ orchestrator::bsss_config_not_exists() {
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
-orchestrator::install_new_port_w_guard() {
+ssh::orchestrator::install_port_with_guard() {
     local watchdog_pid
     local port
 
@@ -161,7 +161,7 @@ main() {
     
     # Запуск или возврат кода 2 при отказе пользователя
     if io::confirm_action "Изменить конфигурацию SSH порта?"; then
-        orchestrator::dispatch_logic
+        ssh::orchestrator::dispatch_logic
     else
         return
     fi

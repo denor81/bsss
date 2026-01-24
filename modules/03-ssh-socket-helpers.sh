@@ -10,7 +10,7 @@ set -Eeuo pipefail
 # @stdout:      нет
 # @exit_code:   0 - SSH уже настроен в service mode
 #               1 - требуется настройка
-ssh::is_already_configured() {
+ssh::socket::is_already_configured() {
     # Если сервис активен И сокет замаскирован — значит, мы уже всё настроили
     if systemctl is-active --quiet ssh.service && [[ "$(systemctl is-enabled ssh.socket 2>/dev/null)" == "masked" ]]; then
         return 0
@@ -24,7 +24,7 @@ ssh::is_already_configured() {
 # @stdout:      нет
 # @exit_code:   0 - SSH успешно переведен в service mode
 #               1 - ошибка при запуске SSH
-ssh::force_service_mode() {
+ssh::socket::force_service_mode() {
     log_info "Принудительная синхронизация SSH к Service Mode..."
 
     systemctl stop ssh.socket >/dev/null 2>&1

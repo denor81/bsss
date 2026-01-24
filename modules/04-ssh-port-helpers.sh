@@ -9,11 +9,11 @@
 # @stdout:      port\0
 # @exit_code:   0 - порт успешно установлен
 #               $? - ошибка в процессе
-ssh::install_new_port() {
+ssh::port::install_new() {
     local new_port
     read -r -d '' new_port
 
-    printf '%s\0' "$new_port" | ssh::create_bsss_config_file
+    printf '%s\0' "$new_port" | ssh::config::create_bsss_file
     printf '%s\0' "$new_port" | ufw::add_bsss_rule
 }
 
@@ -25,16 +25,16 @@ ssh::install_new_port() {
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
 #               $? - ошибка
-ssh::get_user_choice() {
+ssh::ui::get_new_port() {
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
     local suggested_port
-    suggested_port=$(ssh::generate_free_random_port) || return
+    suggested_port=$(ssh::port::generate_free_random_port) || return
 
     local new_port
     while true; do
         new_port=$(io::ask_value "Введите новый SSH порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port" "0" | tr -d '\0') || return
-        ssh::is_port_busy "$new_port" || { printf '%s\0' "$new_port"; break; }
+        ssh::port::is_port_busy "$new_port" || { printf '%s\0' "$new_port"; break; }
         log_error "SSH порт $new_port уже занят другим сервисом."
     done
 }
@@ -45,7 +45,7 @@ ssh::get_user_choice() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::log_bsss_configs_w_port() {
+ssh::config::log_bsss_with_ports() {
     local grep_result
     local found=0
 
@@ -71,7 +71,7 @@ ssh::log_bsss_configs_w_port() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::log_other_configs_w_port() {
+ssh::config::log_other_with_ports() {
     local grep_result
     local found=0
 
@@ -104,7 +104,7 @@ orchestrator::actions_after_port_change() {
     log::draw_lite_border
     log_actual_info "Актуальная информация после внесения изменений"
     ssh::log_active_ports_from_ss
-    ssh::log_bsss_configs_w_port
+    ssh::config::log_bsss_with_ports
     ufw::log_active_ufw_rules
 }
 
@@ -114,13 +114,13 @@ orchestrator::actions_after_port_change() {
 # @stdin:       port\0 (опционально)
 # @stdout:      port\0 (опционально)
 # @exit_code:   0 - успешно
-ssh::reset_and_pass() {
+ssh::rule::reset_and_pass() {
     local port=""
 
     # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
     [[ ! -t 0 ]] && IFS= read -r -d '' port || true
     
-    ssh::delete_all_bsss_rules
+    ssh::rule::delete_all_bsss
 
     # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
     [[ -n "$port" ]] && printf '%s\0' "$port" || true
@@ -132,7 +132,7 @@ ssh::reset_and_pass() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::delete_all_bsss_rules() {
+ssh::rule::delete_all_bsss() {
     # || true нужен потому что sys::get_paths_by_mask может возвращать пустоту и read зависает
     sys::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::delete_paths || true
 }
@@ -162,7 +162,7 @@ sys::restart_services() {
 # @stdout:      нет
 # @exit_code:   0 - порт свободен
 #               1 - порт занят
-ssh::is_port_busy() {
+ssh::port::is_port_busy() {
     ss -ltn | grep -qE ":$1([[:space:]]|$)"
 }
 
@@ -173,9 +173,9 @@ ssh::is_port_busy() {
 # @stdout:      port
 # @exit_code:   0 - порт успешно сгенерирован
 #               $? - ошибка
-ssh::generate_free_random_port() {
+ssh::port::generate_free_random_port() {
     while IFS= read -r port || break; do
-        if ! ssh::is_port_busy "$port"; then
+        if ! ssh::port::is_port_busy "$port"; then
             printf '%s\n' "$port"
             return
         fi
@@ -189,7 +189,7 @@ ssh::generate_free_random_port() {
 # @stdout:      нет
 # @exit_code:   0 - файл успешно создан
 #               1 - ошибка создания
-ssh::create_bsss_config_file() {
+ssh::config::create_bsss_file() {
     local path="${SSH_CONFIGD_DIR}/$BSSS_SSH_CONFIG_FILE_NAME"
     local port
     read -r -d '' port
@@ -214,7 +214,7 @@ EOF
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::display_menu() {
+ssh::ui::display_menu() {
     log::draw_lite_border
     log_info "Доступные действия:"
     log_info_simple_tab "0. Выход"
@@ -228,9 +228,9 @@ ssh::display_menu() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - ошибка в процессе
-ssh::apply_changes() {
+ssh::rule::apply_changes() {
     local port="$1"
-    printf '%s\0' "$port" | ssh::reset_and_pass | ufw::reset_and_pass | ssh::install_new_port
+    printf '%s\0' "$port" | ssh::rule::reset_and_pass | ufw::reset_and_pass | ssh::port::install_new
 }
 
 # @type:        Filter
@@ -244,7 +244,7 @@ ssh::apply_changes() {
 # @stdout:      нет
 # @exit_code:   0 - порт успешно поднят
 #               1 - порт не поднялся в течение таймаута
-ssh::wait_for_port_up() {
+ssh::port::wait_for_up() {
     local port="$1"
     local timeout="${SSH_PORT_CHECK_TIMEOUT:-5}"
     local elapsed=0
