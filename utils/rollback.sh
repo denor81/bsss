@@ -21,7 +21,7 @@ ROLLBACK_TYPE="${ROLLBACK_TYPE:-}"
 trap "" INT TERM
 trap 'log_stop' EXIT
 trap 'orchestrator::stop_rollback' SIGUSR1
-trap 'orchestrator::immediate_rollback' SIGUSR2
+trap 'rollback::orchestrator::immediate' SIGUSR2
 
 # @type:        Orchestrator
 # @description: Останавливает процесс таймера отката и завершает скрипт
@@ -29,7 +29,7 @@ trap 'orchestrator::immediate_rollback' SIGUSR2
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-orchestrator::stop_rollback() {
+rollback::orchestrator::stop() {
     kill "$SLEEP_PID" 2>/dev/null
     exit 0
 }
@@ -41,7 +41,7 @@ orchestrator::stop_rollback() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-orchestrator::immediate_rollback() {
+rollback::orchestrator::immediate() {
     kill "$SLEEP_PID" 2>/dev/null
     log::draw_lite_border
     orchestrator::rollback
@@ -60,7 +60,7 @@ orchestrator::immediate_rollback() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-orchestrator::ssh_rollback() {
+rollback::orchestrator::ssh() {
     log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
     ssh::delete_all_bsss_rules
     ufw::force_disable
@@ -75,7 +75,7 @@ orchestrator::ssh_rollback() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-orchestrator::ufw_rollback() {
+rollback::orchestrator::ufw() {
     log_warn "Выполняется откат UFW..."
     ufw::force_disable
     orchestrator::actions_after_ufw_change
@@ -89,10 +89,10 @@ orchestrator::ufw_rollback() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-orchestrator::rollback() {
+rollback::orchestrator::full() {
     case "$ROLLBACK_TYPE" in
-        "ssh") orchestrator::ssh_rollback ;;
-        "ufw") orchestrator::ufw_rollback ;;
+        "ssh") rollback::orchestrator::ssh ;;
+        "ufw") rollback::orchestrator::ufw ;;
         *) log_error "Неизвестный тип отката: $ROLLBACK_TYPE"; return 1 ;;
     esac
 }
@@ -105,7 +105,7 @@ orchestrator::rollback() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-orchestrator::watchdog_timer() {
+rollback::orchestrator::watchdog_timer() {
     MAIN_SCRIPT_PID="$1"
     local watchdog_fifo="$2"
     local timeout="$ROLLBACK_TIMER_SECONDS"
