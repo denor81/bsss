@@ -23,7 +23,7 @@ trap log_stop EXIT
 # @exit_code:   0 - модули найдены и все успешно выполнены
 #               1 - в случае отсутствия модулей
 #               2 - в случае ошибки одного из модулей
-run_modules_polling() {
+runner::module::run_check() {
     local err=0
     local found=0
 
@@ -97,7 +97,7 @@ runner::module::select_modify() {
 # @stdout:      нет
 # @exit_code:   0 - модули найдены и все успешно выполнены
 #               $? - проброс кода ошибки от модуля
-run_modules_modify() {
+runner::module::run_modify() {
     while true; do
         local exit_code=0
         local selected_module
@@ -110,7 +110,7 @@ run_modules_modify() {
 
         # Обработка главного меню
         if [[ "$selected_module" == "CHECK" ]]; then
-            run_modules_polling
+            runner::module::run_check
         elif [[ "$selected_module" == "EXIT" ]]; then
             break
         fi 
@@ -139,9 +139,9 @@ run_modules_modify() {
 main() {
     log_start
 
-    run_modules_polling
+    runner::module::run_check
     io::confirm_action "Запустить настройку?"
-    run_modules_modify
+    runner::module::run_modify
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
