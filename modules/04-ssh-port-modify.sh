@@ -116,6 +116,7 @@ orchestrator::install_new_port_w_guard() {
     # 9. Подтверждение и остановка Rollback
     if io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null; then
         orchestrator::watchdog_stop "$watchdog_pid"
+        log_info "Изменения зафиксированы, Rollback отключен"
     fi
 }
 
@@ -136,7 +137,7 @@ orchestrator::watchdog_start() {
 
     # Запускаем "Сторожа" отвязано от терминала
     # Передаем PID основного скрипта ($$) первым аргументом
-    ROLLBACK_TYPE="ssh" nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
+    ROLLBACK_TYPE="ssh" nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >wd.log 2>&1 &
     printf '%s' "$!" # Возвращаем PID для оркестратора
 }
 
@@ -145,7 +146,6 @@ orchestrator::watchdog_stop() {
     # Посылаем сигнал успешного завершения (USR1)
     kill -USR1 "$watchdog_pid" 2>/dev/null || true
     wait "$watchdog_pid" 2>/dev/null || true
-    log_info "Изменения зафиксированы, Rollback отключен"
     printf '%s\0' "$WATCHDOG_FIFO" | sys::delete_paths
 }
 

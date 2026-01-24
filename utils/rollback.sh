@@ -3,22 +3,23 @@
 
 set -Eeuo pipefail
 
-readonly UTILS_DIR_PATH="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
-source "${UTILS_DIR_PATH}/../lib/vars.conf"
-source "${UTILS_DIR_PATH}/../lib/logging.sh"
-source "${UTILS_DIR_PATH}/../lib/user_confirmation.sh"
-source "${UTILS_DIR_PATH}/../modules/common-helpers.sh"
-source "${UTILS_DIR_PATH}/../modules/04-ssh-port-helpers.sh"
-source "${UTILS_DIR_PATH}/../modules/05-ufw-helpers.sh"
-source "${UTILS_DIR_PATH}/../modules/03-ssh-socket-helpers.sh"
+source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/lib/user_confirmation.sh"
+source "${PROJECT_ROOT}/modules/common-helpers.sh"
+source "${PROJECT_ROOT}/modules/04-ssh-port-helpers.sh"
+source "${PROJECT_ROOT}/modules/05-ufw-helpers.sh"
 
+MAIN_SCRIPT_PID=""
 SLEEP_PID=""
 MAIN_SCRIPT=""
 ROLLBACK_TYPE="${ROLLBACK_TYPE:-}"
 
-trap 'log_stop 2>&3' EXIT
+trap "" INT TERM
+trap 'log_stop' EXIT
 trap 'orchestrator::stop_rollback' SIGUSR1
 trap 'orchestrator::immediate_rollback' SIGUSR2
 
@@ -42,8 +43,8 @@ orchestrator::stop_rollback() {
 # @exit_code:   0 - всегда
 orchestrator::immediate_rollback() {
     kill "$SLEEP_PID" 2>/dev/null
-    log::draw_lite_border 2>&3
-    orchestrator::rollback 2>&3
+    log::draw_lite_border
+    orchestrator::rollback
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
         kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
@@ -60,12 +61,12 @@ orchestrator::immediate_rollback() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 orchestrator::ssh_rollback() {
-    log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..." 2>&3
-    ssh::delete_all_bsss_rules 2>&3
-    ufw::force_disable 2>&3
-    ufw::delete_all_bsss_rules 2>&3
-    orchestrator::actions_after_port_change 2>&3
-    log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам." 2>&3
+    log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
+    ssh::delete_all_bsss_rules
+    ufw::force_disable
+    ufw::delete_all_bsss_rules
+    orchestrator::actions_after_port_change
+    log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
 }
 
 # @type:        Orchestrator
@@ -75,22 +76,10 @@ orchestrator::ssh_rollback() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 orchestrator::ufw_rollback() {
-    log_warn "Выполняется откат UFW..." 2>&3
-    ufw::force_disable 2>&3
-    orchestrator::actions_after_ufw_change 2>&3
-    log_success "UFW отключен. Проверьте доступ к серверу." 2>&3
-}
-
-# @type:        Orchestrator
-# @description: Откат SSH на socket режим
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда
-orchestrator::ssh_socket_rollback() {
-    log_warn "Откат на socket-режим..." 2>&3
-    ssh::switch_to_socket_mode 2>&3
-    log_success "SSH возвращен в socket-режим" 2>&3
+    log_warn "Выполняется откат UFW..."
+    ufw::force_disable
+    orchestrator::actions_after_ufw_change
+    log_success "UFW отключен. Проверьте доступ к серверу."
 }
 
 # @type:        Orchestrator
@@ -104,7 +93,6 @@ orchestrator::rollback() {
     case "$ROLLBACK_TYPE" in
         "ssh") orchestrator::ssh_rollback ;;
         "ufw") orchestrator::ufw_rollback ;;
-        "ssh_socket") orchestrator::ssh_socket_rollback ;;
         *) log_error "Неизвестный тип отката: $ROLLBACK_TYPE"; return 1 ;;
     esac
 }
@@ -120,45 +108,41 @@ orchestrator::rollback() {
 orchestrator::watchdog_timer() {
     MAIN_SCRIPT_PID="$1"
     local watchdog_fifo="$2"
-    local timeout="${SSH_SOCKET_ROLLBACK_TIMER_SECONDS:-$ROLLBACK_TIMER_SECONDS}"
+    local timeout="$ROLLBACK_TIMER_SECONDS"
+
     exec 3> "$watchdog_fifo"
-    log_start 2>&3
-    log_info "Фоновый таймер запущен на $timeout сек..." 2>&3
+
+    mkdir -p "${PROJECT_ROOT}/logs"
+    readonly ROLLBACK_LOG_FILE="${PROJECT_ROOT}/logs/rb_$(date +%Y-%m-%d_%H-%M-%S).log"
+    exec > >(tee -a "$ROLLBACK_LOG_FILE" > "$watchdog_fifo") 2>&1
+
+    log_start
+    log_info "Фоновый таймер запущен на $timeout сек..."
     
     local rollback_message
     case "$ROLLBACK_TYPE" in
-        "ssh")
-            rollback_message="будут сброшены настройки ${UTIL_NAME^^} для SSH порта и отключен UFW"
-            ;;
-        "ufw")
-            rollback_message="будет отключен UFW"
-            ;;
-        "ssh_socket")
-            rollback_message="SSH будет возвращен в socket-режим"
-            ;;
-        *)
-            rollback_message="будут сброшены настройки"
-            ;;
+        "ssh") rollback_message="будут сброшены настройки ${UTIL_NAME^^} для SSH порта и отключен UFW" ;;
+        "ufw") rollback_message="будет отключен UFW" ;;
+        *) rollback_message="будут сброшены настройки" ;;
     esac
     
-    log_bold_info "По истечению таймера $rollback_message" 2>&3
-    log_bold_info "В случае разрыва текущей сессии подключайтесь к серверу по старым параметрам после истечения таймера" 2>&3
+    log_bold_info "По истечению таймера $rollback_message"
+    log_bold_info "В случае разрыва текущей сессии подключайтесь к серверу по старым параметрам после истечения таймера"
 
     sleep "$timeout" &
     SLEEP_PID=$!
 
     if wait "$SLEEP_PID" 2>/dev/null; then
-        log::new_line >&3
-        log::draw_lite_border 2>&3
-        log_info "Время истекло - выполняется ОТКАТ" 2>&3
-        orchestrator::rollback 2>&3
+        log::new_line
+        log::draw_lite_border
+        log_info "Время истекло - выполняется ОТКАТ"
+        orchestrator::rollback
 
         if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
             kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
             wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
         fi
     fi
-    log_stop 2>&3
     exec 3>&-
 }
 
