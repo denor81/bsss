@@ -27,7 +27,7 @@ sys::file::get_paths_by_mask() {
 # @stdin:       path\0 (0..N)
 # @stdout:      path:type\0 (0..N)
 # @exit_code:   0 - всегда
-sys::get_modules_paths_w_type () {
+sys::module::get_paths_w_type () {
     xargs -r0 awk -F ':[[:space:]]+' '
         BEGIN { IGNORECASE=1; ORS="\0" }
         /^# MODULE_TYPE:/ {
@@ -44,7 +44,7 @@ sys::get_modules_paths_w_type () {
 # @stdin:       path:type\0 (0..N)
 # @stdout:      path\0 (0..N)
 # @exit_code:   0 - всегда
-sys::get_modules_by_type () {
+sys::module::get_by_type () {
     awk -v type="$1" -v RS='\0' -F'<:>' '
         type == $2 { printf "%s\0", $1 }
     '
@@ -70,7 +70,7 @@ sys::file::delete() {
 # @stdin:       нет
 # @stdout:      port\0 (0..N)
 # @exit_code:   0 - всегда
-ssh::get_ports_from_ss() {
+ssh::port::get_from_ss() {
     ss -Hltnp | awk '
         BEGIN { ORS="\0" }
         /"sshd"/ {
@@ -87,7 +87,7 @@ ssh::get_ports_from_ss() {
 # @stdin:       path\0
 # @stdout:      port\0
 # @exit_code:   0 - всегда
-ssh::get_first_port_from_path() {
+ssh::port::get_first_from_path() {
     xargs -r0 awk '
         BEGIN { IGNORECASE=1; ORS="\0"; }
         /^\s*Port\s+/ {
@@ -105,11 +105,11 @@ ssh::get_first_port_from_path() {
 # @stdout:      нет
 # @exit_code:   0 - порты определены
 #               1 - порты не определены
-ssh::log_active_ports_from_ss() {
+ssh::port::log_active_from_ss() {
     local strict_mode=${1:-0}
 
     local active_ports=""
-    active_ports=$(ssh::get_ports_from_ss | tr '\0' ',' | sed 's/,$//')
+    active_ports=$(ssh::port::get_from_ss | tr '\0' ',' | sed 's/,$//')
 
     if [[ -z "$active_ports" ]]; then
         log_error "Нет активных SSH портов [ss -ltnp]"

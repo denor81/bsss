@@ -20,7 +20,7 @@ source "${PROJECT_ROOT}/modules/04-ssh-port-helpers.sh"
 # @exit_code:   0 - успешно
 #               $? - ошибка при проверке портов
 check() {
-    ssh::log_active_ports_from_ss "1"
+    ssh::port::log_active_from_ss "1"
     ssh::config::log_bsss_with_ports
     ssh::config::log_other_with_ports
 }

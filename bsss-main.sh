@@ -34,8 +34,8 @@ runner::module::run_check() {
             err=1
         fi
     done 3< <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
-    | sys::get_modules_paths_w_type \
-    | sys::get_modules_by_type "$MODULE_TYPE_CHECK")
+    | sys::module::get_paths_w_type \
+    | sys::module::get_by_type "$MODULE_TYPE_CHECK")
 
     (( found == 0 )) && { log_error "Запуск не возможен, Модули не найдены"; log::draw_border; return 1; }
     (( err > 0 )) && { log_error "Запуск не возможен, один из модулей показывает ошибку"; log::draw_border; return 2; }
@@ -104,8 +104,8 @@ runner::module::run_modify() {
 
         # Получаем выбранный модуль через пайплайн
         selected_module=$(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
-            | sys::get_modules_paths_w_type \
-            | sys::get_modules_by_type "$MODULE_TYPE_MODIFY" \
+            | sys::module::get_paths_w_type \
+            | sys::module::get_by_type "$MODULE_TYPE_MODIFY" \
             | runner::module::select_modify | tr -d '\0') || return
 
         # Обработка главного меню

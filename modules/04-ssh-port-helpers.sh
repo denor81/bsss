@@ -99,11 +99,11 @@ ssh::config::log_other_with_ports() {
 # @exit_code:   0 - действия успешно выполнены
 #               $? - ошибка в процессе
 ssh::orchestrator::actions_after_port_change() {
-    sys::restart_services
+    sys::service::restart
 
     log::draw_lite_border
     log_actual_info "Актуальная информация после внесения изменений"
-    ssh::log_active_ports_from_ss
+    ssh::port::log_active_from_ss
     ssh::config::log_bsss_with_ports
     ufw::rule::log_active
 }
@@ -137,26 +137,6 @@ ssh::rule::delete_all_bsss() {
     sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::file::delete || true
 }
 
-# @type:        Orchestrator
-# @description: Перезапускает SSH сервис после проверки конфигурации
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - сервис успешно перезапущен
-#               1 - ошибка конфигурации
-sys::restart_services() {
-    if sshd -t; then
-        systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
-        systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
-    else
-        log_error "Ошибка конфигурации ssh [sshd -t]"
-        return 1
-    fi
-}
-
-# @type:        Filter
-# @description: Проверяет, занят ли указанный порт
-# @params:
 #   port        Номер порта для проверки
 # @stdin:       нет
 # @stdout:      нет
@@ -255,7 +235,7 @@ ssh::port::wait_for_up() {
 
     while (( elapsed < timeout )); do
         # Проверяем, есть ли порт в списке активных
-        if ssh::get_ports_from_ss | grep -qzxF "$port"; then
+        if ssh::port::get_from_ss | grep -qzxF "$port"; then
             log_info "SSH порт $port успешно поднят"
             return 0
         fi
