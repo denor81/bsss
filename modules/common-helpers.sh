@@ -126,7 +126,7 @@ ssh::port::log_active_from_ss() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::rule::log_active() {
+ufw::log::rules() {
     local rule
     local found=0
 
@@ -268,40 +268,46 @@ ufw::rule::force_disable() {
     fi
 }
 
-# @type:        Filter
-# @description: Активирует UFW
+# @type:        Orchestrator
+# @description: Запускает фоновый процесс rollback (watchdog)
+# @params:
+#   watchdog_fifo путь к FIFO для коммуникации
+# @stdin:       нет
+# @stdout:      PID процесса watchdog
+# @exit_code:   0 - успешно
+rollback::orchestrator::watchdog_start() {
+    local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
+
+    # Запускаем "Сторожа" отвязано от терминала
+    # Передаем PID основного скрипта ($$) первым аргументом
+    ROLLBACK_TYPE="$1" nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
+    printf '%s' "$!" # Возвращаем PID для оркестратора
+}
+
+# @type:        Orchestrator
+# @description: Останавливает процесс rollback (watchdog) по PID
+# @params:
+#   watchdog_pid PID процесса watchdog для остановки
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+rollback::orchestrator::watchdog_stop() {
+    # Посылаем сигнал успешного завершения (USR1)
+    kill -USR1 "$WATCHDOG_PID" 2>/dev/null || true
+    wait "$WATCHDOG_PID" 2>/dev/null || true
+    log_info "Rollback отключен [PID: $WATCHDOG_PID]"
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
+}
+
+# @type:        Orchestrator
+# @description: Создает FIFO и запускает слушатель для коммуникации с rollback
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::rule::enable() {
-    if ufw --force enable >/dev/null 2>&1; then
-        log_info "UFW: Активирован [ufw --force enable]"
-    else
-        log_error "Ошибка при активации [ufw --force enable]"
-    fi
-}
-
-# @type:        Filter
-# @description: Проверяет конфигурацию sshd на валидность
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - конфигурация валидна
-#               1 - ошибка в конфигурации
-sys::file::validate_sshd_config() {
-    local output
-    output=$(sshd -t 2>&1)
-    local exit_code=$?
-    
-    if [[ $exit_code -eq 0 ]]; then
-        return 0
-    fi
-    
-    if [[ "$output" == *"Missing privilege separation directory"* ]]; then
-        return 0
-    fi
-    
-    echo "$output" >&2
-    return $exit_code
+make_fifo_and_start_reader() {
+    mkfifo "$WATCHDOG_FIFO"
+    log::new_line
+    log_info "Создан FIFO: $WATCHDOG_FIFO"
+    cat "$WATCHDOG_FIFO" >&2 &
 }

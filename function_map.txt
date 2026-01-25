@@ -58,10 +58,10 @@ ufw::menu::get_items()<:>Source<:>Генерирует список доступ
 ufw::menu::display()<:>Sink<:>Отображает пункты меню пользователю (вывод только в stderr)<:>./modules/05-ufw-helpers.sh
 ufw::menu::get_user_choice()<:>Source<:>Запрашивает выбор пользователя и возвращает выбранный ID<:>./modules/05-ufw-helpers.sh
 ufw::orchestrator::execute_action()<:>Orchestrator<:>Выполняет выбранное действие на основе ID<:>./modules/05-ufw-helpers.sh
-ufw::ui::toggle()<:>Sink<:>Переключает состояние UFW<:>./modules/05-ufw-helpers.sh
-ufw::ui::log_status()<:>Sink<:>Логирует состояние UFW<:>./modules/05-ufw-helpers.sh
-ufw::orchestrator::actions_after_ufw_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/05-ufw-helpers.sh
-ufw::rule::apply_changes()<:>Filter<:>Применяет изменения UFW на основе выбранного действия<:>./modules/05-ufw-helpers.sh
+ufw::ui::status_toggle()<:>Sink<:>Переключает состояние UFW<:>./modules/05-ufw-helpers.sh
+ufw::log::status()<:>Sink<:>Логирует состояние UFW<:>./modules/05-ufw-helpers.sh
+ufw::orchestrator::actions_after_ufw_toggle()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/05-ufw-helpers.sh
+ufw::orchestrator::apply_changes()<:>Filter<:>Применяет изменения UFW на основе выбранного действия<:>./modules/05-ufw-helpers.sh
 ufw::ui::confirm_success()<:>Filter<:>Запрашивает подтверждение успешной работы UFW<:>./modules/05-ufw-helpers.sh
 ufw::ping::is_configured()<:>Filter<:>Проверяет, существует ли бэкап файл настроек PING<:>./modules/05-ufw-helpers.sh
 ufw::ping::backup_file()<:>Filter<:>Создает бэкап файла before.rules<:>./modules/05-ufw-helpers.sh
@@ -84,7 +84,7 @@ sys::file::delete()<:>Filter<:>Удаляет указанные файлы и �
 ssh::port::get_from_ss()<:>Source<:>Получает активные SSH порты из ss<:>./modules/common-helpers.sh
 ssh::port::get_first_from_path()<:>Filter<:>Получает первый порт из path<:>./modules/common-helpers.sh
 ssh::port::log_active_from_ss()<:>Orchestrator<:>Проверяет возможность определения активных портов<:>./modules/common-helpers.sh
-ufw::rule::log_active()<:>Orchestrator<:>Выводит активные правила UFW<:>./modules/common-helpers.sh
+ufw::log::rules()<:>Orchestrator<:>Выводит активные правила UFW<:>./modules/common-helpers.sh
 ufw::rule::reset_and_pass()<:>Filter<:>Удаляет все правила UFW BSSS и передает порт дальше<:>./modules/common-helpers.sh
 ufw::rule::delete_all_bsss()<:>Orchestrator<:>Удаляет все правила UFW BSSS<:>./modules/common-helpers.sh
 ufw::rule::get_all_bsss()<:>Source<:>Получает все правила UFW BSSS<:>./modules/common-helpers.sh
@@ -92,7 +92,7 @@ ufw::rule::get_all()<:>Source<:>Получает все правила UFW<:>./m
 ufw::rule::add_bsss()<:>Filter<:>Добавляет правило UFW для BSSS<:>./modules/common-helpers.sh
 ufw::rule::is_active()<:>Filter<:>Проверяет, активен ли UFW<:>./modules/common-helpers.sh
 ufw::rule::force_disable()<:>Filter<:>Деактивирует UFW (пропускает если уже деактивирован)<:>./modules/common-helpers.sh
-ufw::rule::enable()<:>Filter<:>Активирует UFW<:>./modules/common-helpers.sh
+ufw::rule::force_enable()<:>Filter<:>Активирует UFW<:>./modules/common-helpers.sh
 sys::file::validate_sshd_config()<:>Filter<:>Проверяет конфигурацию sshd на валидность<:>./modules/common-helpers.sh
 is_sourced()<:>Filter<:>Проверяет, был ли скрипт вызван через source<:>./oneline-runner.sh
 log_success()<:>Sink<:>Выводит успешное сообщение с символом [V]<:>./oneline-runner.sh

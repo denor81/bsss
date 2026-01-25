@@ -10,7 +10,6 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 readonly MAIN_FILE="bsss-main.sh"
 readonly ALLOWED_PARAMS="hu"
 readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление]"
-readonly CURRENT_MODULE_NAME="$(basename "$0")" # Used in logging
 
 ACTION=""
 

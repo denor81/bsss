@@ -13,8 +13,6 @@ source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/common-helpers.sh"
 source "${PROJECT_ROOT}/modules/04-ssh-port-helpers.sh"
 
-WATCHDOG_FIFO="$PROJECT_ROOT/bsss_watchdog_$$.fifo"
-
 # Сработает при откате изменений при сигнале USR1
 trap log_stop EXIT
 trap stop_script_by_rollback_timer SIGUSR1
@@ -85,7 +83,9 @@ ssh::orchestrator::install_port_with_guard() {
     local port
 
     # 1. Отображение меню
-    ssh::ui::display_menu
+    log::draw_lite_border
+    log_info "Доступные действия:"
+    log_info_simple_tab "0. Выход"
 
     # 2. Получение выбора пользователя (точка возврата кода 2)
     port=$(ssh::ui::get_new_port | tr -d '\0') || return
@@ -120,34 +120,18 @@ ssh::orchestrator::install_port_with_guard() {
     fi
 }
 
-make_fifo_and_start_reader() {
-    mkfifo "$WATCHDOG_FIFO"
-    log::new_line
-    log_info "Создан FIFO: $WATCHDOG_FIFO"
-    cat "$WATCHDOG_FIFO" >&2 &
-}
-
 stop_script_by_rollback_timer() {
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     exit 3
 }
 
-rollback::orchestrator::watchdog_start() {
-    local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
-
-    # Запускаем "Сторожа" отвязано от терминала
-    # Передаем PID основного скрипта ($$) первым аргументом
-    ROLLBACK_TYPE="ssh" nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
-    printf '%s' "$!" # Возвращаем PID для оркестратора
-}
-
-rollback::orchestrator::watchdog_stop() {
-    local watchdog_pid="$1"
-    # Посылаем сигнал успешного завершения (USR1)
-    kill -USR1 "$watchdog_pid" 2>/dev/null || true
-    wait "$watchdog_pid" 2>/dev/null || true
-    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
-}
+# rollback::orchestrator::watchdog_stop() {
+#     local watchdog_pid="$1"
+#     # Посылаем сигнал успешного завершения (USR1)
+#     kill -USR1 "$watchdog_pid" 2>/dev/null || true
+#     wait "$watchdog_pid" 2>/dev/null || true
+#     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
+# }
 
 orchestrator::guard_ui_instructions() {
     local port="$1"

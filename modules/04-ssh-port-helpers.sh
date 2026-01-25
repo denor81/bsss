@@ -105,7 +105,7 @@ ssh::orchestrator::actions_after_port_change() {
     log_actual_info "Актуальная информация после внесения изменений"
     ssh::port::log_active_from_ss
     ssh::config::log_bsss_with_ports
-    ufw::rule::log_active
+    ufw::log::rules
 }
 
 # @type:        Filter
@@ -186,18 +186,6 @@ EOF
         log_error "Не удалось создать правило SSH: $path"
         return 1
     fi
-}
-
-# @type:        Sink
-# @description: Отображает пункты меню пользователю
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ssh::ui::display_menu() {
-    log::draw_lite_border
-    log_info "Доступные действия:"
-    log_info_simple_tab "0. Выход"
 }
 
 # @type:        Filter

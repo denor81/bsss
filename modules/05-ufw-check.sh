@@ -5,7 +5,6 @@
 set -Eeuo pipefail
 
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
-readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
@@ -22,8 +21,9 @@ source "${PROJECT_ROOT}/modules/05-ufw-helpers.sh"
 #               1 - ошибка установки или отказ от установки
 check() {
     if command -v ufw > /dev/null 2>&1; then
-        ufw::ui::log_status
-        ufw::rule::log_active
+        ufw::log::status
+        ufw::log::rules
+        ufw::log::ping_status
     else
         log_error "UFW не установлен"
         if io::confirm_action "Установить UFW сейчас? [apt update && apt install ufw -y]" || return; then

@@ -177,7 +177,7 @@ ssh::port::generate_free_random_port() {
   - Примеры нейминга:
     * Оркестраторы: ssh::ssh::orchestrator::actions_after_port_change, ufw::orchestrator::run_module
     * UI меню: ufw::menu::display, ufw::menu::get_user_choice
-    * UI интерактивные: ssh::ui::get_new_port, ufw::ui::toggle
+    * UI интерактивные: ssh::ui::get_new_port, ufw::ui::status_toggle
     * Проверки: ssh::port::is_port_busy, ssh::socket::is_configured
     * Генерация: ssh::port::generate_free_random_port, ssh::config::create_bsss_file
     * Удаление/сброс: ufw::rule::delete_all_bsss, ssh::rule::reset_and_pass

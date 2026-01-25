@@ -4,7 +4,6 @@
 set -Eeuo pipefail
 
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
-readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
@@ -78,7 +77,7 @@ rollback::orchestrator::ssh() {
 rollback::orchestrator::ufw() {
     log_warn "Выполняется откат UFW..."
     ufw::rule::force_disable
-    ufw::orchestrator::actions_after_ufw_change
+    ufw::orchestrator::actions_after_ufw_toggle
     log_success "UFW отключен. Проверьте доступ к серверу."
 }
 
