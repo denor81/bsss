@@ -40,6 +40,16 @@ ufw::menu::display() {
 }
 
 # @type:        Source
+# @description: Считает количество пунктов меню (Корректно работает до 9 пунктов)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      number - количество пунктов меню
+# @exit_code:   0 - успешно
+ufw::menu::count_items() {
+    ufw::menu::get_items | grep -cz '^'
+}
+
+# @type:        Source
 # @description: Запрашивает выбор пользователя и возвращает выбранный ID
 # @params:      нет
 # @stdin:       нет
@@ -47,33 +57,29 @@ ufw::menu::display() {
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
 ufw::menu::get_user_choice() {
-    local max_id=0
-    max_id=$(ufw::menu::get_items | grep -cz '^')
-
-    local pattern="^[0-$max_id]$"
+    local qty_items=$(ufw::menu::count_items)
+    local pattern="^[0-$qty_items]$"
+    local hint="0-$qty_items"
 
     # Вернет код 2 при выборе 0
-    local selection
-    selection=$(io::ask_value "Выберите действие" "" "$pattern" "0-$max_id" "0" | tr -d '\0') || return
-
-    printf '%s\0' "$selection"
+    io::ask_value "Выберите действие" "" "$pattern" "$hint" "0" || return
 }
 
 # @type:        Orchestrator
 # @description: Применяет изменения UFW на основе выбранного действия
 # @params:
-#   action_id   ID выбранного действия
+#   menu_id     ID выбранного действия
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - ошибка в процессе
 ufw::orchestrator::apply_changes() {
-    local action_id="$1"
+    local menu_id="$1"
 
-    case "$action_id" in
+    case "$menu_id" in
         1) ufw::ui::status_toggle ;;
         2) ufw::ui::ping_toggle ;;
-        *) log_error "Неверный ID действия: [$action_id]"; return 1 ;;
+        *) log_error "Неверный ID действия: [$menu_id]"; return 1 ;;
     esac
 }
 
@@ -156,9 +162,9 @@ ufw::log::status() {
 # @exit_code:   0 - успешно
 ufw::log::ping_status() {
     if ufw::ping::is_configured; then
-        log_info "UFW ping отключен [DROP] [Состояние: модифицировано]"
+        log_info "UFW ping запрещен [DROP] [Состояние: модифицировано]"
     else
-        log_info "UFW ping работает [ACCEPT] [Состояние: по умолчанию]"
+        log_info "UFW ping разрешен [ACCEPT] [Состояние: по умолчанию]"
     fi
 }
 

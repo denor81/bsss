@@ -25,16 +25,17 @@ trap stop_script_by_rollback_timer SIGUSR1
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
 ufw::orchestrator::run_module() {
+    #
+    # Через пайп и сабшелл не получается потому что в get_user_choice есть блокирующй read и он вешает терминал при откате
+    # ufw::menu::get_user_choice | ufw::orchestrator::apply_changes
+    #
 
-    # 1. Отображение меню
     ufw::menu::display
 
-    # 2. Получение выбора пользователя (точка возврата кода 2)
-    local action_id
-    action_id=$(ufw::menu::get_user_choice | tr -d '\0') || return
-
-    # 4. Внесение изменений
-    ufw::orchestrator::apply_changes "$action_id"
+    local menu_id
+    menu_id=$(ufw::menu::get_user_choice | tr -d '\0') || return
+    # Запускаем в текущем процессе, что бы корректно завершать read при получении сигнала отката SIGUSR1
+    ufw::orchestrator::apply_changes "$menu_id"
 }
 
 # @type:        Orchestrator
@@ -44,6 +45,7 @@ ufw::orchestrator::run_module() {
 # @stdout:      нет
 # @exit_code:   3 - код завершения при откате
 stop_script_by_rollback_timer() {
+    log_info "Получен сигнал USR1 - остановка скрипта из-за отката"
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     exit 3
 }

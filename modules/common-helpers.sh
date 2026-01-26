@@ -276,12 +276,12 @@ ufw::rule::force_disable() {
 # @stdout:      PID процесса watchdog
 # @exit_code:   0 - успешно
 rollback::orchestrator::watchdog_start() {
+    local rollback_type="$1"
     local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
 
-    # Запускаем "Сторожа" отвязано от терминала
-    # Передаем PID основного скрипта ($$) первым аргументом
-    ROLLBACK_TYPE="$1" nohup bash "$rollback_module" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
-    printf '%s' "$!" # Возвращаем PID для оркестратора
+    # Сторож в фоне
+    nohup bash "$rollback_module" "$rollback_type" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
+    printf '%s' $! # Возвращаем PID для оркестратора
 }
 
 # @type:        Orchestrator
@@ -293,9 +293,9 @@ rollback::orchestrator::watchdog_start() {
 # @exit_code:   0 - успешно
 rollback::orchestrator::watchdog_stop() {
     # Посылаем сигнал успешного завершения (USR1)
+    log_info "Посылаем сигнал отключения rollback USR1 [PID: $WATCHDOG_PID]"
     kill -USR1 "$WATCHDOG_PID" 2>/dev/null || true
     wait "$WATCHDOG_PID" 2>/dev/null || true
-    log_info "Rollback отключен [PID: $WATCHDOG_PID]"
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
 }
 

@@ -6,42 +6,40 @@
 
 set -Eeuo pipefail
 
-readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-readonly CURRENT_MODULE_NAME="$(basename "$0")"
-source "${PROJECT_ROOT}/lib/logging.sh"
 
-ssh::force_service_mode() {
-    local units_to_stop=("ssh.socket" "ssh.service")
-    
-    log_info "Принудительный перевод SSH в Service Mode..."
-
-    # 1. Сначала жестко останавливаем всё, что связано с SSH
-    # Это очищает порты и убивает возможные конфликты
-    for unit in "${units_to_stop[@]}"; do
-        systemctl stop "$unit" >/dev/null 2>&1
-    done
-
-    # Сбрасываем счетчики ошибок сервисов systemd
-    systemctl reset-failed
-
-    # 2. Отключаем сокет полностью (Masking — лучший способ избежать автозапуска)
-    systemctl disable ssh.socket >/dev/null 2>&1
-    systemctl mask ssh.socket >/dev/null 2>&1
-
-    # 3. Настраиваем и запускаем нужный сервис
-    systemctl unmask ssh.service >/dev/null 2>&1
-    systemctl enable ssh.service >/dev/null 2>&1
-    
-    if systemctl start ssh.service; then
-        # 4. Проверка результата по факту, а не по процессу
-        if systemctl is-active --quiet ssh.service; then
-            log_success "SSH гарантированно запущен как ssh.service"
-            return 0
-        fi
-    fi
-
-    log_error "Критическая ошибка при запуске SSH"
-    return 1
+ufw::menu::get_items() {
+    ufw::rule::is_active && printf '%s|%s\0' "1" "Выключить UFW" || printf '%s|%s\0' "1" "Включить UFW"
+    ufw::ping::is_configured && printf '%s|%s\0' "2" "Ping будет включен [ACCEPT] [По умолчанию]" || printf '%s|%s\0' "2" "Ping будет отключен [DROP]"
+    printf '%s|%s\0' "0" "Выход"
 }
 
-ssh::force_service_mode
+# @type:        Sink
+# @description: Отображает пункты меню пользователю (вывод только в stderr)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::menu::display() {
+    local id
+    local text
+
+    log::draw_lite_border
+
+    ufw::log::status
+    ufw::log::rules
+    ufw::log::ping_status
+
+    log_info "Доступные действия:"
+
+    while IFS='|' read -r -d '' id text || break; do
+        log_info_simple_tab "$id. $text"
+    done < <(ufw::menu::get_items)
+
+    log::draw_lite_border
+}
+
+ufw::menu::count_items() {
+    ufw::menu::get_items | grep -cz '^'
+}
+
+ufw::menu::count_items | cat -A

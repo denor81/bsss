@@ -57,6 +57,16 @@ log_info() {
 
 # @type:        Sink
 # @description: Выводит информационное сообщение с символом [ ]
+# @params:      message - Информационное сообщение
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log_debug() {
+    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
+}
+
+# @type:        Sink
+# @description: Выводит информационное сообщение с символом [ ]
 # @params:      message - Приоритетное информационное сообщение
 # @stdin:       нет
 # @stdout:      нет
