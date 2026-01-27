@@ -98,29 +98,30 @@ ufw::toggle::status() {
     fi
 }
 
-# @type:        Filter
-# @description: Активирует UFW
+# @type:        Orchestrator
+# @description: Активирует UFW с watchdog и подтверждением подключения
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
+#               2 - отменено пользователем (подтверждение не получено)
+#               1 - ошибка активации UFW
 ufw::status::force_enable() {
-    local watchdog_pid
-
-    # Rollback только при включении UFW
     make_fifo_and_start_reader
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "ufw")
     rollback::orchestrator::guard_ui_instructions
 
-    if ufw --force enable >/dev/null 2>&1; then
-        log_info "UFW: Активирован [ufw --force enable]"
-        ufw::orchestrator::actions_after_ufw_toggle
+    if ! ufw --force enable >/dev/null 2>&1; then
+        rollback::orchestrator::immediate
+        log_error "Ошибка при активации [ufw --force enable]"
+        return 1
+    fi
 
-        if io::ask_value "Подтвердите возможность подключения - введите connected" "" "^connected$" "connected" >/dev/null; then
-            rollback::orchestrator::watchdog_stop
-        fi
-    else
-        log_error "Ошибка при активации [ufw --force enable]" && return 1
+    log_info "UFW: Активирован [ufw --force enable]"
+    ufw::orchestrator::actions_after_ufw_toggle
+
+    if io::ask_value "Подтвердите возможность подключения - введите connected" "" "^connected$" "connected" "cancel" >/dev/null; then
+        rollback::orchestrator::watchdog_stop
     fi
 }
 
