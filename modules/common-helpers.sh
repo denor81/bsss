@@ -249,8 +249,8 @@ ufw::rule::add_bsss() {
 # @stdout:      нет
 # @exit_code:   0 - UFW активен
 #               1 - UFW неактивен
-ufw::rule::is_active() {
-    ufw status | grep -q "^Status: active"
+ufw::status::is_active() {
+    ufw status | grep -wq active
 }
 
 # @type:        Filter
@@ -259,12 +259,13 @@ ufw::rule::is_active() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::rule::force_disable() {
-    if ! ufw::rule::is_active; then
-        log_info "UFW: Уже деактивирован, действие пропущено"
-    else
+ufw::status::force_disable() {
+    if ufw::status::is_active; then
         ufw --force disable >/dev/null 2>&1
         log_info "UFW: Полностью деактивирован [ufw --force disable]"
+        ufw::orchestrator::actions_after_ufw_toggle
+    else
+        log_info "UFW: Уже деактивирован, действие пропущено"
     fi
 }
 
@@ -310,4 +311,16 @@ make_fifo_and_start_reader() {
     log::new_line
     log_info "Создан FIFO: $WATCHDOG_FIFO"
     cat "$WATCHDOG_FIFO" >&2 &
+}
+
+# @type:        Orchestrator
+# @description: Обработчик сигнала SIGUSR1 - останавливает модуль при откате и удаляем fifo
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   3 - код завершения при откате
+common::rollback::stop_script_by_rollback_timer() {
+    log_info "Получен сигнал USR1 - остановка скрипта из-за отката"
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
+    exit 3
 }

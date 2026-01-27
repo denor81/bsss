@@ -15,7 +15,7 @@ source "${PROJECT_ROOT}/modules/04-ssh-port-helpers.sh"
 
 # Сработает при откате изменений при сигнале USR1
 trap log_stop EXIT
-trap stop_script_by_rollback_timer SIGUSR1
+trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
 # @description: Определяет состояние конфигурации SSH (существует/отсутствует) 
@@ -120,7 +120,7 @@ ssh::orchestrator::install_port_with_guard() {
     fi
 }
 
-stop_script_by_rollback_timer() {
+common::rollback::stop_script_by_rollback_timer() {
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     exit 3
 }

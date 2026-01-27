@@ -58,7 +58,7 @@ ufw::menu::get_items()<:>Source<:>Генерирует список доступ
 ufw::menu::display()<:>Sink<:>Отображает пункты меню пользователю (вывод только в stderr)<:>./modules/05-ufw-helpers.sh
 ufw::menu::get_user_choice()<:>Source<:>Запрашивает выбор пользователя и возвращает выбранный ID<:>./modules/05-ufw-helpers.sh
 ufw::orchestrator::execute_action()<:>Orchestrator<:>Выполняет выбранное действие на основе ID<:>./modules/05-ufw-helpers.sh
-ufw::ui::status_toggle()<:>Sink<:>Переключает состояние UFW<:>./modules/05-ufw-helpers.sh
+ufw::toggle::status()<:>Sink<:>Переключает состояние UFW<:>./modules/05-ufw-helpers.sh
 ufw::log::status()<:>Sink<:>Логирует состояние UFW<:>./modules/05-ufw-helpers.sh
 ufw::orchestrator::actions_after_ufw_toggle()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/05-ufw-helpers.sh
 ufw::orchestrator::apply_changes()<:>Filter<:>Применяет изменения UFW на основе выбранного действия<:>./modules/05-ufw-helpers.sh
@@ -67,12 +67,12 @@ ufw::ping::is_configured()<:>Filter<:>Проверяет, существует �
 ufw::ping::backup_file()<:>Filter<:>Создает бэкап файла before.rules<:>./modules/05-ufw-helpers.sh
 ufw::ping::disable_in_rules()<:>Transformer<:>Заменяет ACCEPT на DROP в ICMP правилах через awk<:>./modules/05-ufw-helpers.sh
 ufw::ping::restore()<:>Filter<:>Восстанавливает файл before.rules из бэкапа и удаляет бэкап<:>./modules/05-ufw-helpers.sh
-ufw::ping::reload()<:>Sink<:>Выполняет ufw reload для применения изменений<:>./modules/05-ufw-helpers.sh
-ufw::ping::disable_ping()<:>Orchestrator<:>Отключает пинг через UFW (бэкап + трансформация + reload)<:>./modules/05-ufw-helpers.sh
+ufw::status::reload()<:>Sink<:>Выполняет ufw reload для применения изменений<:>./modules/05-ufw-helpers.sh
+ufw::orchestrator::disable_ping()<:>Orchestrator<:>Отключает пинг через UFW (бэкап + трансформация + reload)<:>./modules/05-ufw-helpers.sh
 ufw::ping::restore_ping()<:>Orchestrator<:>Восстанавливает настройки PING по умолчанию (восстановление + reload)<:>./modules/05-ufw-helpers.sh
 ufw::orchestrator::run_module()<:>Orchestrator<:>Запускает модуль UFW с механизмом rollback только при включении UFW<:>./modules/05-ufw-modify.sh
 make_fifo_and_start_reader()<:>Orchestrator<:>Создает FIFO и запускает слушатель для коммуникации с rollback<:>./modules/05-ufw-modify.sh
-stop_script_by_rollback_timer()<:>Orchestrator<:>Обработчик сигнала SIGUSR1 - останавливает скрипт при откате<:>./modules/05-ufw-modify.sh
+common::rollback::stop_script_by_rollback_timer()<:>Orchestrator<:>Обработчик сигнала SIGUSR1 - останавливает скрипт при откате<:>./modules/05-ufw-modify.sh
 rollback::orchestrator::watchdog_start()<:>Orchestrator<:>Запускает фоновый процесс rollback (watchdog)<:>./modules/05-ufw-modify.sh
 rollback::orchestrator::watchdog_stop()<:>Orchestrator<:>Останавливает процесс rollback (watchdog) по PID<:>./modules/05-ufw-modify.sh
 rollback::orchestrator::guard_ui_instructions()<:>Sink<:>Отображает инструкции пользователю для проверки подключения<:>./modules/05-ufw-modify.sh
@@ -90,9 +90,9 @@ ufw::rule::delete_all_bsss()<:>Orchestrator<:>Удаляет все правил
 ufw::rule::get_all_bsss()<:>Source<:>Получает все правила UFW BSSS<:>./modules/common-helpers.sh
 ufw::rule::get_all()<:>Source<:>Получает все правила UFW<:>./modules/common-helpers.sh
 ufw::rule::add_bsss()<:>Filter<:>Добавляет правило UFW для BSSS<:>./modules/common-helpers.sh
-ufw::rule::is_active()<:>Filter<:>Проверяет, активен ли UFW<:>./modules/common-helpers.sh
-ufw::rule::force_disable()<:>Filter<:>Деактивирует UFW (пропускает если уже деактивирован)<:>./modules/common-helpers.sh
-ufw::rule::force_enable()<:>Filter<:>Активирует UFW<:>./modules/common-helpers.sh
+ufw::status::is_active()<:>Filter<:>Проверяет, активен ли UFW<:>./modules/common-helpers.sh
+ufw::status::force_disable()<:>Filter<:>Деактивирует UFW (пропускает если уже деактивирован)<:>./modules/common-helpers.sh
+ufw::status::force_enable()<:>Filter<:>Активирует UFW<:>./modules/common-helpers.sh
 sys::file::validate_sshd_config()<:>Filter<:>Проверяет конфигурацию sshd на валидность<:>./modules/common-helpers.sh
 is_sourced()<:>Filter<:>Проверяет, был ли скрипт вызван через source<:>./oneline-runner.sh
 log_success()<:>Sink<:>Выводит успешное сообщение с символом [V]<:>./oneline-runner.sh

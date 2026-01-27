@@ -9,7 +9,7 @@
 # @stdout:      id|text\0 (0..N)
 # @exit_code:   0 - успешно
 ufw::menu::get_items() {
-    ufw::rule::is_active && printf '%s|%s\0' "1" "Выключить UFW" || printf '%s|%s\0' "1" "Включить UFW"
+    ufw::status::is_active && printf '%s|%s\0' "1" "Выключить UFW" || printf '%s|%s\0' "1" "Включить UFW"
     ufw::ping::is_configured && printf '%s|%s\0' "2" "Ping будет включен [ACCEPT] [По умолчанию]" || printf '%s|%s\0' "2" "Ping будет отключен [DROP]"
     printf '%s|%s\0' "0" "Выход"
 }
@@ -73,12 +73,12 @@ ufw::menu::get_user_choice() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - ошибка в процессе
-ufw::orchestrator::apply_changes() {
+ufw::orchestrator::dispatch_logic() {
     local menu_id="$1"
 
     case "$menu_id" in
-        1) ufw::ui::status_toggle ;;
-        2) ufw::ui::ping_toggle ;;
+        1) ufw::toggle::status ;;
+        2) ufw::toggle::ping ;;
         *) log_error "Неверный ID действия: [$menu_id]"; return 1 ;;
     esac
 }
@@ -90,11 +90,11 @@ ufw::orchestrator::apply_changes() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки от ufw
-ufw::ui::status_toggle() {
-    if ufw::rule::is_active; then
-        ufw::rule::force_disable
+ufw::toggle::status() {
+    if ufw::status::is_active; then
+        ufw::status::force_disable
     else
-        ufw::rule::force_enable
+        ufw::status::force_enable
     fi
 }
 
@@ -104,7 +104,7 @@ ufw::ui::status_toggle() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::rule::force_enable() {
+ufw::status::force_enable() {
     local watchdog_pid
 
     # Rollback только при включении UFW
@@ -114,30 +114,54 @@ ufw::rule::force_enable() {
 
     if ufw --force enable >/dev/null 2>&1; then
         log_info "UFW: Активирован [ufw --force enable]"
+        ufw::orchestrator::actions_after_ufw_toggle
+
+        if io::ask_value "Подтвердите возможность подключения - введите connected" "" "^connected$" "connected" >/dev/null; then
+            rollback::orchestrator::watchdog_stop
+        fi
     else
-        log_error "Ошибка при активации [ufw --force enable]"
-    fi
-
-    ufw::orchestrator::actions_after_ufw_toggle
-
-    if io::ask_value "Подтвердите возможность подключения - введите connected" "" "^connected$" "connected" >/dev/null; then
-        rollback::orchestrator::watchdog_stop
+        log_error "Ошибка при активации [ufw --force enable]" && return 1
     fi
 }
 
 # @type:        Sink
+# @description: Отображает инструкции пользователю для проверки подключения
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+log::rollback::instructions() {
+    log::draw_lite_border
+    log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
+    log_attention "Проверьте доступ к серверу после включения UFW"
+}
+
+# @type:        Toggle
 # @description: Переключает состояние PING
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки от ufw
-ufw::ui::ping_toggle() {
+ufw::toggle::ping() {
     if ufw::ping::is_configured; then
-        ufw::ping::restore_ping
+        ufw::ping::restore
     else
-        ufw::ping::disable_ping
+        ufw::orchestrator::disable_ping
     fi
+    ufw::status::reload
+}
+
+# @type:        Orchestrator
+# @description: Отключает пинг через UFW (бэкап + трансформация + reload)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - код ошибки операции
+ufw::orchestrator::disable_ping() {
+    ufw::ping::backup_file
+    ufw::ping::disable_in_rules
 }
 
 # @type:        Sink
@@ -147,11 +171,7 @@ ufw::ui::ping_toggle() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::log::status() {
-    if ufw::rule::is_active; then
-        log_info "UFW включен"
-    else
-        log_info "UFW отключен"
-    fi
+    ufw::status::is_active && log_info "UFW включен" || log_info "UFW отключен"
 }
 
 # @type:        Sink
@@ -255,7 +275,7 @@ ufw::ping::restore() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки ufw reload
-ufw::ping::reload() {
+ufw::status::reload() {
     if ufw reload >/dev/null; then
         log_info "UFW перезагружен [ufw reload]"
     else
@@ -263,29 +283,4 @@ ufw::ping::reload() {
         log_error "Не удалось выполнить [ufw reload] [Code: $rc]"
         return "$rc"
     fi
-}
-
-# @type:        Orchestrator
-# @description: Отключает пинг через UFW (бэкап + трансформация + reload)
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки операции
-ufw::ping::disable_ping() {
-    ufw::ping::backup_file || return 1
-    ufw::ping::disable_in_rules
-    ufw::ping::reload
-}
-
-# @type:        Orchestrator
-# @description: Восстанавливает настройки PING по умолчанию (восстановление + reload)
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки операции
-ufw::ping::restore_ping() {
-    ufw::ping::restore
-    ufw::ping::reload
 }
