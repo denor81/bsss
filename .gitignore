@@ -2,3 +2,6 @@
 .cache/
 opencode.json
 logs/
+
+# Git worktrees
+.worktrees/
