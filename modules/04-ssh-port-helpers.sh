@@ -102,7 +102,7 @@ ssh::orchestrator::actions_after_port_change() {
     sys::service::restart
 
     log::draw_lite_border
-    log_actual_info "Актуальная информация после внесения изменений"
+    log_actual_info
     ssh::port::log_active_from_ss
     ssh::config::log_bsss_with_ports
     ufw::log::rules

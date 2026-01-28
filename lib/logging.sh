@@ -106,9 +106,10 @@ log_attention() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_actual_info() {
+    local text="${1:-Актуальная информация после внесения изменений}"
     local color='\e[37;42m'
     local color_reset='\e[0m'
-    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
+    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$text" >&2
 }
 
 # @type:        Sink

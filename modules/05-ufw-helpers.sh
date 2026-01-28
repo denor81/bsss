@@ -82,7 +82,7 @@ ufw::orchestrator::dispatch_logic() {
     esac
 }
 
-# @type:        Sink
+# @type:        Orchestrator
 # @description: Переключает состояние UFW
 # @params:      нет
 # @stdin:       нет
@@ -136,7 +136,7 @@ log::rollback::instructions() {
     log_attention "Проверьте доступ к серверу после включения UFW"
 }
 
-# @type:        Toggle
+# @type:        Orchestrator
 # @description: Переключает состояние PING
 # @params:      нет
 # @stdin:       нет
@@ -171,7 +171,9 @@ ufw::orchestrator::disable_ping() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::log::status() {
-    ufw::status::is_active && log_info "UFW включен" || log_info "UFW отключен"
+    ufw::status::is_active && \
+    log_info "UFW включен" || \
+    log_info "UFW отключен"
 }
 
 # @type:        Sink
@@ -181,11 +183,9 @@ ufw::log::status() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::log::ping_status() {
-    if ufw::ping::is_configured; then
-        log_info "UFW ping запрещен [DROP] [Состояние: модифицировано]"
-    else
-        log_info "UFW ping разрешен [ACCEPT] [Состояние: по умолчанию]"
-    fi
+    ufw::ping::is_configured && \
+    log_info "UFW ping запрещен [DROP] [Состояние: модифицировано]" || \
+    log_info "UFW ping разрешен [ACCEPT] [Состояние: по умолчанию]"
 }
 
 # @type:        Orchestrator
@@ -197,7 +197,7 @@ ufw::log::ping_status() {
 #               $? - ошибка в процессе
 ufw::orchestrator::actions_after_ufw_toggle() {
     log::draw_lite_border
-    log_actual_info "Актуальная информация после внесения изменений"
+    log_actual_info
     ufw::log::status
     ufw::log::rules
     ufw::log::ping_status
