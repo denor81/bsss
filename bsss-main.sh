@@ -139,11 +139,10 @@ main() {
     log_start
 
     runner::module::run_check
-    io::confirm_action "Запустить настройку?"
+    io::confirm_action "Запустить настройку?" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
     runner::module::run_modify
 }
 
-# (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main
 fi

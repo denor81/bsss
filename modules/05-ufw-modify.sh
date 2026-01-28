@@ -44,13 +44,14 @@ ufw::orchestrator::run_module() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
+#               $? - ошибка выполнения модулей
 main() {
     log_start
 
-    # Запуск или возврат кода 2 при отказе пользователя
-    io::confirm_action "Изменить состояние UFW?" && ufw::orchestrator::run_module
+    io::confirm_action "Изменить состояние UFW?" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
+    ufw::orchestrator::run_module
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+    main
 fi
