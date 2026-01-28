@@ -1,7 +1,3 @@
-#!/usr/bin/env bash
-# MODULE_TYPE: helper
-# Использование: source "/modules/...sh"
-
 # @type:        Source
 # @description: Генерирует список доступных пунктов меню на основе текущего состояния
 # @params:      нет
@@ -283,18 +279,4 @@ ufw::status::reload() {
         log_error "Не удалось выполнить [ufw reload] [Code: $rc]"
         return "$rc"
     fi
-}
-
-# @type:        Orchestrator
-# @description: Обработчик сигнала EXIT - останавливает модуль и удаляем fifo
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   $?
-ufw::exit::actions() {
-    local rc=$?
-    log_info "Получен сигнал EXIT"
-    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
-    log_stop
-    exit $rc
 }

@@ -2,7 +2,7 @@
 # Изменяет SSH порт
 # MODULE_TYPE: modify
 
-set -Eeuo pipefail
+set -Eeuox pipefail
 
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 
@@ -12,7 +12,7 @@ source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/common-helpers.sh"
 source "${PROJECT_ROOT}/modules/04-ssh-port-helpers.sh"
 
-trap ssh::exit::actions EXIT TERM INT
+trap common::exit::actions EXIT TERM INT
 trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
@@ -31,23 +31,6 @@ ssh::orchestrator::dispatch_logic() {
     fi
 }
 
-# @type:        Sink
-# @description: Обработчик сигнала EXIT - останавливает модуль
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   $?
-ssh::exit::actions() {
-    local rc=$?
-    log_stop
-    exit $rc
-}
-
-common::rollback::stop_script_by_rollback_timer() {
-    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
-    exit 3
-}
-
 # @type:        Orchestrator
 # @description: Основная точка входа для модуля изменения SSH порта
 # @params:      нет
@@ -58,7 +41,7 @@ common::rollback::stop_script_by_rollback_timer() {
 main() {
     log_start
 
-    io::confirm_action "Изменить конфигурацию SSH порта?" || return
+    io::confirm_action "Изменить конфигурацию SSH порта?" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
     ssh::orchestrator::dispatch_logic
 }
 

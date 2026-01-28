@@ -1,8 +1,3 @@
-#!/usr/bin/env bash
-# uninstall_functions.sh
-# Библиотека функций для удаления установленных файлов и директорий
-# Использование: source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
-
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 UNINSTALL_FILE_PATH=$PROJECT_ROOT/$UNINSTALL_PATHS
 

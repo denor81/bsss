@@ -1,7 +1,3 @@
-#!/usr/bin/env bash
-# MODULE_TYPE: helper
-# Использование: source "/modules/...sh"
-
 # @type:        Source
 # @description: Получает список путей через нулевой разделитель
 # @params:
@@ -55,12 +51,20 @@ sys::module::get_by_type () {
 # @params:      нет
 # @stdin:       path\0 (0..N)
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0
+#               1 - ошибка при удалении
 sys::file::delete() {
-    while IFS= read -r -d '' path || break; do
-        local resp
-        resp=$(rm -rfv -- "$path" ) || return
-        log_info "Удалено: $resp"
+    local path
+    local resp
+    while IFS= read -r -d '' path; do
+        [[ ! -e "$path" ]] && continue
+
+        if resp=$(rm -rfv "$path" 2>&1); then
+            log_info "Удалено: $resp"
+        else
+            log_error "Ошибка удаления $path: $resp"
+            return 1
+        fi
     done
 }
 
@@ -155,10 +159,11 @@ ufw::log::rules() {
 # @exit_code:   0 - успешно
 ufw::rule::reset_and_pass() {
     local port=""
-
+что то с портом - не передается или что то еще  здесь ошибка
     # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
     [[ ! -t 0 ]] && IFS= read -r -d '' port || true
-    
+    log_debug "Порт $port $?"
+    exit 8
     ufw::rule::delete_all_bsss
 
     # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
@@ -323,4 +328,18 @@ common::rollback::stop_script_by_rollback_timer() {
     log_info "Получен сигнал USR1 - остановка скрипта из-за отката"
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     exit 3
+}
+
+# @type:        Orchestrator
+# @description: Обработчик сигнала EXIT - останавливает модуль и удаляем fifo
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   $?
+common::exit::actions() {
+    rc=$?
+    log_info "Получен сигнал EXIT [RC: $rc]"
+    [[ -n "$WATCHDOG_FIFO" ]] && printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
+    log_stop
+    exit $rc
 }

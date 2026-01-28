@@ -1,7 +1,3 @@
-#!/usr/bin/env bash
-# MODULE_TYPE: helper
-# Использование: source "/modules/...sh"
-
 # @type:        Sink
 # @description: Отображает меню сценария с существующими конфигами
 # @params:      нет
@@ -15,17 +11,6 @@ ssh::menu::display_exists_scenario() {
     log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
     log_info_simple_tab "2. Переустановка (замена на новый порт)"
     log_info_simple_tab "0. Выход"
-}
-
-# @type:        Source
-# @description: Запрашивает выбор сценария действий
-# @params:      нет
-# @stdin:       нет
-# @stdout:      choice\0 (0-2)
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-ssh::menu::get_scenario_choice() {
-    io::ask_value "Выберите" "" "^[012]$" "0-2" "0"
 }
 
 # @type:        Sink
@@ -67,12 +52,14 @@ ssh::ui::get_new_port() {
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
     local suggested_port
-    suggested_port=$(ssh::port::generate_free_random_port) || return
+    read -r -d '' suggested_port < <(ssh::port::generate_free_random_port)
 
     local new_port
     while true; do
         new_port=$(io::ask_value "Введите новый SSH порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port" "0" | tr -d '\0') || return
-        ssh::port::is_port_busy "$new_port" || { printf '%s\0' "$new_port"; break; }
+
+         # Проверка на занятость порта
+        ssh::port::is_port_free "$new_port" && { printf '%s\0' "$new_port"; break; }
         log_error "SSH порт $new_port уже занят другим сервисом."
     done
 }
@@ -171,30 +158,32 @@ ssh::rule::reset_and_pass() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ssh::rule::delete_all_bsss() {
-    # || true нужен потому что sys::file::get_paths_by_mask может возвращать пустоту и read зависает
-    sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::file::delete || true
+    sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::file::delete
 }
 
+# @type:        Source
+# @description: Проверяет, что указанный порт свободен
+# @params:      
 #   port        Номер порта для проверки
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - порт свободен
 #               1 - порт занят
-ssh::port::is_port_busy() {
-    ss -ltn | grep -qE ":$1([[:space:]]|$)"
+ssh::port::is_port_free() {
+    ! ss -ltn | grep -qE ":$1([[:space:]]|$)"
 }
 
 # @type:        Source
 # @description: Генерирует случайный свободный порт в диапазоне 10000-65535
 # @params:      нет
 # @stdin:       нет
-# @stdout:      port
+# @stdout:      port\0
 # @exit_code:   0 - порт успешно сгенерирован
 #               $? - ошибка
 ssh::port::generate_free_random_port() {
     while IFS= read -r port || break; do
-        if ! ssh::port::is_port_busy "$port"; then
-            printf '%s\n' "$port"
+        if ssh::port::is_port_free "$port"; then
+            printf '%s\0' "$port"
             return
         fi
     done < <(shuf -i 10000-65535)
@@ -227,19 +216,6 @@ EOF
 }
 
 # @type:        Filter
-# @description: Применяет изменения SSH порта (сброс старых правил и установка новых)
-# @params:
-#   port        Номер порта для установки
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - ошибка в процессе
-ssh::rule::apply_changes() {
-    local port="$1"
-    printf '%s\0' "$port" | ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ssh::port::install_new
-}
-
-# @type:        Filter
 # @description: Блокирующая проверка поднятия SSH порта после изменения
 #               Проверяет порт в цикле с интервалом 0.5 секунды
 #               При успешном обнаружении возвращает 0
@@ -262,8 +238,8 @@ ssh::port::wait_for_up() {
     while (( elapsed < timeout )); do
         # Проверяем, есть ли порт в списке активных
         if ssh::port::get_from_ss | grep -qzxF "$port"; then
-            log_info "SSH порт $port успешно поднят"
-            return 0
+            log_info "SSH порт $port успешно поднят после $attempts попыток в течение $elapsed сек"
+            return
         fi
 
         sleep "$interval"
@@ -271,7 +247,7 @@ ssh::port::wait_for_up() {
         attempts=$((attempts + 1))
     done
 
-    log_error "ПОРТ $port НЕ ПОДНЯЛСЯ [$attempts попыток в течение ${timeout} сек]"
+    log_error "ПОРТ $port НЕ ПОДНЯЛСЯ [$attempts попыток в течение $timeout сек]"
     return 1
 }
 
@@ -286,7 +262,7 @@ ssh::port::wait_for_up() {
 ssh::orchestrator::config_exists_handler() {
     ssh::menu::display_exists_scenario
     local choice
-    choice=$(ssh::menu::get_scenario_choice | tr -d '\0') || return
+    read -r -d '' choice < <(io::ask_value "Выберите" "" "^[012]$" "0-2" "0")
 
     case "$choice" in
         1) ssh::toggle::reset_port ;;
@@ -316,7 +292,6 @@ ssh::orchestrator::config_not_exists_handler() {
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
 ssh::toggle::install_port() {
-    local watchdog_pid
     local port
 
     ssh::menu::display_install_ui
@@ -324,21 +299,22 @@ ssh::toggle::install_port() {
     port=$(ssh::ui::get_new_port | tr -d '\0') || return
 
     make_fifo_and_start_reader
-    watchdog_pid=$(rollback::orchestrator::watchdog_start "$WATCHDOG_FIFO")
+    WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "ssh")
 
-    ssh::menu::display_guard_instructions "$port"
+    ssh::log::guard_instructions "$port"
 
-    printf '%s\0' "$port" | ssh::rule::apply_changes
+    printf '%s\0' "$port" | ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ssh::port::install_new
+
     ssh::orchestrator::actions_after_port_change
 
     if ! ssh::port::wait_for_up "$port"; then
-        kill -USR2 "$watchdog_pid" 2>/dev/null || true
-        wait "$watchdog_pid" 2>/dev/null || true
+        kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
+        wait "$WATCHDOG_PID" 2>/dev/null || true
         while true; do sleep 1; done
     fi
 
     if io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null; then
-        rollback::orchestrator::watchdog_stop "$watchdog_pid"
+        rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
         log_info "Изменения зафиксированы, Rollback отключен"
     fi
 }
@@ -362,9 +338,26 @@ ssh::toggle::reset_port() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::menu::display_guard_instructions() {
+ssh::log::guard_instructions() {
     local port="$1"
     log::draw_lite_border
     log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
     log_attention "ОТКРОЙТЕ НОВОЕ ОКНО и проверьте связь через порт $port"
+}
+
+# @type:        Orchestrator
+# @description: Перезапускает SSH сервис после проверки конфигурации
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - сервис успешно перезапущен
+#               1 - ошибка конфигурации
+sys::service::restart() {
+    if sshd -t; then
+        systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
+        systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
+    else
+        log_error "Ошибка конфигурации ssh [sshd -t]"
+        return 1
+    fi
 }

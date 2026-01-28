@@ -1,8 +1,3 @@
-#!/usr/bin/env bash
-# logging.sh
-# Библиотека функций для унифицированного логирования
-# Использование: source "${THIS_DIR_PATH}/lib/logging.sh"
-
 # Символы для обозначения статуса сообщений
 # shellcheck disable=SC2034
 readonly SYMBOL_SUCCESS="[v]"
@@ -141,7 +136,7 @@ log_start() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_stop() {
-    echo >&2
+    # echo >&2
     echo -e "$SYMBOL_INFO [${1:-$CURRENT_MODULE_NAME}]>>stop>>[PID: ${2:-$$}]" >&2
 }
 
@@ -163,5 +158,6 @@ log::draw_border() {
 # @exit_code:   0 - успешно
 log::draw_lite_border() {
     # printf '%.0s-' {1..80} >&2; echo >&2
-    log::new_line
+    # log::new_line
+    :
 }

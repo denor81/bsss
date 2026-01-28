@@ -1,9 +1,3 @@
-#!/usr/bin/env bash
-# Хелперы для работы с SSH socket/service режимами
-# MODULE_TYPE: helper
-
-set -Eeuo pipefail
-
 # @type:        Filter
 # @description: Проверяет, настроен ли SSH в service mode
 # @stdin:       нет
@@ -41,7 +35,7 @@ ssh::socket::force_service_mode() {
             return 1
         fi
     else
-        systemctl reload ssh.service >/dev/null 2>&1
+        systemctl restart ssh.service >/dev/null 2>&1
     fi
 
     if systemctl is-active --quiet ssh.service; then

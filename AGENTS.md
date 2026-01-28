@@ -123,7 +123,7 @@ ufw::rule::reset_and_pass() {
 #               $? - ошибка
 ssh::port::generate_free_random_port() {
     while IFS= read -r port || break; do
-        if ! ssh::port::is_port_busy "$port"; then
+        if ! ssh::port::is_port_free "$port"; then
             printf '%s\n' "$port"
             return
         fi
@@ -168,7 +168,7 @@ ssh::port::generate_free_random_port() {
   - Правила для action:
     * Дублирование ДОПУСТИМО, если:
       - Без него теряется смысл: ssh::port::generate_free_random_port (не generate_free_random)
-      - Повышает однозначность: ssh::port::is_port_busy (лучше чем is_busy)
+      - Повышает однозначность: ssh::port::is_port_free (лучше чем is_busy)
       - Существительное — важная часть действия
     * Дублирование НЕ обязательно, если:
       - Субдомен уже однозначно указывает объект: ufw::ping::is_configured (не is_ping_configured)
@@ -178,7 +178,7 @@ ssh::port::generate_free_random_port() {
     * Оркестраторы: ssh::ssh::orchestrator::actions_after_port_change, ufw::orchestrator::run_module
     * UI меню: ufw::menu::display, ufw::menu::get_user_choice
     * UI интерактивные: ssh::ui::get_new_port, ufw::toggle::status
-    * Проверки: ssh::port::is_port_busy, ssh::socket::is_configured
+    * Проверки: ssh::port::is_port_free, ssh::socket::is_configured
     * Генерация: ssh::port::generate_free_random_port, ssh::config::create_bsss_file
     * Удаление/сброс: ufw::rule::delete_all_bsss, ssh::rule::reset_and_pass
     * Системные: sys::file::validate_sshd_config, sys::service::restart

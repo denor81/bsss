@@ -1,5 +1,3 @@
-# Использование: source "/lib/user_confirmation.sh"
-
 # @type:        Interactive
 # @description: Циклический опрос пользователя до получения валидного значения.
 # @params:      Использует ssh::get_ports_from_ss.
