@@ -102,10 +102,10 @@ runner::module::run_modify() {
         local selected_module
 
         # Получаем выбранный модуль через пайплайн
-        selected_module=$(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
+        read -r -d '' selected_module < <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
             | sys::module::get_paths_w_type \
             | sys::module::get_by_type "$MODULE_TYPE_MODIFY" \
-            | runner::module::select_modify | tr -d '\0') || return
+            | runner::module::select_modify) || return
 
         # Обработка главного меню
         if [[ "$selected_module" == "CHECK" ]]; then
@@ -120,7 +120,7 @@ runner::module::run_modify() {
 
             case "$exit_code" in
                 0) log_info "Модуль успешно завершен [Code: $exit_code]" ;; # код 0
-                2|130) log_info "Модуль завершен пользователем [Code: $exit_code]" ;; # код 2
+                2|130) log_info "Модуль завершен пользователем [Code: $exit_code]" ;; # код 2 или 130 при ctrl+c
                 3) log_info "Модуль завершен откатом [Code: $exit_code]" ;; # код 3
                 *) log_error "Ошибка в модуле [$selected_module] [Code: $exit_code]" ;; # код $?
             esac

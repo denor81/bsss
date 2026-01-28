@@ -109,7 +109,7 @@ ufw::toggle::status() {
 ufw::status::force_enable() {
     make_fifo_and_start_reader
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "ufw")
-    rollback::orchestrator::guard_ui_instructions
+    log::rollback::instructions
 
     if ! ufw --force enable >/dev/null 2>&1; then
         rollback::orchestrator::immediate

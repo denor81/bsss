@@ -48,11 +48,7 @@ main() {
     log_start
 
     # Запуск или возврат кода 2 при отказе пользователя
-    if io::confirm_action "Изменить состояние UFW?"; then
-        ufw::orchestrator::run_module
-    else
-        return
-    fi
+    io::confirm_action "Изменить состояние UFW?" && ufw::orchestrator::run_module
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

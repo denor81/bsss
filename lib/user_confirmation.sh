@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-# user_confirmation.sh
-# Выбор полльзователем параметра
 # Использование: source "/lib/user_confirmation.sh"
 
 # @type:        Interactive
@@ -47,7 +44,6 @@ io::ask_value() {
 io::confirm_action() {
     local question=${1:-"Продолжить?"}
     
-    local choice
-    # при выборе n возвращаем 2
-    choice=$(io::ask_value "$question" "y" "[yn]" "Y/n" "n"| tr -d '\0') || return
+    # при выборе n io::ask_value вернет код 2
+    io::ask_value "$question" "y" "[yn]" "Y/n" "n" >/dev/null
 }

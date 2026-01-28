@@ -82,7 +82,6 @@ rollback::orchestrator::ssh() {
 rollback::orchestrator::ufw() {
     log_warn "Выполняется откат UFW..."
     ufw::status::force_disable
-    ufw::orchestrator::actions_after_ufw_toggle
     log_success "UFW отключен. Проверьте доступ к серверу."
 }
 
@@ -144,7 +143,7 @@ rollback::orchestrator::watchdog_timer() {
         rollback::orchestrator::full
 
         if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
-            log_info_simple_tab "Посылаем сигнал отката основному скрипту USR1 [PID: $MAIN_SCRIPT_PID]"
+            log_info "Посылаем сигнал отката основному скрипту USR1 [PID: $MAIN_SCRIPT_PID]"
             kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
             wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
         fi
