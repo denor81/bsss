@@ -61,8 +61,7 @@ ufw::menu::get_user_choice() {
     local pattern="^[0-$qty_items]$"
     local hint="0-$qty_items"
 
-    # Вернет код 2 при выборе 0
-    io::ask_value "Выберите действие" "" "$pattern" "$hint" "0" || return
+    io::ask_value "Выберите действие" "" "$pattern" "$hint" "0" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
 }
 
 # @type:        Orchestrator

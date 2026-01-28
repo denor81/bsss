@@ -80,12 +80,12 @@ runner::module::select_modify() {
 
     # Запрашиваем выбор пользователя
     local selection
-    selection=$(io::ask_value "Выберите модуль" "" "^(00|[0-$(( ${#module_paths[@]} ))])$" "0-${#module_paths[@]}" | tr -d '\0')
+    read -r -d '' selection < <(io::ask_value "Выберите модуль" "" "^(00|[0-$(( ${#module_paths[@]} ))])$" "0-${#module_paths[@]}")
     
     case "$selection" in
-        0) log_info "Выход из меню настройки"; printf '%s\0' "EXIT" ;;
-        00) printf '%s\0' "CHECK" ;;
-        *)  printf '%s\0' "${module_paths[$((selection - 1))]}" ;;
+        0) log_info "Выход из меню настройки"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
+        00) printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
+        *)  printf '%s\0' "${module_paths[$((selection - 1))]}" ;; # Возвращаем выбранный путь
     esac
 }
 
