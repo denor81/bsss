@@ -13,7 +13,7 @@ source "${PROJECT_ROOT}/modules/common-helpers.sh"
 source "${PROJECT_ROOT}/modules/05-ufw-helpers.sh"
 
 # Сработает при откате изменений при сигнале USR1
-trap log_stop EXIT
+trap ufw::exit::actions EXIT TERM INT
 trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator

@@ -30,7 +30,6 @@ trap 'rollback::orchestrator::immediate' SIGUSR2
 # @exit_code:   0 - всегда
 rollback::orchestrator::stop() {
     log_info "Получен сигнал USR1 - остановка таймера отката"
-    log_info_simple_tab "Остановка таймера отката"
     kill "$SLEEP_PID" 2>/dev/null
     exit 0
 }
@@ -43,8 +42,7 @@ rollback::orchestrator::stop() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::immediate() {
-    log_info "Получен сигнал USR2 - немедленный откат изменений"
-    log_info_simple_tab "Остановка таймера отката"
+    log_info "Получен сигнал USR2 - остановка таймера отката и немедленный откат изменений"
     kill "$SLEEP_PID" 2>/dev/null
     log::draw_lite_border
     rollback::orchestrator::full

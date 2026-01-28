@@ -284,3 +284,17 @@ ufw::status::reload() {
         return "$rc"
     fi
 }
+
+# @type:        Orchestrator
+# @description: Обработчик сигнала EXIT - останавливает модуль и удаляем fifo
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   $?
+ufw::exit::actions() {
+    local rc=$?
+    log_info "Получен сигнал EXIT"
+    printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
+    log_stop
+    exit $rc
+}
