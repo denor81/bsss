@@ -20,8 +20,8 @@ source "${PROJECT_ROOT}/modules/04-ssh-port-helpers.sh"
 #               $? - ошибка при проверке портов
 check() {
     ssh::port::log_active_from_ss "1"
-    ssh::config::log_bsss_with_ports
-    ssh::config::log_other_with_ports
+    ssh::log::bsss_configs
+    ssh::log::other_configs
 }
 
 main() {

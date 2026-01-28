@@ -2,6 +2,44 @@
 # MODULE_TYPE: helper
 # Использование: source "/modules/...sh"
 
+# @type:        Sink
+# @description: Отображает меню сценария с существующими конфигами
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ssh::menu::display_exists_scenario() {
+    ssh::log::bsss_configs
+
+    log_info "Доступные действия:"
+    log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
+    log_info_simple_tab "2. Переустановка (замена на новый порт)"
+    log_info_simple_tab "0. Выход"
+}
+
+# @type:        Source
+# @description: Запрашивает выбор сценария действий
+# @params:      нет
+# @stdin:       нет
+# @stdout:      choice\0 (0-2)
+# @exit_code:   0 - успешно
+#               2 - выход по запросу пользователя
+ssh::menu::get_scenario_choice() {
+    io::ask_value "Выберите" "" "^[012]$" "0-2" "0"
+}
+
+# @type:        Sink
+# @description: Отображает меню сценария установки
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ssh::menu::display_install_ui() {
+    log::draw_lite_border
+    log_info "Доступные действия:"
+    log_info_simple_tab "0. Выход"
+}
+
 # @type:        Filter
 # @description: Основной функционал установки/изменения SSH порта
 # @params:      нет
@@ -39,13 +77,13 @@ ssh::ui::get_new_port() {
     done
 }
 
-# @type:        Orchestrator
-# @description: Выводит все BSSS конфигурации SSH с портами
+# @type:        Sink
+# @description: Логирует все BSSS конфигурации SSH с портами
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::config::log_bsss_with_ports() {
+ssh::log::bsss_configs() {
     local grep_result
     local found=0
 
@@ -65,13 +103,13 @@ ssh::config::log_bsss_with_ports() {
     fi
 }
 
-# @type:        Orchestrator
-# @description: Выводит все сторонние конфигурации SSH с портами
+# @type:        Sink
+# @description: Логирует все сторонние конфигурации SSH с портами
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::config::log_other_with_ports() {
+ssh::log::other_configs() {
     local grep_result
     local found=0
 
@@ -104,7 +142,7 @@ ssh::orchestrator::actions_after_port_change() {
     log::draw_lite_border
     log_actual_info
     ssh::port::log_active_from_ss
-    ssh::config::log_bsss_with_ports
+    ssh::log::bsss_configs
     ufw::log::rules
 }
 
@@ -235,4 +273,98 @@ ssh::port::wait_for_up() {
 
     log_error "ПОРТ $port НЕ ПОДНЯЛСЯ [$attempts попыток в течение ${timeout} сек]"
     return 1
+}
+
+# @type:        Orchestrator
+# @description: Обработчик сценария с существующими конфигами
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               2 - выход по запросу пользователя
+#               $? - код ошибки дочернего процесса
+ssh::orchestrator::config_exists_handler() {
+    ssh::menu::display_exists_scenario
+    local choice
+    choice=$(ssh::menu::get_scenario_choice | tr -d '\0') || return
+
+    case "$choice" in
+        1) ssh::toggle::reset_port ;;
+        2) ssh::toggle::install_port ;;
+        *) return 2 ;;
+    esac
+}
+
+# @type:        Orchestrator
+# @description: Обработчик сценария отсутствия конфигов
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               2 - выход по запросу пользователя
+#               $? - код ошибки дочернего процесса
+ssh::orchestrator::config_not_exists_handler() {
+    ssh::toggle::install_port
+}
+
+# @type:        Orchestrator
+# @description: Устанавливает новый SSH порт с механизмом rollback
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               2 - выход по запросу пользователя
+#               $? - код ошибки дочернего процесса
+ssh::toggle::install_port() {
+    local watchdog_pid
+    local port
+
+    ssh::menu::display_install_ui
+
+    port=$(ssh::ui::get_new_port | tr -d '\0') || return
+
+    make_fifo_and_start_reader
+    watchdog_pid=$(rollback::orchestrator::watchdog_start "$WATCHDOG_FIFO")
+
+    ssh::menu::display_guard_instructions "$port"
+
+    printf '%s\0' "$port" | ssh::rule::apply_changes
+    ssh::orchestrator::actions_after_port_change
+
+    if ! ssh::port::wait_for_up "$port"; then
+        kill -USR2 "$watchdog_pid" 2>/dev/null || true
+        wait "$watchdog_pid" 2>/dev/null || true
+        while true; do sleep 1; done
+    fi
+
+    if io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null; then
+        rollback::orchestrator::watchdog_stop "$watchdog_pid"
+        log_info "Изменения зафиксированы, Rollback отключен"
+    fi
+}
+
+# @type:        Orchestrator
+# @description: Сбрасывает SSH порт (удаляет все BSSS правила)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - код ошибки дочернего процесса
+ssh::toggle::reset_port() {
+    ssh::rule::reset_and_pass | ufw::rule::reset_and_pass
+    ssh::orchestrator::actions_after_port_change
+}
+
+# @type:        Sink
+# @description: Отображает инструкции guard для пользователя
+# @params:
+#   port        Номер порта
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ssh::menu::display_guard_instructions() {
+    local port="$1"
+    log::draw_lite_border
+    log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
+    log_attention "ОТКРОЙТЕ НОВОЕ ОКНО и проверьте связь через порт $port"
 }
