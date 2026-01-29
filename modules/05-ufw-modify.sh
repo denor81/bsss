@@ -44,11 +44,20 @@ ufw::orchestrator::run_module() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
+#               2 - отказ пользователя
+#               4 - нет правил BSSS в UFW
 #               $? - ошибка выполнения модулей
 main() {
     log_start
 
-    io::confirm_action "Изменить состояние UFW?" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
+    io::confirm_action "Изменить состояние UFW?" || return
+
+    if ! ufw::rule::has_any_bsss; then
+        log_warn "Невозможно продолжить: нет правил BSSS в UFW"
+        log_warn "Сначала добавьте SSH-порт через модуль SSH"
+        return 4
+    fi
+
     ufw::orchestrator::run_module
 }
 

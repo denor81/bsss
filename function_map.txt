@@ -39,7 +39,6 @@ ssh::socket::force_service_mode()<:>Orchestrator<:>Принудительно п
 check()<:>Orchestrator<:>Проверяет необходимость перезагрузки системы<:>./modules/03-sys-reload-check.sh
 check()<:>Orchestrator<:>Проверяет состояние SSH портов и правил<:>./modules/04-ssh-port-check.sh
 ssh::menu::display_exists_scenario()<:>Sink<:>Отображает меню сценария с существующими конфигами<:>./modules/04-ssh-port-helpers.sh
-ssh::menu::get_scenario_choice()<:>Source<:>Запрашивает выбор сценария действий<:>./modules/04-ssh-port-helpers.sh
 ssh::menu::display_install_ui()<:>Sink<:>Отображает меню сценария установки<:>./modules/04-ssh-port-helpers.sh
 ssh::port::install_new()<:>Filter<:>Основной функционал установки/изменения SSH порта<:>./modules/04-ssh-port-helpers.sh
 ssh::ui::get_new_port()<:>Source<:>Запрашивает у пользователя новый SSH порт<:>./modules/04-ssh-port-helpers.sh
@@ -48,19 +47,20 @@ ssh::log::other_configs()<:>Sink<:>Логирует все сторонние к
 ssh::orchestrator::actions_after_port_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/04-ssh-port-helpers.sh
 ssh::rule::reset_and_pass()<:>Filter<:>Удаляет все правила BSSS и передает порт дальше<:>./modules/04-ssh-port-helpers.sh
 ssh::rule::delete_all_bsss()<:>Orchestrator<:>Удаляет все правила BSSS SSH<:>./modules/04-ssh-port-helpers.sh
+ssh::port::is_port_free()<:>Source<:>Проверяет, что указанный порт свободен<:>./modules/04-ssh-port-helpers.sh
 ssh::port::generate_free_random_port()<:>Source<:>Генерирует случайный свободный порт в диапазоне 10000-65535<:>./modules/04-ssh-port-helpers.sh
 ssh::config::create_bsss_file()<:>Filter<:>Создает новый конфигурационный файл SSH с указанным портом<:>./modules/04-ssh-port-helpers.sh
-ssh::rule::apply_changes()<:>Filter<:>Применяет изменения SSH порта (сброс старых правил и установка новых)<:>./modules/04-ssh-port-helpers.sh
 ssh::port::wait_for_up()<:>Filter<:>Блокирующая проверка поднятия SSH порта после изменения<:>./modules/04-ssh-port-helpers.sh
 ssh::orchestrator::config_exists_handler()<:>Orchestrator<:>Обработчик сценария с существующими конфигами<:>./modules/04-ssh-port-helpers.sh
 ssh::orchestrator::config_not_exists_handler()<:>Orchestrator<:>Обработчик сценария отсутствия конфигов<:>./modules/04-ssh-port-helpers.sh
 ssh::toggle::install_port()<:>Orchestrator<:>Устанавливает новый SSH порт с механизмом rollback<:>./modules/04-ssh-port-helpers.sh
 ssh::toggle::reset_port()<:>Orchestrator<:>Сбрасывает SSH порт (удаляет все BSSS правила)<:>./modules/04-ssh-port-helpers.sh
-ssh::menu::display_guard_instructions()<:>Sink<:>Отображает инструкции guard для пользователя<:>./modules/04-ssh-port-helpers.sh
+ssh::log::guard_instructions()<:>Sink<:>Отображает инструкции guard для пользователя<:>./modules/04-ssh-port-helpers.sh
+sys::service::restart()<:>Orchestrator<:>Перезапускает SSH сервис после проверки конфигурации<:>./modules/04-ssh-port-helpers.sh
 ssh::orchestrator::dispatch_logic()<:>Orchestrator<:>Определяет состояние конфигурации SSH и переключает логику модуля на соответствующий сценарий<:>./modules/04-ssh-port-modify.sh
-ssh::exit::actions()<:>Sink<:>Обработчик сигнала EXIT - останавливает модуль<:>./modules/04-ssh-port-modify.sh
 main()<:>Orchestrator<:>Основная точка входа для модуля изменения SSH порта<:>./modules/04-ssh-port-modify.sh
 check()<:>Orchestrator<:>Проверяет наличие UFW и устанавливает при необходимости<:>./modules/05-ufw-check.sh
+ufw::rule::has_any_bsss()<:>Filter<:>Проверяет, есть ли правила UFW BSSS<:>./modules/05-ufw-helpers.sh
 ufw::menu::get_items()<:>Source<:>Генерирует список доступных пунктов меню на основе текущего состояния<:>./modules/05-ufw-helpers.sh
 ufw::menu::display()<:>Sink<:>Отображает пункты меню пользователю (вывод только в stderr)<:>./modules/05-ufw-helpers.sh
 ufw::menu::count_items()<:>Source<:>Считает количество пунктов меню (Корректно работает до 9 пунктов)<:>./modules/05-ufw-helpers.sh
@@ -73,13 +73,12 @@ ufw::toggle::ping()<:>Orchestrator<:>Переключает состояние P
 ufw::orchestrator::disable_ping()<:>Orchestrator<:>Отключает пинг через UFW (бэкап + трансформация + reload)<:>./modules/05-ufw-helpers.sh
 ufw::log::status()<:>Sink<:>Логирует состояние UFW<:>./modules/05-ufw-helpers.sh
 ufw::log::ping_status()<:>Sink<:>Логирует состояние PING<:>./modules/05-ufw-helpers.sh
-ufw::orchestrator::ufw_statuses()<:>Orchestrator<:>Выполняет действия после вкл/выкл UFW<:>./modules/05-ufw-helpers.sh
+ufw::orchestrator::ufw_statuses()<:>Orchestrator<:>Отображает статусы UFW: общее состояние, правила, состояние PING<:>./modules/05-ufw-helpers.sh
 ufw::ping::is_configured()<:>Filter<:>Проверяет, существует ли бэкап файл настроек PING<:>./modules/05-ufw-helpers.sh
 ufw::ping::backup_file()<:>Filter<:>Создает бэкап файла before.rules<:>./modules/05-ufw-helpers.sh
 ufw::ping::disable_in_rules()<:>Transformer<:>Заменяет ACCEPT на DROP в ICMP правилах через<:>./modules/05-ufw-helpers.sh
 ufw::ping::restore()<:>Filter<:>Восстанавливает файл before.rules из бэкапа и удаляет бэкап<:>./modules/05-ufw-helpers.sh
 ufw::status::reload()<:>Sink<:>Выполняет ufw reload для применения изменений<:>./modules/05-ufw-helpers.sh
-ufw::exit::actions()<:>Orchestrator<:>Обработчик сигнала EXIT - останавливает модуль и удаляем fifo<:>./modules/05-ufw-helpers.sh
 ufw::orchestrator::run_module()<:>Orchestrator<:>Запускает модуль UFW с механизмом rollback только при включении UFW<:>./modules/05-ufw-modify.sh
 main()<:>Orchestrator<:>Основная точка входа для модуля изменения состояния UFW<:>./modules/05-ufw-modify.sh
 sys::file::get_paths_by_mask()<:>Source<:>Получает список путей через нулевой разделитель<:>./modules/common-helpers.sh
@@ -101,6 +100,7 @@ rollback::orchestrator::watchdog_start()<:>Orchestrator<:>Запускает ф�
 rollback::orchestrator::watchdog_stop()<:>Orchestrator<:>Останавливает процесс rollback (watchdog) по PID<:>./modules/common-helpers.sh
 make_fifo_and_start_reader()<:>Orchestrator<:>Создает FIFO и запускает слушатель для коммуникации с rollback<:>./modules/common-helpers.sh
 common::rollback::stop_script_by_rollback_timer()<:>Orchestrator<:>Обработчик сигнала SIGUSR1 - останавливает модуль при откате и удаляем fifo<:>./modules/common-helpers.sh
+common::exit::actions()<:>Orchestrator<:>Обработчик сигнала EXIT - останавливает модуль и удаляем fifo<:>./modules/common-helpers.sh
 is_sourced()<:>Filter<:>Проверяет, был ли скрипт вызван через source<:>./oneline-runner.sh
 log_success()<:>Sink<:>Выводит успешное сообщение с символом [V]<:>./oneline-runner.sh
 log_error()<:>Sink<:>Выводит сообщение об ошибке с символом [X]<:>./oneline-runner.sh
@@ -120,7 +120,6 @@ _create_symlink()<:>Orchestrator<:>Создание символической �
 _set_execution_permissions()<:>Orchestrator<:>Установка прав на выполнение<:>./oneline-runner.sh
 install_to_system()<:>Orchestrator<:>Функция установки в систему<:>./oneline-runner.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./oneline-runner.sh
-ufw::menu::display()<:>Sink<:>Отображает пункты меню пользователю (вывод только в stderr)<:>./t.sh
 find_bash_files()<:>Source<:>Находит все bash файлы в проекте<:>./utils/generate_function_map.sh
 extract_functions_from_file()<:>Filter<:>Извлекает функции и их контракты из bash файла<:>./utils/generate_function_map.sh
 main()<:>Orchestrator<:>Основная точка входа для генерации карты функций<:>./utils/generate_function_map.sh

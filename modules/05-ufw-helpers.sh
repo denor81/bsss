@@ -1,3 +1,14 @@
+# @type:        Filter
+# @description: Проверяет, есть ли правила UFW BSSS
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - есть хотя бы одно правило BSSS
+#               1 - нет правил BSSS
+ufw::rule::has_any_bsss() {
+    ufw::rule::get_all_bsss | read -r -d '' _
+}
+
 # @type:        Source
 # @description: Генерирует список доступных пунктов меню на основе текущего состояния
 # @params:      нет

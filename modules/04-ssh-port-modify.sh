@@ -25,7 +25,7 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 #               $? - код ошибки дочернего процесса
 ssh::orchestrator::dispatch_logic() {
     # if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
-    if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK"; then
+    if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" >/dev/null; then
         ssh::orchestrator::config_exists_handler
     else
         ssh::orchestrator::config_not_exists_handler

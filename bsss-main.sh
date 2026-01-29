@@ -119,10 +119,11 @@ runner::module::run_modify() {
             bash "$selected_module" || exit_code=$?
 
             case "$exit_code" in
-                0) log_info "Модуль успешно завершен [Code: $exit_code]" ;; # код 0
-                2|130) log_info "Модуль завершен пользователем [Code: $exit_code]" ;; # код 2 или 130 при ctrl+c
-                3) log_info "Модуль завершен откатом [Code: $exit_code]" ;; # код 3
-                *) log_error "Ошибка в модуле [$selected_module] [Code: $exit_code]" ;; # код $?
+                0) log_info "Модуль успешно завершен [Code: $exit_code]" ;;
+                2|130) log_info "Модуль завершен пользователем [Code: $exit_code]" ;;
+                3) log_info "Модуль завершен откатом [Code: $exit_code]" ;;
+                4) log_info "Модуль требует предварительной настройки SSH [Code: $exit_code]" ;;
+                *) log_error "Ошибка в модуле [$selected_module] [Code: $exit_code]" ;;
             esac
         fi
     done
