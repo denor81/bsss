@@ -9,6 +9,28 @@ ufw::rule::has_any_bsss() {
     ufw::rule::get_all_bsss | read -r -d '' _
 }
 
+# @type:        Orchestrator
+# @description: Проверяет требования для запуска UFW модуля
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - требования выполнены
+#               4 - требования не выполнены
+ufw::rule::check_requirements() {
+    if ufw::rule::has_any_bsss; then
+        return 0
+    fi
+
+    if ufw::status::is_active; then
+        log_info "Нет правил BSSS, но UFW активен - можно отключить"
+        return 0
+    else
+        log_warn "Невозможно продолжить: нет правил BSSS в UFW"
+        log_warn "Сначала добавьте SSH-порт через модуль SSH"
+        return 4
+    fi
+}
+
 # @type:        Source
 # @description: Генерирует список доступных пунктов меню на основе текущего состояния
 # @params:      нет

@@ -61,6 +61,7 @@ ssh::orchestrator::dispatch_logic()<:>Orchestrator<:>Определяет сос
 main()<:>Orchestrator<:>Основная точка входа для модуля изменения SSH порта<:>./modules/04-ssh-port-modify.sh
 check()<:>Orchestrator<:>Проверяет наличие UFW и устанавливает при необходимости<:>./modules/05-ufw-check.sh
 ufw::rule::has_any_bsss()<:>Filter<:>Проверяет, есть ли правила UFW BSSS<:>./modules/05-ufw-helpers.sh
+ufw::rule::check_requirements()<:>Orchestrator<:>Проверяет требования для запуска UFW модуля<:>./modules/05-ufw-helpers.sh
 ufw::menu::get_items()<:>Source<:>Генерирует список доступных пунктов меню на основе текущего состояния<:>./modules/05-ufw-helpers.sh
 ufw::menu::display()<:>Sink<:>Отображает пункты меню пользователю (вывод только в stderr)<:>./modules/05-ufw-helpers.sh
 ufw::menu::count_items()<:>Source<:>Считает количество пунктов меню (Корректно работает до 9 пунктов)<:>./modules/05-ufw-helpers.sh
