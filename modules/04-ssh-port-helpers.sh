@@ -5,6 +5,7 @@
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ssh::menu::display_exists_scenario() {
+    ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
 
     log_info "Доступные действия:"
@@ -263,12 +264,12 @@ ssh::port::wait_for_up() {
 ssh::orchestrator::config_exists_handler() {
     ssh::menu::display_exists_scenario
     local choice
-    read -r -d '' choice < <(io::ask_value "Выберите" "" "^[012]$" "0-2" "0")
+    choice=$(io::ask_value "Выберите" "" "^[012]$" "0-2" "0" | tr -d '\0') || return
 
     case "$choice" in
         1) ssh::reset::port ;;
         2) ssh::install::port ;;
-        *) return 2 ;;
+        *) log_warn "Не корректный выбор" ;;
     esac
 }
 
