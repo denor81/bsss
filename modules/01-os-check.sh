@@ -16,7 +16,7 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 # @stdin:       content of a file (stream)
 # @stdout:      string ID
 # @exit_code:   0 - всегда
-_get_os_id() {
+get_os_id() {
     awk -F= '
         $1=="ID" {
             gsub (/"/, "", $2)
@@ -40,7 +40,7 @@ check() {
     }
 
     local id
-    id=$( _get_os_id < "$OS_RELEASE_FILE_PATH" )
+    id=$( get_os_id < "$OS_RELEASE_FILE_PATH" )
 
     if [[ "$id" != "$ALLOWED_SYS" ]]; then
         log_error "Система ${id^:-Unknown} не поддерживается (ожидалось: $ALLOWED_SYS)"

@@ -27,8 +27,6 @@ runner::module::run_check() {
     local err=0
     local found=0
 
-    sys::module::validate_order || return 5
-
     log::draw_border
     while read -r -d '' m_path <&3; do
         found=$((found + 1))
@@ -41,7 +39,7 @@ runner::module::run_check() {
     | sys::module::sort_by_order)
 
     (( found == 0 )) && { log_error "Запуск не возможен, Модули не найдены"; log::draw_border; return 1; }
-    (( err > 0 )) && { log_error "Запуск не возможен, один из модулей показывает ошибку"; log::draw_border; return 2; }
+    (( err )) && { log_error "Запуск не возможен, один из модулей показывает ошибку"; log::draw_border; return 2; }
     log::draw_border
 }
 
@@ -144,6 +142,7 @@ runner::module::run_modify() {
 #               $? - ошибка выполнения модулей
 main() {
     log_start
+    sys::module::validate_order
     sys::log::rotate_old_files
 
     runner::module::run_check
