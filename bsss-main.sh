@@ -143,6 +143,7 @@ runner::module::run_modify() {
 main() {
     log_start
     sys::module::validate_order
+    sys::module::check_duplicate_order
     sys::log::rotate_old_files
 
     runner::module::run_check

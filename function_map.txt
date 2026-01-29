@@ -27,7 +27,7 @@ check_permissions()<:>Filter<:>Проверяет права доступа дл
 show_help()<:>Sink<:>Выводит справочную информацию<:>./local-runner.sh
 run_default()<:>Orchestrator<:>Запускает основной скрипт<:>./local-runner.sh
 main()<:>Orchestrator<:>Основная точка входа<:>./local-runner.sh
-_get_os_id()<:>Filter<:>Получает строку ID текущей системы<:>./modules/01-os-check.sh
+get_os_id()<:>Filter<:>Получает строку ID текущей системы<:>./modules/01-os-check.sh
 check()<:>Orchestrator<:>Проверяет совместимость текущей ОС с разрешенной<:>./modules/01-os-check.sh
 sys::update::get_command()<:>Source<:>Генерирует команду обновления системы для apt<:>./modules/02-update-system.sh
 sys::update::execute()<:>Sink<:>Выполняет обновление системы используя переданную команду<:>./modules/02-update-system.sh
@@ -88,6 +88,7 @@ sys::module::get_paths_w_type<:>Filter<:>Возвращает строку - п�
 sys::module::get_by_type<:>Filter<:>Возвращает отфильтрованные по типу пути к модулям<:>./modules/common-helpers.sh
 sys::module::sort_by_order()<:>Filter<:>Сортирует пути модулей по приоритету MODULE_ORDER и извлекает только пути<:>./modules/common-helpers.sh
 sys::module::validate_order()<:>Source<:>Валидирует наличие обязательного метатега MODULE_ORDER во всех модулях с MODULE_TYPE<:>./modules/common-helpers.sh
+sys::module::check_duplicate_order()<:>Source<:>Проверяет дубликаты значений MODULE_ORDER в модулях<:>./modules/common-helpers.sh
 sys::file::delete()<:>Filter<:>Удаляет указанные файлы и директории<:>./modules/common-helpers.sh
 ssh::port::get_from_ss()<:>Source<:>Получает активные SSH порты из ss<:>./modules/common-helpers.sh
 ssh::port::get_first_from_path()<:>Filter<:>Получает первый порт из path<:>./modules/common-helpers.sh

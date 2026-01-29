@@ -103,6 +103,34 @@ sys::module::validate_order() {
     (( missing )) && return 5 || return 0
 }
 
+# @type:        Source
+# @description: Проверяет дубликаты значений MODULE_ORDER в модулях
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - нет дубликатов
+#               5 - найдены дубликаты MODULE_ORDER
+sys::module::check_duplicate_order() {
+    local duplicates
+    local has_dup=0
+
+    duplicates=$(grep -EiHs '^# MODULE_ORDER:' "${PROJECT_ROOT}/$MODULES_DIR"/*.sh \
+    | awk -F': ' '{print $2}' | sort | uniq -d) || true
+
+    if [[ -n "$duplicates" ]]; then
+        has_dup=1
+        for value in $duplicates; do
+            grep -EiHs "^# MODULE_ORDER: ${value}$" "${PROJECT_ROOT}/$MODULES_DIR"/*.sh \
+            | cut -d: -f1 \
+            | while IFS= read -r file; do
+                log_error "Дублирующийся MODULE_ORDER (${value}): $file"
+            done
+        done
+    fi
+
+    (( has_dup )) && return 5 || return 0
+}
+
 # @type:        Filter
 # @description: Удаляет указанные файлы и директории
 # @params:      нет
