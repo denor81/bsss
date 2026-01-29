@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Обновляет системные пакеты
+# MODULE_ORDER: 20
 # MODULE_TYPE: modify
 
 set -Eeuo pipefail

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Изменяет SSH порт
+# MODULE_ORDER: 60
 # MODULE_TYPE: modify
 
 set -Eeuo pipefail

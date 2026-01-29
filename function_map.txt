@@ -82,9 +82,12 @@ ufw::ping::restore()<:>Filter<:>Восстанавливает файл before.r
 ufw::status::reload()<:>Sink<:>Выполняет ufw reload для применения изменений<:>./modules/05-ufw-helpers.sh
 ufw::orchestrator::run_module()<:>Orchestrator<:>Запускает модуль UFW с механизмом rollback только при включении UFW<:>./modules/05-ufw-modify.sh
 main()<:>Orchestrator<:>Основная точка входа для модуля изменения состояния UFW<:>./modules/05-ufw-modify.sh
+sys::log::rotate_old_files()<:>Sink<:>Вращает лог-файлы - удаляет старые файлы если их больше MAX_LOG_FILES<:>./modules/common-helpers.sh
 sys::file::get_paths_by_mask()<:>Source<:>Получает список путей через нулевой разделитель<:>./modules/common-helpers.sh
-sys::module::get_paths_w_type<:>Filter<:>Возвращает строку - путь с типом<:>./modules/common-helpers.sh
+sys::module::get_paths_w_type<:>Filter<:>Возвращает строку - путь с типом и порядком запуска<:>./modules/common-helpers.sh
 sys::module::get_by_type<:>Filter<:>Возвращает отфильтрованные по типу пути к модулям<:>./modules/common-helpers.sh
+sys::module::sort_by_order()<:>Filter<:>Сортирует пути модулей по приоритету MODULE_ORDER и извлекает только пути<:>./modules/common-helpers.sh
+sys::module::validate_order()<:>Source<:>Валидирует наличие обязательного метатега MODULE_ORDER во всех модулях с MODULE_TYPE<:>./modules/common-helpers.sh
 sys::file::delete()<:>Filter<:>Удаляет указанные файлы и директории<:>./modules/common-helpers.sh
 ssh::port::get_from_ss()<:>Source<:>Получает активные SSH порты из ss<:>./modules/common-helpers.sh
 ssh::port::get_first_from_path()<:>Filter<:>Получает первый порт из path<:>./modules/common-helpers.sh

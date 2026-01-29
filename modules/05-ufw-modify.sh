@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Изменяет состояние UFW
+# MODULE_ORDER: 80
 # MODULE_TYPE: modify
 
 set -Eeuo pipefail

@@ -22,9 +22,12 @@ trap log_stop EXIT
 # @exit_code:   0 - модули найдены и все успешно выполнены
 #               1 - в случае отсутствия модулей
 #               2 - в случае ошибки одного из модулей
+#               5 - отсутствуют обязательные метатеги MODULE_ORDER
 runner::module::run_check() {
     local err=0
     local found=0
+
+    sys::module::validate_order || return 5
 
     log::draw_border
     while read -r -d '' m_path <&3; do
@@ -34,7 +37,8 @@ runner::module::run_check() {
         fi
     done 3< <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
     | sys::module::get_paths_w_type \
-    | sys::module::get_by_type "$MODULE_TYPE_CHECK")
+    | sys::module::get_by_type "$MODULE_TYPE_CHECK" \
+    | sys::module::sort_by_order)
 
     (( found == 0 )) && { log_error "Запуск не возможен, Модули не найдены"; log::draw_border; return 1; }
     (( err > 0 )) && { log_error "Запуск не возможен, один из модулей показывает ошибку"; log::draw_border; return 2; }
@@ -105,6 +109,7 @@ runner::module::run_modify() {
         read -r -d '' selected_module < <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
             | sys::module::get_paths_w_type \
             | sys::module::get_by_type "$MODULE_TYPE_MODIFY" \
+            | sys::module::sort_by_order \
             | runner::module::select_modify) || return
 
         # Обработка главного меню
@@ -123,6 +128,7 @@ runner::module::run_modify() {
                 2|130) log_info "Модуль завершен пользователем [Code: $exit_code]" ;;
                 3) log_info "Модуль завершен откатом [Code: $exit_code]" ;;
                 4) log_info "Модуль требует предварительной настройки SSH [Code: $exit_code]" ;;
+                5) log_error "Отсутствуют обязательные метатеги MODULE_ORDER [Code: $exit_code]" ;;
                 *) log_error "Ошибка в модуле [$selected_module] [Code: $exit_code]" ;;
             esac
         fi

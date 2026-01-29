@@ -41,16 +41,18 @@ sys::file::get_paths_by_mask() {
 }
 
 # @type:        Filter
-# @description: Возвращает строку - путь с типом
+# @description: Возвращает строку - путь с типом и порядком запуска
 # @params:      нет
 # @stdin:       path\0 (0..N)
-# @stdout:      path:type\0 (0..N)
+# @stdout:      path\torder\ttype\0 (0..N)
 # @exit_code:   0 - всегда
 sys::module::get_paths_w_type () {
-    xargs -r0 awk -F ':[[:space:]]+' '
-        BEGIN { IGNORECASE=1; ORS="\0" }
+    xargs -r0 awk '
+        BEGIN { IGNORECASE=1; ORS="\0"; order=""; type="" }
+        /^# MODULE_ORDER:/ { order=$3; next }
         /^# MODULE_TYPE:/ {
-            print FILENAME "<:>" $2
+            type=$3
+            print FILENAME "\t" order "\t" type
             nextfile
         }
     '
@@ -60,13 +62,45 @@ sys::module::get_paths_w_type () {
 # @description: Возвращает отфильтрованные по типу пути к модулям
 # @params:
 #   type        Module type
-# @stdin:       path:type\0 (0..N)
-# @stdout:      path\0 (0..N)
+# @stdin:       path\torder\ttype\0 (0..N)
+# @stdout:      path\torder\ttype\0 (0..N)
 # @exit_code:   0 - всегда
 sys::module::get_by_type () {
-    awk -v type="$1" -v RS='\0' -F'<:>' '
-        type == $2 { printf "%s\0", $1 }
+    awk -v type="$1" -v RS='\0' -F'\t' '
+        type == $3 { printf "%s\0", $0 }
     '
+}
+
+# @type:        Filter
+# @description: Сортирует пути модулей по приоритету MODULE_ORDER и извлекает только пути
+# @params:      нет
+# @stdin:       path\torder\ttype\0 (0..N)
+# @stdout:      path\0 (0..N)
+# @exit_code:   0 - всегда
+sys::module::sort_by_order() {
+    sort -z -t$'\t' -k2,2n | cut -z -f1
+}
+
+# @type:        Source
+# @description: Валидирует наличие обязательного метатега MODULE_ORDER во всех модулях с MODULE_TYPE
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - все модули валидны
+#               5 - найдены модули без MODULE_ORDER
+sys::module::validate_order() {
+    local missing=0
+
+    while IFS= read -r -d '' path; do
+        if ! grep -q '^# MODULE_ORDER:' "$path"; then
+            log_error "Отсутствует обязательный тег MODULE_ORDER: $path"
+            missing=1
+        fi
+    done < <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
+    | sys::module::get_paths_w_type \
+    | awk -v RS='\0' -F'\t' 'BEGIN { ORS="" } { print $1 "\0" }')
+
+    (( missing )) && return 5 || return 0
 }
 
 # @type:        Filter
