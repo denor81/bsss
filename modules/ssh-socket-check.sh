@@ -10,7 +10,7 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
-source "${PROJECT_ROOT}/modules/03-ssh-socket-helpers.sh"
+source "${PROJECT_ROOT}/modules/helpers/ssh-socket.sh"
 
 # @type:        Orchestrator
 # @description: Настраивает SSH в service режим, если это необходимо

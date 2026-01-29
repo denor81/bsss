@@ -8,9 +8,9 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
-source "${PROJECT_ROOT}/modules/common-helpers.sh"
-source "${PROJECT_ROOT}/modules/04-ssh-port-helpers.sh"
-source "${PROJECT_ROOT}/modules/05-ufw-helpers.sh"
+source "${PROJECT_ROOT}/modules/helpers/common.sh"
+source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
+source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 
 MAIN_SCRIPT_PID=""
 SLEEP_PID=""
