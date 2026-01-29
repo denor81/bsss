@@ -33,11 +33,11 @@ ssh::menu::display_install_ui() {
 # @exit_code:   0 - порт успешно установлен
 #               $? - ошибка в процессе
 ssh::port::install_new() {
-    local new_port
-    read -r -d '' new_port
+    local port
+    read -r -d '' port
 
-    printf '%s\0' "$new_port" | ssh::config::create_bsss_file
-    printf '%s\0' "$new_port" | ufw::rule::add_bsss
+    printf '%s\0' "$port" | ssh::config::create_bsss_file
+    printf '%s\0' "$port" | ufw::rule::add_bsss
 }
 
 # @type:        Source
@@ -124,10 +124,10 @@ ssh::log::other_configs() {
 # @exit_code:   0 - действия успешно выполнены
 #               $? - ошибка в процессе
 ssh::orchestrator::actions_after_port_change() {
-    sys::service::restart
+    # sys::service::restart
 
     log::draw_lite_border
-    log_actual_info
+    # log_actual_info
     ssh::port::log_active_from_ss
     ssh::log::bsss_configs
     ufw::log::rules
@@ -143,7 +143,7 @@ ssh::rule::reset_and_pass() {
     local port=""
 
     # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
-    [[ ! -t 0 ]] && IFS= read -r -d '' port || true
+    [[ ! -t 0 ]] && read -r -d '' port || true
     
     ssh::rule::delete_all_bsss
 
@@ -158,7 +158,8 @@ ssh::rule::reset_and_pass() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ssh::rule::delete_all_bsss() {
-    sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::file::delete
+    # || true нужен что бы гасить код 1 при отсутствии файлов
+    sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::file::delete || true
 }
 
 # @type:        Source
@@ -231,7 +232,7 @@ ssh::port::wait_for_up() {
     local timeout="${SSH_PORT_CHECK_TIMEOUT:-5}"
     local elapsed=0
     local interval=0.5
-    local attempts=0
+    local attempts=1
 
     log_info "Ожидание поднятия SSH порта $port (таймаут: ${timeout} сек)..."
 
@@ -305,6 +306,8 @@ ssh::toggle::install_port() {
 
     printf '%s\0' "$port" | ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ssh::port::install_new
 
+    sys::service::restart
+    log_actual_info
     ssh::orchestrator::actions_after_port_change
 
     if ! ssh::port::wait_for_up "$port"; then
@@ -328,6 +331,9 @@ ssh::toggle::install_port() {
 #               $? - код ошибки дочернего процесса
 ssh::toggle::reset_port() {
     ssh::rule::reset_and_pass | ufw::rule::reset_and_pass
+
+    sys::service::restart
+    log_actual_info
     ssh::orchestrator::actions_after_port_change
 }
 

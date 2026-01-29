@@ -113,6 +113,7 @@ ufw::status::force_enable() {
     fi
 
     log_info "UFW: Активирован [ufw --force enable]"
+    log_actual_info
     ufw::orchestrator::actions_after_ufw_toggle
 
     if io::ask_value "Подтвердите возможность подключения - введите connected" "" "^connected$" "connected" "cancel" >/dev/null; then
@@ -193,7 +194,7 @@ ufw::log::ping_status() {
 #               $? - ошибка в процессе
 ufw::orchestrator::actions_after_ufw_toggle() {
     log::draw_lite_border
-    log_actual_info
+    # log_actual_info
     ufw::log::status
     ufw::log::rules
     ufw::log::ping_status

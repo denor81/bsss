@@ -19,7 +19,7 @@ ssh::socket::is_already_configured() {
 # @exit_code:   0 - SSH успешно переведен в service mode
 #               1 - ошибка при запуске SSH
 ssh::socket::force_service_mode() {
-    log_info "Принудительная синхронизация SSH к Service Mode..."
+    log_info "Принудительное переключение SSH в Service Mode..."
 
     systemctl stop ssh.socket >/dev/null 2>&1
     systemctl disable ssh.socket >/dev/null 2>&1

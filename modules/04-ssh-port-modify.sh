@@ -2,7 +2,7 @@
 # Изменяет SSH порт
 # MODULE_TYPE: modify
 
-set -Eeuox pipefail
+set -Eeuo pipefail
 
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 
@@ -24,7 +24,8 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
 ssh::orchestrator::dispatch_logic() {
-    if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
+    # if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
+    if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK"; then
         ssh::orchestrator::config_exists_handler
     else
         ssh::orchestrator::config_not_exists_handler

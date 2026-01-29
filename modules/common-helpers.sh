@@ -5,7 +5,8 @@
 #   mask        [optional] Glob pattern (default: "*")
 # @stdin:       нет
 # @stdout:      path\0 (0..N)
-# @exit_code:   0 - всегда
+# @exit_code:   0
+#               1 - при отсутствии файлов по маске
 sys::file::get_paths_by_mask() {
     local dir=${1:-.}
     local mask=${2:-*}
@@ -159,11 +160,10 @@ ufw::log::rules() {
 # @exit_code:   0 - успешно
 ufw::rule::reset_and_pass() {
     local port=""
-что то с портом - не передается или что то еще  здесь ошибка
+
     # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
-    [[ ! -t 0 ]] && IFS= read -r -d '' port || true
-    log_debug "Порт $port $?"
-    exit 8
+    [[ ! -t 0 ]] && read -r -d '' port || true
+
     ufw::rule::delete_all_bsss
 
     # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
@@ -265,12 +265,11 @@ ufw::status::is_active() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::status::force_disable() {
-    if ufw::status::is_active; then
-        ufw --force disable >/dev/null 2>&1
+    if ufw::status::is_active && ufw --force disable >/dev/null 2>&1; then
         log_info "UFW: Полностью деактивирован [ufw --force disable]"
-        ufw::orchestrator::actions_after_ufw_toggle
+        # ufw::orchestrator::actions_after_ufw_toggle
     else
-        log_info "UFW: Уже деактивирован, действие пропущено"
+        log_info "UFW: деактивирован"
     fi
 }
 
