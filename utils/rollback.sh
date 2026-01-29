@@ -125,7 +125,7 @@ rollback::orchestrator::watchdog_timer() {
     exec 3> "$watchdog_fifo"
 
     mkdir -p "${PROJECT_ROOT}/logs"
-    readonly ROLLBACK_LOG_FILE="${PROJECT_ROOT}/logs/rb_$(date +%Y-%m-%d_%H-%M-%S).log"
+    readonly ROLLBACK_LOG_FILE="${PROJECT_ROOT}/logs/$(date +%Y-%m-%d_%H-%M-%S)_rollback.log"
     exec > >(tee -a "$ROLLBACK_LOG_FILE" > "$watchdog_fifo") 2>&1
 
     log_start
