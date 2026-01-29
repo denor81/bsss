@@ -18,8 +18,8 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
 
 # Logging initialization
-mkdir -p "${PROJECT_ROOT}/logs"
-readonly LOG_FILE="${PROJECT_ROOT}/logs/$(date +%Y-%m-%d_%H-%M-%S).log"
+mkdir -p "${PROJECT_ROOT}/${LOGS_DIR}"
+readonly LOG_FILE="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # @type:        Filter

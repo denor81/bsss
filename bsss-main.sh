@@ -138,6 +138,7 @@ runner::module::run_modify() {
 #               $? - ошибка выполнения модулей
 main() {
     log_start
+    sys::log::rotate_old_files
 
     runner::module::run_check
     io::confirm_action "Запустить настройку?" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
