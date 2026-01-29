@@ -53,8 +53,8 @@ ssh::config::create_bsss_file()<:>Filter<:>Создает новый конфи�
 ssh::port::wait_for_up()<:>Filter<:>Блокирующая проверка поднятия SSH порта после изменения<:>./modules/04-ssh-port-helpers.sh
 ssh::orchestrator::config_exists_handler()<:>Orchestrator<:>Обработчик сценария с существующими конфигами<:>./modules/04-ssh-port-helpers.sh
 ssh::orchestrator::config_not_exists_handler()<:>Orchestrator<:>Обработчик сценария отсутствия конфигов<:>./modules/04-ssh-port-helpers.sh
-ssh::toggle::install_port()<:>Orchestrator<:>Устанавливает новый SSH порт с механизмом rollback<:>./modules/04-ssh-port-helpers.sh
-ssh::toggle::reset_port()<:>Orchestrator<:>Сбрасывает SSH порт (удаляет все BSSS правила)<:>./modules/04-ssh-port-helpers.sh
+ssh::install::port()<:>Orchestrator<:>Устанавливает новый SSH порт с механизмом rollback<:>./modules/04-ssh-port-helpers.sh
+ssh::reset::port()<:>Orchestrator<:>Сбрасывает SSH порт (удаляет все BSSS правила)<:>./modules/04-ssh-port-helpers.sh
 ssh::log::guard_instructions()<:>Sink<:>Отображает инструкции guard для пользователя<:>./modules/04-ssh-port-helpers.sh
 sys::service::restart()<:>Orchestrator<:>Перезапускает SSH сервис после проверки конфигурации<:>./modules/04-ssh-port-helpers.sh
 ssh::orchestrator::dispatch_logic()<:>Orchestrator<:>Определяет состояние конфигурации SSH и переключает логику модуля на соответствующий сценарий<:>./modules/04-ssh-port-modify.sh

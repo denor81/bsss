@@ -266,8 +266,8 @@ ssh::orchestrator::config_exists_handler() {
     read -r -d '' choice < <(io::ask_value "Выберите" "" "^[012]$" "0-2" "0")
 
     case "$choice" in
-        1) ssh::toggle::reset_port ;;
-        2) ssh::toggle::install_port ;;
+        1) ssh::reset::port ;;
+        2) ssh::install::port ;;
         *) return 2 ;;
     esac
 }
@@ -281,7 +281,7 @@ ssh::orchestrator::config_exists_handler() {
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
 ssh::orchestrator::config_not_exists_handler() {
-    ssh::toggle::install_port
+    ssh::install::port
 }
 
 # @type:        Orchestrator
@@ -292,7 +292,7 @@ ssh::orchestrator::config_not_exists_handler() {
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
-ssh::toggle::install_port() {
+ssh::install::port() {
     local port
 
     ssh::menu::display_install_ui
@@ -329,7 +329,7 @@ ssh::toggle::install_port() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
-ssh::toggle::reset_port() {
+ssh::reset::port() {
     ssh::rule::reset_and_pass | ufw::rule::reset_and_pass
 
     ufw::status::force_disable # Для гарантированного доступа
