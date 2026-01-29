@@ -105,7 +105,7 @@
 #               $? — код ошибки дочернего процесса
 ssh::orchestrator::config_not_exists() {
     ssh::ui::get_new_port | ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ssh::port::install_new
-    ssh::orchestrator::actions_after_port_change
+    ssh::orchestrator::log_statuses
 }
 ```
  - Фильтр
@@ -191,7 +191,7 @@ ssh::port::generate_free_random_port() {
       - Действие очевидно из контекста
 
   - Примеры нейминга:
-    * Оркестраторы: ssh::ssh::orchestrator::actions_after_port_change, ufw::orchestrator::run_module
+    * Оркестраторы: ssh::ssh::orchestrator::log_statuses, ufw::orchestrator::run_module
     * UI меню: ufw::menu::display, ufw::menu::get_user_choice
     * UI интерактивные: ssh::ui::get_new_port, ufw::toggle::status
     * Проверки: ssh::port::is_port_free, ssh::socket::is_configured

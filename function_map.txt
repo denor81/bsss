@@ -44,7 +44,7 @@ ssh::port::install_new()<:>Filter<:>Основной функционал уст
 ssh::ui::get_new_port()<:>Source<:>Запрашивает у пользователя новый SSH порт<:>./modules/04-ssh-port-helpers.sh
 ssh::log::bsss_configs()<:>Sink<:>Логирует все BSSS конфигурации SSH с портами<:>./modules/04-ssh-port-helpers.sh
 ssh::log::other_configs()<:>Sink<:>Логирует все сторонние конфигурации SSH с портами<:>./modules/04-ssh-port-helpers.sh
-ssh::orchestrator::actions_after_port_change()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/04-ssh-port-helpers.sh
+ssh::orchestrator::log_statuses()<:>Orchestrator<:>Выполняет действия после установки порта: перезапуск сервисов и валидация<:>./modules/04-ssh-port-helpers.sh
 ssh::rule::reset_and_pass()<:>Filter<:>Удаляет все правила BSSS и передает порт дальше<:>./modules/04-ssh-port-helpers.sh
 ssh::rule::delete_all_bsss()<:>Orchestrator<:>Удаляет все правила BSSS SSH<:>./modules/04-ssh-port-helpers.sh
 ssh::port::is_port_free()<:>Source<:>Проверяет, что указанный порт свободен<:>./modules/04-ssh-port-helpers.sh
@@ -74,7 +74,7 @@ ufw::toggle::ping()<:>Orchestrator<:>Переключает состояние P
 ufw::orchestrator::disable_ping()<:>Orchestrator<:>Отключает пинг через UFW (бэкап + трансформация + reload)<:>./modules/05-ufw-helpers.sh
 ufw::log::status()<:>Sink<:>Логирует состояние UFW<:>./modules/05-ufw-helpers.sh
 ufw::log::ping_status()<:>Sink<:>Логирует состояние PING<:>./modules/05-ufw-helpers.sh
-ufw::orchestrator::ufw_statuses()<:>Orchestrator<:>Отображает статусы UFW: общее состояние, правила, состояние PING<:>./modules/05-ufw-helpers.sh
+ufw::orchestrator::log_statuses()<:>Orchestrator<:>Отображает статусы UFW: общее состояние, правила, состояние PING<:>./modules/05-ufw-helpers.sh
 ufw::ping::is_configured()<:>Filter<:>Проверяет, существует ли бэкап файл настроек PING<:>./modules/05-ufw-helpers.sh
 ufw::ping::backup_file()<:>Filter<:>Создает бэкап файла before.rules<:>./modules/05-ufw-helpers.sh
 ufw::ping::disable_in_rules()<:>Transformer<:>Заменяет ACCEPT на DROP в ICMP правилах через<:>./modules/05-ufw-helpers.sh
@@ -88,7 +88,7 @@ sys::module::get_by_type<:>Filter<:>Возвращает отфильтрова�
 sys::file::delete()<:>Filter<:>Удаляет указанные файлы и директории<:>./modules/common-helpers.sh
 ssh::port::get_from_ss()<:>Source<:>Получает активные SSH порты из ss<:>./modules/common-helpers.sh
 ssh::port::get_first_from_path()<:>Filter<:>Получает первый порт из path<:>./modules/common-helpers.sh
-ssh::port::log_active_from_ss()<:>Orchestrator<:>Проверяет возможность определения активных портов<:>./modules/common-helpers.sh
+ssh::log::active_ports_from_ss()<:>Orchestrator<:>Проверяет возможность определения активных портов<:>./modules/common-helpers.sh
 ufw::log::rules()<:>Orchestrator<:>Выводит активные правила UFW<:>./modules/common-helpers.sh
 ufw::rule::reset_and_pass()<:>Filter<:>Удаляет все правила UFW BSSS и передает порт дальше<:>./modules/common-helpers.sh
 ufw::rule::delete_all_bsss()<:>Orchestrator<:>Удаляет все правила UFW BSSS<:>./modules/common-helpers.sh

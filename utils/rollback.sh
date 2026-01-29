@@ -71,8 +71,8 @@ rollback::orchestrator::ssh() {
 
     sys::service::restart
     log_actual_info
-    ssh::orchestrator::actions_after_port_change
-    ufw::orchestrator::ufw_statuses
+    ssh::orchestrator::log_statuses
+    ufw::orchestrator::log_statuses
 
     log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
 }
@@ -88,7 +88,7 @@ rollback::orchestrator::ufw() {
 
     ufw::status::force_disable
     log_actual_info
-    ufw::orchestrator::ufw_statuses
+    ufw::orchestrator::log_statuses
 
     log_success "UFW отключен. Проверьте доступ к серверу."
 }

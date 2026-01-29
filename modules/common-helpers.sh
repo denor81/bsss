@@ -110,7 +110,7 @@ ssh::port::get_first_from_path() {
 # @stdout:      нет
 # @exit_code:   0 - порты определены
 #               1 - порты не определены
-ssh::port::log_active_from_ss() {
+ssh::log::active_ports_from_ss() {
     local strict_mode=${1:-0}
 
     local active_ports=""
@@ -267,7 +267,7 @@ ufw::status::is_active() {
 ufw::status::force_disable() {
     if ufw::status::is_active && ufw --force disable >/dev/null 2>&1; then
         log_info "UFW: Полностью деактивирован [ufw --force disable]"
-        # ufw::orchestrator::ufw_statuses
+        # ufw::orchestrator::log_statuses
     else
         log_info "UFW: деактивирован"
     fi

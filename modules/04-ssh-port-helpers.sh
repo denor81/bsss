@@ -123,12 +123,12 @@ ssh::log::other_configs() {
 # @stdout:      нет
 # @exit_code:   0 - действия успешно выполнены
 #               $? - ошибка в процессе
-ssh::orchestrator::actions_after_port_change() {
+ssh::orchestrator::log_statuses() {
     # sys::service::restart
 
     log::draw_lite_border
     # log_actual_info
-    ssh::port::log_active_from_ss
+    ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
     ufw::log::rules
 }
@@ -308,7 +308,7 @@ ssh::toggle::install_port() {
 
     sys::service::restart
     log_actual_info
-    ssh::orchestrator::actions_after_port_change
+    ssh::orchestrator::log_statuses
 
     if ! ssh::port::wait_for_up "$port"; then
         kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
@@ -332,9 +332,11 @@ ssh::toggle::install_port() {
 ssh::toggle::reset_port() {
     ssh::rule::reset_and_pass | ufw::rule::reset_and_pass
 
+    ufw::status::force_disable # Для гарантированного доступа
+
     sys::service::restart
     log_actual_info
-    ssh::orchestrator::actions_after_port_change
+    ssh::orchestrator::log_statuses
 }
 
 # @type:        Sink
