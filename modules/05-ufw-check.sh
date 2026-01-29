@@ -21,9 +21,7 @@ source "${PROJECT_ROOT}/modules/05-ufw-helpers.sh"
 #               1 - ошибка установки или отказ от установки
 check() {
     if command -v ufw > /dev/null 2>&1; then
-        ufw::log::status
-        ufw::log::rules
-        ufw::log::ping_status
+        ufw::orchestrator::ufw_statuses
     else
         log_error "UFW не установлен"
         if io::confirm_action "Установить UFW сейчас? [apt update && apt install ufw -y]" || return; then

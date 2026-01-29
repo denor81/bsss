@@ -267,7 +267,7 @@ ufw::status::is_active() {
 ufw::status::force_disable() {
     if ufw::status::is_active && ufw --force disable >/dev/null 2>&1; then
         log_info "UFW: Полностью деактивирован [ufw --force disable]"
-        # ufw::orchestrator::actions_after_ufw_toggle
+        # ufw::orchestrator::ufw_statuses
     else
         log_info "UFW: деактивирован"
     fi

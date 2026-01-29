@@ -22,9 +22,7 @@ ufw::menu::display() {
 
     log::draw_lite_border
 
-    ufw::log::status
-    ufw::log::rules
-    ufw::log::ping_status
+    ufw::orchestrator::ufw_statuses
 
     log_info "Доступные действия:"
 
@@ -114,7 +112,7 @@ ufw::status::force_enable() {
 
     log_info "UFW: Активирован [ufw --force enable]"
     log_actual_info
-    ufw::orchestrator::actions_after_ufw_toggle
+    ufw::orchestrator::ufw_statuses
 
     if io::ask_value "Подтвердите возможность подключения - введите connected" "" "^connected$" "connected" "cancel" >/dev/null; then
         rollback::orchestrator::watchdog_stop
@@ -186,13 +184,12 @@ ufw::log::ping_status() {
 }
 
 # @type:        Orchestrator
-# @description: Выполняет действия после вкл/выкл UFW
+# @description: Отображает статусы UFW: общее состояние, правила, состояние PING
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - действия успешно выполнены
-#               $? - ошибка в процессе
-ufw::orchestrator::actions_after_ufw_toggle() {
+# @exit_code:   0 - Всегда успешно
+ufw::orchestrator::ufw_statuses() {
     log::draw_lite_border
     # log_actual_info
     ufw::log::status
