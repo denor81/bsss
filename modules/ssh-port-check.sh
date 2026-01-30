@@ -25,6 +25,13 @@ check() {
     ssh::log::other_configs
 }
 
+# @type:        Orchestrator
+# @description: Точка входа модуля проверки SSH порта
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - проверка прошла успешно
+#               $? - ошибка проверки
 main() {
     check
 }

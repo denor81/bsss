@@ -26,6 +26,13 @@ check() {
     fi
 }
 
+# @type:        Orchestrator
+# @description: Точка входа модуля проверки перезагрузки системы
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - перезагрузка не требуется
+#               1 - требуется перезагрузка
 main() {
     check
 }

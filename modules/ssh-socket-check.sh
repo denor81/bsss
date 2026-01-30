@@ -31,6 +31,14 @@ check() {
     ssh::socket::force_service_mode
 }
 
+# @type:        Orchestrator
+# @description: Точка входа модуля проверки SSH socket
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - проверка прошла успешно
+#               2 - отказ пользователя от переключения в service mode
+#               $? - ошибка проверки
 main() {
     check
 }

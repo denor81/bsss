@@ -50,6 +50,13 @@ check() {
     log_info "Система ${id^} поддерживается"
 }
 
+# @type:        Orchestrator
+# @description: Точка входа модуля проверки ОС
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - проверка прошла успешно
+#               1 - ошибка проверки
 main() {
     check
 }

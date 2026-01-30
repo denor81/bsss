@@ -141,7 +141,13 @@ check_root_permissions() {
     fi
 }
 
-# Спрашиваем пользователя о режиме запуска
+# @type:        Interactive
+# @description: Запрашивает у пользователя режим запуска (однократно/установка/отмена)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - режим выбран (ONETIME_RUN_FLAG или SYS_INSTALL_FLAG установлен)
+#               1 - отмена или ошибка выбора
 ask_user_how_to_run() {
     log_info "Запустить ${UTIL_NAME^^} однократно?"
     log_info "Y - запуск однократно / n - установить / c - отмена"

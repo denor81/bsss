@@ -95,21 +95,21 @@ ufw::ping::restore()|Filter|Восстанавливает файл before.rules
 ufw::status::reload()|Sink|Выполняет ufw reload для применения изменений|./modules/helpers/ufw.sh|1
 get_os_id()|Filter|Получает строку ID текущей системы|./modules/os-check.sh|1
 check()|Orchestrator|Проверяет совместимость текущей ОС с разрешенной|./modules/os-check.sh|6
-main()|NO_CONTRACT|Функция без контракта|./modules/os-check.sh|16
+main()|Orchestrator|Точка входа модуля проверки ОС|./modules/os-check.sh|16
 check()|Orchestrator|Проверяет состояние SSH портов и правил|./modules/ssh-port-check.sh|6
-main()|NO_CONTRACT|Функция без контракта|./modules/ssh-port-check.sh|16
+main()|Orchestrator|Точка входа модуля проверки SSH порта|./modules/ssh-port-check.sh|16
 ssh::orchestrator::dispatch_logic()|Orchestrator|Определяет состояние конфигурации SSH и переключает логику модуля на соответствующий сценарий|./modules/ssh-port-modify.sh|1
 main()|Orchestrator|Основная точка входа для модуля изменения SSH порта|./modules/ssh-port-modify.sh|16
 check()|Orchestrator|Настраивает SSH в service режим, если это необходимо|./modules/ssh-socket-check.sh|6
-main()|NO_CONTRACT|Функция без контракта|./modules/ssh-socket-check.sh|16
+main()|Orchestrator|Точка входа модуля проверки SSH socket|./modules/ssh-socket-check.sh|16
 check()|Orchestrator|Проверяет необходимость перезагрузки системы|./modules/system-reload-check.sh|6
-main()|NO_CONTRACT|Функция без контракта|./modules/system-reload-check.sh|16
+main()|Orchestrator|Точка входа модуля проверки перезагрузки системы|./modules/system-reload-check.sh|16
 sys::update::get_command()|Source|Генерирует команду обновления системы для apt|./modules/system-update.sh|1
 sys::update::execute()|Sink|Выполняет обновление системы используя переданную команду|./modules/system-update.sh|1
 sys::update::orchestrator()|Orchestrator|Оркестратор процесса обновления системы|./modules/system-update.sh|1
 main()|Orchestrator|Основная точка входа модуля обновления системы|./modules/system-update.sh|16
 check()|Orchestrator|Проверяет наличие UFW и устанавливает при необходимости|./modules/ufw-check.sh|6
-main()|NO_CONTRACT|Функция без контракта|./modules/ufw-check.sh|16
+main()|Orchestrator|Точка входа модуля проверки UFW|./modules/ufw-check.sh|16
 ufw::orchestrator::run_module()|Orchestrator|Запускает модуль UFW с механизмом rollback только при включении UFW|./modules/ufw-modify.sh|1
 main()|Orchestrator|Основная точка входа для модуля изменения состояния UFW|./modules/ufw-modify.sh|16
 is_sourced()|Filter|Проверяет, был ли скрипт вызван через source|./oneline-runner.sh|1
@@ -119,7 +119,7 @@ log_info()|Sink|Выводит информационное сообщение �
 cleanup_handler()|Orchestrator|Очистка временных файлов|./oneline-runner.sh|2
 hello()|Sink|Выводит приветственное сообщение|./oneline-runner.sh|1
 check_root_permissions()|Filter|Проверяет права root|./oneline-runner.sh|1
-ask_user_how_to_run()|NO_CONTRACT|Функция без контракта|./oneline-runner.sh|1
+ask_user_how_to_run()|Interactive|Запрашивает у пользователя режим запуска (однократно/установка/отмена)|./oneline-runner.sh|1
 _create_tmp_dir()|Source|Создаёт временную директорию|./oneline-runner.sh|1
 _download_archive()|Source|Скачивает архив во временный файл|./oneline-runner.sh|1
 _unpack_archive()|Filter|Распаковывает архив|./oneline-runner.sh|1

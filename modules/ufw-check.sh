@@ -43,6 +43,14 @@ check() {
 
 }
 
+# @type:        Orchestrator
+# @description: Точка входа модуля проверки UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - проверка прошла успешно
+#               2 - отказ пользователя от установки UFW
+#               $? - ошибка проверки
 main() {
     check
 }
