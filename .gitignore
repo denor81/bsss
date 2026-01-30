@@ -2,6 +2,7 @@
 .cache/
 opencode.json
 t.sh
+function_map.txt
 logs/
 
 # Git worktrees
