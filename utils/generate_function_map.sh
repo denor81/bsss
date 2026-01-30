@@ -19,7 +19,7 @@ find_bash_files() {
 # @description: Извлекает функции и их контракты из bash файла
 # @params:      нет
 # @stdin:       file_path\0
-# @stdout:      function_name<:>type<:>description<:>file_path
+# @stdout:      function_name|type|description|file_path
 # @exit_code:   0 - всегда
 extract_functions_from_file() {
     local file_path
@@ -59,25 +59,27 @@ extract_functions_from_file() {
             
             # Определение функции (включая функции с двоеточиями в имени)
             /^[a-zA-Z_:][a-zA-Z0-9_:]*[[:space:]]*\(\)/ {
+                func_name = $1
                 if (in_contract) {
-                    func_name = $1
-                    # Выводим в требуемом формате
-                    print func_name "<:>" func_type "<:>" func_desc "<:>" file_path "\n"
-                    in_contract = 0
+                    print func_name "|" func_type "|" func_desc "|" file_path "\n"
+                } else {
+                    print func_name "|NO_CONTRACT|Функция без контракта|" file_path "\n"
                 }
+                in_contract = 0
                 next
             }
             
             # Альтернативный синтаксис функции: function name() (включая функции с двоеточиями)
             /^function[[:space:]]+[a-zA-Z_:][a-zA-Z0-9_:]*[[:space:]]*\(\)/ {
-                if (in_contract) {
-                    if (match($0, /function[[:space:]]+([a-zA-Z_:][a-zA-Z0-9_:]*)/, arr)) {
-                        func_name = arr[1]
-                        # Выводим в требуемом формате
-                        print func_name "<:>" func_type "<:>" func_desc "<:>" file_path "\n"
+                if (match($0, /function[[:space:]]+([a-zA-Z_:][a-zA-Z0-9_:]*)/, arr)) {
+                    func_name = arr[1]
+                    if (in_contract) {
+                        print func_name "|" func_type "|" func_desc "|" file_path "\n"
+                    } else {
+                        print func_name "|NO_CONTRACT|Функция без контракта|" file_path "\n"
                     }
-                    in_contract = 0
                 }
+                in_contract = 0
                 next
             }
             
@@ -86,6 +88,31 @@ extract_functions_from_file() {
                 in_contract = 0
             }
         ' "$file_path"
+    done
+}
+
+# @type:        Filter
+# @description: Подсчитывает количество вызовов каждой функции
+# @params:      нет
+# @stdin:       function_name|type|description|file_path
+# @stdout:      function_name|type|description|file_path|call_count
+# @exit_code:   0 - всегда
+count_function_calls() {
+    local line
+    local func_name
+    local count
+    
+    while IFS= read -r line; do
+        func_name=$(echo "$line" | cut -d'|' -f1 | sed 's/()$//')
+        
+        # Ищем вызовы функции в .sh файлах, исключая:
+        # 1. Закомментированные строки (строки, начинающиеся с #)
+        # 2. Определения функции (func_name() или function func_name())
+        count=$(find . -type f -name "*.sh" -exec grep -h "\\b${func_name}\\b" {} + 2>/dev/null | \
+                awk '!/^[[:space:]]*#/ && !/^([[:space:]]*)?'"${func_name}"'\(\)/ && !/^[[:space:]]*function[[:space:]]+'"${func_name}"'\(\)/' | \
+                wc -l | tr -d ' ')
+        
+        echo "${line}|${count}"
     done
 }
 
@@ -98,13 +125,16 @@ extract_functions_from_file() {
 main() {
     local output_file="function_map.txt"
     
-    echo "Генерация карты функций..."
+    echo "Генерация карты функций с подсчетом вызовов..."
     
-    # Генерируем карту функций и сохраняем в файл
-    find_bash_files | extract_functions_from_file > "$output_file"
+    # Создаем файл с заголовком
+    echo "function_name|type|description|file_path|call_count" > "$output_file"
+    
+    # Генерируем карту функций с количеством вызовов
+    find_bash_files | extract_functions_from_file | count_function_calls >> "$output_file"
     
     echo "Карта функций сохранена в файл: $output_file"
-    echo "Всего функций найдено: $(wc -l < "$output_file")"
+    echo "Всего функций найдено: $(($(wc -l < "$output_file") - 1))"
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
