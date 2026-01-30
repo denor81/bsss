@@ -17,11 +17,6 @@ source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
 
-# Logging initialization
-mkdir -p "${PROJECT_ROOT}/${LOGS_DIR}"
-readonly LOG_FILE="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
-exec > >(tee -a "$LOG_FILE") 2>&1
-
 # @type:        Filter
 # @description: Парсинг параметров запуска с использованием getopts
 # @params:
@@ -80,6 +75,13 @@ run_default() {
     exec bash "${PROJECT_ROOT}/$MAIN_FILE"
 }
 
+log_init() {
+    # Logging initialization
+    mkdir -p "${PROJECT_ROOT}/${LOGS_DIR}"
+    readonly LOG_FILE="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
+    exec > >(tee -a "$LOG_FILE") 2>&1
+}
+
 # @type:        Orchestrator
 # @description: Основная точка входа
 # @params:      @ - параметры командной строки
@@ -89,6 +91,7 @@ run_default() {
 #               $? - ошибка проверки прав или параметров
 main() {
     check_permissions
+    log_init
     parse_params "$ALLOWED_PARAMS" "$@"
 
     case "$ACTION" in
