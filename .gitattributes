@@ -1,14 +1,5 @@
-# 1. Сначала исключаем ВСЕ файлы из архива
 * export-ignore
 
-# 2. Исключаем сам файл настроек (по желанию, чтобы его тоже не было в архиве)
-#.gitattributes export-ignore
-#.gitignore export-ignore
-
-# 3. Явно "разрешаем" (возвращаем) нужные файлы и папки
-# Используем минус перед атрибутом (-export-ignore), чтобы отменить игнорирование
-
-# Пример: включить папку dist со всем содержимым
 modules/ -export-ignore
 modules/** -export-ignore
 lib/ -export-ignore
@@ -16,7 +7,5 @@ lib/** -export-ignore
 utils/ -export-ignore
 utils/rollback.sh -export-ignore
 
-# Пример: включить конкретный файл в корне
 bsss-main.sh -export-ignore
 local-runner.sh -export-ignore
-oneline-runner.sh -export-ignore

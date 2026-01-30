@@ -170,22 +170,6 @@ ssh::port::get_from_ss() {
     ' | sort -zu
 }
 
-# @type:        Filter
-# @description: Получает первый порт из path
-# @params:      нет
-# @stdin:       path\0
-# @stdout:      port\0
-# @exit_code:   0 - всегда
-ssh::port::get_first_from_path() {
-    xargs -r0 awk '
-        BEGIN { IGNORECASE=1; ORS="\0"; }
-        /^\s*Port\s+/ {
-            print $2
-            exit
-        }
-    '
-}
-
 # @type:        Orchestrator
 # @description: Проверяет возможность определения активных портов
 # @params:

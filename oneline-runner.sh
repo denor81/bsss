@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # oneline-runner.sh
 # Загрузчик для установки проекта одной командой
-# Usage: bash <(curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh)
+# Usage: curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh | sudo bash
 
 set -Eeuo pipefail
 
@@ -55,17 +55,6 @@ log_error() {
 # @exit_code:   0 - всегда
 log_info() {
     echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
-}
-
-# @type:        Filter
-# @description: Проверяет, был ли скрипт вызван через source
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - скрипт вызван через source
-#               1 - скрипт запущен напрямую
-is_sourced() {
-    [[ "${BASH_SOURCE[0]}" != "${0}" ]]
 }
 
 # @type:        Sink
