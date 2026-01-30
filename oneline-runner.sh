@@ -6,9 +6,10 @@
 set -Eeuo pipefail
 
 readonly UTIL_NAME="bsss"
+readonly VERSION="1.0.1"
+
 readonly SYMBOL_LINK_PATH="/usr/local/bin/$UTIL_NAME"
-readonly ARCHIVE_URL="file:///tmp/project-v1.0.0.tar.gz"
-# readonly ARCHIVE_URL="https://github.com/denor81/$UTIL_NAME/archive/refs/tags/v1.0.0.tar.gz"
+readonly ARCHIVE_URL="https://github.com/denor81/${UTIL_NAME}/releases/download/v${VERSION}/${UTIL_NAME}-framework-v${VERSION}.tar.gz"
 readonly INSTALL_DIR="/opt/$UTIL_NAME"
 readonly INSTALL_LOG_FILE_NAME=".uninstall_paths"
 readonly LOCAL_RUNNER_FILE_NAME="local-runner.sh"
