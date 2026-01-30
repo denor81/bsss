@@ -1,6 +1,7 @@
 # Cache directory
 .cache/
 opencode.json
+t.sh
 logs/
 
 # Git worktrees
