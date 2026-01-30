@@ -431,7 +431,4 @@ install::runner::main() {
     fi
 }
 
-# (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    install::runner::main
-fi
+install::runner::main
