@@ -75,6 +75,12 @@ run_default() {
     exec bash "${PROJECT_ROOT}/$MAIN_FILE"
 }
 
+# @type:        Orchestrator
+# @description: Инициализирует систему логирования: создает директорию логов и перенаправляет stdout/stderr в файл и терминал
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка создания директории
 log_init() {
     # Logging initialization
     mkdir -p "${PROJECT_ROOT}/${LOGS_DIR}"
