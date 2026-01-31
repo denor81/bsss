@@ -47,7 +47,7 @@ sys::file::get_paths_by_mask() {
 # @stdout:      path\torder\ttype\0 (0..N)
 # @exit_code:   0 - всегда
 sys::module::get_paths_w_type () {
-    xargs -r0 awk '
+    xargs -r0 gawk '
         BEGIN { IGNORECASE=1; ORS="\0"; order=""; type="" }
         /^# MODULE_ORDER:/ { order=$3; next }
         /^# MODULE_TYPE:/ {
@@ -66,7 +66,7 @@ sys::module::get_paths_w_type () {
 # @stdout:      path\torder\ttype\0 (0..N)
 # @exit_code:   0 - всегда
 sys::module::get_by_type () {
-    awk -v type="$1" -v RS='\0' -F'\t' '
+    gawk -v type="$1" -v RS='\0' -F'\t' '
         type == $3 { printf "%s\0", $0 }
     '
 }
@@ -98,7 +98,7 @@ sys::module::validate_order() {
         fi
     done < <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
     | sys::module::get_paths_w_type \
-    | awk -v RS='\0' -F'\t' 'BEGIN { ORS="" } { print $1 "\0" }')
+    | gawk -v RS='\0' -F'\t' 'BEGIN { ORS="" } { print $1 "\0" }')
 
     (( missing )) && return 5 || return 0
 }
@@ -115,7 +115,7 @@ sys::module::check_duplicate_order() {
     local has_dup=0
 
     duplicates=$(grep -EiHs '^# MODULE_ORDER:' "${PROJECT_ROOT}/$MODULES_DIR"/*.sh \
-    | awk -F': ' '{print $2}' | sort | uniq -d) || true
+    | gawk -F': ' '{print $2}' | sort | uniq -d) || true
 
     if [[ -n "$duplicates" ]]; then
         has_dup=1
@@ -160,7 +160,7 @@ sys::file::delete() {
 # @stdout:      port\0 (0..N)
 # @exit_code:   0 - всегда
 ssh::port::get_from_ss() {
-    ss -Hltnp | awk '
+    ss -Hltnp | gawk '
         BEGIN { ORS="\0" }
         /"sshd"/ {
             if (match($4, /:[0-9]+$/, m)) {
@@ -271,7 +271,7 @@ ufw::rule::delete_all_bsss() {
 # @exit_code:   0 - всегда
 ufw::rule::get_all_bsss() {
     ufw show added \
-    | awk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
+    | gawk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
         BEGIN { ORS="\0" }
         $0 ~ marker {
             sub(/^ufw[[:space:]]+/, "");
@@ -289,7 +289,7 @@ ufw::rule::get_all_bsss() {
 ufw::rule::get_all() {
     if command -v ufw > /dev/null 2>&1; then
         ufw show added \
-        | awk -v marker="^ufw.*" '
+        | gawk -v marker="^ufw.*" '
             BEGIN { ORS="\0" }
             $0 ~ marker {
                 print $0;

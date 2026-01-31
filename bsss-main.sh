@@ -10,6 +10,7 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
+source "${PROJECT_ROOT}/modules/helpers/init.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 
 trap log_stop EXIT
@@ -142,6 +143,7 @@ runner::module::run_modify() {
 #               $? - ошибка выполнения модулей
 main() {
     log_start
+    sys::gawk::check_dependency
     sys::module::validate_order
     sys::module::check_duplicate_order
     sys::log::rotate_old_files

@@ -17,7 +17,7 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 # @stdout:      string ID
 # @exit_code:   0 - всегда
 get_os_id() {
-    awk -F= '
+    gawk -F= '
         $1=="ID" {
             gsub (/"/, "", $2)
             print $2
