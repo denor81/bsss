@@ -17,7 +17,7 @@ ssh::socket::is_already_configured() {
     # 3. Если сокет есть, проверяем его статус через is-enabled.
     # Нам нужно именно значение "masked".
     local socket_enabled_status
-    socket_enabled_status=$(systemctl is-enabled "$unit_socket" 2>/dev/null || echo "not-found")
+    socket_enabled_status=$(systemctl is-enabled "$unit_socket" 2>/dev/null)
 
     [[ "$socket_enabled_status" == "masked" ]]
 }

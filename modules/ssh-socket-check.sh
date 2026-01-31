@@ -28,15 +28,15 @@ check_unit() {
 # @exit_code:   0 - режим корректен или успешно переключен
 #               1 - ошибка в ssh::socket::force_service_mode
 check() {
-    if ssh::socket::is_already_configured || return; then
+    if ssh::socket::is_already_configured; then
         log_info "SSH настроен корректно [ssh.service]"
         return
+    else
+        log_error "SSH настроен в режиме [ssh.socket], в этом режиме наблюдаются проблемы с поднятием порта"
+        log_info "Для работы скрипта требуется переключение SSH в Service Mode [ssh.service]"
+        io::confirm_action "Переключить SSH в Service Mode?"
+        ssh::socket::force_service_mode
     fi
-
-    log_error "SSH настроен в режиме [ssh.socket], в этом режиме наблюдаются проблемы с поднятием порта"
-    log_info "Для работы скрипта требуется переключение SSH в Service Mode [ssh.service]"
-    io::confirm_action "Переключить SSH в Service Mode?"
-    ssh::socket::force_service_mode
 }
 
 # @type:        Orchestrator
