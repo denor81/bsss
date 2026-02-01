@@ -12,6 +12,12 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-socket.sh"
 
+# @type:        Filter
+# @description: Проверяет существование ssh.service юнита
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - юнит существует
+#               1 - юнит не установлен
 check_unit() {
     if ! sys::ssh::unit_exists "ssh.service"; then
         log_error "Юнит ssh.service не установлен [ssh.service]"

@@ -211,7 +211,7 @@ install::download::archive() {
     fi
     
     local fsize=""
-    fsize=$(stat -c "%s" "$tmparchive" | awk '{printf "%.2f KB\n", $1/1024}')
+    fsize=$(stat -c "%s" "$tmparchive" | gawk '{printf "%.2f KB\n", $1/1024}')
     log_info "Архив скачан в $tmparchive (размер: $fsize, тип: $(file -ib "$tmparchive"))"
     
     TMPARCHIVE="$tmparchive"
@@ -236,7 +236,7 @@ install::archive::unpack() {
         return 1
     }
     local dir_size=""
-    dir_size=$(du -sb "$temp_project_dir" | cut -f1 | awk '{printf "%.2f KB\n", $1/1024}' )
+    dir_size=$(du -sb "$temp_project_dir" | cut -f1 | gawk '{printf "%.2f KB\n", $1/1024}' )
     log_info "Архив распакован в $temp_project_dir (размер: $dir_size)"
 }
 

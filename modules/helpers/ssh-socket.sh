@@ -33,6 +33,10 @@ sys::ssh::unit_exists() {
     systemctl list-unit-files "$unit_name" --quiet | grep -Fq "$unit_name"
 }
 
+# @type:        Filter
+# @description: Проверяет, активен ли ssh.service
+# @stdin:       нет
+# @stdout:      нет
 # @exit_code:   0 - активен
 #               1 - не активен
 sys::ssh::is_service_active() {

@@ -25,7 +25,7 @@ extract_functions_from_file() {
     local file_path
     while IFS= read -r -d '' file_path; do
         # Извлекаем все функции в файле
-        awk -v file_path="$file_path" '
+        gawk -v file_path="$file_path" '
             # Флаг для отслеживания контракта функции
             BEGIN {
                 in_contract = 0
@@ -109,7 +109,7 @@ count_function_calls() {
         # 1. Закомментированные строки (строки, начинающиеся с #)
         # 2. Определения функции (func_name() или function func_name())
         count=$(find . -type f -name "*.sh" -exec grep -h "\\b${func_name}\\b" {} + 2>/dev/null | \
-                awk '!/^[[:space:]]*#/ && !/^([[:space:]]*)?'"${func_name}"'\(\)/ && !/^[[:space:]]*function[[:space:]]+'"${func_name}"'\(\)/' | \
+                gawk '!/^[[:space:]]*#/ && !/^([[:space:]]*)?'"${func_name}"'\(\)/ && !/^[[:space:]]*function[[:space:]]+'"${func_name}"'\(\)/' | \
                 wc -l | tr -d ' ')
         
         echo "${line}|${count}"
