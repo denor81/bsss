@@ -364,7 +364,7 @@ ssh::log::guard_instructions() {
 sys::service::restart() {
     if sshd -t; then
         systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
-        systemctl restart ssh && log_info "SSH сервис перезагружен [systemctl restart ssh]"
+        systemctl restart ssh.service && log_info "SSH сервис перезагружен [systemctl restart ssh.service]"
     else
         log_error "Ошибка конфигурации ssh [sshd -t]"
         return 1

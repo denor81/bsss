@@ -7,8 +7,8 @@ set -Eeuo pipefail
 
 readonly UTIL_NAME="bsss"
 readonly REPO_URL="https://github.com"
-readonly FILE_NAME="bsss-framework-latest.tar.gz"
-readonly ARCHIVE_URL="${REPO_URL}/denor81/${UTIL_NAME}/releases/latest/download/${FILE_NAME}"
+readonly ARCHIVE_FILE_NAME="bsss-framework-latest.tar.gz"
+readonly ARCHIVE_URL="${REPO_URL}/denor81/${UTIL_NAME}/releases/latest/download/${ARCHIVE_FILE_NAME}"
 
 readonly SYMBOL_LINK_PATH="/usr/local/bin/$UTIL_NAME"
 readonly INSTALL_DIR="/opt/$UTIL_NAME"
@@ -195,10 +195,8 @@ install::download::archive() {
     local tmparchive="${2:-}"
     local add_to_cleanup="${3:-true}"
     
-    local curl_output=""
-    
     if [[ -z "$tmparchive" ]]; then
-        tmparchive=$(mktemp --tmpdir "$UTIL_NAME"-archive-XXXXXX)
+        tmparchive=$(mktemp --tmpdir "$UTIL_NAME"-archive-XXXXXX.tar.gz)
     fi
     
     log_info "Скачиваю архив: $archive_url"
@@ -206,11 +204,11 @@ install::download::archive() {
     if [[ "$add_to_cleanup" == "true" ]]; then
         CLEANUP_COMMANDS+=("$tmparchive")
     fi
-    
-    curl_output=$(curl -fsSL "$archive_url" -o "$tmparchive" 2>&1) || {
-        log_error "Ошибка загрузки архива - $curl_output"
+
+    if ! curl -fL --progress-meter "$archive_url" -o "$tmparchive"; then
+        log_error "Не удалось скачать архив (проверьте интернет или URL)"
         return 1
-    }
+    fi
     
     local fsize=""
     fsize=$(stat -c "%s" "$tmparchive" | awk '{printf "%.2f KB\n", $1/1024}')
