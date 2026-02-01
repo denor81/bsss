@@ -3,40 +3,38 @@ name: Build Release Assets
 on:
   push:
     tags:
-      - 'v*' # Срабатывает на v1.0, v2.1.3 и т.д.
+      - 'v*'
 
 jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Важно для создания релиза
+      contents: write 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Нужен для корректной работы git archive
+          fetch-depth: 0
 
-      - name: Create Archive
-        id: archive_step # Обязательно добавляем ID, чтобы обращаться к этому шагу
+      - name: Create Static Archive
+        id: archive_step
         run: |
-          RELEASE_NAME="bsss-framework-${{ github.ref_name }}"
-          ARCHIVE_NAME="${RELEASE_NAME}.tar.gz"
-          CHECKSUM_NAME="${RELEASE_NAME}.sha256"
+          FILE_NAME="bsss-framework-latest.tar.gz"
+          CHECKSUM_NAME="bsss-framework-latest.sha256"
           
-          git archive --format=tar.gz --prefix="${RELEASE_NAME}/" -o "$ARCHIVE_NAME" HEAD
-          sha256sum "$ARCHIVE_NAME" > "$CHECKSUM_NAME"
+          git archive --format=tar.gz -o "$FILE_NAME" HEAD
           
-          echo "archive_file=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
-          echo "checksum_file=$CHECKSUM_NAME" >> $GITHUB_OUTPUT
+          sha256sum "$FILE_NAME" > "$CHECKSUM_NAME"
+          
+          echo "archive=$FILE_NAME" >> $GITHUB_OUTPUT
+          echo "checksum=$CHECKSUM_NAME" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ${{ steps.archive_step.outputs.archive_file }}
-            ${{ steps.archive_step.outputs.checksum_file }}
+            ${{ steps.archive_step.outputs.archive }}
+            ${{ steps.archive_step.outputs.checksum }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          
