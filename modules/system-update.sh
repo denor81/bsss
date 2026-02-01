@@ -63,6 +63,7 @@ sys::update::orchestrator() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
+#               2 - отказ пользователя (io::confirm_action)
 #               $? - код ошибки дочернего процесса
 main() {
     log_start

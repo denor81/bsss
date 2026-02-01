@@ -33,6 +33,7 @@ check_unit() {
 # @stdout:      нет
 # @exit_code:   0 - режим корректен или успешно переключен
 #               1 - ошибка в ssh::socket::force_service_mode
+#               2 - отказ пользователя от переключения в service mode
 check() {
     if ssh::socket::is_already_configured; then
         log_info "SSH настроен корректно [ssh.service]"
