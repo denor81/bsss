@@ -66,6 +66,20 @@ log_question() {
 }
 
 # @type:        Sink
+# @description: ТОЛЬКО в файл - ответ с символом [?]
+#               В терминал ответ выводится стандартными средствами read
+# @params:      answer
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log_answer() {
+    local msg="$1"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [ANSWER] [$CURRENT_MODULE_NAME] $msg"
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+}
+
+# @type:        Sink
 # @description: Выводит информационное сообщение с символом [ ]
 # @params:      message - Информационное сообщение
 # @stdin:       нет
@@ -102,7 +116,11 @@ log_bold_info() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_warn() {
-    echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $1" >&2
+    local msg="$1"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [WARN] [$CURRENT_MODULE_NAME] $msg"
+    echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -112,9 +130,13 @@ log_warn() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_attention() {
+    local msg="$1"
+    local formatted_msg
     local color='\e[41;37m'
     local color_reset='\e[0m'
-    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$1" >&2
+    formatted_msg="$(date '+%H:%M:%S') [ATTENTION] [$CURRENT_MODULE_NAME] $msg"
+    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -124,10 +146,13 @@ log_attention() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_actual_info() {
-    local text="${1:-Актуальная информация после внесения изменений}"
+    local msg="${1:-Актуальная информация после внесения изменений}"
+    local formatted_msg
     local color='\e[37;42m'
     local color_reset='\e[0m'
-    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$text" >&2
+    formatted_msg="$(date '+%H:%M:%S') [ACTUAL_INFO] [$CURRENT_MODULE_NAME] $msg"
+    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -137,7 +162,11 @@ log_actual_info() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info_simple_tab() {
-    echo -e "$SYMBOL_INFO    $1" >&2
+    local msg="$1"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [INFO_TAB] [$CURRENT_MODULE_NAME] $msg"
+    echo -e "$SYMBOL_INFO    $msg" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -148,7 +177,12 @@ log_info_simple_tab() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_start() {
-    echo -e "$SYMBOL_INFO [${1:-$CURRENT_MODULE_NAME}]>>start>>[PID: ${2:-$$}]" >&2
+    local module_name="${1:-$CURRENT_MODULE_NAME}"
+    local pid="${2:-$$}"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [START] [$module_name] PID: $pid"
+    echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -159,8 +193,12 @@ log_start() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_stop() {
-    # echo >&2
-    echo -e "$SYMBOL_INFO [${1:-$CURRENT_MODULE_NAME}]>>stop>>[PID: ${2:-$$}]" >&2
+    local module_name="${1:-$CURRENT_MODULE_NAME}"
+    local pid="${2:-$$}"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [STOP] [$module_name] PID: $pid"
+    echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink

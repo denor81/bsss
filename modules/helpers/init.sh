@@ -10,7 +10,7 @@
 sys::gawk::check_dependency() {
     if command -v gawk >/dev/null 2>&1; then
         local gawk_v=$(gawk -V | head -n 1)
-        log_info "Ключевые зависимости"
+        log_info "Ключевые зависимости:"
         log_info_simple_tab "gawk установлен [$gawk_v]"
         return
     fi

@@ -19,6 +19,7 @@ io::ask_value() {
         log_question "$question [$hint]"
         read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] $question [$hint]: " -r choice </dev/tty
         choice=${choice:-$default}
+        log_answer "$choice"
 
         # Возвращаем код 2 при отмене
         [[ -n "$cancel_keyword" && "$choice" == "$cancel_keyword" ]] && return 2
