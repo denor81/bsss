@@ -409,3 +409,15 @@ common::exit::actions() {
     log_stop
     exit $rc
 }
+
+# @type:        Orchestrator
+# @description: Обработчик сигнала INT
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   $?
+common::int::actions() {
+    rc=$?
+    log_info "Получен сигнал INT [RC: $rc]"
+    exit $rc
+}
