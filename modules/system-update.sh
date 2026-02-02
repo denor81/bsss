@@ -2,6 +2,7 @@
 # Обновляет системные пакеты
 # MODULE_ORDER: 20
 # MODULE_TYPE: modify
+# MODULE_NAME: Обновление системы
 
 set -Eeuo pipefail
 

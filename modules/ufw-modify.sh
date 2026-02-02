@@ -2,6 +2,7 @@
 # Изменяет состояние UFW
 # MODULE_ORDER: 80
 # MODULE_TYPE: modify
+# MODULE_NAME: Настройка брандмауэра UFW
 
 set -Eeuo pipefail
 

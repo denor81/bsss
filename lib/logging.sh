@@ -7,6 +7,12 @@ readonly SYMBOL_ATTENTION="[A]"
 readonly SYMBOL_ACTUAL_INFO="[i]"
 readonly SYMBOL_ERROR="[x]"
 
+# @type:        Sink
+# @description: Выводит пустую строку
+# @params:      нет
+# @stdin:       нет
+# @stdout:      новая строка
+# @exit_code:   0 - всегда
 new_line() {
     echo >&2
 }
