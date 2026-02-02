@@ -68,6 +68,12 @@ parse_params() {
     done
 }
 
+# @type:        Orchestrator
+# @description: Инициализирует систему логирования: создает директорию логов, создает файл и симлинк, настраивает права
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 log_init() {
     local real_log="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
     
@@ -128,7 +134,7 @@ runner::module::run_check() {
 # @stdin:       path\0 (0..N) - пути к модулям modify
 # @stdout:      path\0 (0..1) - выбранный путь к модулю
 #               CHECK\0 - если выбрана проверка системы (00)
-#               пусто - если выбран выход (0)
+#               EXIT\0 - если выбран выход (0)
 # @exit_code:   0 - успешно
 #               1 - нет доступных модулей
 runner::module::select_modify() {
@@ -148,7 +154,20 @@ runner::module::select_modify() {
     log_info "Доступные модули настройки:"
     local i
     for ((i = 0; i < ${#module_paths[@]}; i++)); do
-        module_name=$(basename "${module_paths[$i]}")
+        module_name=$(gawk '
+            BEGIN { name="" }
+            /^# MODULE_NAME:/ { 
+                sub(/^# MODULE_NAME:[[:space:]]*/, "")
+                name=$0
+                exit
+            }
+            /^[^#]/ { exit }
+            END { 
+                if (name=="") name=FILENAME
+                sub(/.*\//, "", name)
+                print name
+            }
+        ' "${module_paths[$i]}")
         log_info_simple_tab "$((i + 1)). $module_name"
     done
     log_info_simple_tab "0. Выход"
@@ -207,6 +226,13 @@ runner::module::run_modify() {
     done
 }
 
+# @type:        Orchestrator
+# @description: Основная функция запуска: проверяет зависимости, запускает проверку и меню модификации
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка проверки или запуска модулей
 run() {
     sys::gawk::check_dependency
     sys::module::validate_order
