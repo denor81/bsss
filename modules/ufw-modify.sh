@@ -13,8 +13,8 @@ source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 
-# Сработает при откате изменений при сигнале USR1
-trap common::exit::actions EXIT TERM INT
+trap common::int::actions INT
+trap common::exit::actions EXIT
 trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
