@@ -53,8 +53,6 @@ ufw::menu::display() {
     local id
     local text
 
-    log::draw_lite_border
-
     ufw::orchestrator::log_statuses
 
     log_info "Доступные действия:"
@@ -62,8 +60,6 @@ ufw::menu::display() {
     while IFS='|' read -r -d '' id text || break; do
         log_info_simple_tab "$id. $text"
     done < <(ufw::menu::get_items)
-
-    log::draw_lite_border
 }
 
 # @type:        Source
@@ -159,7 +155,6 @@ ufw::status::force_enable() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 log::rollback::instructions() {
-    log::draw_lite_border
     log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
     log_attention "Проверьте доступ к серверу после включения UFW"
 }
@@ -223,8 +218,6 @@ ufw::log::ping_status() {
 # @stdout:      нет
 # @exit_code:   0 - Всегда успешно
 ufw::orchestrator::log_statuses() {
-    log::draw_lite_border
-    # log_actual_info
     ufw::log::status
     ufw::log::rules
     ufw::log::ping_status

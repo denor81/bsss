@@ -75,18 +75,7 @@ run_default() {
     exec bash "${PROJECT_ROOT}/$MAIN_FILE"
 }
 
-# @type:        Orchestrator
-# @description: Инициализирует систему логирования: создает директорию логов и перенаправляет stdout/stderr в файл и терминал
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - ошибка создания директории
-log_init() {
-    # Logging initialization
-    mkdir -p "${PROJECT_ROOT}/${LOGS_DIR}"
-    readonly LOG_FILE="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
-    exec > >(tee -a "$LOG_FILE") 2>&1
-}
+
 
 # @type:        Orchestrator
 # @description: Основная точка входа
@@ -97,7 +86,6 @@ log_init() {
 #               $? - ошибка проверки прав или параметров
 main() {
     check_permissions
-    log_init
     parse_params "$ALLOWED_PARAMS" "$@"
 
     case "$ACTION" in

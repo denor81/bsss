@@ -8,16 +8,16 @@
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-sys::log::rotate_old_files() {
-    local logs_dir="${PROJECT_ROOT}/${LOGS_DIR}"
-    [[ ! -d "$logs_dir" ]] && return 0
+# sys::log::rotate_old_files() {
+#     local logs_dir="${PROJECT_ROOT}/${LOGS_DIR}"
+#     [[ ! -d "$logs_dir" ]] && return 0
     
-    find "$logs_dir" -maxdepth 1 -type f -name "*.log" -printf '%T@ %p\0' \
-        | sort -z -n \
-        | sed -z 's/^[0-9.]* //' \
-        | head -z -n -"$MAX_LOG_FILES" \
-        | xargs -r0 rm -f
-}
+#     find "$logs_dir" -maxdepth 1 -type f -name "*.log" -printf '%T@ %p\0' \
+#         | sort -z -n \
+#         | sed -z 's/^[0-9.]* //' \
+#         | head -z -n -"$MAX_LOG_FILES" \
+#         | xargs -r0 rm -f
+# }
 
 
 # @type:        Source
@@ -380,7 +380,6 @@ rollback::orchestrator::watchdog_stop() {
 # @exit_code:   0 - успешно
 make_fifo_and_start_reader() {
     mkfifo "$WATCHDOG_FIFO"
-    log::new_line
     log_info "Создан FIFO: $WATCHDOG_FIFO"
     cat "$WATCHDOG_FIFO" >&2 &
 }

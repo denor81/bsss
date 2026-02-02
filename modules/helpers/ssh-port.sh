@@ -21,7 +21,6 @@ ssh::menu::display_exists_scenario() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ssh::menu::display_install_ui() {
-    log::draw_lite_border
     log_info "Доступные действия:"
     log_info_simple_tab "0. Выход"
 }
@@ -125,10 +124,6 @@ ssh::log::other_configs() {
 # @exit_code:   0 - действия успешно выполнены
 #               $? - ошибка в процессе
 ssh::orchestrator::log_statuses() {
-    # sys::service::restart
-
-    log::draw_lite_border
-    # log_actual_info
     ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
     ufw::log::rules
@@ -349,7 +344,6 @@ ssh::reset::port() {
 # @exit_code:   0 - успешно
 ssh::log::guard_instructions() {
     local port="$1"
-    log::draw_lite_border
     log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
     log_attention "ОТКРОЙТЕ НОВОЕ ОКНО и проверьте связь через порт $port"
 }

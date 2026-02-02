@@ -16,7 +16,8 @@ io::ask_value() {
     local choice
 
     while true; do
-        read -p "$QUESTION_PREFIX $question [$hint]: " -r choice </dev/tty
+        log_question "$question [$hint]"
+        read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] $question [$hint]: " -r choice </dev/tty
         choice=${choice:-$default}
 
         # Возвращаем код 2 при отмене

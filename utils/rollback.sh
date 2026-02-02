@@ -44,7 +44,6 @@ rollback::orchestrator::stop() {
 rollback::orchestrator::immediate() {
     log_info "Получен сигнал USR2 - остановка таймера отката и немедленный откат изменений"
     kill "$SLEEP_PID" 2>/dev/null
-    log::draw_lite_border
     rollback::orchestrator::full
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
@@ -145,8 +144,6 @@ rollback::orchestrator::watchdog_timer() {
     SLEEP_PID=$!
 
     if wait "$SLEEP_PID" 2>/dev/null; then
-        log::new_line
-        log::draw_lite_border
         log_info "Время истекло - выполняется ОТКАТ"
         rollback::orchestrator::full
 

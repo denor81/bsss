@@ -3,22 +3,11 @@
 readonly SYMBOL_SUCCESS="[v]"
 readonly SYMBOL_QUESTION="[?]" # Используется в lib/user_confirmation.sh
 readonly SYMBOL_INFO="[ ]"
+readonly SYMBOL_DEBUG="[D]"
 readonly SYMBOL_WARN="[!]"
 readonly SYMBOL_ATTENTION="[A]"
 readonly SYMBOL_ACTUAL_INFO="[i]"
 readonly SYMBOL_ERROR="[x]"
-
-readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
-
-# @type:        Sink
-# @description: Новая строка
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-log::new_line() {
-    echo >&2
-}
 
 # @type:        Sink
 # @description: Выводит успешное сообщение с символом [v]
@@ -27,7 +16,11 @@ log::new_line() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_success() {
-    echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2
+    local msg="$1"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [SUCCESS] [$CURRENT_MODULE_NAME] $msg"
+    echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -37,7 +30,11 @@ log_success() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_error() {
-    echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
+    local msg="$1"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [ERROR] [$CURRENT_MODULE_NAME] $msg"
+    echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -47,7 +44,25 @@ log_error() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info() {
-    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
+    local msg="$1"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [INFO] [$CURRENT_MODULE_NAME] $msg"
+    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+}
+
+# @type:        Sink
+# @description: ТОЛЬКО в файл - вопрос с символом [?]
+#               В терминал вопрос выводится стандартными средствами read
+# @params:      question - вопрос
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log_question() {
+    local msg="$1"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [QUESTION] [$CURRENT_MODULE_NAME] $msg"
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -57,7 +72,11 @@ log_info() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_debug() {
-    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
+    local msg="$1"
+    local formatted_msg
+    formatted_msg="$(date '+%H:%M:%S') [DEBUG] [$CURRENT_MODULE_NAME] $msg"
+    echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -67,9 +86,13 @@ log_debug() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_bold_info() {
+    local msg="$1"
+    local formatted_msg
     local color='\e[1m'
     local color_reset='\e[0m'
+    formatted_msg="$(date '+%H:%M:%S') [BOLD_INFO] [$CURRENT_MODULE_NAME] $msg"
     printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
+    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -148,16 +171,4 @@ log_stop() {
 # @exit_code:   0 - успешно
 log::draw_border() {
     printf '%.0s#' {1..80} >&2; echo >&2
-}
-
-# @type:        Sink
-# @description: Выводит разделитель из 80 символов '-'
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-log::draw_lite_border() {
-    # printf '%.0s-' {1..80} >&2; echo >&2
-    # log::new_line
-    :
 }

@@ -26,7 +26,6 @@ readonly SYMBOL_SUCCESS="[v]"
 readonly SYMBOL_QUESTION="[?]"
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_ERROR="[x]"
-readonly QUESTION_PREFIX="$SYMBOL_QUESTION [$CURRENT_MODULE_NAME]"
 
 # @type:        Sink
 # @description: Выводит успешное сообщение с символом [v]
@@ -128,7 +127,7 @@ install::ui::ask_run_mode() {
     local choice
 
     while true; do
-        read -p "$QUESTION_PREFIX Ваш выбор (Y/n/c): " -r </dev/tty
+        read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] Ваш выбор (Y/n/c): " -r </dev/tty
         choice=${REPLY:-Y}
         
         if [[ ${choice,,} =~ ^[ync]$ ]]; then

@@ -1,19 +1,89 @@
 #!/usr/bin/env bash
 # Основной скрипт для последовательного запуска модулей системы
-# Usage: run with ./local-runner.sh
+# Usage: run with ./main.sh [options] [-h|-u]
 
 set -Eeuo pipefail
 
 # Константы
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
+readonly ALLOWED_PARAMS="hu"
+readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление]"
+PARAMS_ACTION=""
 
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
+source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
 source "${PROJECT_ROOT}/modules/helpers/init.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 
+trap 'exit 100' INT
 trap log_stop EXIT
+
+# @type:        Filter
+# @description: Проверяет права доступа для запуска скрипта
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - права root есть
+#               1 - недостаточно прав
+check_permissions() {
+    if [[ $EUID -ne 0 ]]; then
+        log_error "Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
+        return 1
+    fi
+}
+
+# @type:        Sink
+# @description: Выводит справочную информацию
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+show_help() {
+    log_info "Доступны короткие параметры $ALLOWED_PARAMS $ALLOWED_PARAMS_HELP"
+}
+
+# @type:        Filter
+# @description: Парсинг параметров запуска с использованием getopts
+# @params:
+#   allowed_params [optional] Разрешенные параметры (default: $ALLOWED_PARAMS)
+#   @            Остальные параметры для парсинга
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - некорректный параметр
+parse_params() {
+    # Всегда используем дефолтный ALLOWED_PARAMS
+    local allowed_params="${1:-$ALLOWED_PARAMS}"
+    shift
+    
+    while getopts ":$allowed_params" opt "$@"; do
+        case "${opt}" in
+            h)  ACTION="help" ;;
+            u)  ACTION="uninstall" ;;
+            \?) log_error "Некорректный параметр -$OPTARG, доступны: $allowed_params"; return 1 ;;
+            :)  log_error "Параметр -$OPTARG требует значение"; return 1 ;;
+        esac
+    done
+}
+
+log_init() {
+    local real_log="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
+    
+    mkdir -p "$(dirname "$real_log")"
+    touch "$real_log"
+    
+    # Создаем симлинк на текущий лог-файл
+    ln -sf "$real_log" "$CURRENT_LOG_SYMLINK"
+}
+
+# log_init() {
+#     # Logging initialization
+#     mkdir -p "${PROJECT_ROOT}/${LOGS_DIR}"
+#     readonly LOG_FILE="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
+#     exec > >(tee -a "$LOG_FILE") 2>&1
+# }
 
 # @type:        Orchestrator
 # @description: Поиск и запуск модулей с типом 'check'
@@ -70,7 +140,6 @@ runner::module::select_modify() {
     fi
 
     # Отображаем меню
-    log::draw_lite_border
     log_info "Доступные модули настройки:"
     local i
     for ((i = 0; i < ${#module_paths[@]}; i++)); do
@@ -79,7 +148,6 @@ runner::module::select_modify() {
     done
     log_info_simple_tab "0. Выход"
     log_info_simple_tab "00. Проверка системы (check)"
-    log::draw_lite_border
 
     # Запрашиваем выбор пользователя
     local selection
@@ -134,25 +202,37 @@ runner::module::run_modify() {
     done
 }
 
-# @type:        Orchestrator
-# @description: Основная точка входа
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - ошибка выполнения модулей
-main() {
-    log_start
+run() {
     sys::gawk::check_dependency
     sys::module::validate_order
     sys::module::check_duplicate_order
-    sys::log::rotate_old_files
+    # sys::log::rotate_old_files
 
     runner::module::run_check
     io::confirm_action "Запустить настройку?" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
     runner::module::run_modify
 }
 
+# @type:        Orchestrator
+# @description: Основная точка входа
+# @params:      @ - параметры командной строки
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка проверки прав или параметров
+main() {
+    log_init
+    log_start
+    check_permissions
+    parse_params "$ALLOWED_PARAMS" "$@"
+
+    case "$PARAMS_ACTION" in
+        help)      show_help ;;
+        uninstall) run_uninstall ;;
+        *)         run ;;
+    esac
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main
+    main "$@"
 fi
