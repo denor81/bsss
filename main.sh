@@ -17,8 +17,8 @@ source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
 source "${PROJECT_ROOT}/modules/helpers/init.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 
-trap 'exit 100' INT
-trap log_stop EXIT
+trap common::int::actions INT
+trap common::exit::actions EXIT
 
 # @type:        Filter
 # @description: Проверяет права доступа для запуска скрипта
@@ -71,19 +71,24 @@ parse_params() {
 log_init() {
     local real_log="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
     
+    # 1. Создаем дерево директорий
     mkdir -p "$(dirname "$real_log")"
     touch "$real_log"
     
-    # Создаем симлинк на текущий лог-файл
+    # 2. Создаем симлинк
     ln -sf "$real_log" "$CURRENT_LOG_SYMLINK"
-}
 
-# log_init() {
-#     # Logging initialization
-#     mkdir -p "${PROJECT_ROOT}/${LOGS_DIR}"
-#     readonly LOG_FILE="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
-#     exec > >(tee -a "$LOG_FILE") 2>&1
-# }
+    # 3. Определяем, кому отдавать права
+    # Если запущен через sudo, берем реального юзера, иначе текущего
+    local target_user="${SUDO_USER:-$USER}"
+    
+    # 4. Меняем владельца рекурсивно на всю папку логов
+    # Это покроет и файлы, и сам симлинк (включая тот, на что он указывает)
+    chown -R "$target_user:$target_user" "${PROJECT_ROOT}/${LOGS_DIR}"
+    
+    # 5. Отдельно фиксируем права на сам симлинк (флаг -h)
+    chown -h "$target_user:$target_user" "$CURRENT_LOG_SYMLINK"
+}
 
 # @type:        Orchestrator
 # @description: Поиск и запуск модулей с типом 'check'
@@ -206,7 +211,7 @@ run() {
     sys::gawk::check_dependency
     sys::module::validate_order
     sys::module::check_duplicate_order
-    # sys::log::rotate_old_files
+    sys::log::rotate_old_files
 
     runner::module::run_check
     io::confirm_action "Запустить настройку?" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)

@@ -8,16 +8,16 @@
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-# sys::log::rotate_old_files() {
-#     local logs_dir="${PROJECT_ROOT}/${LOGS_DIR}"
-#     [[ ! -d "$logs_dir" ]] && return 0
+sys::log::rotate_old_files() {
+    local logs_dir="${PROJECT_ROOT}/${LOGS_DIR}"
+    [[ ! -d "$logs_dir" ]] && return 0
     
-#     find "$logs_dir" -maxdepth 1 -type f -name "*.log" -printf '%T@ %p\0' \
-#         | sort -z -n \
-#         | sed -z 's/^[0-9.]* //' \
-#         | head -z -n -"$MAX_LOG_FILES" \
-#         | xargs -r0 rm -f
-# }
+    find "$logs_dir" -maxdepth 1 -type f -name "[0-9][0-9][0-9][0-9]-*.log" -printf '%T@ %p\0' \
+        | sort -z -n \
+        | sed -z 's/^[0-9.]* //' \
+        | head -z -n -"$MAX_LOG_FILES" \
+        | xargs -r0 rm -f
+}
 
 
 # @type:        Source
@@ -418,6 +418,10 @@ common::exit::actions() {
 # @exit_code:   $?
 common::int::actions() {
     rc=$?
+    if [[ $rc -eq 0 ]]; then
+        rc=130
+    fi
+    new_line
     log_info "Получен сигнал INT [RC: $rc]"
     exit $rc
 }

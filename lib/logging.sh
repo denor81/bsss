@@ -1,13 +1,15 @@
-# Символы для обозначения статуса сообщений
-# shellcheck disable=SC2034
 readonly SYMBOL_SUCCESS="[v]"
-readonly SYMBOL_QUESTION="[?]" # Используется в lib/user_confirmation.sh
+readonly SYMBOL_QUESTION="[?]"
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_DEBUG="[D]"
 readonly SYMBOL_WARN="[!]"
 readonly SYMBOL_ATTENTION="[A]"
 readonly SYMBOL_ACTUAL_INFO="[i]"
 readonly SYMBOL_ERROR="[x]"
+
+new_line() {
+    echo >&2
+}
 
 # @type:        Sink
 # @description: Выводит успешное сообщение с символом [v]
