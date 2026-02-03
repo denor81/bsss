@@ -3,6 +3,15 @@
 # Загрузчик для установки проекта одной командой
 # Usage: curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh | sudo bash
 
+#
+#
+#
+# Логирование oneline-runner.sh происходит в journalctl
+# journalctl -t bsss --since '10 minutes ago'
+#
+#
+#
+
 set -Eeuo pipefail
 
 readonly UTIL_NAME="bsss"
