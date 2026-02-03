@@ -21,14 +21,22 @@ jobs:
         run: |
           FILE_NAME="bsss-framework-latest.tar.gz"
           CHECKSUM_NAME="bsss-framework-latest.sha256"
-          
-          git archive --format=tar.gz -o "$FILE_NAME" HEAD
+          VARS_FILE="lib/vars.conf"
+
+          # 1. Меняем значения переменных в файле перед архивацией
+          # Используем регулярные выражения, чтобы найти строку и заменить число
+          sed -i "s/^readonly ROLLBACK_TIMER_SECONDS=.*/readonly ROLLBACK_TIMER_SECONDS=300/" "$VARS_FILE"
+          sed -i "s/^readonly SSH_PORT_CHECK_TIMEOUT=.*/readonly SSH_PORT_CHECK_TIMEOUT=10/" "$VARS_FILE"
+
+          # 2. Теперь создаем архив (в него попадут уже измененные файлы)
+          # ВАЖНО: 'git archive' берет файлы из коммита, а нам нужны измененные на диске.
+          # Поэтому используем обычный tar, чтобы включить локальные правки sed.
+          tar -czf "$FILE_NAME" --exclude=".git" . 
           
           sha256sum "$FILE_NAME" > "$CHECKSUM_NAME"
           
           echo "archive=$FILE_NAME" >> $GITHUB_OUTPUT
           echo "checksum=$CHECKSUM_NAME" >> $GITHUB_OUTPUT
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
