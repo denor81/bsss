@@ -7,6 +7,15 @@ readonly SYMBOL_ATTENTION="[A]"
 readonly SYMBOL_ACTUAL_INFO="[i]"
 readonly SYMBOL_ERROR="[x]"
 
+#
+#
+#
+# LOG_STRICT_MODE нужен для маскировки ошибок логирования при экстренном прерывании родительского скрипта
+#
+#
+#
+
+
 # Journal mapping: BSSS log type -> systemd journal priority
 readonly -A JOURNAL_MAP=(
     [DEBUG]="debug"
@@ -46,7 +55,11 @@ log::to_journal() {
 # @stdout:      новая строка
 # @exit_code:   0 - всегда
 new_line() {
-    echo >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo >&2
+    else
+        echo >&2 || true
+    fi
 }
 
 # @type:        Sink
@@ -60,7 +73,11 @@ log_success() {
     local type="SUCCESS"
     local formatted_msg
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2
+    else
+        echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
 }
@@ -76,7 +93,11 @@ log_error() {
     local type="ERROR"
     local formatted_msg
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2
+    else
+        echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
 }
@@ -92,7 +113,11 @@ log_info() {
     local type="INFO"
     local formatted_msg
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
+    else
+        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
 }
@@ -140,7 +165,11 @@ log_debug() {
     local type="DEBUG"
     local formatted_msg
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2
+    else
+        echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
 }
@@ -158,7 +187,11 @@ log_bold_info() {
     local color='\e[1m'
     local color_reset='\e[0m'
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
+    else
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
 }
@@ -174,7 +207,11 @@ log_warn() {
     local type="WARN"
     local formatted_msg
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2
+    else
+        echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
 }
@@ -192,7 +229,11 @@ log_attention() {
     local color='\e[41;37m'
     local color_reset='\e[0m'
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2
+    else
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
 }
@@ -210,7 +251,11 @@ log_actual_info() {
     local color='\e[37;42m'
     local color_reset='\e[0m'
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
+    else
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
 }
@@ -226,7 +271,11 @@ log_info_simple_tab() {
     local type="INFO_TAB"
     local formatted_msg
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    echo -e "$SYMBOL_INFO    $msg" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo -e "$SYMBOL_INFO    $msg" >&2
+    else
+        echo -e "$SYMBOL_INFO    $msg" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
 }
@@ -244,7 +293,11 @@ log_start() {
     local type="START"
     local formatted_msg
     formatted_msg="$(date '+%H:%M:%S') [$type] [$module_name] PID: $pid"
-    echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2
+    else
+        echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "PID: $pid" "$type"
 }
@@ -262,7 +315,11 @@ log_stop() {
     local type="STOP"
     local formatted_msg
     formatted_msg="$(date '+%H:%M:%S') [$type] [$module_name] PID: $pid"
-    echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2
+    else
+        echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2 || true
+    fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "PID: $pid" "$type"
 }
@@ -274,5 +331,9 @@ log_stop() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 log::draw_border() {
-    printf '%.0s#' {1..80} >&2; echo >&2
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        printf '%.0s#' {1..80} >&2; echo >&2
+    else
+        printf '%.0s#' {1..80} >&2 || true; echo >&2 || true
+    fi
 }

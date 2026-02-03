@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 # ROLLBACK
 
+#
+#
+#
+# LOG_STRICT_MODE нужен для маскировки ошибок логирования при экстренном прерывании родительского скрипта
+# SIGPIPE гасим по той же причине - обеспечиваем максимальную живучесть rollback
+#
+#
+#
+
 set -Eeuo pipefail
 
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
@@ -12,12 +21,16 @@ source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 
+LOG_STRICT_MODE=false
 MAIN_SCRIPT_PID=""
 SLEEP_PID=""
 MAIN_SCRIPT=""
 ROLLBACK_TYPE=""
 
-trap "" INT TERM # Игнорируем прерывание - скрипт должен жить
+# На случай прерывания родительского скрипт защищаемся от SIGPIPE для максимальной устойчивости rollback
+trap '' SIGPIPE # Игнорируем ошибки пайпов при записи логов в закрытый дескриптор
+
+trap '' INT TERM # Игнорируем прерывание - скрипт должен жить
 trap 'rollback::orchestrator::exit' EXIT
 trap 'rollback::orchestrator::stop_usr1' SIGUSR1
 trap 'rollback::orchestrator::immediate_usr2' SIGUSR2
@@ -61,7 +74,7 @@ rollback::orchestrator::immediate_usr2() {
     rollback::orchestrator::full
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
-        log_info_simple_tab "Посылаем сигнал отката основному скрипту USR1 [PID: $MAIN_SCRIPT_PID]"
+        log_info "Посылаем сигнал отката основному скрипту USR1 [PID: $MAIN_SCRIPT_PID]"
         kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
         wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
     fi
@@ -154,6 +167,7 @@ rollback::orchestrator::watchdog_timer() {
     SLEEP_PID=$!
 
     if wait "$SLEEP_PID" 2>/dev/null; then
+        new_line
         log_info "Время истекло - выполняется ОТКАТ"
         rollback::orchestrator::full
 
