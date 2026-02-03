@@ -27,6 +27,34 @@ readonly SYMBOL_QUESTION="[?]"
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_ERROR="[x]"
 
+# Journal mapping: BSSS log type -> systemd journal priority
+readonly -A JOURNAL_MAP=(
+    [SUCCESS]="notice"
+    [INFO]="info"
+    [ERROR]="err"
+)
+
+# Check if logger command is available for journal logging
+command -v logger >/dev/null 2>&1 && readonly LOG_JOURNAL_ENABLED=1 || readonly LOG_JOURNAL_ENABLED=0
+
+# @type:        Sink
+# @description: Sends message to systemd journal if logging is enabled
+# @params:      message - Message to log
+#               log_type - BSSS log type (SUCCESS, ERROR, INFO)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log::to_journal() {
+    local msg="$1"
+    local log_type="$2"
+    local priority
+
+    if (( LOG_JOURNAL_ENABLED )); then
+        priority="${JOURNAL_MAP[$log_type]:-info}"
+        logger --id -t "$UTIL_NAME" -p "user.$priority" "[$CURRENT_MODULE_NAME] $msg" || true
+    fi
+}
+
 # @type:        Sink
 # @description: Выводит успешное сообщение с символом [v]
 # @params:      message - Сообщение для вывода
@@ -34,7 +62,8 @@ readonly SYMBOL_ERROR="[x]"
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_success() {
-    echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2
+    echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2 || true
+    log::to_journal "$1" "SUCCESS"
 }
 
 # @type:        Sink
@@ -44,7 +73,8 @@ log_success() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_error() {
-    echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2
+    echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2 || true
+    log::to_journal "$1" "ERROR"
 }
 
 # @type:        Sink
@@ -54,7 +84,8 @@ log_error() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info() {
-    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2
+    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2 || true
+    log::to_journal "$1" "INFO"
 }
 
 # @type:        Sink
