@@ -11,6 +11,9 @@ readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление]"
 PARAMS_ACTION=""
 
 source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/i18n/core.sh"
+source "${PROJECT_ROOT}/lib/i18n/loader.sh"
+i18n::init
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
@@ -29,7 +32,7 @@ trap common::exit::actions EXIT
 #               1 - недостаточно прав
 check_permissions() {
     if [[ $EUID -ne 0 ]]; then
-        log_error "Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
+        log_error "common.error_root_privileges"
         return 1
     fi
 }
@@ -41,7 +44,7 @@ check_permissions() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 show_help() {
-    log_info "Доступны короткие параметры $ALLOWED_PARAMS $ALLOWED_PARAMS_HELP"
+    log_info "common.info_short_params" "$ALLOWED_PARAMS" "$ALLOWED_PARAMS_HELP"
 }
 
 # @type:        Filter
@@ -62,8 +65,8 @@ parse_params() {
         case "${opt}" in
             h)  ACTION="help" ;;
             u)  ACTION="uninstall" ;;
-            \?) log_error "Некорректный параметр -$OPTARG, доступны: $allowed_params"; return 1 ;;
-            :)  log_error "Параметр -$OPTARG требует значение"; return 1 ;;
+            \?) log_error "common.error_invalid_param" "$OPTARG" "$allowed_params"; return 1 ;;
+            :)  log_error "common.error_param_requires_value" "$OPTARG"; return 1 ;;
         esac
     done
 }
@@ -120,8 +123,8 @@ runner::module::run_check() {
     | sys::module::get_by_type "$MODULE_TYPE_CHECK" \
     | sys::module::sort_by_order)
 
-    (( found == 0 )) && { log_error "Запуск не возможен, Модули не найдены"; log::draw_border; return 1; }
-    (( err )) && { log_error "Запуск не возможен, один из модулей показывает ошибку"; log::draw_border; return 2; }
+    (( found == 0 )) && { log_error "common.error_no_modules_found"; log::draw_border; return 1; }
+    (( err )) && { log_error "common.error_module_error"; log::draw_border; return 2; }
     log::draw_border
 }
 
@@ -146,12 +149,12 @@ runner::module::select_modify() {
 
     # Проверяем, есть ли модули
     if (( ${#module_paths[@]} == 0 )); then
-        log_error "Нет доступных модулей для настройки"
+        log_error "common.error_no_modules_available"
         return 1
     fi
 
     # Отображаем меню
-    log_info "Доступные модули настройки:"
+    log_info "common.info_available_modules"
     local i
     for ((i = 0; i < ${#module_paths[@]}; i++)); do
         module_name=$(gawk '
@@ -168,17 +171,17 @@ runner::module::select_modify() {
                 print name
             }
         ' "${module_paths[$i]}")
-        log_info_simple_tab "$((i + 1)). $module_name"
+        log_info_simple_tab "$(printf "$(_ "common.info_menu_item_format")" "$((i + 1))" "$module_name")"
     done
-    log_info_simple_tab "0. Выход"
-    log_info_simple_tab "00. Проверка системы (check)"
+    log_info_simple_tab "0. $(_ "common.menu_exit")"
+    log_info_simple_tab "$(_ "common.info_menu_check_item")"
 
     # Запрашиваем выбор пользователя
     local selection
     read -r -d '' selection < <(io::ask_value "Выберите модуль" "" "^(00|[0-$(( ${#module_paths[@]} ))])$" "0-${#module_paths[@]}")
     
     case "$selection" in
-        0) log_info "Выход из меню настройки"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
+        0) log_info "common.info_exit_menu"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
         00) printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
         *)  printf '%s\0' "${module_paths[$((selection - 1))]}" ;; # Возвращаем выбранный путь
     esac
@@ -215,12 +218,12 @@ runner::module::run_modify() {
             bash "$selected_module" || exit_code=$?
 
             case "$exit_code" in
-                0) log_info "Модуль успешно завершен [Code: $exit_code]" ;;
-                2|130) log_info "Модуль завершен пользователем [Code: $exit_code]" ;;
-                3) log_info "Модуль завершен откатом [Code: $exit_code]" ;;
-                4) log_info "Модуль требует предварительной настройки SSH [Code: $exit_code]" ;;
-                5) log_error "Отсутствуют обязательные метатеги MODULE_ORDER [Code: $exit_code]" ;;
-                *) log_error "Ошибка в модуле [$selected_module] [Code: $exit_code]" ;;
+                0) log_info "common.info_module_successful" "$exit_code" ;;
+                2|130) log_info "common.info_module_user_cancelled" "$exit_code" ;;
+                3) log_info "common.info_module_rollback" "$exit_code" ;;
+                4) log_info "common.info_module_requires_ssh" "$exit_code" ;;
+                5) log_error "common.error_missing_meta_tags" "$exit_code" ;;
+                *) log_error "common.error_module_failed_code" "$selected_module" "$exit_code" ;;
             esac
         fi
     done

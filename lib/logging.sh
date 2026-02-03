@@ -258,7 +258,7 @@ log_attention() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME] "$msg" >&2 || true
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"

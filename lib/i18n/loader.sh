@@ -62,8 +62,8 @@ i18n::load_translations() {
         return 1
     fi
     
-    # Очистка предыдущих переводов
-    unset I18N_MESSAGES
+    # Очистка предыдущих переводов (переобъявление ассоциативного массива)
+    declare -gA I18N_MESSAGES=()
     
     # Загрузка всех .sh файлов из директории языка
     local translation_files
