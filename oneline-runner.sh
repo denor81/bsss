@@ -13,7 +13,7 @@ readonly ARCHIVE_URL="${REPO_URL}/denor81/${UTIL_NAME}/releases/latest/download/
 readonly SYMBOL_LINK_PATH="/usr/local/bin/$UTIL_NAME"
 readonly INSTALL_DIR="/opt/$UTIL_NAME"
 readonly INSTALL_LOG_FILE_NAME=".uninstall_paths"
-readonly LOCAL_RUNNER_FILE_NAME="local-runner.sh"
+readonly MAIN_SCRIPT_FILE_NAME="main.sh"
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 
 declare -a CLEANUP_COMMANDS=()
@@ -243,22 +243,22 @@ install::archive::unpack() {
 # @description: Проверяет успешность распаковки во временную директорию
 # @params:
 #   temp_project_dir [optional] Директория с проектом (default: $TEMP_PROJECT_DIR)
-#   local_runner_file_name [optional] Имя файла (default: $LOCAL_RUNNER_FILE_NAME)
-#   tmp_local_runner_path [optional] Путь к файлу (computed if not provided)
+#   main_script_file_name [optional] Имя файла (default: $MAIN_SCRIPT_FILE_NAME)
+#   tmp_main_script_path [optional] Путь к файлу (computed if not provided)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - файл найден
 #               1 - файл не найден
 install::archive::check() {
     local temp_project_dir="${1:-$TEMP_PROJECT_DIR}"
-    local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"
-    
-    TMP_LOCAL_RUNNER_PATH="${3:-$(find "$temp_project_dir" -type f -name "$local_runner_file_name")}"
-    if [[ -z "$TMP_LOCAL_RUNNER_PATH" ]]; then
-        log_error "При проверке наличия исполняемого файла произошла ошибка - файл $local_runner_file_name не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
+    local main_script_file_name="${2:-$MAIN_SCRIPT_FILE_NAME}"
+
+    TMP_MAIN_SCRIPT_PATH="${3:-$(find "$temp_project_dir" -type f -name "$main_script_file_name")}"
+    if [[ -z "$TMP_MAIN_SCRIPT_PATH" ]]; then
+        log_error "При проверке наличия исполняемого файла произошла ошибка - файл $main_script_file_name не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
         return 1
     fi
-    log_info "Исполняемый файл $local_runner_file_name найден"
+    log_info "Исполняемый файл $main_script_file_name найден"
 }
 
 # @type:        Sink
@@ -324,14 +324,14 @@ install::dir::create() {
 # @type:        Orchestrator
 # @description: Копирование файлов установки
 # @params:
-#   tmp_dir_path [optional] Временная директория (computed from TMP_LOCAL_RUNNER_PATH if not provided)
+#   tmp_dir_path [optional] Временная директория (computed from TMP_MAIN_SCRIPT_PATH if not provided)
 #   install_dir [optional] Директория установки (default: $INSTALL_DIR)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               1 - ошибка копирования
 install::files::copy() {
-    local tmp_dir_path="${1:-$(dirname "$TMP_LOCAL_RUNNER_PATH")}"
+    local tmp_dir_path="${1:-$(dirname "$TMP_MAIN_SCRIPT_PATH")}"
     local install_dir="${2:-$INSTALL_DIR}"
     
     log_info "Копирую файлы из $tmp_dir_path в $install_dir"
@@ -346,7 +346,7 @@ install::files::copy() {
 # @description: Создание символической ссылки
 # @params:
 #   install_dir [optional] Директория установки (default: $INSTALL_DIR)
-#   local_runner_file_name [optional] Имя файла (default: $LOCAL_RUNNER_FILE_NAME)
+#   main_script_file_name [optional] Имя файла (default: $MAIN_SCRIPT_FILE_NAME)
 #   symbol_link_path [optional] Путь к ссылке (default: $SYMBOL_LINK_PATH)
 #   util_name [optional] Имя утилиты (default: $UTIL_NAME)
 # @stdin:       нет
@@ -355,18 +355,18 @@ install::files::copy() {
 #               1 - ошибка создания ссылки
 install::symlink::create() {
     local install_dir="${1:-$INSTALL_DIR}"
-    local local_runner_file_name="${2:-$LOCAL_RUNNER_FILE_NAME}"
+    local main_script_file_name="${2:-$MAIN_SCRIPT_FILE_NAME}"
     local symbol_link_path="${3:-$SYMBOL_LINK_PATH}"
     local util_name="${4:-$UTIL_NAME}"
-    
-    local local_runner_path="$install_dir/$local_runner_file_name"
-    
-    ln -s "$local_runner_path" "$symbol_link_path" || {
+
+    local main_script_path="$install_dir/$main_script_file_name"
+
+    ln -s "$main_script_path" "$symbol_link_path" || {
         log_error "Не удалось создать символическую ссылку"
         return 1
     }
-    
-    log_info "Создана символическая ссылка $util_name для запуска $local_runner_path. (Расположение ссылки: $(dirname "$symbol_link_path"))"
+
+    log_info "Создана символическая ссылка $util_name для запуска $main_script_path. (Расположение ссылки: $(dirname "$symbol_link_path"))"
     install::log::add_path "$symbol_link_path"
 }
 
@@ -419,10 +419,10 @@ install::runner::main() {
         install::tmp::create
         install::download::archive
         install::archive::unpack "$TMPARCHIVE" "$TEMP_PROJECT_DIR"
-        install::archive::check "$TEMP_PROJECT_DIR" "$LOCAL_RUNNER_FILE_NAME"
+        install::archive::check "$TEMP_PROJECT_DIR" "$MAIN_SCRIPT_FILE_NAME"
     fi
     if [[ "$ONETIME_RUN_FLAG" -eq 1 ]]; then
-        bash "$TMP_LOCAL_RUNNER_PATH"
+        bash "$TMP_MAIN_SCRIPT_PATH"
     fi
     if [[ "$SYS_INSTALL_FLAG" -eq 1 ]]; then
         install::to_system

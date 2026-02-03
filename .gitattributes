@@ -4,8 +4,6 @@ modules/ -export-ignore
 modules/** -export-ignore
 lib/ -export-ignore
 lib/** -export-ignore
-utils/ -export-ignore
-utils/rollback.sh -export-ignore
+ utils/ -export-ignore
+ utils/** -export-ignore
 
-bsss-main.sh -export-ignore
-local-runner.sh -export-ignore
