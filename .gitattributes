@@ -4,6 +4,7 @@ modules/ -export-ignore
 modules/** -export-ignore
 lib/ -export-ignore
 lib/** -export-ignore
- utils/ -export-ignore
- utils/** -export-ignore
+utils/ -export-ignore
+utils/rollback.sh -export-ignore
 
+main.sh -export-ignore
