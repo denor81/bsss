@@ -8,13 +8,12 @@ readonly SYMBOL_ACTUAL_INFO="[i]"
 readonly SYMBOL_ERROR="[x]"
 
 #
-#
-#
 # LOG_STRICT_MODE нужен для маскировки ошибок логирования при экстренном прерывании родительского скрипта
 #
-#
-#
 
+#
+#
+#
 
 # Journal mapping: BSSS log type -> systemd journal priority
 readonly -A JOURNAL_MAP=(
@@ -47,7 +46,6 @@ log::to_journal() {
     fi
 }
 
-
 # @type:        Sink
 # @description: Выводит пустую строку
 # @params:      нет
@@ -64,14 +62,18 @@ new_line() {
 
 # @type:        Sink
 # @description: Выводит успешное сообщение с символом [v]
-# @params:      message - Сообщение для вывода
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_success() {
-    local msg="$1"
+    local msg_key="$1"
     local type="SUCCESS"
     local formatted_msg
+    local msg
+    
+    msg="$(_ "$msg_key" "${@:2}")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2
@@ -84,14 +86,18 @@ log_success() {
 
 # @type:        Sink
 # @description: Выводит сообщение об ошибке с символом [x]
-# @params:      message - Сообщение об ошибке
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_error() {
-    local msg="$1"
+    local msg_key="$1"
     local type="ERROR"
     local formatted_msg
+    local msg
+    
+    msg="$(_ "$msg_key" "${@:2}")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2
@@ -104,14 +110,18 @@ log_error() {
 
 # @type:        Sink
 # @description: Выводит информационное сообщение с символом [ ]
-# @params:      message - Информационное сообщение
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info() {
-    local msg="$1"
+    local msg_key="$1"
     local type="INFO"
     local formatted_msg
+    local msg
+    
+    msg="$(_ "$msg_key" "${@:2}")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
@@ -156,14 +166,18 @@ log_answer() {
 
 # @type:        Sink
 # @description: Выводит информационное сообщение с символом [ ]
-# @params:      message - Информационное сообщение
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_debug() {
-    local msg="$1"
+    local msg_key="$1"
     local type="DEBUG"
     local formatted_msg
+    local msg
+    
+    msg="$(_ "$msg_key" "${@:2}")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2
@@ -176,16 +190,20 @@ log_debug() {
 
 # @type:        Sink
 # @description: Выводит информационное сообщение с символом [ ]
-# @params:      message - Приоритетное информационное сообщение
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_bold_info() {
-    local msg="$1"
+    local msg_key="$1"
     local type="BOLD_INFO"
     local formatted_msg
+    local msg
     local color='\e[1m'
     local color_reset='\e[0m'
+    
+    msg="$(_ "$msg_key" "${@:2}")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
@@ -198,14 +216,18 @@ log_bold_info() {
 
 # @type:        Sink
 # @description: Выводит предупреждение с символом [!]
-# @params:      message - Предупреждающее сообщение
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_warn() {
-    local msg="$1"
+    local msg_key="$1"
     local type="WARN"
     local formatted_msg
+    local msg
+    
+    msg="$(_ "$msg_key" "${@:2}")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2
@@ -218,21 +240,25 @@ log_warn() {
 
 # @type:        Sink
 # @description: Выводит важное сообщение с символом [A]
-# @params:      message - Важное сообщение
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_attention() {
-    local msg="$1"
+    local msg_key="$1"
     local type="ATTENTION"
     local formatted_msg
+    local msg
     local color='\e[41;37m'
     local color_reset='\e[0m'
+    
+    msg="$(_ "$msg_key" "${@:2}")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME] "$msg" >&2 || true
     fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
@@ -240,21 +266,25 @@ log_attention() {
 
 # @type:        Sink
 # @description: Выводит важное сообщение с символом [i]
-# @params:      message - актуальная информация
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_actual_info() {
-    local msg="${1:-Актуальная информация после внесения изменений}"
+    local msg_key="${1:-Актуальная информация после внесения изменений}"
     local type="ACTUAL_INFO"
     local formatted_msg
+    local msg
     local color='\e[37;42m'
     local color_reset='\e[0m'
+    
+    msg="$(_ "$msg_key")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
     else
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2 || true
     fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
@@ -262,14 +292,17 @@ log_actual_info() {
 
 # @type:        Sink
 # @description: Выводит информационное сообщение с отступом
-# @params:      message - Сообщение для вывода
+# @params:      message_key - Ключ сообщения в i18n системе
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info_simple_tab() {
-    local msg="$1"
+    local msg_key="$1"
     local type="INFO_TAB"
     local formatted_msg
+    local msg
+    
+    msg="$(_ "$msg_key")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_INFO    $msg" >&2
