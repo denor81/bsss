@@ -212,7 +212,55 @@ ssh::port::generate_free_random_port() {
     * ssh: port, config, socket, ui
     * sys: file, service, process, update
     * io: confirm, input
-    * log: border, message
-    * orchestrator: только внутри домена (domain::orchestrator::action)
-    * runner: module
-    * rollback: orchestrator
+```
+
+### Структура переводов
+
+Переводы организованы по модулям:
+
+```
+lib/i18n/
+├── core.sh              # Основная функция _()
+├── loader.sh            # Загрузка переводов по языку
+├── ru/                   # Русские переводы
+│   ├── common.sh        # Общие сообщения
+│   ├── ssh.sh           # SSH модуль
+│   ├── ufw.sh           # UFW модуль
+│   └── system.sh         # Системные сообщения
+└── en/                   # Английские переводы
+    ├── common.sh
+    ├── ssh.sh
+    ├── ufw.sh
+    └── system.sh
+```
+
+### Использование i18n в коде
+
+**Замена жестких строк на ключи:**
+Было:
+```bash
+log_info "Доступные действия:"
+```
+
+Стало:
+```bash
+log_info "common.info_available_modules"
+```
+
+**Форматирование сообщений:**
+```bash
+# Без аргументов
+log_info "ssh.success_port_up" "$port" "$attempts" "$elapsed"
+
+# С аргументами
+log_success "ssh.success_port_up" "$port" "$attempts" "$elapsed"
+```
+
+**Конвенции именования ключей:**
+
+- Формат: `module.submodule.action.message_type`
+- Примеры:
+  - `common.error_root_privileges` - общая ошибка прав root
+  - `ssh.ui.get_action_choice.available_actions` - UI выбор действий SSH
+  - `ssh.success_port_up` - успешное сообщение о поднятии SSH порта
+```
