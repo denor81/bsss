@@ -134,7 +134,7 @@ ufw::status::force_enable() {
     log::rollback::instructions
 
     if ! ufw --force enable >/dev/null 2>&1; then
-        rollback::orchestrator::immediate
+        rollback::orchestrator::immediate_usr2
         log_error "Ошибка при активации [ufw --force enable]"
         return 1
     fi

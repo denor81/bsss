@@ -205,7 +205,7 @@ ssh::port::generate_free_random_port() {
     * Удаление/сброс: ufw::rule::delete_all_bsss, ssh::rule::reset_and_pass
     * Системные: sys::file::validate_sshd_config, sys::service::restart
     * Запуск модулей: runner::module::run_check, runner::module::select_modify
-    * Rollback: rollback::orchestrator::immediate, rollback::orchestrator::ssh
+    * Rollback: rollback::orchestrator::immediate_usr2, rollback::orchestrator::ssh
 
   - Домены и субдомены:
     * ufw: menu, ui, ping, rule

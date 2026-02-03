@@ -17,10 +17,24 @@ SLEEP_PID=""
 MAIN_SCRIPT=""
 ROLLBACK_TYPE=""
 
-trap "" INT TERM # Попытка игнорировать прерывания ctrl c, но надо тестировать
-trap 'log_stop' EXIT
-trap 'rollback::orchestrator::stop' SIGUSR1
-trap 'rollback::orchestrator::immediate' SIGUSR2
+trap "" INT TERM # Игнорируем прерывание - скрипт должен жить
+trap 'rollback::orchestrator::exit' EXIT
+trap 'rollback::orchestrator::stop_usr1' SIGUSR1
+trap 'rollback::orchestrator::immediate_usr2' SIGUSR2
+
+# @type:        Orchestrator
+# @description: Действия при завершении скрипта
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+rollback::orchestrator::exit() {
+    log_info "Получен сигнал EXIT"
+    log_info "Закрываем перенаправление 2>FIFO>parent_script"
+    log_stop
+    exec 2>&-
+    exit 0
+}
 
 # @type:        Orchestrator
 # @description: Останавливает процесс таймера отката и завершает скрипт
@@ -28,7 +42,7 @@ trap 'rollback::orchestrator::immediate' SIGUSR2
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-rollback::orchestrator::stop() {
+rollback::orchestrator::stop_usr1() {
     log_info "Получен сигнал USR1 - остановка таймера отката"
     kill "$SLEEP_PID" 2>/dev/null
     exit 0
@@ -41,7 +55,7 @@ rollback::orchestrator::stop() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-rollback::orchestrator::immediate() {
+rollback::orchestrator::immediate_usr2() {
     log_info "Получен сигнал USR2 - остановка таймера отката и немедленный откат изменений"
     kill "$SLEEP_PID" 2>/dev/null
     rollback::orchestrator::full
@@ -121,9 +135,9 @@ rollback::orchestrator::watchdog_timer() {
     MAIN_SCRIPT_PID="$2"
     local watchdog_fifo="$3"
 
-    exec 3> "$watchdog_fifo"
-
+    exec 2> "$watchdog_fifo"
     log_start
+    log_info "Открыто перенаправление 2>FIFO>parent_script"
     log_info "Фоновый таймер запущен на $ROLLBACK_TIMER_SECONDS сек..."
     
     local rollback_message
@@ -149,8 +163,6 @@ rollback::orchestrator::watchdog_timer() {
             wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
         fi
     fi
-    log_info "Закрываем FIFO дескриптор 3"
-    exec 3>&-
 }
 
 # @type:        Orchestrator
