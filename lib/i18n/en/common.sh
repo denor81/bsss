@@ -83,3 +83,11 @@ I18N_MESSAGES["rollback.timeout_ufw"]="On timeout, UFW will be disabled"
 I18N_MESSAGES["rollback.timeout_generic"]="On timeout, settings will be reset"
 I18N_MESSAGES["rollback.timeout_reconnect"]="In case of current session loss, connect to server via old parameters after timeout"
 I18N_MESSAGES["rollback.time_expired"]="Time expired - performing ROLLBACK"
+
+# Module names
+I18N_MESSAGES["module.system.update.name"]="System update"
+I18N_MESSAGES["module.ssh.name"]="SSH port configuration"
+I18N_MESSAGES["module.ufw.name"]="UFW firewall configuration"
+
+# IO ask_value
+I18N_MESSAGES["io.ask_value.select_module"]="Select module"

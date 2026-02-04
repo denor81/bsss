@@ -2,7 +2,7 @@
 # Обновляет системные пакеты
 # MODULE_ORDER: 20
 # MODULE_TYPE: modify
-# MODULE_NAME: Обновление системы
+# MODULE_NAME: module.system.update.name
 
 set -Eeuo pipefail
 

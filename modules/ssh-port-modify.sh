@@ -2,7 +2,7 @@
 # Изменяет SSH порт
 # MODULE_ORDER: 60
 # MODULE_TYPE: modify
-# MODULE_NAME: Настройка SSH порта
+# MODULE_NAME: module.ssh.name
 
 set -Eeuo pipefail
 

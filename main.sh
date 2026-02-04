@@ -170,14 +170,14 @@ runner::module::select_modify() {
                 print name
             }
         ' "${module_paths[$i]}")
-        log_info_simple_tab "$(_ "common.info_menu_item_format" "$((i + 1))" "$module_name")"
+        log_info_simple_tab "$(_ "common.info_menu_item_format" "$((i + 1))" "$(_ "$module_name")")"
     done
     log_info_simple_tab "$(_ "common.info_menu_item_format" "0" "$(_ "common.menu_exit")")"
     log_info_simple_tab "$(_ "common.info_menu_check_item" "00" "$(_ "common.menu_check")")"
 
     # Запрашиваем выбор пользователя
     local selection
-    read -r -d '' selection < <(io::ask_value "Выберите модуль" "" "^(00|[0-$(( ${#module_paths[@]} ))])$" "0-${#module_paths[@]}")
+    read -r -d '' selection < <(io::ask_value "$(_ "io.ask_value.select_module")" "" "^(00|[0-9])$" "0-${#module_paths[@]}")
     
     case "$selection" in
         0) log_info "$(_ "common.info_exit_menu")"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT

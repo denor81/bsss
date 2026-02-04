@@ -26,7 +26,7 @@ ufw::rule::check_requirements() {
         return 0
     else
         log_warn "$(_ "ufw.warning.continue_without_rules")"
-        log_warn "$(_ "ufw.warning.add_ssh_first")"
+        log_info "$(_ "ufw.warning.add_ssh_first")"
         return 4
     fi
 }

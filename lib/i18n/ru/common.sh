@@ -83,3 +83,11 @@ I18N_MESSAGES["rollback.timeout_ufw"]="По истечению таймера б
 I18N_MESSAGES["rollback.timeout_generic"]="По истечению таймера будут сброшены настройки"
 I18N_MESSAGES["rollback.timeout_reconnect"]="В случае разрыва текущей сессии подключайтесь к серверу по старым параметрам после истечения таймера"
 I18N_MESSAGES["rollback.time_expired"]="Время истекло - выполняется ОТКАТ"
+
+# Module names
+I18N_MESSAGES["module.system.update.name"]="Обновление системы"
+I18N_MESSAGES["module.ssh.name"]="Настройка SSH порта"
+I18N_MESSAGES["module.ufw.name"]="Настройка брандмауэра UFW"
+
+# IO ask_value
+I18N_MESSAGES["io.ask_value.select_module"]="Выберите модуль"
