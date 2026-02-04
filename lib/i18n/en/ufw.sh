@@ -20,7 +20,7 @@ I18N_MESSAGES["ufw.error.disable_failed"]="Error during deactivation [ufw --forc
 
 # Success messages
 I18N_MESSAGES["ufw.success.backup_created"]="Backup created: [%s]"
-I18N_MESSAGES["ufw.success.backup_failed"]="Failed to create backup %s [%s]"
+I18N_MESSAGES["ufw.error.backup_failed"]="Failed to create backup %s [%s]"
 I18N_MESSAGES["ufw.success.before_rules_edited"]="Edited: [%s]"
 I18N_MESSAGES["ufw.success.before_rules_restore_failed"]="Error during editing: [%s]"
 I18N_MESSAGES["ufw.success.rules_deleted"]="BSSS rules deleted"

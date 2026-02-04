@@ -38,7 +38,7 @@ get_os_id() {
 #               1 - ошибка валидации или файл не найден
 check() {
     [[ -f "$OS_RELEASE_FILE_PATH" ]] || {
-        log_error "os.check.file_not_found" "$OS_RELEASE_FILE_PATH"
+        log_error "$(_ "os.check.file_not_found" "$OS_RELEASE_FILE_PATH")"
         return 1
     }
 
@@ -46,11 +46,11 @@ check() {
     id=$( get_os_id < "$OS_RELEASE_FILE_PATH" )
 
     if [[ "$id" != "$ALLOWED_SYS" ]]; then
-        log_error "os.check.unsupported" "${id^:-Unknown}" "$ALLOWED_SYS"
+        log_error "$(_ "os.check.unsupported" "${id^:-Unknown}" "$ALLOWED_SYS")"
         return 1
     fi
 
-    log_info "os.check.supported" "${id^}"
+    log_info "$(_ "os.check.supported" "${id^}")"
 }
 
 # @type:        Orchestrator

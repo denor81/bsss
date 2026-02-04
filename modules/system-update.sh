@@ -25,12 +25,12 @@ trap log_stop EXIT
 # @stdout:      command\0
 # @exit_code:   0 - успешно
 #               1 - apt не найден
-sys::update::get_command() {
+    sys::update::get_command() {
     if ! command -v apt-get >/dev/null 2>&1; then
-        log_error "system.update.apt_not_found"
+        log_error "$(_ "system.update.apt_not_found")"
         return 1
     fi
-    
+
     printf '%s\0' "apt-get update && apt-get upgrade -y"
 }
 
@@ -40,12 +40,12 @@ sys::update::get_command() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               1 - ошибка выполнения команды
-sys::update::execute() {
+    sys::update::execute() {
     local update_cmd=""
     [[ ! -t 0 ]] && IFS= read -r -d '' update_cmd || return 1
-    
+
     if ! bash -c "$update_cmd"; then
-        log_error "system.update.error"
+        log_error "$(_ "system.update.error")"
         return 1
     fi
 }
@@ -73,7 +73,7 @@ main() {
     log_start
     
     # Запуск или возврат кода 2 при отказе пользователя
-    if io::confirm_action "$(i18n::get "system.update.confirm")"; then
+    if io::confirm_action "$(_ "system.update.confirm")"; then
         sys::update::orchestrator
     else
         return

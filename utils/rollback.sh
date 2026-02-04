@@ -15,6 +15,9 @@ set -Eeuo pipefail
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
 
 source "${PROJECT_ROOT}/lib/vars.conf"
+source "${PROJECT_ROOT}/lib/i18n/core.sh"
+source "${PROJECT_ROOT}/lib/i18n/loader.sh"
+i18n::init
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
@@ -42,8 +45,8 @@ trap 'rollback::orchestrator::immediate_usr2' SIGUSR2
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::exit() {
-    log_info "rollback.exit_received"
-    log_info "rollback.close_redirection"
+    log_info "$(_ "rollback.exit_received")"
+    log_info "$(_ "rollback.close_redirection")"
     log_stop
     exec 2>&-
     exit 0
@@ -56,7 +59,7 @@ rollback::orchestrator::exit() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::stop_usr1() {
-    log_info "rollback.stop_usr1_received"
+    log_info "$(_ "rollback.stop_usr1_received")"
     kill "$SLEEP_PID" 2>/dev/null
     exit 0
 }
@@ -69,12 +72,12 @@ rollback::orchestrator::stop_usr1() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::immediate_usr2() {
-    log_info "rollback.immediate_usr2_received"
+    log_info "$(_ "rollback.immediate_usr2_received")"
     kill "$SLEEP_PID" 2>/dev/null
     rollback::orchestrator::full
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
-        log_info "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID"
+        log_info "$(_ "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID")"
         kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
         wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
     fi
@@ -89,7 +92,7 @@ rollback::orchestrator::immediate_usr2() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::ssh() {
-    log_warn "rollback.full_dismantle"
+    log_warn "$(_ "rollback.full_dismantle")"
 
     ssh::rule::delete_all_bsss
     ufw::rule::delete_all_bsss
@@ -100,7 +103,7 @@ rollback::orchestrator::ssh() {
     ssh::orchestrator::log_statuses
     ufw::orchestrator::log_statuses
 
-    log_success "rollback.system_restored"
+    log_success "$(_ "rollback.system_restored")"
 }
 
 # @type:        Orchestrator
@@ -110,13 +113,13 @@ rollback::orchestrator::ssh() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::ufw() {
-    log_warn "rollback.ufw_executing"
+    log_warn "$(_ "rollback.ufw_executing")"
 
     ufw::status::force_disable
     log_actual_info
     ufw::orchestrator::log_statuses
 
-    log_success "rollback.ufw_disabled"
+    log_success "$(_ "rollback.ufw_disabled")"
 }
 
 # @type:        Orchestrator
@@ -130,7 +133,7 @@ rollback::orchestrator::full() {
     case "$ROLLBACK_TYPE" in
         "ssh") rollback::orchestrator::ssh ;;
         "ufw") rollback::orchestrator::ufw ;;
-        *) log_error "rollback.unknown_type" "$ROLLBACK_TYPE"; return 1 ;;
+        *) log_error "$(_ "rollback.unknown_type" "$ROLLBACK_TYPE")"; return 1 ;;
     esac
 }
 
@@ -150,29 +153,29 @@ rollback::orchestrator::watchdog_timer() {
 
     exec 2> "$watchdog_fifo"
     log_start
-    log_info "rollback.redirection_opened"
-    log_info "rollback.timer_started" "$ROLLBACK_TIMER_SECONDS"
-    
+    log_info "$(_ "rollback.redirection_opened")"
+    log_info "$(_ "rollback.timer_started" "$ROLLBACK_TIMER_SECONDS")"
+
     local rollback_message_key
     case "$ROLLBACK_TYPE" in
         "ssh") rollback_message_key="rollback.timeout_ssh" ;;
         "ufw") rollback_message_key="rollback.timeout_ufw" ;;
         *) rollback_message_key="rollback.timeout_generic" ;;
     esac
-    
-    log_bold_info "$rollback_message_key"
-    log_bold_info "rollback.timeout_reconnect"
+
+    log_bold_info "$(_ "$rollback_message_key")"
+    log_bold_info "$(_ "rollback.timeout_reconnect")"
 
     sleep "$ROLLBACK_TIMER_SECONDS" &
     SLEEP_PID=$!
 
     if wait "$SLEEP_PID" 2>/dev/null; then
         new_line
-        log_info "rollback.time_expired"
+        log_info "$(_ "rollback.time_expired")"
         rollback::orchestrator::full
 
         if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
-            log_info "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID"
+            log_info "$(_ "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID")"
             kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
             wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
         fi

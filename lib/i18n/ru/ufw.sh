@@ -20,7 +20,7 @@ I18N_MESSAGES["ufw.error.disable_failed"]="Ошибка при отключен�
 
 # Success messages
 I18N_MESSAGES["ufw.success.backup_created"]="Создан бэкап: [%s]"
-I18N_MESSAGES["ufw.success.backup_failed"]="Не удалось создать бэкап %s [%s]"
+I18N_MESSAGES["ufw.error.backup_failed"]="Не удалось создать бэкап %s [%s]"
 I18N_MESSAGES["ufw.success.before_rules_edited"]="Отредактирован: [%s]"
 I18N_MESSAGES["ufw.success.before_rules_restore_failed"]="Ошибка при редактировании: [%s]"
 I18N_MESSAGES["ufw.success.rules_deleted"]="Правила BSSS удалены"

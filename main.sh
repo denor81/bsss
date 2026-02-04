@@ -32,7 +32,7 @@ trap common::exit::actions EXIT
 #               1 - недостаточно прав
 check_permissions() {
     if [[ $EUID -ne 0 ]]; then
-        log_error "common.error_root_privileges"
+        log_error "$(_ "common.error_root_privileges")"
         return 1
     fi
 }
@@ -44,7 +44,7 @@ check_permissions() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 show_help() {
-    log_info "common.info_short_params" "$ALLOWED_PARAMS" "$ALLOWED_PARAMS_HELP"
+    log_info "$(_ "common.info_short_params" "$ALLOWED_PARAMS" "$ALLOWED_PARAMS_HELP")"
 }
 
 # @type:        Filter
@@ -65,8 +65,8 @@ parse_params() {
         case "${opt}" in
             h)  ACTION="help" ;;
             u)  ACTION="uninstall" ;;
-            \?) log_error "common.error_invalid_param" "$OPTARG" "$allowed_params"; return 1 ;;
-            :)  log_error "common.error_param_requires_value" "$OPTARG"; return 1 ;;
+            \?) log_error "$(_ "common.error_invalid_param" "$OPTARG" "$allowed_params")"; return 1 ;;
+            :)  log_error "$(_ "common.error_param_requires_value" "$OPTARG")"; return 1 ;;
         esac
     done
 }
@@ -123,8 +123,8 @@ runner::module::run_check() {
     | sys::module::get_by_type "$MODULE_TYPE_CHECK" \
     | sys::module::sort_by_order)
 
-    (( found == 0 )) && { log_error "common.error_no_modules_found"; log::draw_border; return 1; }
-    (( err )) && { log_error "common.error_module_error"; log::draw_border; return 4; }
+    (    (( found == 0 )) && { log_error "$(_ "common.error_no_modules_found")"; log::draw_border; return 1; }
+    (( err )) && { log_error "$(_ "common.error_module_error")"; log::draw_border; return 4; }
     log::draw_border
 }
 
@@ -149,12 +149,12 @@ runner::module::select_modify() {
 
     # Проверяем, есть ли модули
     if (( ${#module_paths[@]} == 0 )); then
-        log_error "common.error_no_modules_available"
+        log_error "$(_ "common.error_no_modules_available")"
         return 1
     fi
 
     # Отображаем меню
-    log_info "common.info_available_modules"
+    log_info "$(_ "common.info_available_modules")"
     local i
     for ((i = 0; i < ${#module_paths[@]}; i++)); do
         module_name=$(gawk '
@@ -171,17 +171,17 @@ runner::module::select_modify() {
                 print name
             }
         ' "${module_paths[$i]}")
-        log_info_simple_tab "common.info_menu_item_format" "$((i + 1))" "$module_name"
+        log_info_simple_tab "$(_ "common.info_menu_item_format" "$((i + 1))" "$module_name")"
     done
-    log_info_simple_tab "common.info_menu_item_format" "0" "$(_ "common.menu_exit")"
-    log_info_simple_tab "common.info_menu_check_item" "00" "$(_ "common.menu_check")"
+    log_info_simple_tab "$(_ "common.info_menu_item_format" "0" "$(_ "common.menu_exit")")"
+    log_info_simple_tab "$(_ "common.info_menu_check_item" "00" "$(_ "common.menu_check")")"
 
     # Запрашиваем выбор пользователя
     local selection
     read -r -d '' selection < <(io::ask_value "Выберите модуль" "" "^(00|[0-$(( ${#module_paths[@]} ))])$" "0-${#module_paths[@]}")
     
     case "$selection" in
-        0) log_info "common.info_exit_menu"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
+        0) log_info "$(_ "common.info_exit_menu")"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
         00) printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
         *)  printf '%s\0' "${module_paths[$((selection - 1))]}" ;; # Возвращаем выбранный путь
     esac
@@ -218,12 +218,12 @@ runner::module::run_modify() {
             bash "$selected_module" || exit_code=$?
 
             case "$exit_code" in
-                0) log_info "common.info_module_successful" "$exit_code" ;;
-                2|130) log_info "common.info_module_user_cancelled" "$exit_code" ;;
-                3) log_info "common.info_module_rollback" "$exit_code" ;;
-                4) log_info "common.info_module_requires_ssh" "$exit_code" ;;
-                5) log_error "common.error_missing_meta_tags" "$exit_code" ;;
-                *) log_error "common.error_module_failed_code" "$selected_module" "$exit_code" ;;
+                0) log_info "$(_ "common.info_module_successful" "$exit_code")" ;;
+                2|130) log_info "$(_ "common.info_module_user_cancelled" "$exit_code")" ;;
+                3) log_info "$(_ "common.info_module_rollback" "$exit_code")" ;;
+                4) log_info "$(_ "common.info_module_requires_ssh" "$exit_code")" ;;
+                5) log_error "$(_ "common.error_missing_meta_tags" "$exit_code")" ;;
+                *) log_error "$(_ "common.error_module_failed_code" "$selected_module" "$exit_code")" ;;
             esac
         fi
     done
@@ -243,7 +243,7 @@ run() {
     sys::log::rotate_old_files
 
     runner::module::run_check
-    io::confirm_action "io.confirm_action.run_setup" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
+    io::confirm_action "$(_ "io.confirm_action.run_setup")" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
     runner::module::run_modify
 }
 

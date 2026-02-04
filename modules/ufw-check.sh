@@ -23,20 +23,20 @@ source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 # @stdout:      нет
 # @exit_code:   0 - UFW установлен или уже был установлен
 #               1 - ошибка установки или отказ от установки
-check() {
+    check() {
     if command -v ufw > /dev/null 2>&1; then
         ufw::orchestrator::log_statuses
     else
-        log_error "ufw.check.not_installed"
+        log_error "$(_ "ufw.check.not_installed")"
         if io::confirm_action "$(_ "ufw.check.install_confirm")" || return; then
             if ! (apt update && apt install ufw -y); then
-                log_error "ufw.check.install_error"
+                log_error "$(_ "ufw.check.install_error")"
                 return 1
             else
                 if command -v ufw > /dev/null 2>&1; then
-                    log_info "ufw.check.install_success"
+                    log_info "$(_ "ufw.check.install_success")"
                 else
-                    log_info "ufw.check.installed_restart"
+                    log_info "$(_ "ufw.check.installed_restart")"
                     return 1
                 fi
             fi

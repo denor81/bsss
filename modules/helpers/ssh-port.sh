@@ -4,14 +4,14 @@
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::menu::display_exists_scenario() {
+    ssh::menu::display_exists_scenario() {
     ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
 
-    log_info "ssh.ui.get_action_choice.available_actions"
-    log_info_simple_tab "ssh.menu.item_reset" "1" "${UTIL_NAME^^}"
-    log_info_simple_tab "ssh.menu.item_reinstall" "2"
-    log_info_simple_tab "ssh.menu.item_exit" "0"
+    log_info "$(_ "ssh.ui.get_action_choice.available_actions")"
+    log_info_simple_tab "$(_ "ssh.menu.item_reset" "1" "${UTIL_NAME^^}")"
+    log_info_simple_tab "$(_ "ssh.menu.item_reinstall" "2")"
+    log_info_simple_tab "$(_ "ssh.menu.item_exit" "0")"
 }
 
 # @type:        Sink
@@ -20,9 +20,9 @@ ssh::menu::display_exists_scenario() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::menu::display_install_ui() {
-    log_info "ssh.ui.get_action_choice.available_actions"
-    log_info_simple_tab "ssh.menu.item_exit" "0"
+    ssh::menu::display_install_ui() {
+    log_info "$(_ "ssh.ui.get_action_choice.available_actions")"
+    log_info_simple_tab "$(_ "ssh.menu.item_exit" "0")"
 }
 
 # @type:        Filter
@@ -56,11 +56,11 @@ ssh::ui::get_new_port() {
 
     local new_port
     while true; do
-        new_port=$(io::ask_value "$(i18n::get "ssh.ui.get_new_port.prompt")" "$suggested_port" "$port_pattern" "$(i18n::get "ssh.ui.get_new_port.hint_range" "$suggested_port")" "0" | tr -d '\0') || return
+        new_port=$(io::ask_value "$(_ "ssh.ui.get_new_port.prompt")" "$suggested_port" "$port_pattern" "$(_ "ssh.ui.get_new_port.hint_range" "$suggested_port")" "0" | tr -d '\0') || return
 
          # Проверка на занятость порта
         ssh::port::is_port_free "$new_port" && { printf '%s\0' "$new_port"; break; }
-        log_error "ssh.error_port_busy" "$new_port"
+        log_error "$(_ "ssh.error_port_busy" "$new_port")"
     done
 }
 
@@ -77,16 +77,16 @@ ssh::log::bsss_configs() {
     while IFS= read -r grep_result || break; do
 
         if (( found == 0 )); then
-            log_info "ssh.info_rules_found"
+            log_info "$(_ "ssh.info_rules_found")"
             found=$((found + 1))
         fi
 
-        log_info_simple_tab "no_translate" "$grep_result"
+        log_info_simple_tab "$(_ "no_translate")" "$grep_result"
 
     done < <(grep -EiHs '^\s*port\b' "${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
-        log_info "ssh.info_no_rules" "$SSH_CONFIG_FILE"
+        log_info "$(_ "ssh.info_no_rules" "$SSH_CONFIG_FILE")"
     fi
 }
 
@@ -103,16 +103,16 @@ ssh::log::other_configs() {
     while IFS= read -r grep_result || break; do
 
         if (( found == 0 )); then
-            log_info "ssh.warning_external_rules_found"
+            log_info "$(_ "ssh.warning_external_rules_found")"
             found=$((found + 1))
         fi
 
-        log_info_simple_tab "no_translate" "$grep_result"
+        log_info_simple_tab "$(_ "no_translate")" "$grep_result"
 
     done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
 
     if (( found == 0 )); then
-        log_info "ssh.warning_no_external_rules" "$SSH_CONFIG_FILE"
+        log_info "$(_ "ssh.warning_no_external_rules" "$SSH_CONFIG_FILE")"
     fi
 }
 
@@ -205,9 +205,9 @@ ssh::config::create_bsss_file() {
 Port $port
 EOF
     then
-        log_info "ssh.success_rule_created" "$path" "$port"
+        log_info "$(_ "ssh.success_rule_created" "$path" "$port")"
     else
-        log_error "ssh.error_rule_creation_failed" "$path"
+        log_error "$(_ "ssh.error_rule_creation_failed" "$path")"
         return 1
     fi
 }
@@ -230,12 +230,12 @@ ssh::port::wait_for_up() {
     local interval=0.5
     local attempts=1
 
-    log_info "ssh.socket.wait_for_ssh_up.info" "$port" "$timeout"
+    log_info "$(_ "ssh.socket.wait_for_ssh_up.info" "$port" "$timeout")"
 
     while (( elapsed < timeout )); do
         # Проверяем, есть ли порт в списке активных
         if ssh::port::get_from_ss | grep -qzxF "$port"; then
-            log_info "ssh.success_port_up" "$port" "$attempts" "$elapsed"
+            log_info "$(_ "ssh.success_port_up" "$port" "$attempts" "$elapsed")"
             return
         fi
 
@@ -244,7 +244,7 @@ ssh::port::wait_for_up() {
         attempts=$((attempts + 1))
     done
 
-    log_error "ssh.error_port_not_up" "$port" "$attempts" "$timeout"
+    log_error "$(_ "ssh.error_port_not_up" "$port" "$attempts" "$timeout")"
     return 1
 }
 
@@ -264,7 +264,7 @@ ssh::orchestrator::config_exists_handler() {
     case "$choice" in
         1) ssh::reset::port ;;
         2) ssh::install::port ;;
-        *) log_warn "ssh.error_invalid_choice" ;;
+        *) log_warn "$(_ "ssh.error_invalid_choice")" ;;
     esac
 }
 
@@ -314,7 +314,7 @@ ssh::install::port() {
 
     if io::ask_value "$(_ "ssh.install.confirm_connection")" "" "^connected$" "connected" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
-        log_info "ssh.success_changes_committed"
+        log_info "$(_ "ssh.success_changes_committed")"
     fi
 }
 
@@ -342,10 +342,10 @@ ssh::reset::port() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ssh::log::guard_instructions() {
+    ssh::log::guard_instructions() {
     local port="$1"
-    log_attention "ssh.guard.dont_close"
-    log_attention "ssh.guard.test_new" "$port"
+    log_attention "$(_ "ssh.guard.dont_close")"
+    log_attention "$(_ "ssh.guard.test_new" "$port")"
 }
 
 # @type:        Orchestrator
@@ -355,12 +355,12 @@ ssh::log::guard_instructions() {
 # @stdout:      нет
 # @exit_code:   0 - сервис успешно перезапущен
 #               1 - ошибка конфигурации
-sys::service::restart() {
+    sys::service::restart() {
     if sshd -t; then
-        systemctl daemon-reload && log_info "ssh.service.daemon_reloaded"
-        systemctl restart ssh.service && log_info "ssh.service.restarted"
+        systemctl daemon-reload && log_info "$(_ "ssh.service.daemon_reloaded")"
+        systemctl restart ssh.service && log_info "$(_ "ssh.service.restarted")"
     else
-        log_error "ssh.error_config_sshd"
+        log_error "$(_ "ssh.error_config_sshd")"
         return 1
     fi
 }

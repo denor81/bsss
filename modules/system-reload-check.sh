@@ -22,10 +22,10 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 #               1 - необходима перезагрузка
 check() {
     if [[ -f "$REBOOT_REQUIRED_FILE_PATH" ]]; then
-        log_error "system.reload.reboot_required" "$REBOOT_REQUIRED_FILE_PATH"
+        log_error "$(_ "system.reload.reboot_required" "$REBOOT_REQUIRED_FILE_PATH")"
         return 1
     else
-        log_info "system.reload.not_required"
+        log_info "$(_ "system.reload.not_required")"
     fi
 }
 

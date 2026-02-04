@@ -21,10 +21,10 @@ source "${PROJECT_ROOT}/modules/helpers/ssh-socket.sh"
 # @stdout:      нет
 # @exit_code:   0 - юнит существует
 #               1 - юнит не установлен
-check_unit() {
+    check_unit() {
     if ! sys::ssh::unit_exists "ssh.service"; then
-        log_error "ssh.socket.unit_not_found"
-        log_info_simple_tab "ssh.socket.script_purpose"
+        log_error "$(_ "ssh.socket.unit_not_found")"
+        log_info_simple_tab "$(_ "ssh.socket.script_purpose")"
         return 1
     fi
 }
@@ -37,13 +37,13 @@ check_unit() {
 # @exit_code:   0 - режим корректен или успешно переключен
 #               1 - ошибка в ssh::socket::force_service_mode
 #               2 - отказ пользователя от переключения в service mode
-check() {
+    check() {
     if ssh::socket::is_already_configured; then
-        log_info "ssh.socket.configured"
+        log_info "$(_ "ssh.socket.configured")"
         return
     else
-        log_error "ssh.socket.mode_warning"
-        log_info "ssh.socket.mode_required"
+        log_error "$(_ "ssh.socket.mode_warning")"
+        log_info "$(_ "ssh.socket.mode_required")"
         io::confirm_action "$(_ "ssh.socket.switch_confirm")"
         ssh::socket::force_service_mode
     fi
