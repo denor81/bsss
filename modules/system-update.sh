@@ -24,7 +24,7 @@ trap log_stop EXIT
 #               1 - apt не найден
 sys::update::get_command() {
     if ! command -v apt-get >/dev/null 2>&1; then
-        log_error "Менеджер пакетов apt-get не найден"
+        log_error "system.update.apt_not_found"
         return 1
     fi
     
@@ -42,7 +42,7 @@ sys::update::execute() {
     [[ ! -t 0 ]] && IFS= read -r -d '' update_cmd || return 1
     
     if ! bash -c "$update_cmd"; then
-        log_error "Ошибка при обновлении системных пакетов"
+        log_error "system.update.error"
         return 1
     fi
 }
@@ -70,7 +70,7 @@ main() {
     log_start
     
     # Запуск или возврат кода 2 при отказе пользователя
-    if io::confirm_action "Обновить системные пакеты? [apt-get update && apt-get upgrade -y]"; then
+    if io::confirm_action "$(i18n::get "system.update.confirm")"; then
         sys::update::orchestrator
     else
         return

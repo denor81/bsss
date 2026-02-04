@@ -1,5 +1,4 @@
 # SSH port messages (Russian)
-declare -gA I18N_MESSAGES
 
 # Menu UI
 I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Доступные действия:"
@@ -31,3 +30,27 @@ I18N_MESSAGES["ssh.error_config_sshd"]="Ошибка конфигурации ss
 # Warning messages
 I18N_MESSAGES["ssh.warning_external_rules_found"]="Есть сторонние правила SSH:"
 I18N_MESSAGES["ssh.warning_no_external_rules"]="Нет сторонних правил SSH [%s]"
+
+# Wait messages
+I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Ожидание поднятия SSH порта %s (таймаут: %s сек)..."
+
+# Menu items
+I18N_MESSAGES["ssh.menu.item_reset"]="1. Сброс (удаление правила %s)"
+I18N_MESSAGES["ssh.menu.item_reinstall"]="2. Переустановка (замена на новый порт)"
+I18N_MESSAGES["ssh.menu.item_exit"]="0. Выход"
+
+# Input messages
+I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Введите новый SSH порт"
+I18N_MESSAGES["ssh.ui.get_new_port.hint_range"]="1-65535, Enter для %s"
+
+# Service messages
+I18N_MESSAGES["ssh.service.daemon_reloaded"]="Конфигурация перезагружена [systemctl daemon-reload]"
+I18N_MESSAGES["ssh.service.restarted"]="SSH сервис перезагружен [systemctl restart ssh.service]"
+
+# Guard instructions
+I18N_MESSAGES["ssh.guard.dont_close"]="НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
+I18N_MESSAGES["ssh.guard.test_new"]="ОТКРОЙТЕ НОВОЕ ОКНО и проверьте связь через порт %s"
+
+# Error messages
+I18N_MESSAGES["ssh.error_port_not_up"]="ПОРТ %s НЕ ПОДНЯЛСЯ [%s попыток в течение %s сек]"
+I18N_MESSAGES["ssh.error_invalid_choice"]="Не корректный выбор"

@@ -1,5 +1,4 @@
 # Common messages (English)
-declare -gA I18N_MESSAGES
 
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Root privileges or run with 'sudo' required. Running as regular user."

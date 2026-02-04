@@ -8,10 +8,10 @@ ssh::menu::display_exists_scenario() {
     ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
 
-    log_info "Доступные действия:"
-    log_info_simple_tab "1. Сброс (удаление правила ${UTIL_NAME^^})"
-    log_info_simple_tab "2. Переустановка (замена на новый порт)"
-    log_info_simple_tab "0. Выход"
+    log_info "ssh.ui.get_action_choice.available_actions"
+    log_info_simple_tab "$(i18n::get "ssh.menu.item_reset" "${UTIL_NAME^^}")"
+    log_info_simple_tab "$(i18n::get "ssh.menu.item_reinstall")"
+    log_info_simple_tab "$(i18n::get "ssh.menu.item_exit")"
 }
 
 # @type:        Sink
@@ -21,8 +21,8 @@ ssh::menu::display_exists_scenario() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ssh::menu::display_install_ui() {
-    log_info "Доступные действия:"
-    log_info_simple_tab "0. Выход"
+    log_info "ssh.ui.get_action_choice.available_actions"
+    log_info_simple_tab "$(i18n::get "ssh.menu.item_exit")"
 }
 
 # @type:        Filter
@@ -56,11 +56,11 @@ ssh::ui::get_new_port() {
 
     local new_port
     while true; do
-        new_port=$(io::ask_value "Введите новый SSH порт" "$suggested_port" "$port_pattern" "1-65535, Enter для $suggested_port" "0" | tr -d '\0') || return
+        new_port=$(io::ask_value "$(i18n::get "ssh.ui.get_new_port.prompt")" "$suggested_port" "$port_pattern" "$(i18n::get "ssh.ui.get_new_port.hint_range" "$suggested_port")" "0" | tr -d '\0') || return
 
          # Проверка на занятость порта
         ssh::port::is_port_free "$new_port" && { printf '%s\0' "$new_port"; break; }
-        log_error "SSH порт $new_port уже занят другим сервисом."
+        log_error "ssh.error_port_busy" "$new_port"
     done
 }
 
@@ -77,7 +77,7 @@ ssh::log::bsss_configs() {
     while IFS= read -r grep_result || break; do
 
         if (( found == 0 )); then
-            log_info "Есть правила ${UTIL_NAME^^} для SSH:"
+            log_info "ssh.info_rules_found"
             found=$((found + 1))
         fi
 
@@ -86,7 +86,7 @@ ssh::log::bsss_configs() {
     done < <(grep -EiHs '^\s*port\b' "${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
-        log_info "Нет правил ${UTIL_NAME^^} для SSH [$SSH_CONFIG_FILE]"
+        log_info "ssh.info_no_rules" "$SSH_CONFIG_FILE"
     fi
 }
 
@@ -103,7 +103,7 @@ ssh::log::other_configs() {
     while IFS= read -r grep_result || break; do
 
         if (( found == 0 )); then
-            log_info "Есть сторонние правила SSH:"
+            log_info "ssh.warning_external_rules_found"
             found=$((found + 1))
         fi
 
@@ -112,7 +112,7 @@ ssh::log::other_configs() {
     done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
 
     if (( found == 0 )); then
-        log_info "Нет сторонних правил SSH [$SSH_CONFIG_FILE]"
+        log_info "ssh.warning_no_external_rules" "$SSH_CONFIG_FILE"
     fi
 }
 
@@ -205,9 +205,9 @@ ssh::config::create_bsss_file() {
 Port $port
 EOF
     then
-        log_info "Создано правило ${UTIL_NAME^^} для SSH: [$path:$port]"
+        log_info "ssh.success_rule_created" "$path" "$port"
     else
-        log_error "Не удалось создать правило SSH: $path"
+        log_error "ssh.error_rule_creation_failed" "$path"
         return 1
     fi
 }
@@ -230,12 +230,12 @@ ssh::port::wait_for_up() {
     local interval=0.5
     local attempts=1
 
-    log_info "Ожидание поднятия SSH порта $port (таймаут: ${timeout} сек)..."
+    log_info "ssh.socket.wait_for_ssh_up.info" "$port" "$timeout"
 
     while (( elapsed < timeout )); do
         # Проверяем, есть ли порт в списке активных
         if ssh::port::get_from_ss | grep -qzxF "$port"; then
-            log_info "SSH порт $port успешно поднят после $attempts попыток в течение $elapsed сек"
+            log_info "ssh.success_port_up" "$port" "$attempts" "$elapsed"
             return
         fi
 
@@ -244,7 +244,7 @@ ssh::port::wait_for_up() {
         attempts=$((attempts + 1))
     done
 
-    log_error "ПОРТ $port НЕ ПОДНЯЛСЯ [$attempts попыток в течение $timeout сек]"
+    log_error "ssh.error_port_not_up" "$port" "$attempts" "$timeout"
     return 1
 }
 
@@ -264,7 +264,7 @@ ssh::orchestrator::config_exists_handler() {
     case "$choice" in
         1) ssh::reset::port ;;
         2) ssh::install::port ;;
-        *) log_warn "Не корректный выбор" ;;
+        *) log_warn "ssh.error_invalid_choice" ;;
     esac
 }
 
@@ -314,7 +314,7 @@ ssh::install::port() {
 
     if io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
-        log_info "Изменения зафиксированы, Rollback отключен"
+        log_info "ssh.success_changes_committed"
     fi
 }
 
@@ -344,8 +344,8 @@ ssh::reset::port() {
 # @exit_code:   0 - успешно
 ssh::log::guard_instructions() {
     local port="$1"
-    log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
-    log_attention "ОТКРОЙТЕ НОВОЕ ОКНО и проверьте связь через порт $port"
+    log_attention "ssh.guard.dont_close"
+    log_attention "ssh.guard.test_new" "$port"
 }
 
 # @type:        Orchestrator
@@ -357,10 +357,10 @@ ssh::log::guard_instructions() {
 #               1 - ошибка конфигурации
 sys::service::restart() {
     if sshd -t; then
-        systemctl daemon-reload && log_info "Конфигурация перезагружена [systemctl daemon-reload]"
-        systemctl restart ssh.service && log_info "SSH сервис перезагружен [systemctl restart ssh.service]"
+        systemctl daemon-reload && log_info "ssh.service.daemon_reloaded"
+        systemctl restart ssh.service && log_info "ssh.service.restarted"
     else
-        log_error "Ошибка конфигурации ssh [sshd -t]"
+        log_error "ssh.error_config_sshd"
         return 1
     fi
 }

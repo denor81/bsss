@@ -1,5 +1,4 @@
 # SSH port messages (English)
-declare -gA I18N_MESSAGES
 
 # Menu UI
 I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Available actions:"
@@ -31,3 +30,27 @@ I18N_MESSAGES["ssh.error_config_sshd"]="SSH config error [sshd -t]"
 # Warning messages
 I18N_MESSAGES["ssh.warning_external_rules_found"]="External SSH rules found:"
 I18N_MESSAGES["ssh.warning_no_external_rules"]="No external SSH rules [%s]"
+
+# Wait messages
+I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Waiting for SSH port %s to come up (timeout: %s sec)..."
+
+# Menu items
+I18N_MESSAGES["ssh.menu.item_reset"]="1. Reset (delete %s rule)"
+I18N_MESSAGES["ssh.menu.item_reinstall"]="2. Reinstall (replace with new port)"
+I18N_MESSAGES["ssh.menu.item_exit"]="0. Exit"
+
+# Input messages
+I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Enter new SSH port"
+I18N_MESSAGES["ssh.ui.get_new_port.hint_range"]="1-65535, Enter for %s"
+
+# Service messages
+I18N_MESSAGES["ssh.service.daemon_reloaded"]="Configuration reloaded [systemctl daemon-reload]"
+I18N_MESSAGES["ssh.service.restarted"]="SSH service restarted [systemctl restart ssh.service]"
+
+# Guard instructions
+I18N_MESSAGES["ssh.guard.dont_close"]="DO NOT CLOSE THIS TERMINAL WINDOW"
+I18N_MESSAGES["ssh.guard.test_new"]="OPEN NEW WINDOW and test connection via port %s"
+
+# Error messages
+I18N_MESSAGES["ssh.error_port_not_up"]="PORT %s DID NOT COME UP [%s attempts in %s sec]"
+I18N_MESSAGES["ssh.error_invalid_choice"]="Invalid choice"

@@ -22,11 +22,11 @@ ufw::rule::check_requirements() {
     fi
 
     if ufw::status::is_active; then
-        log_info "Нет правил BSSS, но UFW активен - можно отключить"
+        log_info "ufw.info.no_rules_but_active"
         return 0
     else
-        log_warn "Невозможно продолжить: нет правил BSSS в UFW"
-        log_warn "Сначала добавьте SSH-порт через модуль SSH"
+        log_warn "ufw.warning.continue_without_rules"
+        log_warn "ufw.warning.add_ssh_first"
         return 4
     fi
 }
@@ -38,9 +38,9 @@ ufw::rule::check_requirements() {
 # @stdout:      id|text\0 (0..N)
 # @exit_code:   0 - успешно
 ufw::menu::get_items() {
-    ufw::status::is_active && printf '%s|%s\0' "1" "Выключить UFW" || printf '%s|%s\0' "1" "Включить UFW"
-    ufw::ping::is_configured && printf '%s|%s\0' "2" "Ping будет включен [ACCEPT] [По умолчанию]" || printf '%s|%s\0' "2" "Ping будет отключен [DROP]"
-    printf '%s|%s\0' "0" "Выход"
+    ufw::status::is_active && printf '%s|%s\0' "1" "$(i18n::get "ufw.menu.item_disable")" || printf '%s|%s\0' "1" "$(i18n::get "ufw.menu.item_enable")"
+    ufw::ping::is_configured && printf '%s|%s\0' "2" "$(i18n::get "ufw.menu.item_ping_enable")" || printf '%s|%s\0' "2" "$(i18n::get "ufw.menu.item_ping_disable")"
+    printf '%s|%s\0' "0" "$(i18n::get "ufw.menu.item_exit")"
 }
 
 # @type:        Sink
@@ -55,7 +55,7 @@ ufw::menu::display() {
 
     ufw::orchestrator::log_statuses
 
-    log_info "Доступные действия:"
+    log_info "ufw.menu.display.available_actions"
 
     while IFS='|' read -r -d '' id text || break; do
         log_info_simple_tab "$id. $text"
@@ -84,7 +84,7 @@ ufw::menu::get_user_choice() {
     local pattern="^[0-$qty_items]$"
     local hint="0-$qty_items"
 
-    io::ask_value "Выберите действие" "" "$pattern" "$hint" "0" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
+    io::ask_value "$(i18n::get "ufw.menu.ask_select")" "" "$pattern" "$hint" "0" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
 }
 
 # @type:        Orchestrator
@@ -101,7 +101,7 @@ ufw::orchestrator::dispatch_logic() {
     case "$menu_id" in
         1) ufw::toggle::status ;;
         2) ufw::toggle::ping ;;
-        *) log_error "Неверный ID действия: [$menu_id]"; return 1 ;;
+        *) log_error "ufw.error.invalid_menu_id" "$menu_id"; return 1 ;;
     esac
 }
 
@@ -135,11 +135,11 @@ ufw::status::force_enable() {
 
     if ! ufw --force enable >/dev/null 2>&1; then
         rollback::orchestrator::immediate_usr2
-        log_error "Ошибка при активации [ufw --force enable]"
+        log_error "ufw.error.enable_failed"
         return 1
     fi
 
-    log_info "UFW: Активирован [ufw --force enable]"
+    log_info "ufw.success.enabled"
     log_actual_info
     ufw::orchestrator::log_statuses
 
@@ -155,8 +155,8 @@ ufw::status::force_enable() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 log::rollback::instructions() {
-    log_attention "НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
-    log_attention "Проверьте доступ к серверу после включения UFW"
+    log_attention "ufw.rollback.warning_title"
+    log_attention "ufw.rollback.test_access"
 }
 
 # @type:        Orchestrator
@@ -195,8 +195,8 @@ ufw::orchestrator::disable_ping() {
 # @exit_code:   0 - успешно
 ufw::log::status() {
     ufw::status::is_active && \
-    log_info "UFW включен" || \
-    log_info "UFW отключен"
+    log_info "ufw.status.enabled" || \
+    log_info "ufw.status.disabled"
 }
 
 # @type:        Sink
@@ -207,8 +207,8 @@ ufw::log::status() {
 # @exit_code:   0 - успешно
 ufw::log::ping_status() {
     ufw::ping::is_configured && \
-    log_info "UFW ping запрещен [DROP] [Состояние: модифицировано]" || \
-    log_info "UFW ping разрешен [ACCEPT] [Состояние: по умолчанию]"
+    log_info "ufw.status.ping_blocked" || \
+    log_info "ufw.status.ping_allowed"
 }
 
 # @type:        Orchestrator
@@ -244,10 +244,10 @@ ufw::ping::is_configured() {
 ufw::ping::backup_file() {
     local res
     if res=$(cp -pv "$UFW_BEFORE_RULES" "$UFW_BEFORE_RULES_BACKUP" 2>&1); then
-        log_info "Создан бэкап: [$res]"
+        log_info "ufw.success.backup_created" "$res"
     else
         local rc=$?
-        log_error "Не удалось создать бэкап $UFW_BEFORE_RULES_BACKUP [$res]"
+        log_error "ufw.error.backup_failed" "$UFW_BEFORE_RULES_BACKUP" "$res"
         return "$rc"
     fi
 }
@@ -261,10 +261,10 @@ ufw::ping::backup_file() {
 # @exit_code:   $? - код ошибки команды sed
 ufw::ping::disable_in_rules() {
     if sed -i '/-p icmp/s/ACCEPT/DROP/g' "$UFW_BEFORE_RULES"; then
-        log_info "Отредактирован: [$UFW_BEFORE_RULES]"
-        log_info "ICMP правила изменены на DROP"
+        log_info "ufw.success.before_rules_edited" "$UFW_BEFORE_RULES"
+        log_info "ufw.success.icmp_changed"
     else
-        log_error "Ошибка при редактировании: [$UFW_BEFORE_RULES]"
+        log_error "ufw.error.edit_failed" "$UFW_BEFORE_RULES"
         return 1
     fi
 }
@@ -278,10 +278,10 @@ ufw::ping::disable_in_rules() {
 #               $? - код ошибки cp или rm
 ufw::ping::restore() {
     if res=$(cp -pv "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES" 2>&1); then
-        log_info "Восстановлен файл before.rules: [$res]"
+        log_info "ufw.success.backup_restored" "$res"
     else
         local rc=$?
-        log_error "Не удалось восстановить $UFW_BEFORE_RULES из бэкапа [$res]"
+        log_error "ufw.error.restore_failed" "$UFW_BEFORE_RULES" "$res"
         return "$rc"
     fi
 
@@ -297,10 +297,10 @@ ufw::ping::restore() {
 #               $? - код ошибки ufw reload
 ufw::status::reload() {
     if ufw reload >/dev/null; then
-        log_info "UFW перезагружен [ufw reload]"
+        log_info "ufw.success.reloaded"
     else
         local rc=$?
-        log_error "Не удалось выполнить [ufw reload] [Code: $rc]"
+        log_error "ufw.error.reload_failed" "$rc"
         return "$rc"
     fi
 }
