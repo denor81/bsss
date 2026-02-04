@@ -124,7 +124,7 @@ runner::module::run_check() {
     | sys::module::sort_by_order)
 
     (( found == 0 )) && { log_error "common.error_no_modules_found"; log::draw_border; return 1; }
-    (( err )) && { log_error "common.error_module_error"; log::draw_border; return 2; }
+    (( err )) && { log_error "common.error_module_error"; log::draw_border; return 4; }
     log::draw_border
 }
 

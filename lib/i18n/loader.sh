@@ -76,7 +76,7 @@ i18n::load_translations() {
     done
     
     # Логирование успешной загрузки
-    echo "Loaded i18n language: $lang_code from $i18n_dir" >&2
+    # echo "Loaded i18n language: $lang_code from $i18n_dir" >&2
 }
 
 # @type:        Orchestrator

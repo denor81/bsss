@@ -199,57 +199,104 @@ ssh::port::generate_free_random_port() {
    - Примеры нейминга:
      * Оркестраторы: ssh::ssh::orchestrator::log_statuses, ufw::orchestrator::run_module
 
-  14. I18n (Internationalization)
-   - Архитектура:
-     * Использует ассоциативные массивы Bash 4+ для переводов
-     * Файловая структура: lib/i18n/{ru|en}/domain.sh
-     * Переключение языка через файл .lang в корне проекта
+   14. I18n (Internationalization)
+    - Подробная документация: [lib/i18n/README.md](lib/i18n/README.md)
 
-   - Использование:
-     * Основная функция: `_ "message_key"` или `i18n::get "message_key"`
-     * В функциях логирования: `log_info "message_key" "arg1" "arg2"`
-     * Форматирование через printf: `I18N_MESSAGES["key"]="Сообщение с %s плейсхолдером"`
+    - Архитектура:
+      * Использует ассоциативные массивы Bash 4+ для переводов
+      * Файловая структура: lib/i18n/{ru|en}/domain.sh
+      * Переключение языка через файл .lang в корне проекта
 
-   - Конвенции именования ключей:
-     * Формат: module.submodule.action.message_type
-     * Примеры:
-       - `common.error_root_privileges` - общие ошибки
-       - `ssh.ui.get_new_port.prompt` - UI сообщения SSH модуля
-       - `ufw.status.enabled` - статусы UFW
+    - Использование:
+      * Основная функция: `_ "message_key"` или `i18n::get "message_key"`
+      * В функциях логирования: `log_info "message_key" "arg1" "arg2"`
+      * Все логеры сами вызывают `_()` для перевода, не нужно вызывать явно
 
-   - Файлы переводов:
-     * lib/i18n/ru/common.sh - общие сообщения (русский)
-     * lib/i18n/en/common.sh - общие сообщения (английский)
-     * lib/i18n/ru/ssh.sh - SSH модуль (русский)
-     * lib/i18n/en/ssh.sh - SSH модуль (английский)
-     * lib/i18n/ru/ufw.sh - UFW модуль (русский)
-     * lib/i18n/en/ufw.sh - UFW модуль (английский)
-     * lib/i18n/ru/system.sh - системные сообщения (русский)
-     * lib/i18n/en/system.sh - системные сообщения (английский)
+    - Конвенции именования ключей:
+      * Формат: module.submodule.action.message_type
+      * Примеры:
+        - `common.error_root_privileges` - общие ошибки
+        - `ssh.ui.get_action_choice.available_actions` - UI сообщения SSH модуля
+        - `ufw.status.enabled` - статусы UFW
 
-   - Добавление новых переводов:
-     1. Добавьте ключ в lib/i18n/ru/domain.sh
-     2. Добавьте тот же ключ с переводом в lib/i18n/en/domain.sh
-     3. Используйте ключ в коде через `_ "key"` или `log_info "key"`
+    - Динамические данные в переводах:
+      * Все динамические данные передаются как аргументы через `%s` плейсхолдеры
+      * НЕ ЗАШИВАЙТЕ динамические значения в переводы!
 
-   - Переключение языка:
-     * Русский (по умолчанию): удалить файл .lang или оставить пустым
-     * Английский: `echo "en" > .lang`
-     * Другие языки: создайте папку lib/i18n/{lang}/ и соответствующие файлы
-    * UI меню: ufw::menu::display, ufw::menu::get_user_choice
-    * UI интерактивные: ssh::ui::get_new_port, ufw::toggle::status
-    * Проверки: ssh::port::is_port_free, ssh::socket::is_configured
-    * Генерация: ssh::port::generate_free_random_port, ssh::config::create_bsss_file
-    * Удаление/сброс: ufw::rule::delete_all_bsss, ssh::rule::reset_and_pass
-    * Системные: sys::file::validate_sshd_config, sys::service::restart
-    * Запуск модулей: runner::module::run_check, runner::module::select_modify
-    * Rollback: rollback::orchestrator::immediate_usr2, rollback::orchestrator::ssh
+      **ПРАВИЛЬНО (номер меню как аргумент):**
+      ```bash
+      # lib/i18n/ru/common.sh
+      I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
+      I18N_MESSAGES["ssh.menu.item_exit"]="%s. Выход"
 
-  - Домены и субдомены:
-    * ufw: menu, ui, ping, rule
-    * ssh: port, config, socket, ui
-    * sys: file, service, process, update
-    * io: confirm, input
+      # modules/helpers/ssh-port.sh
+      log_info_simple_tab "ssh.menu.item_exit" "0"           # 0. Выход
+      log_info_simple_tab "common.info_menu_item_format" "1" "Текст"  # 1. Текст
+      ```
+
+      **НЕПРАВИЛЬНО (номер зашит в перевод):**
+      ```bash
+      # lib/i18n/ru/common.sh
+      I18N_MESSAGES["ssh.menu.item_exit"]="0. Выход"    # ОШИБКА!
+      ```
+
+    - Заглушка `no_translate`:
+      * Используется для вывода текста без перевода (пути к файлам, динамические строки)
+      * Определена в common.sh: `I18N_MESSAGES["no_translate"]="%s"`
+      * Примеры использования:
+
+      ```bash
+      # Путь к файлу
+      log_info_simple_tab "no_translate" "/etc/ssh/sshd_config:Port 22"
+
+      # Динамически сформированная строка
+      local menu_text="$id. $action"
+      log_info_simple_tab "no_translate" "$menu_text"
+      ```
+
+    - Валидное использование `_()` и `i18n::get()`:
+      * ТОЛЬКО в контексте IO функций (пользовательский ввод):
+
+      ```bash
+      # io::confirm_action
+      io::confirm_action "$(_ "key")"
+
+      # io::ask_value
+      io::ask_value "$(_ "key")" "$default" "$pattern" "$hint"
+
+      # printf с переводом
+      printf "$(i18n::get "key")" "$arg1"
+      ```
+
+      * НЕ ИСПОЛЬЗУЙТЕ `_()` в логерах:
+
+      ```bash
+      # ОШИБКА - двойной перевод!
+      log_info "$(_ "key")"             # log_info сам вызывает _()
+
+      # ПРАВИЛЬНО
+      log_info "key"                     # log_info сам переведёт
+      ```
+
+    - Файлы переводов:
+      * lib/i18n/ru/common.sh - общие сообщения (русский)
+      * lib/i18n/en/common.sh - общие сообщения (английский)
+      * lib/i18n/ru/ssh.sh - SSH модуль (русский)
+      * lib/i18n/en/ssh.sh - SSH модуль (английский)
+      * lib/i18n/ru/ufw.sh - UFW модуль (русский)
+      * lib/i18n/en/ufw.sh - UFW модуль (английский)
+      * lib/i18n/ru/system.sh - системные сообщения (русский)
+      * lib/i18n/en/system.sh - системные сообщения (английский)
+
+    - Добавление новых переводов:
+      1. Добавьте ключ в lib/i18n/ru/domain.sh
+      2. Добавьте тот же ключ с переводом в lib/i18n/en/domain.sh
+      3. Используйте ключ в коде через `log_info "key"` или `io::confirm_action "$(_ "key")"`
+
+    - Переключение языка:
+      * Русский (по умолчанию): удалить файл .lang или оставить пустым
+      * Английский: `echo "en" > .lang`
+      * Другие языки: создайте папку lib/i18n/{lang}/ и соответствующие файлы
 ```
 
 ### Структура переводов

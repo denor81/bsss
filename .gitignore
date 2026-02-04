@@ -6,6 +6,8 @@ function_map.txt
 build-archive.sh
 project-v1.0.0.tar.gz
 logs/
+.lang
+docs/plans/
 
 # Git worktrees
 .worktrees/
