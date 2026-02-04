@@ -31,6 +31,8 @@ I18N_MESSAGES["ssh.success_changes_committed"]="Изменения зафикс�
 I18N_MESSAGES["ssh.error_port_busy"]="SSH порт %s уже занят другим сервисом."
 I18N_MESSAGES["ssh.error_rule_creation_failed"]="Не удалось создать правило SSH: %s"
 I18N_MESSAGES["ssh.error_config_sshd"]="Ошибка конфигурации ssh [sshd -t]"
+I18N_MESSAGES["ssh.socket.unit_not_found"]="Юнит ssh.service не найден в системе"
+I18N_MESSAGES["ssh.socket.script_purpose"]="Этот скрипт переключает SSH в режим service"
 
 # Warning messages
 I18N_MESSAGES["ssh.warning_external_rules_found"]="Есть сторонние правила SSH:"
@@ -40,9 +42,9 @@ I18N_MESSAGES["ssh.warning_no_external_rules"]="Нет сторонних пра
 I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Ожидание поднятия SSH порта %s (таймаут: %s сек)..."
 
 # Menu items
-I18N_MESSAGES["ssh.menu.item_reset"]="1. Сброс (удаление правила %s)"
-I18N_MESSAGES["ssh.menu.item_reinstall"]="2. Переустановка (замена на новый порт)"
-I18N_MESSAGES["ssh.menu.item_exit"]="0. Выход"
+I18N_MESSAGES["ssh.menu.item_reset"]="%s. Сброс (удаление правила %s)"
+I18N_MESSAGES["ssh.menu.item_reinstall"]="%s. Переустановка (замена на новый порт)"
+I18N_MESSAGES["ssh.menu.item_exit"]="%s. Выход"
 
 # Input messages
 I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Введите новый SSH порт"

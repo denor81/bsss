@@ -11,15 +11,14 @@ sys::gawk::check_dependency() {
     if command -v gawk >/dev/null 2>&1; then
         local gawk_v=$(gawk -V | head -n 1)
         log_info "init.gawk.version"
-        log_info_simple_tab "$(_ "init.gawk.installed" "$gawk_v")"
+        log_info_simple_tab "init.gawk.installed" "$gawk_v"
         return
     fi
 
     log_error "init.gawk.not_installed"
     log_info "init.gawk.nul_explanation"
 
-    # Используем твой хелпер для подтверждения
-    if io::confirm_action "$(_ "init.gawk.install_confirm")" || return; then
+    if io::confirm_action "init.gawk.install_confirm" || return; then
         if apt update && apt install gawk -y; then
             log_info "init.gawk.install_success"
         else

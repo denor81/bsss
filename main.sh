@@ -159,22 +159,22 @@ runner::module::select_modify() {
     for ((i = 0; i < ${#module_paths[@]}; i++)); do
         module_name=$(gawk '
             BEGIN { name="" }
-            /^# MODULE_NAME:/ { 
+            /^# MODULE_NAME:/ {
                 sub(/^# MODULE_NAME:[[:space:]]*/, "")
                 name=$0
                 exit
             }
             /^[^#]/ { exit }
-            END { 
+            END {
                 if (name=="") name=FILENAME
                 sub(/.*\//, "", name)
                 print name
             }
         ' "${module_paths[$i]}")
-        log_info_simple_tab "$(printf "$(_ "common.info_menu_item_format")" "$((i + 1))" "$module_name")"
+        log_info_simple_tab "common.info_menu_item_format" "$((i + 1))" "$module_name"
     done
-    log_info_simple_tab "0. $(_ "common.menu_exit")"
-    log_info_simple_tab "$(_ "common.info_menu_check_item")"
+    log_info_simple_tab "common.info_menu_item_format" "0" "$(_ "common.menu_exit")"
+    log_info_simple_tab "common.info_menu_check_item" "00" "$(_ "common.menu_check")"
 
     # Запрашиваем выбор пользователя
     local selection

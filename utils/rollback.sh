@@ -160,7 +160,7 @@ rollback::orchestrator::watchdog_timer() {
         *) rollback_message_key="rollback.timeout_generic" ;;
     esac
     
-    log_bold_info "$(_ "$rollback_message_key")"
+    log_bold_info "$rollback_message_key"
     log_bold_info "rollback.timeout_reconnect"
 
     sleep "$ROLLBACK_TIMER_SECONDS" &

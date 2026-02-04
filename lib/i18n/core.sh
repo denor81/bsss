@@ -8,6 +8,8 @@
 # @stdout:      Переведенное сообщение
 # @exit_code:   0 - успех, 1 - ключ не найден
 
+declare -gA I18N_MESSAGES
+
 _() {
     local key="$1"
     shift

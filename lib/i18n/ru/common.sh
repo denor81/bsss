@@ -1,5 +1,8 @@
 # Common messages (Russian)
 
+# Special message - pass through without translation
+I18N_MESSAGES["no_translate"]="%s"
+
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
 I18N_MESSAGES["common.error_root_short"]="Требуются права root или запуск через 'sudo'"
@@ -39,7 +42,7 @@ I18N_MESSAGES["common.info_module_rollback"]="Модуль завершен от
 I18N_MESSAGES["common.info_module_requires_ssh"]="Модуль требует предварительной настройки SSH [Code: %s]"
 I18N_MESSAGES["common.info_exit_menu"]="Выход из меню настройки"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
-I18N_MESSAGES["common.info_menu_check_item"]="00. Проверка системы (check)"
+I18N_MESSAGES["common.info_menu_check_item"]="%s. %s"
 
 # Info messages - uninstall
 I18N_MESSAGES["common.info_uninstall_confirm"]="Удалить ${UTIL_NAME^^}?"
@@ -55,6 +58,11 @@ I18N_MESSAGES["common.error_uninstall_delete_failed"]="Не удалось уд�
 # Init messages
 I18N_MESSAGES["init.gawk.version"]="Ключевые зависимости:"
 I18N_MESSAGES["init.gawk.installed"]="gawk установлен [%s]"
+I18N_MESSAGES["init.gawk.not_installed"]="gawk не установлен"
+I18N_MESSAGES["init.gawk.nul_explanation"]="gawk требуется для работы ассоциативных массивов в Bash"
+I18N_MESSAGES["init.gawk.install_confirm"]="Установить gawk?"
+I18N_MESSAGES["init.gawk.install_success"]="gawk успешно установлен"
+I18N_MESSAGES["init.gawk.install_error"]="Ошибка установки gawk"
 
 # Rollback messages
 I18N_MESSAGES["rollback.exit_received"]="Получен сигнал EXIT"

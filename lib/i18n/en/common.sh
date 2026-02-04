@@ -1,5 +1,8 @@
 # Common messages (English)
 
+# Special message - pass through without translation
+I18N_MESSAGES["no_translate"]="%s"
+
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Root privileges or run with 'sudo' required. Running as regular user."
 I18N_MESSAGES["common.error_root_short"]="Root privileges or run with 'sudo' required"
@@ -39,7 +42,7 @@ I18N_MESSAGES["common.info_module_rollback"]="Module completed via rollback [Cod
 I18N_MESSAGES["common.info_module_requires_ssh"]="Module requires preliminary SSH setup [Code: %s]"
 I18N_MESSAGES["common.info_exit_menu"]="Exit setup menu"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
-I18N_MESSAGES["common.info_menu_check_item"]="00. System check (check)"
+I18N_MESSAGES["common.info_menu_check_item"]="%s. %s"
 
 # Info messages - uninstall
 I18N_MESSAGES["common.info_uninstall_confirm"]="Uninstall ${UTIL_NAME^^}?"
@@ -55,6 +58,11 @@ I18N_MESSAGES["common.error_uninstall_delete_failed"]="Failed to delete: %s"
 # Init messages
 I18N_MESSAGES["init.gawk.version"]="Critical dependencies:"
 I18N_MESSAGES["init.gawk.installed"]="gawk installed [%s]"
+I18N_MESSAGES["init.gawk.not_installed"]="gawk not installed"
+I18N_MESSAGES["init.gawk.nul_explanation"]="gawk is required for associative arrays in Bash"
+I18N_MESSAGES["init.gawk.install_confirm"]="Install gawk?"
+I18N_MESSAGES["init.gawk.install_success"]="gawk installed successfully"
+I18N_MESSAGES["init.gawk.install_error"]="Failed to install gawk"
 
 # Rollback messages
 I18N_MESSAGES["rollback.exit_received"]="Received EXIT signal"

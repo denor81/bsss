@@ -31,6 +31,8 @@ I18N_MESSAGES["ssh.success_changes_committed"]="Changes committed, Rollback disa
 I18N_MESSAGES["ssh.error_port_busy"]="SSH port %s is already in use by another service."
 I18N_MESSAGES["ssh.error_rule_creation_failed"]="Failed to create SSH rule: %s"
 I18N_MESSAGES["ssh.error_config_sshd"]="SSH config error [sshd -t]"
+I18N_MESSAGES["ssh.socket.unit_not_found"]="ssh.service unit not found in system"
+I18N_MESSAGES["ssh.socket.script_purpose"]="This script switches SSH to service mode"
 
 # Warning messages
 I18N_MESSAGES["ssh.warning_external_rules_found"]="External SSH rules found:"
@@ -40,9 +42,9 @@ I18N_MESSAGES["ssh.warning_no_external_rules"]="No external SSH rules [%s]"
 I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Waiting for SSH port %s to come up (timeout: %s sec)..."
 
 # Menu items
-I18N_MESSAGES["ssh.menu.item_reset"]="1. Reset (delete %s rule)"
-I18N_MESSAGES["ssh.menu.item_reinstall"]="2. Reinstall (replace with new port)"
-I18N_MESSAGES["ssh.menu.item_exit"]="0. Exit"
+I18N_MESSAGES["ssh.menu.item_reset"]="%s. Reset (delete %s rule)"
+I18N_MESSAGES["ssh.menu.item_reinstall"]="%s. Reinstall (replace with new port)"
+I18N_MESSAGES["ssh.menu.item_exit"]="%s. Exit"
 
 # Input messages
 I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Enter new SSH port"

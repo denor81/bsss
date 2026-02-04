@@ -9,9 +9,9 @@ ssh::menu::display_exists_scenario() {
     ssh::log::bsss_configs
 
     log_info "ssh.ui.get_action_choice.available_actions"
-    log_info_simple_tab "$(i18n::get "ssh.menu.item_reset" "${UTIL_NAME^^}")"
-    log_info_simple_tab "$(i18n::get "ssh.menu.item_reinstall")"
-    log_info_simple_tab "$(i18n::get "ssh.menu.item_exit")"
+    log_info_simple_tab "ssh.menu.item_reset" "1" "${UTIL_NAME^^}"
+    log_info_simple_tab "ssh.menu.item_reinstall" "2"
+    log_info_simple_tab "ssh.menu.item_exit" "0"
 }
 
 # @type:        Sink
@@ -22,7 +22,7 @@ ssh::menu::display_exists_scenario() {
 # @exit_code:   0 - успешно
 ssh::menu::display_install_ui() {
     log_info "ssh.ui.get_action_choice.available_actions"
-    log_info_simple_tab "$(i18n::get "ssh.menu.item_exit")"
+    log_info_simple_tab "ssh.menu.item_exit" "0"
 }
 
 # @type:        Filter
@@ -81,7 +81,7 @@ ssh::log::bsss_configs() {
             found=$((found + 1))
         fi
 
-        log_info_simple_tab "$grep_result"
+        log_info_simple_tab "no_translate" "$grep_result"
 
     done < <(grep -EiHs '^\s*port\b' "${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK || true)
 
@@ -107,7 +107,7 @@ ssh::log::other_configs() {
             found=$((found + 1))
         fi
 
-        log_info_simple_tab "$grep_result"
+        log_info_simple_tab "no_translate" "$grep_result"
 
     done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
 

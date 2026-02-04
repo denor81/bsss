@@ -293,6 +293,7 @@ log_actual_info() {
 # @type:        Sink
 # @description: Выводит информационное сообщение с отступом
 # @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -301,13 +302,13 @@ log_info_simple_tab() {
     local type="INFO_TAB"
     local formatted_msg
     local msg
-    
-    msg="$(_ "$msg_key")"
+
+    msg="$(_ "$msg_key" "${@:2}")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_INFO    $msg" >&2
+        printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2
     else
-        echo -e "$SYMBOL_INFO    $msg" >&2 || true
+        printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2 || true
     fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
