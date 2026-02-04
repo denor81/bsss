@@ -119,26 +119,26 @@ extract_all_translation_keys() {
 extract_used_keys_with_location() {
     local tmp_file
     tmp_file=$(mktemp)
-    
+
     # Находим все bash файлы, исключая тесты перевода
     find "$PROJECT_ROOT" -name "*.sh" -type f ! -path "*/lib/i18n/*test*.sh" 2>/dev/null > "$tmp_file"
-    
-    # Находим все вызовы _$() в коде с номерами строк
+
+    # Находим все вызовы _$() в коде с номерами строк (флаг H всегда выводит имя файла)
     while IFS= read -r file; do
         if [[ -f "$file" ]]; then
-            grep -hn '\$(_ "' "$file" 2>/dev/null | \
+            grep -Hn '\$(_ "' "$file" 2>/dev/null | \
                 sed 's/^\([^:]*:[^:]*\):.*\$(_ "\([^"]*\)".*/\1 \2/'
         fi
     done < "$tmp_file"
-    
+
     # Находим вызовы i18n::get() (будут помечены как устаревший стиль)
     while IFS= read -r file; do
         if [[ -f "$file" ]]; then
-            grep -hn '\$(i18n::get "' "$file" 2>/dev/null | \
+            grep -Hn '\$(i18n::get "' "$file" 2>/dev/null | \
                 sed 's/^\([^:]*:[^:]*\):.*\$(i18n::get "\([^"]*\)".*/\1 \2 [DEPRECATED i18n::get]/'
         fi
     done < "$tmp_file"
-    
+
     rm -f "$tmp_file"
 }
 
@@ -266,4 +266,6 @@ main() {
     fi
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

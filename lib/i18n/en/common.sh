@@ -16,6 +16,7 @@ I18N_MESSAGES["io.confirm_action.run_setup"]="Run setup?"
 I18N_MESSAGES["common.info_available_modules"]="Available setup modules:"
 I18N_MESSAGES["common.info_short_params"]="Available short parameters %s %s"
 I18N_MESSAGES["common.info_start_module_runner"]="Starting Basic Server Security Setup (${UTIL_NAME^^}) - oneline runner..."
+I18N_MESSAGES["common.default_actual_info"]="Information"
 
 # Success messages
 I18N_MESSAGES["common.success_module_runner_started"]="Basic Server Security Setup (${UTIL_NAME^^}) - oneline runner started"

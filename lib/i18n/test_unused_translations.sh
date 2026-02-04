@@ -24,6 +24,46 @@ readonly COLOR_YELLOW='\e[33m'
 readonly COLOR_GREEN='\e[32m'
 readonly COLOR_RESET='\e[0m'
 
+# @type:        Source
+# @description: Извлекает все функции логгера из logging.sh
+#               Парсит файл автоматически для получения актуального списка функций
+# @params:      нет
+# @stdin:       нет
+# @stdout:      список функций через | для regex (log_info|log_error|...)
+# @exit_code:   0
+get_logger_functions_pattern() {
+    grep -E '^.+\(\) \{' "${PROJECT_ROOT}/lib/logging.sh" 2>/dev/null | \
+        sed 's/.*\([a-z_:_]*\)(.*/\1/' | \
+        tr '\n' '|' | \
+        sed 's/|$//'
+}
+
+# @type:        Source
+# @description: Извлекает все функции io::* из user_confirmation.sh
+#               Парсит файл автоматически для получения актуального списка функций
+# @params:      нет
+# @stdin:       нет
+# @stdout:      список функций через | для regex (ask_value|confirm_action)
+# @exit_code:   0
+get_io_functions_pattern() {
+    grep -E 'io::.+\(\) \{' "${PROJECT_ROOT}/lib/user_confirmation.sh" 2>/dev/null | \
+        sed 's/.*io::\([a-z_]*\)(.*/\1/' | \
+        sort -u | \
+        tr '\n' '|' | \
+        sed 's/|$//'
+}
+
+# @type:        Orchestrator
+# @description: Инициализирует паттерны функций
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0
+init_function_patterns() {
+    readonly LOGGER_FUNCTIONS_PATTERN=$(get_logger_functions_pattern)
+    readonly IO_FUNCTIONS_PATTERN=$(get_io_functions_pattern)
+}
+
 # @type:        Sink
 # @description: Выводит информационное сообщение
 # @params:      message - сообщение
@@ -71,15 +111,15 @@ log_section() {
 # @description: Извлекает ключи i18n из указанного файла переводов
 # @params:      file_path - путь к файлу переводов
 # @stdin:       нет
-# @stdout:      список ключей (по одному на строку)
+# @stdout:      список ключей (по одному на строке)
 # @exit_code:   0 - успех
 extract_translation_keys() {
     local file="$1"
-    
+
     if [[ ! -f "$file" ]]; then
         return 0
     fi
-    
+
     grep 'I18N_MESSAGES\[' "$file" | \
         sed 's/.*I18N_MESSAGES\["//;s/"\].*//' | \
         sort -u
@@ -107,26 +147,51 @@ extract_all_keys_from_lang() {
 
 # @type:        Source
 # @description: Извлекает все используемые ключи из кода проекта
+#               Использует простые устойчивые паттерны для обнаружения
 # @params:      нет
 # @stdin:       нет
-# @stdout:      список ключей (по одному на строку)
+# @stdout:      список ключей (по одному на строке)
 # @exit_code:   0 - успех
 extract_used_keys() {
-    local tmp_file
-    tmp_file=$(mktemp)
-    
-    # Находим все bash файлы, исключая тесты переводода
-    find "$PROJECT_ROOT" -name "*.sh" -type f ! -path "*/lib/i18n/*test*.sh" 2>/dev/null > "$tmp_file"
-    
-    # Находим все вызовы _$() в коде
-    while IFS= read -r file; do
-        if [[ -f "$file" ]]; then
-            grep -h '\$(_ "' "$file" 2>/dev/null | \
-                sed 's/.*\$(_ "\([^"]*\)".*/\1/'
-        fi
-    done < "$tmp_file" | sort -u
-    
-    rm -f "$tmp_file"
+    local exclude_dirs="--exclude-dir=${I18N_DIR} --exclude-dir=.git"
+
+    grep -rh '$(_ "' "$PROJECT_ROOT" $exclude_dirs --include="*.sh" 2>/dev/null | \
+        grep -oP '\$\(_\s+"\K[^"]+' | \
+        sort -u
+}
+
+# @type:        Source
+# @description: Извлекает ключи из вызовов log_* функций без _$()
+#               Ищет простым паттерном: имя_функции "ключ"
+#               Использует динамический паттерн из logging.sh
+# @params:      нет
+# @stdin:       нет
+# @stdout:      список ключей (по одному на строке)
+# @exit_code:   0 - успех
+extract_log_keys() {
+    local exclude_dirs="--exclude-dir=${I18N_DIR} --exclude-dir=.git"
+    local pattern="$LOGGER_FUNCTIONS_PATTERN"
+
+    grep -rhE "(${pattern}) \"" "$PROJECT_ROOT" $exclude_dirs --include="*.sh" 2>/dev/null | \
+        sed -E "s/.*(${pattern}) \"([^\"]+)\".*/\2/" | \
+        grep -vE '^\$' | \
+        sort -u
+}
+
+# @type:        Source
+# @description: Извлекает ключи из вызовов io::* функций
+#               Ищет простым паттерном: io::функция "ключ"
+# @params:      нет
+# @stdin:       нет
+# @stdout:      список ключей (по одному на строке)
+# @exit_code:   0 - успех
+extract_io_keys() {
+    local exclude_dirs="--exclude-dir=${I18N_DIR} --exclude-dir=.git"
+
+    grep -rhE 'io::(confirm_action|ask_value) "' "$PROJECT_ROOT" $exclude_dirs --include="*.sh" 2>/dev/null | \
+        sed -E 's/.*io::(confirm_action|ask_value) "([^"]+)".*/\2/' | \
+        grep -vE '^\$' | \
+        sort -u
 }
 
 # @type:        Source
@@ -187,7 +252,7 @@ find_unused_keys() {
     
     # Извлекаем все используемые ключи из кода
     local used_keys
-    used_keys=$(cat <(extract_used_keys) <(extract_io_keys) | sort -u)
+    used_keys=$(cat <(extract_used_keys) <(extract_log_keys) <(extract_io_keys) | sort -u)
     
     if [[ -z "$used_keys" ]]; then
         log_warn "Не найдено используемых ключей в коде"
@@ -239,6 +304,7 @@ find_unused_keys() {
 # @exit_code:   0 - все проверки пройдены
 #               1 - найдены неиспользуемые ключи
 main() {
+    init_function_patterns
     log_section "I18n Unused Translations Check"
     
     local total_unused=0
@@ -278,4 +344,6 @@ main() {
     fi
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

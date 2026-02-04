@@ -165,8 +165,16 @@ ssh::port::generate_free_random_port() {
  - Активация строгого режима: `set -Eeuo pipefail` в начале каждого скрипта (E=exit on error, e=exit on undefined var, u=pipefail)
 
   11. Конвенции стиля кода
-  - Shebang: Обязательное `#!/usr/bin/env bash` в начале всех bash-файлов
-  - Отступы: Используй пробелы (не табы), стандартный отступ — 4 пробела
+   - Shebang: 
+     * Добавляется ТОЛЬКО в файлы, которые могут выполняться напрямую (main.sh, модули, тесты)
+     * НЕ добавляется в файлы, которые подгружаются через source (хелперы, библиотеки: lib/i18n/core.sh, lib/i18n/loader.sh, lib/logging.sh и т.д.)
+     * Если файл подразумевает прямой запуск, в конце файла должна быть проверка:
+       ```bash
+       if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+           main "$@"
+       fi
+       ```
+   - Отступы: Используй пробелы (не табы), стандартный отступ — 4 пробела
   - Переменные: readonly для констант (определяются в lib/vars.conf), local для временных переменных внутри функций
   - Путь к корню проекта: `${PROJECT_ROOT}` — должен быть определен как `readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"`
   - Имя текущего модуля: `${CURRENT_MODULE_NAME}` — используется в логировании
@@ -199,104 +207,79 @@ ssh::port::generate_free_random_port() {
    - Примеры нейминга:
      * Оркестраторы: ssh::ssh::orchestrator::log_statuses, ufw::orchestrator::run_module
 
-   14. I18n (Internationalization)
-    - Подробная документация: [lib/i18n/README.md](lib/i18n/README.md)
+    14. I18n (Internationalization)
+     - Подробная документация: [lib/i18n/README.md](lib/i18n/README.md)
 
-    - Архитектура:
-      * Использует ассоциативные массивы Bash 4+ для переводов
-      * Файловая структура: lib/i18n/{ru|en}/domain.sh
-      * Переключение языка через файл .lang в корне проекта
+     - Архитектура:
+       * Использует ассоциативные массивы Bash 4+ для переводов
+       * Файловая структура: lib/i18n/{ru|en}/domain.sh
+       * Переключение языка через файл .lang в корне проекта
 
-    - Использование:
-      * Основная функция: `_ "message_key"` или `i18n::get "message_key"`
-      * В функциях логирования: `log_info "message_key" "arg1" "arg2"`
-      * Все логеры сами вызывают `_()` для перевода, не нужно вызывать явно
+     - Стандарт использования переводов:
+       * **Все функции** (io::confirm_action, io::ask_value, log_info, log_error): перевод делается ДО вызова, функция принимает уже переведенную строку
+       * Переводы в файлах переводов могут поддерживать аргументы через printf форматирование (например, `I18N_MESSAGES["key"]="Сообщение %s"`)
 
-    - Конвенции именования ключей:
-      * Формат: module.submodule.action.message_type
-      * Примеры:
-        - `common.error_root_privileges` - общие ошибки
-        - `ssh.ui.get_action_choice.available_actions` - UI сообщения SSH модуля
-        - `ufw.status.enabled` - статусы UFW
+     - Правильные примеры вызовов:
 
-    - Динамические данные в переводах:
-      * Все динамические данные передаются как аргументы через `%s` плейсхолдеры
-      * НЕ ЗАШИВАЙТЕ динамические значения в переводы!
+       ```bash
+       # io::confirm_action - перевод делается ДО вызова
+       io::confirm_action "$(_ "key")"
 
-      **ПРАВИЛЬНО (номер меню как аргумент):**
-      ```bash
-      # lib/i18n/ru/common.sh
-      I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
-      I18N_MESSAGES["ssh.menu.item_exit"]="%s. Выход"
+       # io::ask_value - перевод делается ДО вызова
+       io::ask_value "$(_ "key")" "$default" "$pattern" "$hint"
+       или
+       io::ask_value "$(_ "key")" "$default" "$pattern" "$(_ "key" "arg1")" "n"
 
-      # modules/helpers/ssh-port.sh
-      log_info_simple_tab "ssh.menu.item_exit" "0"           # 0. Выход
-      log_info_simple_tab "common.info_menu_item_format" "1" "Текст"  # 1. Текст
-      ```
+       # Логеры - перевод делается ДО вызова
+       log_info "$(_ "key" "arg1" "arg2")"
+       log_error "$(_ "key")"
+       ```
 
-      **НЕПРАВИЛЬНО (номер зашит в перевод):**
-      ```bash
-      # lib/i18n/ru/common.sh
-      I18N_MESSAGES["ssh.menu.item_exit"]="0. Выход"    # ОШИБКА!
-      ```
+       ```bash
+       # Пример перевода с аргументами в файле переводов:
+       # lib/i18n/ru/common.sh:
+       # I18N_MESSAGES["common.helpers.ufw.rule.delete_error"]="Ошибка удаления правила: %s"
 
-    - Заглушка `no_translate`:
-      * Используется для вывода текста без перевода (пути к файлам, динамические строки)
-      * Определена в common.sh: `I18N_MESSAGES["no_translate"]="%s"`
-      * Примеры использования:
+       # Использование в коде:
+       log_error "$(_ "common.helpers.ufw.rule.delete_error" "$rule_args")"
+       ```
 
-      ```bash
-      # Путь к файлу
-      log_info_simple_tab "no_translate" "/etc/ssh/sshd_config:Port 22"
+     - Конвенции именования ключей:
+       * Формат: module.submodule.action.message_type
+       * Примеры:
+         - `common.error_root_privileges` - общие ошибки
+         - `ssh.ui.get_action_choice.available_actions` - UI сообщения SSH модуля
+         - `ufw.status.enabled` - статусы UFW
 
-      # Динамически сформированная строка
-      local menu_text="$id. $action"
-      log_info_simple_tab "no_translate" "$menu_text"
-      ```
+     - Заглушка `no_translate`:
+       * Используется для вывода текста без перевода (пути к файлам, динамические строки)
+       * Определена в common.sh: `I18N_MESSAGES["no_translate"]="%s"`
+       * Примеры использования:
 
-    - Валидное использование `_()` и `i18n::get()`:
-      * ТОЛЬКО в контексте IO функций (пользовательский ввод):
+       ```bash
+       # Путь к файлу
+       log_info_simple_tab "$(_ "no_translate" "/etc/ssh/sshd_config:Port 22")"
+       ```
 
-      ```bash
-      # io::confirm_action
-      io::confirm_action "$(_ "key")"
+     - Файлы переводов:
+       * lib/i18n/ru/common.sh - общие сообщения (русский)
+       * lib/i18n/en/common.sh - общие сообщения (английский)
+       * lib/i18n/ru/ssh.sh - SSH модуль (русский)
+       * lib/i18n/en/ssh.sh - SSH модуль (английский)
+       * lib/i18n/ru/ufw.sh - UFW модуль (русский)
+       * lib/i18n/en/ufw.sh - UFW модуль (английский)
+       * lib/i18n/ru/system.sh - системные сообщения (русский)
+       * lib/i18n/en/system.sh - системные сообщения (английский)
 
-      # io::ask_value
-      io::ask_value "$(_ "key")" "$default" "$pattern" "$hint"
+      - Добавление новых переводов:
+        1. Добавьте ключ в lib/i18n/ru/domain.sh
+        2. Добавьте тот же ключ с переводом в lib/i18n/en/domain.sh
+        3. Используйте ключ в коде через `log_info "$(_ "key")"` или `io::confirm_action "$(_ "key")"`
 
-      # printf с переводом
-      printf "$(i18n::get "key")" "$arg1"
-      ```
-
-      * НЕ ИСПОЛЬЗУЙТЕ `_()` в логерах:
-
-      ```bash
-      # ОШИБКА - двойной перевод!
-      log_info "$(_ "key")"             # log_info сам вызывает _()
-
-      # ПРАВИЛЬНО
-      log_info "key"                     # log_info сам переведёт
-      ```
-
-    - Файлы переводов:
-      * lib/i18n/ru/common.sh - общие сообщения (русский)
-      * lib/i18n/en/common.sh - общие сообщения (английский)
-      * lib/i18n/ru/ssh.sh - SSH модуль (русский)
-      * lib/i18n/en/ssh.sh - SSH модуль (английский)
-      * lib/i18n/ru/ufw.sh - UFW модуль (русский)
-      * lib/i18n/en/ufw.sh - UFW модуль (английский)
-      * lib/i18n/ru/system.sh - системные сообщения (русский)
-      * lib/i18n/en/system.sh - системные сообщения (английский)
-
-    - Добавление новых переводов:
-      1. Добавьте ключ в lib/i18n/ru/domain.sh
-      2. Добавьте тот же ключ с переводом в lib/i18n/en/domain.sh
-      3. Используйте ключ в коде через `log_info "key"` или `io::confirm_action "$(_ "key")"`
-
-    - Переключение языка:
-      * Русский (по умолчанию): удалить файл .lang или оставить пустым
-      * Английский: `echo "en" > .lang`
-      * Другие языки: создайте папку lib/i18n/{lang}/ и соответствующие файлы
+     - Переключение языка:
+       * Русский (по умолчанию): удалить файл .lang или оставить пустым
+       * Английский: `echo "en" > .lang`
+       * Другие языки: создайте папку lib/i18n/{lang}/ и соответствующие файлы
 ```
 
 ### Структура переводов
@@ -320,56 +303,4 @@ lib/i18n/
      ├── ssh.sh
      ├── ufw.sh
      └── system.sh
-```
-
-### Проверка переводов
-
-**Инструменты проверки:**
-- `check_translations.sh` - проверяет целостность переводов между всеми языками
-- `test_unused_translations.sh` - находит неиспользуемые ключи в файлах переводов
-- `test_unknown_translations.sh` - находит ключи в коде, которых нет в переводах
-
-**Запуск проверок:**
-```bash
-# Проверка целостности переводов
-./lib/i18n/check_translations.sh
-
-# Проверка на неиспользуемые переводы
-./lib/i18n/test_unused_translations.sh
-
-# Проверка на неизвестные переводы
-./lib/i18n/test_unknown_translations.sh
-```
-
-Подробнее: [lib/i18n/README.md](lib/i18n/README.md)
-
-### Использование i18n в коде
-
-**Замена жестких строк на ключи:**
-Было:
-```bash
-log_info "Доступные действия:"
-```
-
-Стало:
-```bash
-log_info "common.info_available_modules"
-```
-
-**Форматирование сообщений:**
-```bash
-# Без аргументов
-log_info "ssh.success_port_up" "$port" "$attempts" "$elapsed"
-
-# С аргументами
-log_success "ssh.success_port_up" "$port" "$attempts" "$elapsed"
-```
-
-**Конвенции именования ключей:**
-
-- Формат: `module.submodule.action.message_type`
-- Примеры:
-  - `common.error_root_privileges` - общая ошибка прав root
-  - `ssh.ui.get_action_choice.available_actions` - UI выбор действий SSH
-  - `ssh.success_port_up` - успешное сообщение о поднятии SSH порта
 ```

@@ -10,7 +10,6 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/i18n/core.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
-i18n::init
 source "${PROJECT_ROOT}/lib/logging.sh"
 
 # @type:        Orchestrator
@@ -37,6 +36,7 @@ check() {
 # @exit_code:   0 - перезагрузка не требуется
 #               1 - требуется перезагрузка
 main() {
+    i18n::init
     check
 }
 

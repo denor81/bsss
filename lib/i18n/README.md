@@ -8,23 +8,37 @@ BSSS uses a simple but effective i18n system based on Bash 4+ associative arrays
 
 ### Directory Structure
 
- ```
+```
 lib/i18n/
-├── check_translations.sh       # Translation integrity checker
-├── test_unused_translations.sh # Unused translation keys checker
-├── test_unknown_translations.sh # Unknown translation keys checker
-├── core.sh                     # Core translation function _()
-├── loader.sh                   # Language detection and loader
-├── ru/                         # Russian translations
+├── check_translations.sh        # Translation integrity checker
+├── test_unused_translations.sh  # Unused translation keys checker
+├── test_unknown_translations.sh  # Unknown translation keys checker
+├── core.sh                      # Core translation function _()
+├── loader.sh                    # Language detection and loader
+├── ru/                          # Russian translations
 │   ├── common.sh
 │   ├── ssh.sh
 │   ├── system.sh
 │   └── ufw.sh
-└── en/                         # English translations
+└── en/                          # English translations
     ├── common.sh
     ├── ssh.sh
     ├── system.sh
     └── ufw.sh
+```
+
+### Core Translation Function
+
+The `_()` function (defined in `lib/i18n/core.sh`) is used to retrieve translations:
+
+```bash
+# @type:        Source
+# @description: Переводчик сообщений по ключу
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
+# @stdin:       нет
+# @stdout:      Переведенное сообщение
+# @exit_code:   0 - успех, 1 - ключ не найден
 ```
 
 ### Language Switching
@@ -45,31 +59,105 @@ rm -f .lang
 echo "ru" > .lang
 ```
 
-## Usage
+## Usage Standards
 
-### In Code
+### Translation Before Function Call
 
-Use the `_()` function or `i18n::get()` alias:
+**IMPORTANT**: All functions (io::confirm_action, io::ask_value, log_info, log_error) expect already translated strings. Translate BEFORE calling the function, not inside it.
 
 ```bash
-# Without arguments
-log_info "ssh.ui.get_action_choice.available_actions"
+# Correct - translation done BEFORE function call
+io::confirm_action "$(_ "key")"
 
-# With arguments (printf-style)
-log_info "ssh.socket.wait_for_ssh_up.info" "$port" "$timeout"
+# Correct - translation done BEFORE function call
+io::ask_value "$(_ "key")" "$default" "$pattern" "$(_ "key" "arg1")" "n"
 
-# Direct output
-echo "$(_ 'ssh.menu.item_exit')"
+# Correct - log functions also expect translated strings
+log_info "$(_ "key" "arg1" "arg2")"
+log_error "$(_ "key")"
 ```
 
-### In Translation Files
+### Translations With Arguments
 
-Translation keys follow the convention: `module.submodule.action.message_type`
+Translation keys can support printf-style formatting with arguments:
+
+```bash
+# Example in translation file:
+# lib/i18n/ru/common.sh:
+# I18N_MESSAGES["common.helpers.ufw.rule.delete_error"]="Ошибка удаления правила: %s"
+
+# Usage in code:
+log_error "$(_ "common.helpers.ufw.rule.delete_error" "$rule_args")"
+```
+
+### The `no_translate` Placeholder
+
+There is a special key `no_translate` defined in common.sh that passes through text without translation:
+
+```bash
+# In translation file:
+I18N_MESSAGES["no_translate"]="%s"
+
+Use `no_translate` for:
+- File paths
+- Dynamically generated strings
+- Output that should not be translated
+
+### Key Naming Convention
+
+Format: `module.submodule.action.message_type`
+
+**Examples:**
+- `common.error_root_privileges` - common errors
+- `ssh.ui.get_action_choice.available_actions` - UI messages
+- `ufw.status.enabled` - status messages
+
+**Module Domains:**
+- `common` - Shared/common messages
+- `ssh` - SSH-related messages
+- `ufw` - UFW/firewall messages
+- `system` - System-level messages
+
+**Message Types:**
+- `.error_` - Error messages
+- `.info_` - Informational messages
+- `.success_` - Success messages
+- `.warning_` - Warning messages
+- `.hint_` - Input hints
+- `.default_` - Default values
+
+## Adding New Translations
+
+### Step 1: Add Translation Key
+
+Add the key to `lib/i18n/ru/domain.sh` (Russian):
 
 ```bash
 # lib/i18n/ru/ssh.sh
 I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Доступные действия:"
 I18N_MESSAGES["ssh.success_port_up"]="SSH порт %s успешно поднят"
+```
+
+### Step 2: Add English Translation
+
+Add the same key with English translation to `lib/i18n/en/domain.sh`:
+
+```bash
+# lib/i18n/en/ssh.sh
+I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Available actions:"
+I18N_MESSAGES["ssh.success_port_up"]="SSH port %s successfully raised"
+```
+
+### Step 3: Use in Code
+
+Use the translation key in your code:
+
+```bash
+# Simple message without arguments
+log_info "$(_ "ssh.ui.get_action_choice.available_actions")"
+
+# Message with printf-style arguments
+log_info "$(_ "ssh.success_port_up" "$port")"
 ```
 
 ## Translation Integrity Check
@@ -178,7 +266,6 @@ Finds translation keys used in code that don't exist in translation files:
 
 **Output**:
 - **Red**: Unknown keys with file locations
-- **Yellow**: Deprecated `i18n::get()` calls (should use `_$()` instead)
 - **Summary**: Total issues count
 
 **Example**:
@@ -194,18 +281,15 @@ I18n Unknown Translations Check
 Проверка неизвестных ключей в коде
 ========================================
 [x] main.sh:35: неизвестный ключ перевода 'common.error_root'
-[!] oneline-runner.sh:42: использование устаревшего стиля i18n::get вместо _$()
 [ ] Всего ключей в переводах: 175
 [ ] Используемых ключей в коде: 148
 [ ] Неизвестных ключей в коде: 1
-[ ] Устаревших вызовов i18n::get: 1
 
 ========================================
 Summary
 ========================================
-[x] Найдены проблемы: 2
+[x] Найдены проблемы: 1
 [!] Добавьте недостающие переводы в соответствующие файлы
-[!] Замените i18n::get на _() для использования актуального стиля
 ```
 
 **When to run**:
@@ -238,40 +322,19 @@ set -euo pipefail
 |------------|---------|--------|
 | **Unused keys found** | Keys in translations but not in code | Remove keys or verify code paths |
 | **Unknown keys found** | Keys in code but not in translations | Add translations or fix typos |
-| **Deprecated i18n::get** | Old translation function style | Replace `i18n::get` with `_$()` |
 | **No issues** | All translations are healthy | Proceed with development |
 
 ### Test Limitations
 
-1. **Unused keys test**: Cannot detect conditional usage (keys used in `if` branches). Manual verification required for suspicious cases.
+1. **Unused keys test**: Cannot detect conditional usage (keys used in `if` branches).
 2. **Unknown keys test**: May report false positives for dynamically constructed keys (e.g., using variables).
 3. **Code coverage**: Tests find keys in code but don't execute all code paths. Some keys might be unreachable.
 
-Best practices:
-- Review test results manually before acting
-- Use code search to verify key usage patterns
-- Test actual code paths when in doubt
-
-
-## Key Naming Convention
-
-Format: `module.submodule.action.message_type`
-
-### Module Domains
-- `common` - Shared/common messages
-- `ssh` - SSH-related messages
-- `ufw` - UFW/firewall messages
-- `system` - System-level messages
-
-### Message Types
-- `.error_` - Error messages
-- `.info_` - Informational messages
-- `.success_` - Success messages
-- `.warning_` - Warning messages
-- `.hint_` - Input hints
-- `.default_` - Default values
-
 ## Adding New Language
+
+Currently supported languages: **ru** (Russian, default) and **en** (English).
+
+To add a new language (e.g., German):
 
 1. Create language directory:
    ```bash
@@ -285,13 +348,14 @@ Format: `module.submodule.action.message_type`
 
 3. Translate all values:
    ```bash
-   # Edit lib/i18n/de/common.sh, ssh.sh, etc.
+   # Edit lib/i18n/de/common.sh, ssh.sh, system.sh, ufw.sh
    ```
 
 4. Update `loader.sh` to recognize new language:
    ```bash
+   # Add 'de' to the case statement in loader.sh:
    case "$detected_lang" in
-       ru|en|de|...  # Add 'de' here
+       ru|en|de)  # Add 'de' here
    ```
 
 5. Test:
@@ -305,7 +369,8 @@ Format: `module.submodule.action.message_type`
 1. **Missing keys**: Always run `check_translations.sh` after adding new messages
 2. **Incorrect printf format**: Ensure `%s` placeholders match in all languages
 3. **Inconsistent naming**: Follow the key naming convention strictly
-4. **Hardcoded strings**: Use `_$()` for all user-facing messages
+4. **Hardcoded strings**: Use `_()` for all user-facing messages
+5. **Translation inside functions**: Translate BEFORE calling io::confirm_action, io::ask_value, log_info, log_error
 
 ## Troubleshooting
 
@@ -318,7 +383,7 @@ Format: `module.submodule.action.message_type`
 ### Language not switching
 
 - Check `.lang` file exists in project root
-- Verify language code is supported in `loader.sh`
+- Verify language code is supported in `loader.sh` (ru, en, or your custom language)
 - Ensure no extra whitespace in `.lang` file
 
 ### check_translations.sh shows false positives
@@ -326,3 +391,20 @@ Format: `module.submodule.action.message_type`
 - Verify files are properly formatted (no syntax errors)
 - Check that keys are unique within each file
 - Ensure files use `I18N_MESSAGES["key"]="value"` format
+
+## Reference: Complete Translation Files
+
+### Available Translation Files
+
+- `lib/i18n/ru/common.sh` - Common messages (Russian)
+- `lib/i18n/ru/ssh.sh` - SSH module (Russian)
+- `lib/i18n/ru/ufw.sh` - UFW module (Russian)
+- `lib/i18n/ru/system.sh` - System messages (Russian)
+- `lib/i18n/en/common.sh` - Common messages (English)
+- `lib/i18n/en/ssh.sh` - SSH module (English)
+- `lib/i18n/en/ufw.sh` - UFW module (English)
+- `lib/i18n/en/system.sh` - System messages (English)
+
+### Special Keys
+
+- `no_translate` - Special key to pass through text without translation. Use for file paths and dynamically generated strings.

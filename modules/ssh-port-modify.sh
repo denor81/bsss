@@ -11,7 +11,6 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/i18n/core.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
-i18n::init
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
@@ -46,6 +45,7 @@ ssh::orchestrator::dispatch_logic() {
 # @exit_code:   0 - успешно
 #               $? - ошибка выполнения модулей
 main() {
+    i18n::init
     log_start
 
     io::confirm_action "$(_ "ssh.modify.confirm")" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)

@@ -81,7 +81,7 @@ ssh::log::bsss_configs() {
             found=$((found + 1))
         fi
 
-        log_info_simple_tab "$(_ "no_translate")" "$grep_result"
+        log_info_simple_tab "$(_ "no_translate" "$grep_result")"
 
     done < <(grep -EiHs '^\s*port\b' "${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK || true)
 
@@ -107,7 +107,7 @@ ssh::log::other_configs() {
             found=$((found + 1))
         fi
 
-        log_info_simple_tab "$(_ "no_translate")" "$grep_result"
+        log_info_simple_tab "$(_ "no_translate" "$grep_result")"
 
     done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
 

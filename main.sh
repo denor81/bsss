@@ -13,7 +13,6 @@ PARAMS_ACTION=""
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/i18n/core.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
-i18n::init
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
@@ -123,7 +122,7 @@ runner::module::run_check() {
     | sys::module::get_by_type "$MODULE_TYPE_CHECK" \
     | sys::module::sort_by_order)
 
-    (    (( found == 0 )) && { log_error "$(_ "common.error_no_modules_found")"; log::draw_border; return 1; }
+    (( found == 0 )) && { log_error "$(_ "common.error_no_modules_found")"; log::draw_border; return 1; }
     (( err )) && { log_error "$(_ "common.error_module_error")"; log::draw_border; return 4; }
     log::draw_border
 }
@@ -255,6 +254,7 @@ run() {
 # @exit_code:   0 - успешно
 #               $? - ошибка проверки прав или параметров
 main() {
+    i18n::init
     log_init
     log_start
     check_permissions

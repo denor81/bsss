@@ -16,6 +16,7 @@ I18N_MESSAGES["io.confirm_action.run_setup"]="Запустить настрой�
 I18N_MESSAGES["common.info_available_modules"]="Доступные модули настройки:"
 I18N_MESSAGES["common.info_short_params"]="Доступны короткие параметры %s %s"
 I18N_MESSAGES["common.info_start_module_runner"]="Запуск процедуры настройки Basic Server Security Setup (${UTIL_NAME^^}) - oneline запуск..."
+I18N_MESSAGES["common.default_actual_info"]="Информация"
 
 # Success messages
 I18N_MESSAGES["common.success_module_runner_started"]="Basic Server Security Setup (${UTIL_NAME^^}) - oneline запуск запущен"

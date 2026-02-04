@@ -58,7 +58,7 @@ ufw::menu::display() {
     log_info "$(_ "ufw.menu.display.available_actions")"
 
     while IFS='|' read -r -d '' id text || break; do
-        log_info_simple_tab "$(_ "no_translate")" "$id. $text"
+        log_info_simple_tab "$(_ "no_translate" "$id. $text")"
     done < <(ufw::menu::get_items)
 }
 

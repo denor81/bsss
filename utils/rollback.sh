@@ -17,7 +17,6 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/i18n/core.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
-i18n::init
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
@@ -156,14 +155,12 @@ rollback::orchestrator::watchdog_timer() {
     log_info "$(_ "rollback.redirection_opened")"
     log_info "$(_ "rollback.timer_started" "$ROLLBACK_TIMER_SECONDS")"
 
-    local rollback_message_key
     case "$ROLLBACK_TYPE" in
-        "ssh") rollback_message_key="rollback.timeout_ssh" ;;
-        "ufw") rollback_message_key="rollback.timeout_ufw" ;;
-        *) rollback_message_key="rollback.timeout_generic" ;;
+        "ssh") log_bold_info "$(_ "rollback.timeout_ssh")" ;;
+        "ufw") log_bold_info "$(_ "rollback.timeout_ufw")" ;;
+        *) log_bold_info "$(_ "rollback.timeout_generic")" ;;
     esac
 
-    log_bold_info "$(_ "$rollback_message_key")"
     log_bold_info "$(_ "rollback.timeout_reconnect")"
 
     sleep "$ROLLBACK_TIMER_SECONDS" &
@@ -189,6 +186,7 @@ rollback::orchestrator::watchdog_timer() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 main() {
+    i18n::init
     rollback::orchestrator::watchdog_timer "$@"
 }
 

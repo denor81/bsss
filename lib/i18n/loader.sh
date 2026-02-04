@@ -1,16 +1,3 @@
-#!/usr/bin/env bash
-#
-# @type:        Orchestrator
-# @description: Автоматическая загрузка переводов на основе .lang файла
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успех
-#               1 - файл .lang содержит недопустимый язык
-
-# Объявление глобального массива для переводов
-declare -gA I18N_MESSAGES
-
 # @type:        Source
 # @description: Определяет текущий язык из файла .lang
 # @params:      нет
@@ -19,7 +6,6 @@ declare -gA I18N_MESSAGES
 # @exit_code:   0 - успех
 i18n::detect_language() {
     local lang_file="${PROJECT_ROOT}/.lang"
-    local default_lang="ru"
     
     if [[ -f "$lang_file" ]]; then
         local detected_lang
@@ -34,13 +20,13 @@ i18n::detect_language() {
             *)
                 echo "Invalid language in .lang file: $detected_lang" >&2
                 echo "Supported languages: ru, en, cn, es, fr, de" >&2
-                echo "Falling back to: $default_lang" >&2
-                echo "$default_lang"
+                echo "Falling back to: $DEFAULT_LANG" >&2
+                echo "$DEFAULT_LANG"
                 return 0
                 ;;
         esac
     else
-        echo "$default_lang"
+        echo "$DEFAULT_LANG"
         return 0
     fi
 }

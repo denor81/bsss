@@ -211,7 +211,7 @@ ufw::log::rules() {
             log_bold_info "$(_ "common.helpers.ufw.rules.delete_warning")"
             found=$((found + 1))
         fi
-        log_info_simple_tab "$(_ "no_translate")" "$rule"
+        log_info_simple_tab "$(_ "no_translate" "$rule")"
 
     done < <(ufw::rule::get_all)
 
@@ -257,10 +257,6 @@ ufw::rule::delete_all_bsss() {
             log_error "$(_ "common.helpers.ufw.rule.delete_error" "$rule_args")"
         fi
     done < <(ufw::rule::get_all_bsss)
-
-    # if (( found_any == 0 )); then
-    #     log_info "Активных правил ${UTIL_NAME^^} для UFW не обнаружено, синхронизация не требуется."
-    # fi
 }
 
 # @type:        Source
