@@ -13,6 +13,7 @@ PARAMS_ACTION=""
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/i18n/core.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
+source "${PROJECT_ROOT}/lib/i18n/language_installer.sh"
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
@@ -257,6 +258,7 @@ main() {
     i18n::init
     log_init
     log_start
+    i18n::installer::setup_if_needed
     check_permissions
     parse_params "$ALLOWED_PARAMS" "$@"
 
