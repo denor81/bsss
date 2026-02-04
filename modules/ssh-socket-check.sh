@@ -41,7 +41,7 @@ check() {
     else
         log_error "ssh.socket.mode_warning"
         log_info "ssh.socket.mode_required"
-        io::confirm_action "ssh.socket.switch_confirm"
+        io::confirm_action "$(_ "ssh.socket.switch_confirm")"
         ssh::socket::force_service_mode
     fi
 }

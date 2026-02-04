@@ -25,7 +25,7 @@ check() {
         ufw::orchestrator::log_statuses
     else
         log_error "ufw.check.not_installed"
-        if io::confirm_action "ufw.check.install_confirm" || return; then
+        if io::confirm_action "$(_ "ufw.check.install_confirm")" || return; then
             if ! (apt update && apt install ufw -y); then
                 log_error "ufw.check.install_error"
                 return 1

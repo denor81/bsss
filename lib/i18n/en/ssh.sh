@@ -1,5 +1,8 @@
 # SSH port messages (English)
 
+# Modify messages
+I18N_MESSAGES["ssh.modify.confirm"]="Modify SSH port configuration?"
+
 # Menu UI
 I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Available actions:"
 I18N_MESSAGES["ssh.ui.get_action_choice.option_reset"]="Reset (delete ${UTIL_NAME^^} rule)"

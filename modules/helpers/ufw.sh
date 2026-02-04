@@ -143,7 +143,7 @@ ufw::status::force_enable() {
     log_actual_info
     ufw::orchestrator::log_statuses
 
-    if io::ask_value "ufw.install.confirm_connection" "" "^connected$" "connected" "cancel" >/dev/null; then
+    if io::ask_value "$(_ "ufw.install.confirm_connection")" "" "^connected$" "connected" "cancel" >/dev/null; then
         rollback::orchestrator::watchdog_stop
     fi
 }

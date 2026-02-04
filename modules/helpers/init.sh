@@ -19,7 +19,7 @@ sys::gawk::check_dependency() {
     log_info "init.gawk.nul_explanation"
 
     # Используем твой хелпер для подтверждения
-    if io::confirm_action "init.gawk.install_confirm" || return; then
+    if io::confirm_action "$(_ "init.gawk.install_confirm")" || return; then
         if apt update && apt install gawk -y; then
             log_info "init.gawk.install_success"
         else

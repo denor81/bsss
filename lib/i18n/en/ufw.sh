@@ -1,5 +1,8 @@
 # UFW messages (English)
 
+# Modify messages
+I18N_MESSAGES["ufw.modify.confirm"]="Modify UFW status?"
+
 # Menu UI
 I18N_MESSAGES["ufw.menu.display.available_actions"]="Available actions:"
 I18N_MESSAGES["ufw.menu.display.no_rules"]="No BSSS rules, but UFW is active - can be disabled"
@@ -56,6 +59,7 @@ I18N_MESSAGES["ufw.success.backup_restored"]="before.rules file restored: [%s]"
 
 # Error messages
 I18N_MESSAGES["ufw.error.invalid_menu_id"]="Invalid action ID: [%s]"
+I18N_MESSAGES["ufw.error.backup_failed"]="Failed to create backup %s [%s]"
 I18N_MESSAGES["ufw.error.restore_failed"]="Failed to restore %s from backup [%s]"
 I18N_MESSAGES["ufw.error.edit_failed"]="Error during editing: [%s]"
 I18N_MESSAGES["ufw.error.reload_failed"]="Failed to execute [ufw reload] [Code: %s]"

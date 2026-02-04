@@ -206,9 +206,9 @@ log_bold_info() {
     msg="$(_ "$msg_key" "${@:2}")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2 || true
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"
@@ -282,9 +282,9 @@ log_actual_info() {
     msg="$(_ "$msg_key")"
     formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$1" >&2 || true
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
     echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
     log::to_journal "$msg" "$type"

@@ -1,5 +1,8 @@
 # SSH port messages (Russian)
 
+# Modify messages
+I18N_MESSAGES["ssh.modify.confirm"]="Изменить конфигурацию SSH порта?"
+
 # Menu UI
 I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Доступные действия:"
 I18N_MESSAGES["ssh.ui.get_action_choice.option_reset"]="Сброс (удаление правила ${UTIL_NAME^^})"

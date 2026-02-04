@@ -53,7 +53,7 @@ ufw::orchestrator::run_module() {
 main() {
     log_start
 
-    io::confirm_action "Изменить состояние UFW?" || return
+    io::confirm_action "$(_ "ufw.modify.confirm")" || return
 
     ufw::rule::check_requirements || return
 

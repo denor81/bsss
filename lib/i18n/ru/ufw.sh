@@ -1,5 +1,8 @@
 # UFW messages (Russian)
 
+# Modify messages
+I18N_MESSAGES["ufw.modify.confirm"]="Изменить состояние UFW?"
+
 # Menu UI
 I18N_MESSAGES["ufw.menu.display.available_actions"]="Доступные действия:"
 I18N_MESSAGES["ufw.menu.display.no_rules"]="Нет правил BSSS, но UFW активен - можно отключить"
@@ -33,7 +36,6 @@ I18N_MESSAGES["ufw.rollback.test_access"]="Проверьте доступ к с
 I18N_MESSAGES["ufw.install.confirm_connection"]="Подтвердите возможность подключения - введите connected"
 
 # Menu messages
-I18N_MESSAGES["ufw.menu.available_actions"]="Доступные действия:"
 I18N_MESSAGES["ufw.menu.ask_select"]="Выберите действие"
 I18N_MESSAGES["ufw.menu.item_disable"]="Выключить UFW"
 I18N_MESSAGES["ufw.menu.item_enable"]="Включить UFW"
