@@ -11,7 +11,7 @@ UNINSTALL_FILE_PATH=$PROJECT_ROOT/$UNINSTALL_PATHS
 check_uninstall_file() {
     # Проверяем наличие файла с путями для удаления
     if [[ ! -f "$UNINSTALL_FILE_PATH" ]]; then
-        log_error "Файл с путями для удаления не найден: $UNINSTALL_FILE_PATH"
+        log_error "common.error_uninstall_file_not_found" "$UNINSTALL_FILE_PATH"
         return 1
     fi
 }
@@ -29,13 +29,13 @@ do_uninstall() {
     while IFS= read -r path || break; do
         # Проверяем существование пути или символической ссылки перед удалением
         if [[ -e "$path" || -L "$path" ]]; then
-            log_info "Удаляю: $path"
+            log_info "common.info_uninstall_delete" "$path"
             rm -rf "$path" || {
-                log_error "Не удалось удалить: $path"
+                log_error "common.error_uninstall_delete_failed" "$path"
                 return 1
             }
         else
-            log_info "Путь не существует, пропускаю: $path"
+            log_info "common.info_uninstall_path_not_exists" "$path"
         fi
     done < "$UNINSTALL_FILE_PATH"
 }
@@ -49,10 +49,10 @@ do_uninstall() {
 # @exit_code:   0 - успешно
 #               $? - ошибка удаления
 run_uninstall() {
-    io::confirm_action "Удалить ${UTIL_NAME^^}?"
+    io::confirm_action "common.info_uninstall_confirm"
     check_uninstall_file
     
-    log_info "Начинаю удаление установленных файлов..."
+    log_info "common.info_uninstall_start"
     do_uninstall
-    log_success "Удаление завершено успешно"
+    log_success "common.info_uninstall_success"
 }

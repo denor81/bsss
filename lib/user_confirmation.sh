@@ -28,7 +28,7 @@ io::ask_value() {
             printf '%s\0' "$choice"
             break
         fi
-        log_error "Ошибка ввода. Ожидается: $hint"
+        log_error "common.error_invalid_input" "$hint"
     done
 }
 
@@ -42,7 +42,7 @@ io::ask_value() {
 # @exit_code:   0 — успешно
 #               2 — отменено пользователем.
 io::confirm_action() {
-    local question=${1:-"Продолжить?"}
+    local question=${1:-"$(_ "io.confirm_action.default_question")"}
     
     # при выборе n io::ask_value вернет код 2
     io::ask_value "$question" "y" "[yn]" "Y/n" "n" >/dev/null

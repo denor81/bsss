@@ -259,7 +259,7 @@ ssh::port::wait_for_up() {
 ssh::orchestrator::config_exists_handler() {
     ssh::menu::display_exists_scenario
     local choice
-    choice=$(io::ask_value "Выберите" "" "^[012]$" "0-2" "0" | tr -d '\0') || return
+    choice=$(io::ask_value "ssh.ui.get_action_choice.ask_select" "" "^[012]$" "0-2" "0" | tr -d '\0') || return
 
     case "$choice" in
         1) ssh::reset::port ;;
@@ -312,7 +312,7 @@ ssh::install::port() {
         while true; do sleep 1; done
     fi
 
-    if io::ask_value "Подтвердите подключение - введите connected" "" "^connected$" "connected" >/dev/null; then
+    if io::ask_value "ssh.install.confirm_connection" "" "^connected$" "connected" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
         log_info "ssh.success_changes_committed"
     fi

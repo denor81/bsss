@@ -42,8 +42,8 @@ trap 'rollback::orchestrator::immediate_usr2' SIGUSR2
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::exit() {
-    log_info "Получен сигнал EXIT"
-    log_info "Закрываем перенаправление 2>FIFO>parent_script"
+    log_info "rollback.exit_received"
+    log_info "rollback.close_redirection"
     log_stop
     exec 2>&-
     exit 0
@@ -56,7 +56,7 @@ rollback::orchestrator::exit() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::stop_usr1() {
-    log_info "Получен сигнал USR1 - остановка таймера отката"
+    log_info "rollback.stop_usr1_received"
     kill "$SLEEP_PID" 2>/dev/null
     exit 0
 }
@@ -69,12 +69,12 @@ rollback::orchestrator::stop_usr1() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::immediate_usr2() {
-    log_info "Получен сигнал USR2 - остановка таймера отката и немедленный откат изменений"
+    log_info "rollback.immediate_usr2_received"
     kill "$SLEEP_PID" 2>/dev/null
     rollback::orchestrator::full
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
-        log_info "Посылаем сигнал отката основному скрипту USR1 [PID: $MAIN_SCRIPT_PID]"
+        log_info "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID"
         kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
         wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
     fi
@@ -89,7 +89,7 @@ rollback::orchestrator::immediate_usr2() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::ssh() {
-    log_warn "Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
+    log_warn "rollback.full_dismantle"
 
     ssh::rule::delete_all_bsss
     ufw::rule::delete_all_bsss
@@ -100,7 +100,7 @@ rollback::orchestrator::ssh() {
     ssh::orchestrator::log_statuses
     ufw::orchestrator::log_statuses
 
-    log_success "Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
+    log_success "rollback.system_restored"
 }
 
 # @type:        Orchestrator
@@ -110,13 +110,13 @@ rollback::orchestrator::ssh() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::ufw() {
-    log_warn "Выполняется откат UFW..."
+    log_warn "rollback.ufw_executing"
 
     ufw::status::force_disable
     log_actual_info
     ufw::orchestrator::log_statuses
 
-    log_success "UFW отключен. Проверьте доступ к серверу."
+    log_success "rollback.ufw_disabled"
 }
 
 # @type:        Orchestrator
@@ -130,7 +130,7 @@ rollback::orchestrator::full() {
     case "$ROLLBACK_TYPE" in
         "ssh") rollback::orchestrator::ssh ;;
         "ufw") rollback::orchestrator::ufw ;;
-        *) log_error "Неизвестный тип отката: $ROLLBACK_TYPE"; return 1 ;;
+        *) log_error "rollback.unknown_type" "$ROLLBACK_TYPE"; return 1 ;;
     esac
 }
 
@@ -150,29 +150,29 @@ rollback::orchestrator::watchdog_timer() {
 
     exec 2> "$watchdog_fifo"
     log_start
-    log_info "Открыто перенаправление 2>FIFO>parent_script"
-    log_info "Фоновый таймер запущен на $ROLLBACK_TIMER_SECONDS сек..."
+    log_info "rollback.redirection_opened"
+    log_info "rollback.timer_started" "$ROLLBACK_TIMER_SECONDS"
     
-    local rollback_message
+    local rollback_message_key
     case "$ROLLBACK_TYPE" in
-        "ssh") rollback_message="будут сброшены настройки ${UTIL_NAME^^} для SSH порта и отключен UFW" ;;
-        "ufw") rollback_message="будет отключен UFW" ;;
-        *) rollback_message="будут сброшены настройки" ;;
+        "ssh") rollback_message_key="rollback.timeout_ssh" ;;
+        "ufw") rollback_message_key="rollback.timeout_ufw" ;;
+        *) rollback_message_key="rollback.timeout_generic" ;;
     esac
     
-    log_bold_info "По истечению таймера $rollback_message"
-    log_bold_info "В случае разрыва текущей сессии подключайтесь к серверу по старым параметрам после истечения таймера"
+    log_bold_info "$(_ "$rollback_message_key")"
+    log_bold_info "rollback.timeout_reconnect"
 
     sleep "$ROLLBACK_TIMER_SECONDS" &
     SLEEP_PID=$!
 
     if wait "$SLEEP_PID" 2>/dev/null; then
         new_line
-        log_info "Время истекло - выполняется ОТКАТ"
+        log_info "rollback.time_expired"
         rollback::orchestrator::full
 
         if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
-            log_info "Посылаем сигнал отката основному скрипту USR1 [PID: $MAIN_SCRIPT_PID]"
+            log_info "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID"
             kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
             wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
         fi

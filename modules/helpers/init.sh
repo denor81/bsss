@@ -10,22 +10,22 @@
 sys::gawk::check_dependency() {
     if command -v gawk >/dev/null 2>&1; then
         local gawk_v=$(gawk -V | head -n 1)
-        log_info "Ключевые зависимости:"
-        log_info_simple_tab "gawk установлен [$gawk_v]"
+        log_info "init.gawk.version"
+        log_info_simple_tab "$(_ "init.gawk.installed" "$gawk_v")"
         return
     fi
 
-    log_error "Критическая зависимость - 'gawk' не установлен"
-    log_info "Этот проект использует NUL-разделители, которые корректно поддерживает только GNU Awk"
+    log_error "init.gawk.not_installed"
+    log_info "init.gawk.nul_explanation"
 
     # Используем твой хелпер для подтверждения
-    if io::confirm_action "Установить gawk сейчас? [apt update && apt install gawk -y]" || return; then
+    if io::confirm_action "init.gawk.install_confirm" || return; then
         if apt update && apt install gawk -y; then
-            log_info "gawk успешно установлен"
+            log_info "init.gawk.install_success"
         else
             local rc
             rc=$?
-            log_error "Ошибка при установке gawk"
+            log_error "init.gawk.install_error"
             return $rc
         fi
     fi

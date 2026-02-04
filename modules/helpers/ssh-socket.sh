@@ -50,7 +50,7 @@ sys::ssh::is_service_active() {
 # @exit_code:   0 - SSH успешно переведен в service mode
 #               1 - ошибка при запуске SSH
 ssh::socket::force_service_mode() {
-    log_info "Принудительное переключение SSH в Service Mode..."
+    log_info "ssh.socket.force_mode"
 
     systemctl stop ssh.socket >/dev/null 2>&1
     systemctl disable ssh.socket >/dev/null 2>&1
@@ -60,9 +60,9 @@ ssh::socket::force_service_mode() {
     systemctl enable ssh.service >/dev/null 2>&1
 
     if ! systemctl is-active --quiet ssh.service; then
-        log_info "Сервис не запущен. Пытаюсь стартовать..."
+        log_info "ssh.socket.service_not_active"
         if ! systemctl start ssh.service; then
-            log_error "Не удалось запустить ssh.service. Проверьте 'journalctl -xeu ssh.service'"
+            log_error "ssh.socket.start_error"
             return 1
         fi
     else
@@ -70,7 +70,7 @@ ssh::socket::force_service_mode() {
     fi
 
     if systemctl is-active --quiet ssh.service; then
-        log_success "SSH активен (Service Mode)"
+        log_success "ssh.socket.active"
         return 0
     fi
 

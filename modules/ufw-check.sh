@@ -24,16 +24,16 @@ check() {
     if command -v ufw > /dev/null 2>&1; then
         ufw::orchestrator::log_statuses
     else
-        log_error "UFW не установлен"
-        if io::confirm_action "Установить UFW сейчас? [apt update && apt install ufw -y]" || return; then
+        log_error "ufw.check.not_installed"
+        if io::confirm_action "ufw.check.install_confirm" || return; then
             if ! (apt update && apt install ufw -y); then
-                log_error "Ошибка при установке UFW"
+                log_error "ufw.check.install_error"
                 return 1
             else
                 if command -v ufw > /dev/null 2>&1; then
-                    log_info "UFW успешно установлен"
+                    log_info "ufw.check.install_success"
                 else
-                    log_info "UFW установлен - перезапустите скрипт"
+                    log_info "ufw.check.installed_restart"
                     return 1
                 fi
             fi

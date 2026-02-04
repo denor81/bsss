@@ -93,7 +93,7 @@ sys::module::validate_order() {
 
     while IFS= read -r -d '' path; do
         if ! grep -q '^# MODULE_ORDER:' "$path"; then
-            log_error "Отсутствует обязательный тег MODULE_ORDER: $path"
+            log_error "common.helpers.validate_order.error_missing_tag" "$path"
             missing=1
         fi
     done < <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
@@ -123,7 +123,7 @@ sys::module::check_duplicate_order() {
             grep -EiHs "^# MODULE_ORDER: ${value}$" "${PROJECT_ROOT}/$MODULES_DIR"/*.sh \
             | cut -d: -f1 \
             | while IFS= read -r file; do
-                log_error "Дублирующийся MODULE_ORDER (${value}): $file"
+                log_error "common.helpers.validate_order.error_duplicate" "$value" "$file"
             done
         done
     fi
@@ -145,9 +145,9 @@ sys::file::delete() {
         [[ ! -e "$path" ]] && continue
 
         if resp=$(rm -rfv "$path" 2>&1); then
-            log_info "Удалено: $resp"
+            log_info "common.helpers.file.delete.success" "$resp"
         else
-            log_error "Ошибка удаления $path: $resp"
+            log_error "common.helpers.file.delete.error" "$path" "$resp"
             return 1
         fi
     done
@@ -185,10 +185,10 @@ ssh::log::active_ports_from_ss() {
     active_ports=$(ssh::port::get_from_ss | tr '\0' ',' | sed 's/,$//')
 
     if [[ -z "$active_ports" ]]; then
-        log_error "Нет активных SSH портов [ss -ltnp]"
+        log_error "common.helpers.ssh.no_active_ports"
         (( strict_mode == 1 )) && return 1
     else
-        log_info "Есть активные SSH порты [ss -ltnp]: ${active_ports}"
+        log_info "common.helpers.ssh.active_ports" "$active_ports"
     fi
 
 }
@@ -206,9 +206,9 @@ ufw::log::rules() {
     while read -r -d '' rule || break; do
 
         if (( found == 0 )); then
-            log_info "Есть правила UFW [ufw show added]"
-            log_bold_info "Правила UFW синхронизированы с настройками ${UTIL_NAME^^} для SSH порта"
-            log_bold_info "Удаляя правила SSH, также будут удалены связанные правила UFW"
+            log_info "common.helpers.ufw.rules_found"
+            log_bold_info "common.helpers.ufw.rules.sync"
+            log_bold_info "common.helpers.ufw.rules.delete_warning"
             found=$((found + 1))
         fi
         log_info_simple_tab "$rule"
@@ -216,7 +216,7 @@ ufw::log::rules() {
     done < <(ufw::rule::get_all)
 
     if (( found == 0 )); then
-        log_info "Нет правил UFW [ufw show added]"
+        log_info "common.helpers.ufw.rules_not_found"
     fi
 }
 
@@ -252,9 +252,9 @@ ufw::rule::delete_all_bsss() {
         # found_any=1
 
         if printf '%s' "$rule_args" | xargs ufw --force delete >/dev/null 2>&1; then
-            log_info "Удалено правило UFW: ufw --force delete $rule_args"
+            log_info "common.helpers.ufw.rule.deleted" "$rule_args"
         else
-            log_error "Ошибка при удалении правила UFW: ufw --force delete $rule_args"
+            log_error "common.helpers.ufw.rule.delete_error" "$rule_args"
         fi
     done < <(ufw::rule::get_all_bsss)
 
@@ -308,9 +308,9 @@ ufw::rule::add_bsss() {
     local port
     while read -r -d '' port; do
         if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >/dev/null 2>&1; then
-            log_info "Создано правило UFW: [ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT]"
+            log_info "common.helpers.ufw.rule.added" "$port"
         else
-            log_info "Ошибка при добавлении правила UFW: [ufw allow ${port}/tcp comment $BSSS_MARKER_COMMENT]"
+            log_info "common.helpers.ufw.rule.add_error" "$port"
         fi
     done
 }
@@ -334,10 +334,10 @@ ufw::status::is_active() {
 # @exit_code:   0 - успешно
 ufw::status::force_disable() {
     if ufw::status::is_active && ufw --force disable >/dev/null 2>&1; then
-        log_info "UFW: Полностью деактивирован [ufw --force disable]"
+        log_info "common.helpers.ufw.disabled"
         # ufw::orchestrator::log_statuses
     else
-        log_info "UFW: деактивирован"
+        log_info "common.helpers.ufw.already_disabled"
     fi
 }
 
@@ -366,7 +366,7 @@ rollback::orchestrator::watchdog_start() {
 # @exit_code:   0 - успешно
 rollback::orchestrator::watchdog_stop() {
     # Посылаем сигнал успешного завершения (USR1)
-    log_info "Посылаем сигнал отключения rollback USR1 [PID: $WATCHDOG_PID]"
+    log_info "common.helpers.rollback.stop_signal" "$WATCHDOG_PID"
     kill -USR1 "$WATCHDOG_PID" 2>/dev/null || true
     wait "$WATCHDOG_PID" 2>/dev/null || true
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
@@ -380,7 +380,7 @@ rollback::orchestrator::watchdog_stop() {
 # @exit_code:   0 - успешно
 make_fifo_and_start_reader() {
     mkfifo "$WATCHDOG_FIFO"
-    log_info "Создан FIFO: $WATCHDOG_FIFO"
+    log_info "common.helpers.rollback.fifo_created" "$WATCHDOG_FIFO"
     cat "$WATCHDOG_FIFO" >&2 &
 }
 
@@ -391,7 +391,7 @@ make_fifo_and_start_reader() {
 # @stdout:      нет
 # @exit_code:   3 - код завершения при откате
 common::rollback::stop_script_by_rollback_timer() {
-    log_info "Получен сигнал USR1 - остановка скрипта из-за отката"
+    log_info "common.helpers.rollback.stop_received"
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     exit 3
 }
@@ -404,7 +404,7 @@ common::rollback::stop_script_by_rollback_timer() {
 # @exit_code:   $?
 common::exit::actions() {
     rc=$?
-    log_info "Получен сигнал EXIT [RC: $rc]"
+    log_info "common.helpers.rollback.exit_received" "$rc"
     [[ -n "$WATCHDOG_FIFO" ]] && printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     log_stop
     exit $rc
@@ -422,6 +422,6 @@ common::int::actions() {
         rc=130
     fi
     new_line
-    log_info "Получен сигнал INT [RC: $rc]"
+    log_info "common.helpers.rollback.int_received" "$rc"
     exit $rc
 }

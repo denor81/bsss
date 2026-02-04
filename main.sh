@@ -243,7 +243,7 @@ run() {
     sys::log::rotate_old_files
 
     runner::module::run_check
-    io::confirm_action "Запустить настройку?" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
+    io::confirm_action "io.confirm_action.run_setup" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
     runner::module::run_modify
 }
 

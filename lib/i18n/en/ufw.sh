@@ -30,6 +30,7 @@ I18N_MESSAGES["ufw.warning.add_ssh_first"]="First add SSH port via SSH module"
 I18N_MESSAGES["ufw.rollback.warning_title"]="DO NOT CLOSE THIS TERMINAL WINDOW"
 I18N_MESSAGES["ufw.rollback.ask_confirm"]="Confirm connection availability - enter connected"
 I18N_MESSAGES["ufw.rollback.test_access"]="Check server access after enabling UFW"
+I18N_MESSAGES["ufw.install.confirm_connection"]="Confirm connection availability - enter connected"
 
 # Menu messages
 I18N_MESSAGES["ufw.menu.ask_select"]="Select action"

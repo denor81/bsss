@@ -3,6 +3,11 @@
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
 I18N_MESSAGES["common.error_root_short"]="Требуются права root или запуск через 'sudo'"
+I18N_MESSAGES["common.error_invalid_input"]="Ошибка ввода. Ожидается: %s"
+
+# IO messages
+I18N_MESSAGES["io.confirm_action.default_question"]="Продолжить?"
+I18N_MESSAGES["io.confirm_action.run_setup"]="Запустить настройку?"
 
 # Info messages
 I18N_MESSAGES["common.info_available_modules"]="Доступные модули настройки:"
@@ -35,3 +40,37 @@ I18N_MESSAGES["common.info_module_requires_ssh"]="Модуль требует п
 I18N_MESSAGES["common.info_exit_menu"]="Выход из меню настройки"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
 I18N_MESSAGES["common.info_menu_check_item"]="00. Проверка системы (check)"
+
+# Info messages - uninstall
+I18N_MESSAGES["common.info_uninstall_confirm"]="Удалить ${UTIL_NAME^^}?"
+I18N_MESSAGES["common.info_uninstall_start"]="Начинаю удаление установленных файлов..."
+I18N_MESSAGES["common.info_uninstall_success"]="Удаление завершено успешно"
+I18N_MESSAGES["common.info_uninstall_path_not_exists"]="Путь не существует, пропускаю: %s"
+I18N_MESSAGES["common.info_uninstall_delete"]="Удаляю: %s"
+
+# Error messages - uninstall
+I18N_MESSAGES["common.error_uninstall_file_not_found"]="Файл с путями для удаления не найден: %s"
+I18N_MESSAGES["common.error_uninstall_delete_failed"]="Не удалось удалить: %s"
+
+# Init messages
+I18N_MESSAGES["init.gawk.version"]="Ключевые зависимости:"
+I18N_MESSAGES["init.gawk.installed"]="gawk установлен [%s]"
+
+# Rollback messages
+I18N_MESSAGES["rollback.exit_received"]="Получен сигнал EXIT"
+I18N_MESSAGES["rollback.close_redirection"]="Закрываем перенаправление 2>FIFO>parent_script"
+I18N_MESSAGES["rollback.stop_usr1_received"]="Получен сигнал USR1 - остановка таймера отката"
+I18N_MESSAGES["rollback.immediate_usr2_received"]="Получен сигнал USR2 - остановка таймера отката и немедленный откат изменений"
+I18N_MESSAGES["rollback.send_signal_to_parent"]="Посылаем сигнал отката основному скрипту USR1 [PID: %s]"
+I18N_MESSAGES["rollback.full_dismantle"]="Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
+I18N_MESSAGES["rollback.system_restored"]="Система возвращена к исходному состоянию. Проверьте доступ по старым портам."
+I18N_MESSAGES["rollback.ufw_executing"]="Выполняется откат UFW..."
+I18N_MESSAGES["rollback.ufw_disabled"]="UFW отключен. Проверьте доступ к серверу."
+I18N_MESSAGES["rollback.unknown_type"]="Неизвестный тип отката: %s"
+I18N_MESSAGES["rollback.redirection_opened"]="Открыто перенаправление 2>FIFO>parent_script"
+I18N_MESSAGES["rollback.timer_started"]="Фоновый таймер запущен на %s сек..."
+I18N_MESSAGES["rollback.timeout_ssh"]="По истечению таймера будут сброшены настройки ${UTIL_NAME^^} для SSH порта и отключен UFW"
+I18N_MESSAGES["rollback.timeout_ufw"]="По истечению таймера будет отключен UFW"
+I18N_MESSAGES["rollback.timeout_generic"]="По истечению таймера будут сброшены настройки"
+I18N_MESSAGES["rollback.timeout_reconnect"]="В случае разрыва текущей сессии подключайтесь к серверу по старым параметрам после истечения таймера"
+I18N_MESSAGES["rollback.time_expired"]="Время истекло - выполняется ОТКАТ"
