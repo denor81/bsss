@@ -305,19 +305,43 @@ ssh::port::generate_free_random_port() {
 
 ```
 lib/i18n/
-├── core.sh              # Основная функция _()
-├── loader.sh            # Загрузка переводов по языку
-├── ru/                   # Русские переводы
-│   ├── common.sh        # Общие сообщения
-│   ├── ssh.sh           # SSH модуль
-│   ├── ufw.sh           # UFW модуль
-│   └── system.sh         # Системные сообщения
-└── en/                   # Английские переводы
-    ├── common.sh
-    ├── ssh.sh
-    ├── ufw.sh
-    └── system.sh
+ ├── check_translations.sh       # Проверка целостности переводов между языками
+ ├── test_unused_translations.sh # Проверка неиспользуемых переводов
+ ├── test_unknown_translations.sh # Проверка неизвестных переводов
+ ├── core.sh                     # Основная функция _()
+ ├── loader.sh                   # Загрузка переводов по языку
+ ├── ru/                         # Русские переводы
+ │   ├── common.sh               # Общие сообщения
+ │   ├── ssh.sh                  # SSH модуль
+ │   ├── ufw.sh                  # UFW модуль
+ │   └── system.sh               # Системные сообщения
+ └── en/                         # Английские переводы
+     ├── common.sh
+     ├── ssh.sh
+     ├── ufw.sh
+     └── system.sh
 ```
+
+### Проверка переводов
+
+**Инструменты проверки:**
+- `check_translations.sh` - проверяет целостность переводов между всеми языками
+- `test_unused_translations.sh` - находит неиспользуемые ключи в файлах переводов
+- `test_unknown_translations.sh` - находит ключи в коде, которых нет в переводах
+
+**Запуск проверок:**
+```bash
+# Проверка целостности переводов
+./lib/i18n/check_translations.sh
+
+# Проверка на неиспользуемые переводы
+./lib/i18n/test_unused_translations.sh
+
+# Проверка на неизвестные переводы
+./lib/i18n/test_unknown_translations.sh
+```
+
+Подробнее: [lib/i18n/README.md](lib/i18n/README.md)
 
 ### Использование i18n в коде
 
