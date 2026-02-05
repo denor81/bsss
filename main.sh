@@ -179,7 +179,7 @@ runner::module::select_modify() {
     
     log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_exit" "$(_ "common.menu_exit")")"
     log_info_simple_tab "$(_ "common.info_menu_check_item" "$menu_check" "$(_ "common.menu_check")")"
-    log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_lang" "$(_ "common.menu_language")")"
+    log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_lang" "$(_ "module.ufw.name")")"
 
     # Запрашиваем выбор пользователя
     local selection
