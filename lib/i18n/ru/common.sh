@@ -44,7 +44,6 @@ I18N_MESSAGES["common.info_module_rollback"]="Модуль завершен от
 I18N_MESSAGES["common.info_module_requires_ssh"]="Модуль требует предварительной настройки SSH [Code: %s]"
 I18N_MESSAGES["common.info_exit_menu"]="Выход из меню настройки"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
-I18N_MESSAGES["common.info_menu_check_item"]="%s. %s"
 
 # Info messages - uninstall
 I18N_MESSAGES["common.info_uninstall_confirm"]="Удалить ${UTIL_NAME^^}?"

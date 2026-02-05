@@ -4,7 +4,7 @@
 set -Eeuo pipefail
 
 # shellcheck disable=SC1091
-source "$(dirname "$0")/test_helpers.sh"
+source "$(dirname "$0")/helpers/test_helpers.sh"
 
 # @type:        Orchestrator
 # @description: Проверяет неиспользуемые переводы

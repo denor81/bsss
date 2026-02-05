@@ -17,7 +17,7 @@ i18n::installer::check_lang_file() {
 # @exit_code:   0 - успешно
 #               $? - ошибка find
 i18n::installer::discover_languages() {
-    find "${PROJECT_ROOT}/lib/i18n" -mindepth 1 -maxdepth 1 -type d -printf '%f\0' | sort -z
+    find "${PROJECT_ROOT}/lib/i18n" -mindepth 1 -maxdepth 1 -type d -not -path '*/.*' -printf '%f\0' | sort -z
 }
 
 # @type:        Filter

@@ -43,7 +43,6 @@ I18N_MESSAGES["common.info_module_rollback"]="Module completed via rollback [Cod
 I18N_MESSAGES["common.info_module_requires_ssh"]="Module requires preliminary SSH setup [Code: %s]"
 I18N_MESSAGES["common.info_exit_menu"]="Exit setup menu"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
-I18N_MESSAGES["common.info_menu_check_item"]="%s. %s"
 
 # Info messages - uninstall
 I18N_MESSAGES["common.info_uninstall_confirm"]="Uninstall ${UTIL_NAME^^}?"
