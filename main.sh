@@ -173,6 +173,7 @@ runner::module::select_modify() {
         log_info_simple_tab "$(_ "common.info_menu_item_format" "$((i + 1))" "$(_ "$module_name")")"
     done
 
+    local max_id="${#module_paths[@]}"
     local menu_exit="0"
     local menu_check="00"
     local menu_lang="01"
@@ -183,8 +184,7 @@ runner::module::select_modify() {
 
     # Запрашиваем выбор пользователя
     local selection
-
-    read -r -d '' selection < <(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[0-${#module_paths[@]}])$" "0-${#module_paths[@]}")
+    read -r -d '' selection < <(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[0-$max_id])$" "0-$max_id")
 
     case "$selection" in
         "$menu_exit") log_info "$(_ "common.info_exit_menu")"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT

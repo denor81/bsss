@@ -28,7 +28,7 @@ io::ask_value() {
             printf '%s\0' "$choice"
             break
         fi
-        log_error "$(_ "common.error_invalid_input" "$hint")"
+        log_error "$(_ "common.error_invalid_input" "[$hint]")"
     done
 }
 
