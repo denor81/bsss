@@ -23,7 +23,8 @@ I18N_MESSAGES["common.success_module_runner_started"]="Basic Server Security Set
 
 # Menu messages
 I18N_MESSAGES["common.menu_exit"]="Выход"
-I18N_MESSAGES["common.menu_check"]="Проверка системы (check)"
+I18N_MESSAGES["common.menu_check"]="Проверка системы"
+I18N_MESSAGES["common.menu_language"]="Смена языка [Language]"
 
 # Error messages - param validation
 I18N_MESSAGES["common.error_invalid_param"]="Некорректный параметр -%s, доступны: %s"

@@ -69,13 +69,8 @@ i18n::installer::write_lang_file() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               1 - критическая ошибка
-i18n::installer::setup_if_needed() {
-    if i18n::installer::check_lang_file; then
-        return 0
-    fi
-
+i18n::installer::lang_setup() {
     i18n::installer::discover_languages | i18n::installer::show_language_menu | i18n::installer::write_lang_file
-
     log_info "$(_ "no_translate" "Language installed - restart script / Язык установлен - перезапустите скрипт")"
     exit 0
 }

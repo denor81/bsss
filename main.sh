@@ -172,16 +172,24 @@ runner::module::select_modify() {
         ' "${module_paths[$i]}")
         log_info_simple_tab "$(_ "common.info_menu_item_format" "$((i + 1))" "$(_ "$module_name")")"
     done
-    log_info_simple_tab "$(_ "common.info_menu_item_format" "0" "$(_ "common.menu_exit")")"
-    log_info_simple_tab "$(_ "common.info_menu_check_item" "00" "$(_ "common.menu_check")")"
+
+    local menu_exit="0"
+    local menu_check="00"
+    local menu_lang="01"
+    
+    log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_exit" "$(_ "common.menu_exit")")"
+    log_info_simple_tab "$(_ "common.info_menu_check_item" "$menu_check" "$(_ "common.menu_check")")"
+    log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_lang" "$(_ "common.menu_language")")"
 
     # Запрашиваем выбор пользователя
     local selection
-    read -r -d '' selection < <(io::ask_value "$(_ "io.ask_value.select_module")" "" "^(00|[0-9])$" "0-${#module_paths[@]}")
-    
+
+    read -r -d '' selection < <(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[0-${#module_paths[@]}])$" "0-${#module_paths[@]}")
+
     case "$selection" in
-        0) log_info "$(_ "common.info_exit_menu")"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
-        00) printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
+        "$menu_exit") log_info "$(_ "common.info_exit_menu")"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
+        "$menu_check") printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
+        "$menu_lang") printf '%s\0' "LANG_CHANGE" ;; # Возвращаем маркер смены языка
         *)  printf '%s\0' "${module_paths[$((selection - 1))]}" ;; # Возвращаем выбранный путь
     esac
 }
@@ -208,6 +216,8 @@ runner::module::run_modify() {
         # Обработка главного меню
         if [[ "$selected_module" == "CHECK" ]]; then
             runner::module::run_check
+        elif [[ "$selected_module" == "LANG_CHANGE" ]]; then
+            i18n::installer::lang_setup
         elif [[ "$selected_module" == "EXIT" ]]; then
             break
         fi 
@@ -257,7 +267,7 @@ main() {
     i18n::init
     log_init
     log_start
-    i18n::installer::setup_if_needed
+    i18n::installer::check_lang_file || i18n::installer::lang_setup
     check_permissions
     parse_params "$ALLOWED_PARAMS" "$@"
 
