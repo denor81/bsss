@@ -13,8 +13,7 @@ lib/i18n/
 ├── test_translations.sh        # Translation integrity checker
 ├── test_unused_translations.sh  # Unused translation keys checker
 ├── test_unknown_translations.sh  # Unknown translation keys checker
-├── core.sh                      # Core translation function _()
-├── loader.sh                    # Language detection and loader
+├── loader.sh                    # Language detection and loader Core translation function _()
 ├── ru/                          # Russian translations
 │   ├── common.sh
 │   ├── ssh.sh

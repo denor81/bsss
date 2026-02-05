@@ -43,8 +43,9 @@ i18n::installer::show_language_menu() {
         log_info_simple_tab "$(_ "no_translate" "$((i + 1))") ${lang_codes[$i]}"
     done
 
+    local max_id=${#lang_codes[@]}
     local selection
-    read -r -d '' selection < <(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[1-9][0-9]*$" "1-${#lang_codes[@]}")
+    read -r -d '' selection < <(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[1-9][0-9]*$" "1-$max_id")
 
     printf '%s\0' "${lang_codes[$((selection - 1))]}"
 }

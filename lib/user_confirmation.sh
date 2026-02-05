@@ -12,7 +12,7 @@
 # @exit_code:   0 — успешно получено значение
 #               2 — отменено пользователем.
 io::ask_value() {
-    local question=$1 default=$2 pattern=$3 hint=$4 cancel_keyword=${5:-}
+    local question="$1" default="$2" pattern="$3" hint="$4" cancel_keyword="${5:-}"
     local choice
 
     while true; do
