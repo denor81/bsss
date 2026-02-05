@@ -1,15 +1,7 @@
 #!/usr/bin/env bash
-#
-# @type:        Orchestrator
-# @description: Проверяет целостность переводов между всеми языками
-#               Сообщает о недостающих ключах перевода
-# @params:      нет
-# @stdin:       нет
-# @stdout:      Отчет о недостающих ключах
-# @exit_code:   0 - проверка выполнена
-#               1 - найдены недостающие ключи
+# Проверяет синхронизацию файлов переводов
 
-set -euo pipefail
+set -Eeuo pipefail
 
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/../.."
 readonly I18N_DIR="${PROJECT_ROOT}/lib/i18n"

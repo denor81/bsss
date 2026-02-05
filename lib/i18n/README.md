@@ -10,7 +10,7 @@ BSSS uses a simple but effective i18n system based on Bash 4+ associative arrays
 
 ```
 lib/i18n/
-├── check_translations.sh        # Translation integrity checker
+├── test_translations.sh        # Translation integrity checker
 ├── test_unused_translations.sh  # Unused translation keys checker
 ├── test_unknown_translations.sh  # Unknown translation keys checker
 ├── core.sh                      # Core translation function _()
@@ -29,7 +29,7 @@ lib/i18n/
 
 ### Core Translation Function
 
-The `_()` function (defined in `lib/i18n/core.sh`) is used to retrieve translations:
+The `_()` function (defined in `lib/i18n/loader.sh`) is used to retrieve translations:
 
 ```bash
 # @type:        Source
@@ -167,7 +167,7 @@ log_info "$(_ "ssh.success_port_up" "$port")"
 To verify that all translation keys are synchronized across languages:
 
 ```bash
-./lib/i18n/check_translations.sh
+./lib/i18n/test_translations.sh
 ```
 
 ### Output
@@ -179,7 +179,7 @@ To verify that all translation keys are synchronized across languages:
 ### Example Output
 
 ```bash
-$ ./lib/i18n/check_translations.sh
+$ ./lib/i18n/test_translations.sh
 
 ========================================
 I18n Translation Integrity Check
@@ -302,7 +302,7 @@ Summary
 Run all translation tests together:
 
 ```bash
-./lib/i18n/check_translations.sh
+./lib/i18n/test_translations.sh
 ./lib/i18n/test_unused_translations.sh
 ./lib/i18n/test_unknown_translations.sh
 ```
@@ -311,7 +311,7 @@ Or create a wrapper script:
 ```bash
 #!/bin/bash
 set -euo pipefail
-./lib/i18n/check_translations.sh
+./lib/i18n/test_translations.sh
 ./lib/i18n/test_unused_translations.sh
 ./lib/i18n/test_unknown_translations.sh
 ```
@@ -366,7 +366,7 @@ To add a new language (e.g., German):
 
 ## Common Pitfalls
 
-1. **Missing keys**: Always run `check_translations.sh` after adding new messages
+1. **Missing keys**: Always run `test_translations.sh` after adding new messages
 2. **Incorrect printf format**: Ensure `%s` placeholders match in all languages
 3. **Inconsistent naming**: Follow the key naming convention strictly
 4. **Hardcoded strings**: Use `_()` for all user-facing messages
@@ -378,7 +378,7 @@ To add a new language (e.g., German):
 
 - Check that the key exists in translation files
 - Verify the `.lang` file contains valid language code
-- Run `check_translations.sh` to find inconsistencies
+- Run `test_translations.sh` to find inconsistencies
 
 ### Language not switching
 
@@ -386,7 +386,7 @@ To add a new language (e.g., German):
 - Verify language code is supported in `loader.sh` (ru, en, or your custom language)
 - Ensure no extra whitespace in `.lang` file
 
-### check_translations.sh shows false positives
+### test_translations.sh shows false positives
 
 - Verify files are properly formatted (no syntax errors)
 - Check that keys are unique within each file

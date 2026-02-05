@@ -151,6 +151,19 @@ ssh::port::generate_free_random_port() {
     done < <(shuf -i 10000-65535)
 }
 ```
+  - Шапка исполняемых файлов
+```
+#!/usr/bin/env bash
+# Изменяет SSH порт
+# MODULE_ORDER: 60
+# MODULE_TYPE: modify
+# MODULE_NAME: module.ssh.name # Имя модуля использутся в формировании меню и по этому указывается название переменной перевода
+
+# Или без дополнительных полей если файл не подразумевает их
+#!/usr/bin/env bash
+# Проверяет синхронизацию файлов переводов
+```
+  - Шапка может отсутствовать в файлах хелперах и прочих файлах подключаемых через source
   - Дополнительные примеры
     - [modules/04-ssh-port-helpers.sh](modules/04-ssh-port-helpers.sh)
     - [modules/04-ssh-port-modify.sh](modules/04-ssh-port-modify.sh)
@@ -167,7 +180,7 @@ ssh::port::generate_free_random_port() {
   11. Конвенции стиля кода
    - Shebang: 
      * Добавляется ТОЛЬКО в файлы, которые могут выполняться напрямую (main.sh, модули, тесты)
-     * НЕ добавляется в файлы, которые подгружаются через source (хелперы, библиотеки: lib/i18n/core.sh, lib/i18n/loader.sh, lib/logging.sh и т.д.)
+     * НЕ добавляется в файлы, которые подгружаются через source (хелперы, библиотеки: lib/i18n/loader.sh, lib/logging.sh и т.д.)
      * Если файл подразумевает прямой запуск, в конце файла должна быть проверка:
        ```bash
        if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -293,7 +306,7 @@ ssh::port::generate_free_random_port() {
 
 ```
 lib/i18n/
- ├── check_translations.sh       # Проверка целостности переводов между языками
+ ├── test_translations.sh       # Проверка целостности переводов между языками
  ├── test_unused_translations.sh # Проверка неиспользуемых переводов
  ├── test_unknown_translations.sh # Проверка неизвестных переводов
  ├── core.sh                     # Основная функция _()

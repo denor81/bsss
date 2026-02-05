@@ -5,30 +5,7 @@
 # @stdout:      lang_code (например: ru|en)
 # @exit_code:   0 - успех
 i18n::detect_language() {
-    local lang_file="${PROJECT_ROOT}/.lang"
-    
-    if [[ -f "$lang_file" ]]; then
-        local detected_lang
-        detected_lang=$(cat "$lang_file" 2>/dev/null | tr -d '[:space:]')
-        
-        # Валидация языка
-        case "$detected_lang" in
-            ru|en|cn|es|fr|de)
-                echo "$detected_lang"
-                return 0
-                ;;
-            *)
-                echo "Invalid language in .lang file: $detected_lang" >&2
-                echo "Supported languages: ru, en, cn, es, fr, de" >&2
-                echo "Falling back to: $DEFAULT_LANG" >&2
-                echo "$DEFAULT_LANG"
-                return 0
-                ;;
-        esac
-    else
-        echo "$DEFAULT_LANG"
-        return 0
-    fi
+    [[ -f "$LANG_FILE" ]] && cat "$LANG_FILE" 2>/dev/null || printf '%s' "$DEFAULT_LANG"
 }
 
 # @type:        Orchestrator
@@ -39,30 +16,15 @@ i18n::detect_language() {
 # @exit_code:   0 - успех
 #               1 - файл переводов не найден
 i18n::load_translations() {
-    local lang_code="$1"
-    local i18n_dir="${PROJECT_ROOT}/lib/i18n/${lang_code}"
+    read -r lang_code
+    local i18n_dir="${I18N_DIR}/${lang_code}"
     
-    # Проверка существования директории языка
-    if [[ ! -d "$i18n_dir" ]]; then
-        echo "i18n directory not found: $i18n_dir" >&2
-        return 1
-    fi
+    [[ ! -d "$i18n_dir" ]] && return 1
     
-    # Очистка предыдущих переводов (переобъявление ассоциативного массива)
-    declare -gA I18N_MESSAGES=()
-    
-    # Загрузка всех .sh файлов из директории языка
-    local translation_files
-    mapfile -t translation_files < <(find "$i18n_dir" -maxdepth 1 -name "*.sh" -type f | sort)
-    
-    for file in "${translation_files[@]}"; do
-        if [[ -r "$file" ]]; then
-            . "$file"
-        fi
-    done
-    
-    # Логирование успешной загрузки
-    # echo "Loaded i18n language: $lang_code from $i18n_dir" >&2
+    local path
+    while IFS= read -r -d '' path; do
+        [[ -f "$path" ]] && source "$path"
+    done < <(find "$i18n_dir" -type f -maxdepth 1 -name "*.sh" -print0)
 }
 
 # @type:        Orchestrator
@@ -71,15 +33,26 @@ i18n::load_translations() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успех
-#               1 - ошибка загрузки
+#               $? - pipefail
 i18n::init() {
-    local lang
-    lang=$(i18n::detect_language)
+    i18n::load_translations <<< "$(i18n::detect_language)"
+}
+
+# @type:        Source
+# @description: Переводчик сообщений по ключу
+# @params:      message_key - Ключ сообщения в i18n системе
+#               args - Аргументы для форматирования (опционально)
+# @stdin:       нет
+# @stdout:      Переведенное сообщение
+# @exit_code:   0 - успех
+#               1 - ключ не найден
+_() {
+    local key="$1"
+    shift
     
-    if ! i18n::load_translations "$lang"; then
-        echo "Failed to load translations for language: $lang" >&2
-        return 1
+    if [[ -v I18N_MESSAGES["$key"] ]]; then
+        printf "${I18N_MESSAGES["$key"]}" "$@"
+    else
+        echo "$SYMBOL_WARN [$CURRENT_MODULE_NAME] [$key] NOT TRANSLATED" >&2
     fi
-    
-    return 0
 }
