@@ -106,7 +106,7 @@
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 — упешно
+# @exit_code:   0 — успешно
 #               $? — код ошибки дочернего процесса
 ssh::orchestrator::config_not_exists() {
     ssh::ui::get_new_port | ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ssh::port::install_new
@@ -152,14 +152,17 @@ ssh::port::generate_free_random_port() {
 }
 ```
   - Шапка исполняемых файлов
+    - Добавляется ТОЛЬКО в файлы, которые могут выполняться напрямую
+    - Пример с полями:
 ```
 #!/usr/bin/env bash
 # Изменяет SSH порт
 # MODULE_ORDER: 60
 # MODULE_TYPE: modify
 # MODULE_NAME: module.ssh.name # Имя модуля использутся в формировании меню и по этому указывается название переменной перевода
-
-# Или без дополнительных полей если файл не подразумевает их
+```
+    - Пример без полей:
+```
 #!/usr/bin/env bash
 # Проверяет синхронизацию файлов переводов
 ```
@@ -218,7 +221,7 @@ ssh::port::generate_free_random_port() {
    - Примеры нейминга:
      * Оркестраторы: ssh::ssh::orchestrator::log_statuses, ufw::orchestrator::run_module
 
-    14. I18n (Internationalization)
+   14. I18n (Internationalization)
      - Подробная документация: [lib/i18n/README.md](lib/i18n/README.md)
 
      - Архитектура:
@@ -229,39 +232,39 @@ ssh::port::generate_free_random_port() {
      - Стандарт использования переводов:
        * **Все функции** (io::confirm_action, io::ask_value, log_info, log_error): перевод делается ДО вызова, функция принимает уже переведенную строку
        * Переводы в файлах переводов могут поддерживать аргументы через printf форматирование (например, `I18N_MESSAGES["key"]="Сообщение %s"`)
-       * Достаем перевод "$(_ "key" "arg1")" или если нет примающих параметров, то "$(_ "key")"
+        * Достаем перевод "$(_ \"key\" \"arg1\")" или если нет примающих параметров, то "$(_ \"key\")"
 
      - Правильные примеры вызовов:
 
-       ```bash
-       # io::confirm_action - перевод делается ДО вызова
-       io::confirm_action "$(_ "key")"
-       
-       # Пример функции ask_value
-       io::ask_value() {
-        local question=$1 default=$2 pattern=$3 hint=$4 cancel_keyword=${5:-}
-        ...
-        }
+        ```bash
+        # io::confirm_action - перевод делается ДО вызова
+        io::confirm_action "$(_ \"key\")"
+        
+        # Пример функции ask_value
+        io::ask_value() {
+         local question=$1 default=$2 pattern=$3 hint=$4 cancel_keyword=${5:-}
+         ...
+         }
 
-       # Вызов ask_value
-       # io::ask_value - перевод делается ДО вызова
-       io::ask_value "$(_ "key")" "$default" "$pattern" "$hint"
-       или
-       io::ask_value "$(_ "key")" "$default" "$pattern" "$(_ "key" "arg1")" "n"
+        # Вызов ask_value
+        # io::ask_value - перевод делается ДО вызова
+        io::ask_value "$(_ \"key\")" "$default" "$pattern" "$hint"
+        или
+        io::ask_value "$(_ \"key\")" "$default" "$pattern" "$(_ \"key\" \"arg1\")" "n"
 
-       # Логеры - перевод делается ДО вызова
-       log_info "$(_ "key" "arg1" "arg2")"
-       log_error "$(_ "key")"
-       ```
+        # Логеры - перевод делается ДО вызова
+        log_info "$(_ \"key\" \"arg1\" \"arg2\")"
+        log_error "$(_ \"key\")"
+        ```
 
-       ```bash
-       # Пример перевода с аргументами в файле переводов:
-       # lib/i18n/ru/common.sh:
-       # I18N_MESSAGES["common.helpers.ufw.rule.delete_error"]="Ошибка удаления правила: %s"
+        ```bash
+        # Пример перевода с аргументами в файле переводов:
+        # lib/i18n/ru/common.sh:
+        # I18N_MESSAGES["common.helpers.ufw.rule.delete_error"]="Ошибка удаления правила: %s"
 
-       # Использование в коде:
-       log_error "$(_ "common.helpers.ufw.rule.delete_error" "$rule_args")"
-       ```
+        # Использование в коде:
+        log_error "$(_ \"common.helpers.ufw.rule.delete_error\" \"$rule_args\")"
+        ```
 
      - Конвенции именования ключей:
        * Формат: module.submodule.action.message_type
@@ -275,30 +278,29 @@ ssh::port::generate_free_random_port() {
        * Определена в common.sh: `I18N_MESSAGES["no_translate"]="%s"`
        * Примеры использования:
 
-       ```bash
-       # Путь к файлу
-       log_info_simple_tab "$(_ "no_translate" "/etc/ssh/sshd_config:Port 22")"
-       ```
+        ```bash
+        # Путь к файлу
+        log_info_simple_tab "$(_ \"no_translate\" \"/etc/ssh/sshd_config:Port 22\")"
+        ```
 
-     - Файлы переводов:
-       * lib/i18n/ru/common.sh - общие сообщения (русский)
-       * lib/i18n/en/common.sh - общие сообщения (английский)
-       * lib/i18n/ru/ssh.sh - SSH модуль (русский)
-       * lib/i18n/en/ssh.sh - SSH модуль (английский)
-       * lib/i18n/ru/ufw.sh - UFW модуль (русский)
-       * lib/i18n/en/ufw.sh - UFW модуль (английский)
-       * lib/i18n/ru/system.sh - системные сообщения (русский)
-       * lib/i18n/en/system.sh - системные сообщения (английский)
+      - Файлы переводов:
+        * lib/i18n/ru/common.sh - общие сообщения (русский)
+        * lib/i18n/en/common.sh - общие сообщения (английский)
+        * lib/i18n/ru/ssh.sh - SSH модуль (русский)
+        * lib/i18n/en/ssh.sh - SSH модуль (английский)
+        * lib/i18n/ru/ufw.sh - UFW модуль (русский)
+        * lib/i18n/en/ufw.sh - UFW модуль (английский)
+        * lib/i18n/ru/system.sh - системные сообщения (русский)
+        * lib/i18n/en/system.sh - системные сообщения (английский)
 
-       - Добавление новых переводов:
-         * **Правило для агентов-программистов**: При необходимости добавить новый лог (log_info, log_error и т.д.) нужно в первую очередь создавать переменную перевода (локализации) в файле русского языка (lib/i18n/ru/domain.sh)
-         * Другие языковые локализации (en и др.) создавать не обязательно — этим будет заниматься другой агент-переводчик
-         * Задача агента, который программирует — создать одну локализацию (русскую)
-         * Процесс:
-           1. Добавьте ключ в lib/i18n/ru/domain.sh (обязательно)
-           2. Используйте ключ в коде через `log_info "$(_ "key")"` или `io::confirm_action "$(_ "key")"`
-           3. Остальные языки добавляются другим агентом (translation agent)
-```
+        - Добавление новых переводов:
+          * **Правило для агентов-программистов**: При необходимости добавить новый лог (log_info, log_error и т.д.) нужно в первую очередь создавать переменную перевода (локализации) в файле русского языка (lib/i18n/ru/domain.sh)
+          * Другие языковые локализации (en и др.) создавать не обязательно — этим будет заниматься другой агент-переводчик
+          * Задача агента, который программирует — создать одну локализацию (русскую)
+          * Процесс:
+            1. Добавьте ключ в lib/i18n/ru/domain.sh (обязательно)
+            2. Используйте ключ в коде через `log_info "$(_ \"key\")"` или `io::confirm_action "$(_ \"key\")"`
+            3. Остальные языки добавляются другим агентом (translation agent)
 
 ### Структура переводов
 
@@ -321,4 +323,82 @@ lib/i18n/
      ├── ssh.sh
      ├── ufw.sh
      └── system.sh
+```
+
+### Примеры хорошего кода
+  - Предпочтительна потоковая архитектура
+```bash
+# Пример 1
+# ПЛОХО: Избыточная логика, использование переменных там, где нужен поток
+i18n::detect_language() {
+    local lang_file="${PROJECT_ROOT}/.lang"
+    if [[ -f "$lang_file" ]]; then
+        local detected_lang
+        detected_lang=$(cat "$lang_file" 2>/dev/null | tr -d '[:space:]')
+        echo "$detected_lang"
+    else
+        echo "$DEFAULT_LANG"
+    fi
+}
+
+# ХОРОШО: Потоковый стиль, прозрачный вывод (Idempotent output)
+i18n::detect_language() {
+    [[ -f "$LANG_FILE" ]] && cat "$LANG_FILE" 2>/dev/null | tr -d '[:space:]' || printf '%s' "$DEFAULT_LANG"
+}
+
+# Пример 2
+# Плохой код
+i18n::load_translations() {
+    local lang_code="$1"
+    local i18n_dir="${PROJECT_ROOT}/lib/i18n/${lang_code}"
+    
+    if [[ ! -d "$i18n_dir" ]]; then
+        echo "i18n directory not found: $i18n_dir" >&2
+        return 1
+    fi
+    
+    # Плохо - глобальный массив должен объявляется в общем конфигурационном файле, а не в коде проекта
+    declare -gA I18N_MESSAGES=()
+    
+    local translation_files
+    mapfile -t translation_files < <(find "$i18n_dir" -maxdepth 1 -name "*.sh" -type f | sort)
+    
+    for file in "${translation_files[@]}"; do
+        if [[ -r "$file" ]]; then
+            . "$file"
+        fi
+    done
+}
+
+# Хороший код (Streaming Style)
+i18n::load_translations() {
+    local lang_code i18n_dir path
+
+    read -r lang_code
+    i18n_dir="${I18N_DIR}/${lang_code}"
+    
+    [[ ! -d "$i18n_dir" ]] && return 1
+    
+    while IFS= read -r -d '' path; do
+        [[ -f "$path" ]] && source "$path"
+    done < <(find "$i18n_dir" -type f -maxdepth 1 -name "*.sh" -print0)
+}
+
+# Пример 3
+# Плохой код
+i18n::init() {
+    local lang
+    lang=$(i18n::detect_language)
+    
+    if ! i18n::load_translations "$lang"; then
+        return 1
+    fi
+    
+    return 0
+}
+
+# Хороший код
+i18n::init() {
+    i18n::load_translations <<< "$(i18n::detect_language)"
+}
 ```

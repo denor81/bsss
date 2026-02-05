@@ -16,12 +16,13 @@ i18n::detect_language() {
 # @exit_code:   0 - успех
 #               1 - файл переводов не найден
 i18n::load_translations() {
+    local lang_code i18n_dir path
+
     read -r lang_code
-    local i18n_dir="${I18N_DIR}/${lang_code}"
+    i18n_dir="${I18N_DIR}/${lang_code}"
     
     [[ ! -d "$i18n_dir" ]] && return 1
     
-    local path
     while IFS= read -r -d '' path; do
         [[ -f "$path" ]] && source "$path"
     done < <(find "$i18n_dir" -type f -maxdepth 1 -name "*.sh" -print0)
