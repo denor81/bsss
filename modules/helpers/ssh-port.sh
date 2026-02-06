@@ -281,6 +281,17 @@ ssh::orchestrator::config_not_exists_handler() {
 }
 
 # @type:        Orchestrator
+# @description: Инициирует немедленный откат через SIGUSR2 и ожидает завершения watchdog
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - откат выполнен, процесс заблокирован
+ssh::orchestrator::trigger_immediate_rollback() {
+    kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
+    wait "$WATCHDOG_PID" 2>/dev/null || true
+    while true; do sleep 1; done
+}
+
+# @type:        Orchestrator
 # @description: Устанавливает новый SSH порт с механизмом rollback
 # @params:      нет
 # @stdin:       нет
@@ -307,14 +318,14 @@ ssh::install::port() {
     ssh::orchestrator::log_statuses
 
     if ! ssh::port::wait_for_up "$port"; then
-        kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
-        wait "$WATCHDOG_PID" 2>/dev/null || true
-        while true; do sleep 1; done
+        ssh::orchestrator::trigger_immediate_rollback
     fi
 
-    if io::ask_value "$(_ "ssh.install.confirm_connection")" "" "^connected$" "connected" >/dev/null; then
+    if io::ask_value "$(_ "ssh.install.confirm_connection")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
         log_info "$(_ "ssh.success_changes_committed")"
+    else
+        ssh::orchestrator::trigger_immediate_rollback
     fi
 }
 

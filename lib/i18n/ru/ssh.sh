@@ -16,7 +16,7 @@ I18N_MESSAGES["ssh.ui.get_new_port.ask_port"]="Введите новый SSH п�
 I18N_MESSAGES["ssh.ui.get_new_port.hint"]="Порт должен быть от 1 до 65535"
 I18N_MESSAGES["ssh.ui.get_new_port.default"]="22"
 I18N_MESSAGES["ssh.ui.get_action_choice.ask_select"]="Выберите"
-I18N_MESSAGES["ssh.install.confirm_connection"]="Подтвердите подключение - введите connected"
+I18N_MESSAGES["ssh.install.confirm_connection"]="Подтвердите подключение - введите connected или 0 для отмены"
 
 # Info messages
 I18N_MESSAGES["ssh.info_rules_found"]="Есть правила ${UTIL_NAME^^} для SSH:"

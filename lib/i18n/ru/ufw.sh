@@ -33,7 +33,7 @@ I18N_MESSAGES["ufw.warning.add_ssh_first"]="Сначала добавьте SSH-
 I18N_MESSAGES["ufw.rollback.warning_title"]="НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
 I18N_MESSAGES["ufw.rollback.ask_confirm"]="Подтвердите возможность подключения - введите connected"
 I18N_MESSAGES["ufw.rollback.test_access"]="Проверьте доступ к серверу после включения UFW"
-I18N_MESSAGES["ufw.install.confirm_connection"]="Подтвердите возможность подключения - введите connected"
+I18N_MESSAGES["ufw.install.confirm_connection"]="Подтвердите возможность подключения - введите connected или 0 для отмены"
 
 # Menu messages
 I18N_MESSAGES["ufw.menu.ask_select"]="Выберите действие"

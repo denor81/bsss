@@ -16,7 +16,7 @@ I18N_MESSAGES["ssh.ui.get_new_port.ask_port"]="Enter new SSH port"
 I18N_MESSAGES["ssh.ui.get_new_port.hint"]="Port must be from 1 to 65535"
 I18N_MESSAGES["ssh.ui.get_new_port.default"]="22"
 I18N_MESSAGES["ssh.ui.get_action_choice.ask_select"]="Select"
-I18N_MESSAGES["ssh.install.confirm_connection"]="Confirm connection - enter connected"
+I18N_MESSAGES["ssh.install.confirm_connection"]="Confirm connection - enter connected or 0 to cancel"
 
 # Info messages
 I18N_MESSAGES["ssh.info_rules_found"]="${UTIL_NAME^^} rules found for SSH:"
