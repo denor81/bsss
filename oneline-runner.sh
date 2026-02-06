@@ -157,7 +157,7 @@ installer::ask_value() {
 installer::ui::ask_language() {
     local lang
 
-    lang=$(installer::ask_value "$(_ "installer.ask_language.question")" "r" "[re]" "r/e")
+    lang=$(installer::ask_value "$(_ "installer.no_translate" "Русский [r] | English [e]")" "r" "[re]" "r/e")
 
     if [[ "$lang" =~ ^[Ee]$ ]]; then
         INSTALLER_LANG="en"
@@ -523,7 +523,7 @@ install::to_system() {
 # @exit_code:   0 - успешно
 #               $? - ошибка выполнения
 install::runner::main() {
-    log_info "$(_ "installer.no_translate" "For watch log - type [journalctl -t bsss --since '10 minutes ago']")"
+    log_info "$(_ "installer.no_translate" "For logs type [journalctl -t bsss --since '10 minutes ago']")"
     installer::ui::ask_language
     install::ui::hello
     install::permissions::check_root
@@ -546,7 +546,6 @@ install::runner::main() {
 declare -gA I18N_MESSAGES_RU=(
     [installer.no_translate]="%s"
     [installer.hello]="Basic Server Security Setup (%s) - oneline запуск..."
-    [installer.ask_language.question]="Русский [r] | English [e]"
     [installer.ask_language.selected]="Выбран язык"
     [installer.error_invalid_input]="Неверный выбор"
     [installer.cleanup.start]="Запуск процедуры очистки по причине: %s"
@@ -591,7 +590,6 @@ declare -gA I18N_MESSAGES_RU=(
 declare -gA I18N_MESSAGES_EN=(
     [installer.no_translate]="%s"
     [installer.hello]="Basic Server Security Setup (%s) - oneline execution..."
-    [installer.ask_language.question]="Русский [r] | English [e]"
     [installer.ask_language.selected]="Language selected"
     [installer.error_invalid_input]="Invalid choice"
     [installer.cleanup.start]="Starting cleanup procedure, reason: %s"
