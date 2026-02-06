@@ -17,8 +17,7 @@ set -Eeuo pipefail
 readonly UTIL_NAME="bsss"
 readonly REPO_URL="https://github.com"
 readonly ARCHIVE_FILE_NAME="bsss-framework-latest.tar.gz"
-# readonly ARCHIVE_URL="${REPO_URL}/denor81/${UTIL_NAME}/releases/latest/download/${ARCHIVE_FILE_NAME}"
-readonly ARCHIVE_URL="file:///home/ubuntu/bsss/project-v1.0.0.tar.gz"
+readonly ARCHIVE_URL="${REPO_URL}/denor81/${UTIL_NAME}/releases/latest/download/${ARCHIVE_FILE_NAME}"
 
 readonly SYMBOL_LINK_PATH="/usr/local/bin/$UTIL_NAME"
 readonly INSTALL_DIR="/opt/$UTIL_NAME"
