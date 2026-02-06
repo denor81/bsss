@@ -54,6 +54,6 @@ _() {
     if [[ -v I18N_MESSAGES["$key"] ]]; then
         printf "${I18N_MESSAGES["$key"]}" "$@"
     else
-        echo "$SYMBOL_WARN [$CURRENT_MODULE_NAME] [$key] NOT TRANSLATED" >&2
+        printf '%s' "[$key] NOT TRANSLATED" >&2
     fi
 }

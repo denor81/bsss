@@ -34,6 +34,7 @@ i18n::report_missing_translations() {
 }
 
 main() {
+    printf 'Показывает битые ссылки в коде проекта на переводы\n'
     local result_count
 
     result_count=$(i18n::extract_keys_from_code | i18n::check_key_exists | i18n::count_stream)

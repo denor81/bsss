@@ -44,6 +44,7 @@ i18n::test_translation_sync() {
 }
 
 main() {
+    printf 'Сверяет файлы переводов\n'
     if i18n::test_translation_sync; then
         printf 'All translations are synchronized\n'
         return 0

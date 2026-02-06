@@ -6,7 +6,7 @@ cd "$SCRIPT_DIR"
 
 for test_file in *.sh; do
     [[ "$test_file" == "run.sh" ]] && continue
-    
+    printf '%s\n' "$test_file"
     bash "$test_file"
-    printf '%s\n\n' "$(printf '#%.0s' {1..80})"
+    printf '%s\n' "$(printf '#%.0s' {1..80})"
 done

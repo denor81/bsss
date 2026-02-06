@@ -118,7 +118,7 @@ i18n::extract_keys_from_code() {
                 '
 
             # Извлекаем ключи из кода ($(_ "common.error_no_modules_available"))
-            find "$dir" -type f -name "*.sh" -print0 2>/dev/null | \
+            find "$dir" -type f -name "*.sh" -not -name "oneline-runner*.sh" -print0 2>/dev/null | \
                 xargs -0 cat 2>/dev/null | \
                 gawk '
                     {

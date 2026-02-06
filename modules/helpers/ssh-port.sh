@@ -11,7 +11,7 @@
     log_info "$(_ "common.menu_header")"
     log_info_simple_tab "$(_ "ssh.menu.item_reset" "1" "${UTIL_NAME^^}")"
     log_info_simple_tab "$(_ "ssh.menu.item_reinstall" "2")"
-    log_info_simple_tab "$(_ "ssh.menu.item_exit" "0")"
+    log_info_simple_tab "$(_ "common.exit" "0")"
 }
 
 # @type:        Filter
