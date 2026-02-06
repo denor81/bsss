@@ -62,8 +62,8 @@ parse_params() {
     
     while getopts ":$allowed_params" opt "$@"; do
         case "${opt}" in
-            h)  ACTION="help" ;;
-            u)  ACTION="uninstall" ;;
+            h)  PARAMS_ACTION="help" ;;
+            u)  PARAMS_ACTION="uninstall" ;;
             \?) log_error "$(_ "common.error_invalid_param" "$OPTARG" "$allowed_params")"; return 1 ;;
             :)  log_error "$(_ "common.error_param_requires_value" "$OPTARG")"; return 1 ;;
         esac

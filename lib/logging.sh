@@ -60,6 +60,10 @@ new_line() {
     fi
 }
 
+log_formatted_msg() {
+    { echo "$(date '+%H:%M:%S') $1" >> "$CURRENT_LOG_SYMLINK"; } 2>/dev/null || true
+}
+
 # @type:        Sink
 # @description: Выводит успешное сообщение с символом [v]
 # @params:      message - Уже переведенное сообщение
@@ -69,15 +73,13 @@ new_line() {
 log_success() {
     local msg="$1"
     local type="SUCCESS"
-    local formatted_msg
 
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2
     else
         echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -90,15 +92,13 @@ log_success() {
 log_error() {
     local msg="$1"
     local type="ERROR"
-    local formatted_msg
-
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
+    
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2
     else
         echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -111,15 +111,13 @@ log_error() {
 log_info() {
     local msg="$1"
     local type="INFO"
-    local formatted_msg
-
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
+    
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
     else
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -133,9 +131,8 @@ log_info() {
 log_question() {
     local msg="$1"
     local type="QUESTION"
-    local formatted_msg
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -149,9 +146,8 @@ log_question() {
 log_answer() {
     local msg="$1"
     local type="ANSWER"
-    local formatted_msg
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -164,15 +160,13 @@ log_answer() {
 log_debug() {
     local msg="$1"
     local type="DEBUG"
-    local formatted_msg
-
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
+    
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2
     else
         echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -185,17 +179,15 @@ log_debug() {
 log_bold_info() {
     local msg="$1"
     local type="BOLD_INFO"
-    local formatted_msg
-    local color='\e[1m'
+        local color='\e[1m'
     local color_reset='\e[0m'
 
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -208,15 +200,13 @@ log_bold_info() {
 log_warn() {
     local msg="$1"
     local type="WARN"
-    local formatted_msg
-
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
+    
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2
     else
         echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -229,17 +219,15 @@ log_warn() {
 log_attention() {
     local msg="$1"
     local type="ATTENTION"
-    local formatted_msg
-    local color='\e[41;37m'
+        local color='\e[41;37m'
     local color_reset='\e[0m'
 
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -252,17 +240,15 @@ log_attention() {
 log_actual_info() {
     local msg="${1:-$(_ "common.default_actual_info")}"
     local type="ACTUAL_INFO"
-    local formatted_msg
-    local color='\e[37;42m'
+        local color='\e[37;42m'
     local color_reset='\e[0m'
 
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -275,15 +261,13 @@ log_actual_info() {
 log_info_simple_tab() {
     local msg="$1"
     local type="INFO_TAB"
-    local formatted_msg
-
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$CURRENT_MODULE_NAME] $msg"
+    
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2
     else
         printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -298,14 +282,12 @@ log_start() {
     local module_name="${1:-$CURRENT_MODULE_NAME}"
     local pid="${2:-$$}"
     local type="START"
-    local formatted_msg
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$module_name] PID: $pid"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2
     else
         echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$module_name] PID: $pid"
     log::to_journal "PID: $pid" "$type"
 }
 
@@ -320,14 +302,12 @@ log_stop() {
     local module_name="${1:-$CURRENT_MODULE_NAME}"
     local pid="${2:-$$}"
     local type="STOP"
-    local formatted_msg
-    formatted_msg="$(date '+%H:%M:%S') [$type] [$module_name] PID: $pid"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2
     else
         echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2 || true
     fi
-    echo "$formatted_msg" >> "$CURRENT_LOG_SYMLINK" 2>/dev/null || true
+    log_formatted_msg "[$type] [$module_name] PID: $pid"
     log::to_journal "PID: $pid" "$type"
 }
 
