@@ -3,6 +3,9 @@
 # Special message - pass through without translation
 I18N_MESSAGES["no_translate"]="%s"
 
+# Basic messages
+I18N_MESSAGES["common.exit"]="Exit"
+
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Root privileges or run with 'sudo' required. Running as regular user."
 I18N_MESSAGES["common.error_root_short"]="Root privileges or run with 'sudo' required"
@@ -22,7 +25,7 @@ I18N_MESSAGES["common.default_actual_info"]="Information"
 I18N_MESSAGES["common.success_module_runner_started"]="Basic Server Security Setup (${UTIL_NAME^^}) - oneline runner started"
 
 # Menu messages
-I18N_MESSAGES["common.menu_exit"]="Exit"
+I18N_MESSAGES["common.menu_header"]="Available actions:"
 I18N_MESSAGES["common.menu_check"]="System check (check)"
 
 # Error messages - param validation

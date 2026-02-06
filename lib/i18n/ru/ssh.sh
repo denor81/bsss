@@ -4,7 +4,6 @@
 I18N_MESSAGES["ssh.modify.confirm"]="Изменить конфигурацию SSH порта?"
 
 # Menu UI
-I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Доступные действия:"
 I18N_MESSAGES["ssh.ui.get_action_choice.option_reset"]="Сброс (удаление правила ${UTIL_NAME^^})"
 I18N_MESSAGES["ssh.ui.get_action_choice.option_reinstall"]="Переустановка (замена на новый порт)"
 I18N_MESSAGES["ssh.ui.get_action_choice.option_exit"]="Выход"
@@ -44,7 +43,6 @@ I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Ожидание поднят�
 # Menu items
 I18N_MESSAGES["ssh.menu.item_reset"]="%s. Сброс (удаление правила %s)"
 I18N_MESSAGES["ssh.menu.item_reinstall"]="%s. Переустановка (замена на новый порт)"
-I18N_MESSAGES["ssh.menu.item_exit"]="%s. Выход"
 
 # Input messages
 I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Введите новый SSH порт"

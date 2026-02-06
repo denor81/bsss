@@ -4,7 +4,6 @@
 I18N_MESSAGES["ufw.modify.confirm"]="Modify UFW status?"
 
 # Menu UI
-I18N_MESSAGES["ufw.menu.display.available_actions"]="Available actions:"
 I18N_MESSAGES["ufw.menu.display.no_rules"]="No BSSS rules, but UFW is active - can be disabled"
 I18N_MESSAGES["ufw.menu.display.exit"]="Exit"
 

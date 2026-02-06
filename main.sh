@@ -153,7 +153,7 @@ runner::module::select_modify() {
     fi
 
     # Отображаем меню
-    log_info "$(_ "common.info_available_modules")"
+    log_info "$(_ "common.menu_header")"
     local i
     for ((i = 0; i < ${#module_paths[@]}; i++)); do
         module_name=$(gawk '
@@ -178,7 +178,7 @@ runner::module::select_modify() {
     local menu_check="00"
     local menu_lang="01"
     
-    log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_exit" "$(_ "common.menu_exit")")"
+    log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_exit" "$(_ "common.exit")")"
     log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_check" "$(_ "common.menu_check")")"
     log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_lang" "$(_ "common.menu_language")")"
 
@@ -187,7 +187,7 @@ runner::module::select_modify() {
     read -r -d '' selection < <(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[0-$max_id])$" "0-$max_id")
 
     case "$selection" in
-        "$menu_exit") log_info "$(_ "common.info_exit_menu")"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
+        "$menu_exit") log_info "$(_ "common.exit")"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
         "$menu_check") printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
         "$menu_lang") printf '%s\0' "LANG_CHANGE" ;; # Возвращаем маркер смены языка
         *)  printf '%s\0' "${module_paths[$((selection - 1))]}" ;; # Возвращаем выбранный путь

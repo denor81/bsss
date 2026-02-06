@@ -270,7 +270,6 @@ ssh::port::generate_free_random_port() {
        * Формат: module.submodule.action.message_type
        * Примеры:
          - `common.error_root_privileges` - общие ошибки
-         - `ssh.ui.get_action_choice.available_actions` - UI сообщения SSH модуля
          - `ufw.status.enabled` - статусы UFW
 
      - Заглушка `no_translate`:

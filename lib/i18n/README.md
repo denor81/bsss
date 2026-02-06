@@ -108,7 +108,6 @@ Format: `module.submodule.action.message_type`
 
 **Examples:**
 - `common.error_root_privileges` - common errors
-- `ssh.ui.get_action_choice.available_actions` - UI messages
 - `ufw.status.enabled` - status messages
 
 **Module Domains:**
@@ -133,7 +132,7 @@ Add the key to `lib/i18n/ru/domain.sh` (Russian):
 
 ```bash
 # lib/i18n/ru/ssh.sh
-I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Доступные действия:"
+I18N_MESSAGES["common.menu_header"]="Доступные действия:"
 I18N_MESSAGES["ssh.success_port_up"]="SSH порт %s успешно поднят"
 ```
 
@@ -143,7 +142,7 @@ Add the same key with English translation to `lib/i18n/en/domain.sh`:
 
 ```bash
 # lib/i18n/en/ssh.sh
-I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Available actions:"
+I18N_MESSAGES["common.menu_header"]="Available actions:"
 I18N_MESSAGES["ssh.success_port_up"]="SSH port %s successfully raised"
 ```
 
@@ -153,7 +152,7 @@ Use the translation key in your code:
 
 ```bash
 # Simple message without arguments
-log_info "$(_ "ssh.ui.get_action_choice.available_actions")"
+log_info "$(_ "common.menu_header")"
 
 # Message with printf-style arguments
 log_info "$(_ "ssh.success_port_up" "$port")"

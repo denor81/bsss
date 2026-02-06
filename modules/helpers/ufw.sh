@@ -55,7 +55,7 @@ ufw::menu::display() {
 
     ufw::orchestrator::log_statuses
 
-    log_info "$(_ "ufw.menu.display.available_actions")"
+    log_info "$(_ "common.menu_header")"
 
     while IFS='|' read -r -d '' id text || break; do
         log_info_simple_tab "$(_ "no_translate" "$id. $text")"

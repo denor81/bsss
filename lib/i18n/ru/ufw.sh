@@ -4,7 +4,6 @@
 I18N_MESSAGES["ufw.modify.confirm"]="Изменить состояние UFW?"
 
 # Menu UI
-I18N_MESSAGES["ufw.menu.display.available_actions"]="Доступные действия:"
 I18N_MESSAGES["ufw.menu.display.no_rules"]="Нет правил BSSS, но UFW активен - можно отключить"
 I18N_MESSAGES["ufw.menu.display.exit"]="Выход"
 

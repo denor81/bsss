@@ -4,7 +4,6 @@
 I18N_MESSAGES["ssh.modify.confirm"]="Modify SSH port configuration?"
 
 # Menu UI
-I18N_MESSAGES["ssh.ui.get_action_choice.available_actions"]="Available actions:"
 I18N_MESSAGES["ssh.ui.get_action_choice.option_reset"]="Reset (delete ${UTIL_NAME^^} rule)"
 I18N_MESSAGES["ssh.ui.get_action_choice.option_reinstall"]="Reinstall (replace with new port)"
 I18N_MESSAGES["ssh.ui.get_action_choice.option_exit"]="Exit"
@@ -44,7 +43,6 @@ I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Waiting for SSH port %s to com
 # Menu items
 I18N_MESSAGES["ssh.menu.item_reset"]="%s. Reset (delete %s rule)"
 I18N_MESSAGES["ssh.menu.item_reinstall"]="%s. Reinstall (replace with new port)"
-I18N_MESSAGES["ssh.menu.item_exit"]="%s. Exit"
 
 # Input messages
 I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Enter new SSH port"

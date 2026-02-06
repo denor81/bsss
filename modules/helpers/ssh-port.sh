@@ -8,20 +8,9 @@
     ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
 
-    log_info "$(_ "ssh.ui.get_action_choice.available_actions")"
+    log_info "$(_ "common.menu_header")"
     log_info_simple_tab "$(_ "ssh.menu.item_reset" "1" "${UTIL_NAME^^}")"
     log_info_simple_tab "$(_ "ssh.menu.item_reinstall" "2")"
-    log_info_simple_tab "$(_ "ssh.menu.item_exit" "0")"
-}
-
-# @type:        Sink
-# @description: Отображает меню сценария установки
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-    ssh::menu::display_install_ui() {
-    log_info "$(_ "ssh.ui.get_action_choice.available_actions")"
     log_info_simple_tab "$(_ "ssh.menu.item_exit" "0")"
 }
 
@@ -302,7 +291,8 @@ ssh::orchestrator::trigger_immediate_rollback() {
 ssh::install::port() {
     local port
 
-    ssh::menu::display_install_ui
+    log_info "$(_ "common.menu_header")"
+    log_info_simple_tab "$(_ "common.info_menu_item_format" "0" "$(_ "common.exit")")"
 
     port=$(ssh::ui::get_new_port | tr -d '\0') || return
 
@@ -320,6 +310,9 @@ ssh::install::port() {
     if ! ssh::port::wait_for_up "$port"; then
         ssh::orchestrator::trigger_immediate_rollback
     fi
+
+    log_info "$(_ "common.menu_header")"
+    log_info_simple_tab "$(_ "common.info_menu_item_format" "0" "$(_ "common.exit")")"
 
     if io::ask_value "$(_ "ssh.install.confirm_connection")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"

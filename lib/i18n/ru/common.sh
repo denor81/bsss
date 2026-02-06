@@ -3,6 +3,9 @@
 # Special message - pass through without translation
 I18N_MESSAGES["no_translate"]="%s"
 
+# Basic messages
+I18N_MESSAGES["common.exit"]="Выход"
+
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
 I18N_MESSAGES["common.error_root_short"]="Требуются права root или запуск через 'sudo'"
@@ -22,7 +25,7 @@ I18N_MESSAGES["common.default_actual_info"]="Информация"
 I18N_MESSAGES["common.success_module_runner_started"]="Basic Server Security Setup (${UTIL_NAME^^}) - oneline запуск запущен"
 
 # Menu messages
-I18N_MESSAGES["common.menu_exit"]="Выход"
+I18N_MESSAGES["common.menu_header"]="Доступные действия:"
 I18N_MESSAGES["common.menu_check"]="Проверка системы"
 I18N_MESSAGES["common.menu_language"]="Смена языка [Language]"
 
