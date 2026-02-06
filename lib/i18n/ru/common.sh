@@ -29,10 +29,6 @@ I18N_MESSAGES["common.menu_header"]="Доступные действия:"
 I18N_MESSAGES["common.menu_check"]="Проверка системы"
 I18N_MESSAGES["common.menu_language"]="Смена языка [Language]"
 
-# Error messages - param validation
-I18N_MESSAGES["common.error_invalid_param"]="Некорректный параметр -%s, доступны: %s"
-I18N_MESSAGES["common.error_param_requires_value"]="Параметр -%s требует значение"
-
 # Error messages - module runner
 I18N_MESSAGES["common.error_no_modules_found"]="Запуск не возможен, Модули не найдены"
 I18N_MESSAGES["common.error_module_error"]="Запуск не возможен, один из модулей показывает ошибку"

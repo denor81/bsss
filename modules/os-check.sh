@@ -59,7 +59,7 @@ check() {
 # @exit_code:   0 - проверка прошла успешно
 #               1 - ошибка проверки
 main() {
-    i18n::init
+    i18n::load
     check
 }
 

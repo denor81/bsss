@@ -399,7 +399,7 @@ common::rollback::stop_script_by_rollback_timer() {
 # @stdout:      нет
 # @exit_code:   $?
 common::exit::actions() {
-    rc=$?
+    local rc=$?
     log_info "$(_ "common.helpers.rollback.exit_received" "$rc")"
     [[ -n "$WATCHDOG_FIFO" ]] && printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     log_stop
@@ -413,7 +413,7 @@ common::exit::actions() {
 # @stdout:      нет
 # @exit_code:   $?
 common::int::actions() {
-    rc=$?
+    local rc=$?
     if [[ $rc -eq 0 ]]; then
         rc=130
     fi

@@ -384,7 +384,7 @@ i18n::load_translations() {
 
 # Пример 3
 # Плохой код
-i18n::init() {
+i18n::load() {
     local lang
     lang=$(i18n::detect_language)
     
@@ -396,7 +396,7 @@ i18n::init() {
 }
 
 # Хороший код
-i18n::init() {
+i18n::load() {
     i18n::load_translations <<< "$(i18n::detect_language)"
 }
 ```

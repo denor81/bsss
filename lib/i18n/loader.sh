@@ -23,6 +23,7 @@ i18n::load_translations() {
     
     [[ ! -d "$i18n_dir" ]] && return 1
     
+    declare -gA I18N_MESSAGES=() # Обнуляем массив
     while IFS= read -r -d '' path; do
         [[ -f "$path" ]] && source "$path"
     done < <(find "$i18n_dir" -type f -maxdepth 1 -name "*.sh" -print0)
@@ -30,13 +31,18 @@ i18n::load_translations() {
 
 # @type:        Orchestrator
 # @description: Инициализирует систему i18n (обнаруживает и загружает)
-# @params:      нет
+# @params:      lang_code\0
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успех
 #               $? - pipefail
-i18n::init() {
-    i18n::load_translations <<< "$(i18n::detect_language)"
+i18n::load() {
+    local lang_code="${1:-}"
+    if [[ -n "$lang_code" ]]; then
+        i18n::load_translations <<< "$(printf '%s' "$lang_code")"
+    else
+        i18n::load_translations <<< "$(i18n::detect_language)"
+    fi
 }
 
 # @type:        Source
@@ -51,6 +57,10 @@ _() {
     local key="$1"
     shift
     
+    # if (( ${#I18N_MESSAGES[@]} == 0 )); then
+    #     i18n::load "$DEFAULT_LANG"
+    # fi
+
     if [[ -v I18N_MESSAGES["$key"] ]]; then
         printf "${I18N_MESSAGES["$key"]}" "$@"
     else

@@ -56,7 +56,7 @@ source "${PROJECT_ROOT}/modules/helpers/ssh-socket.sh"
 #               2 - отказ пользователя от переключения в service mode
 #               $? - ошибка проверки
 main() {
-    i18n::init
+    i18n::load
     check_unit
     check
 }

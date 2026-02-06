@@ -6,8 +6,8 @@ set -Eeuo pipefail
 
 # Константы
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-readonly ALLOWED_PARAMS="hu"
-readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление]"
+readonly ALLOWED_PARAMS="hul:"
+readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление | -l [ru|en] язык]"
 PARAMS_ACTION=""
 
 source "${PROJECT_ROOT}/lib/vars.conf"
@@ -21,6 +21,29 @@ source "${PROJECT_ROOT}/modules/helpers/common.sh"
 
 trap common::int::actions INT
 trap common::exit::actions EXIT
+
+# @type:        Filter
+# @description: Парсинг параметров запуска с использованием getopts
+# @params:
+#   allowed_params [optional] Разрешенные параметры (default: $ALLOWED_PARAMS)
+#   @            Остальные параметры для парсинга
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - некорректный параметр
+parse_params() {
+    OPTIND=1
+
+    while getopts ":$ALLOWED_PARAMS" opt "$@"; do
+        case "${opt}" in
+            h)  PARAMS_ACTION="help" ;;
+            u)  PARAMS_ACTION="uninstall" ;;
+            l)  i18n::installer::lang_setup_from_param "$OPTARG" ;;
+            \?) log_error "Invalid parameter -$OPTARG, available: $ALLOWED_PARAMS"; return 1 ;;
+            :)  log_error "Parameter -$OPTARG requires a value"; return 1 ;;
+        esac
+    done
+}
 
 # @type:        Filter
 # @description: Проверяет права доступа для запуска скрипта
@@ -44,30 +67,6 @@ check_permissions() {
 # @exit_code:   0 - всегда
 show_help() {
     log_info "$(_ "common.info_short_params" "$ALLOWED_PARAMS" "$ALLOWED_PARAMS_HELP")"
-}
-
-# @type:        Filter
-# @description: Парсинг параметров запуска с использованием getopts
-# @params:
-#   allowed_params [optional] Разрешенные параметры (default: $ALLOWED_PARAMS)
-#   @            Остальные параметры для парсинга
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               1 - некорректный параметр
-parse_params() {
-    # Всегда используем дефолтный ALLOWED_PARAMS
-    local allowed_params="${1:-$ALLOWED_PARAMS}"
-    shift
-    
-    while getopts ":$allowed_params" opt "$@"; do
-        case "${opt}" in
-            h)  PARAMS_ACTION="help" ;;
-            u)  PARAMS_ACTION="uninstall" ;;
-            \?) log_error "$(_ "common.error_invalid_param" "$OPTARG" "$allowed_params")"; return 1 ;;
-            :)  log_error "$(_ "common.error_param_requires_value" "$OPTARG")"; return 1 ;;
-        esac
-    done
 }
 
 # @type:        Orchestrator
@@ -264,12 +263,15 @@ run() {
 # @exit_code:   0 - успешно
 #               $? - ошибка проверки прав или параметров
 main() {
-    i18n::init
+    parse_params "$@"
+    
+    if (( ${#I18N_MESSAGES[@]} == 0 )); then
+        i18n::installer::check_lang_file && i18n::load || i18n::installer::lang_setup
+    fi
+
     log_init
     log_start
-    i18n::installer::check_lang_file || i18n::installer::lang_setup
     check_permissions
-    parse_params "$ALLOWED_PARAMS" "$@"
 
     case "$PARAMS_ACTION" in
         help)      show_help ;;

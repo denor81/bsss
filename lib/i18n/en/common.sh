@@ -28,10 +28,6 @@ I18N_MESSAGES["common.success_module_runner_started"]="Basic Server Security Set
 I18N_MESSAGES["common.menu_header"]="Available actions:"
 I18N_MESSAGES["common.menu_check"]="System check (check)"
 
-# Error messages - param validation
-I18N_MESSAGES["common.error_invalid_param"]="Invalid parameter -%s, available: %s"
-I18N_MESSAGES["common.error_param_requires_value"]="Parameter -%s requires a value"
-
 # Error messages - module runner
 I18N_MESSAGES["common.error_no_modules_found"]="Cannot run, modules not found"
 I18N_MESSAGES["common.error_module_error"]="Cannot run, one of the modules shows an error"

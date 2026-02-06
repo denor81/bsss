@@ -44,7 +44,7 @@ ssh::orchestrator::dispatch_logic() {
 # @exit_code:   0 - успешно
 #               $? - ошибка выполнения модулей
 main() {
-    i18n::init
+    i18n::load
     log_start
 
     io::confirm_action "$(_ "ssh.modify.confirm")" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)

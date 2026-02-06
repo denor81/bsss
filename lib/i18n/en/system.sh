@@ -28,9 +28,11 @@ I18N_MESSAGES["common.helpers.ufw.disabled"]="UFW: Fully deactivated [ufw --forc
 I18N_MESSAGES["common.helpers.ufw.already_disabled"]="UFW: deactivated"
 I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Sending rollback disable signal USR1 [PID: %s]"
 I18N_MESSAGES["common.helpers.rollback.stop_received"]="Received USR1 signal - stopping script due to rollback"
+I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Created FIFO: %s"
+
+# Exit signals
 I18N_MESSAGES["common.helpers.rollback.exit_received"]="Received EXIT signal [RC: %s]"
 I18N_MESSAGES["common.helpers.rollback.int_received"]="Received INT signal [RC: %s]"
-I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Created FIFO: %s"
 
 # Init helpers
 I18N_MESSAGES["init.gawk.not_installed"]="Critical dependency - 'gawk' not installed"

@@ -54,7 +54,7 @@ source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 #               2 - отказ пользователя от установки UFW
 #               $? - иная ошибка
 main() {
-    i18n::init
+    i18n::load
     check
 }
 

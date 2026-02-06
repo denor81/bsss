@@ -34,7 +34,7 @@ check() {
 # @exit_code:   0 - проверка прошла успешно
 #               $? - ошибка проверки
 main() {
-    i18n::init
+    i18n::load
     check
 }
 

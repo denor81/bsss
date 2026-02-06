@@ -52,7 +52,7 @@ ufw::orchestrator::run_module() {
 #               130 - прерывание по Ctrl+C
 #               $? - ошибка выполнения модулей
 main() {
-    i18n::init
+    i18n::load
     log_start
 
     io::confirm_action "$(_ "ufw.modify.confirm")" || return

@@ -185,7 +185,7 @@ rollback::orchestrator::watchdog_timer() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 main() {
-    i18n::init
+    i18n::load
     rollback::orchestrator::watchdog_timer "$@"
 }
 

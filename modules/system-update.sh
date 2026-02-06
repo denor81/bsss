@@ -68,7 +68,7 @@ sys::update::orchestrator() {
 #               2 - отказ пользователя (io::confirm_action)
 #               $? - код ошибки дочернего процесса
 main() {
-    i18n::init
+    i18n::load
     log_start
     
     # Запуск или возврат кода 2 при отказе пользователя
