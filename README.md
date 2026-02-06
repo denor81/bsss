@@ -30,7 +30,7 @@ Choose **Y** for one-time run or **n** to install system-wide.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh | sudo bash
-# Choose 'n' when prompted
+# Choose 'i' when prompted
 ```
 
 After installation:
