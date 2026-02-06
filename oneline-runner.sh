@@ -546,7 +546,7 @@ install::runner::main() {
 declare -gA I18N_MESSAGES_RU=(
     [installer.no_translate]="%s"
     [installer.hello]="Basic Server Security Setup (%s) - oneline запуск..."
-    [installer.ask_language.question]="Язык (r->rus) | Language (e->eng)"
+    [installer.ask_language.question]="Русский [r] | English [e]"
     [installer.ask_language.selected]="Выбран язык"
     [installer.error_invalid_input]="Неверный выбор"
     [installer.cleanup.start]="Запуск процедуры очистки по причине: %s"
