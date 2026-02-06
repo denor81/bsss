@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# oneline-runner2.sh
+# oneline-runner.sh
 # Загрузчик для установки проекта одной командой
-# Usage: curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner2.sh | sudo bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh | sudo bash
 
 #
 #
 #
-# Логирование oneline-runner2.sh происходит в journalctl
+# Логирование oneline-runner.sh происходит в journalctl
 # journalctl -t bsss --since '10 minutes ago'
 #
 #
@@ -241,7 +241,7 @@ install::ui::ask_run_mode() {
         read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] $(_ "installer.ask_run_mode.prompt")" -r </dev/tty
         choice=${REPLY:-Y}
 
-        if [[ ${choice,,} =~ ^[ync]$ ]]; then
+        if [[ ${choice,,} =~ ^[yic]$ ]]; then
             break
         fi
 
@@ -556,8 +556,8 @@ declare -gA I18N_MESSAGES_RU=(
     [installer.error_root_required]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
     [installer.ask_run_mode.question]="Запустить %s однократно?"
     [installer.ask_run_mode.options]="Y - запуск однократно / n - установить / c - отмена"
-    [installer.ask_run_mode.prompt]="Ваш выбор (Y/n/c)"
-    [installer.ask_run_mode.invalid]="Неверный выбор [%s]. Пожалуйста, выберите [ync]"
+    [installer.ask_run_mode.prompt]="Ваш выбор (Y/i/c)"
+    [installer.ask_run_mode.invalid]="Неверный выбор [%s]. Пожалуйста, выберите [yic]"
     [installer.ask_run_mode.cancelled]="Выбрана отмена (%s)"
     [installer.ask_run_mode.install]="Выбрана установка (%s)"
     [installer.ask_run_mode.onetime]="Выбран разовый запуск (%s)"
@@ -601,8 +601,8 @@ declare -gA I18N_MESSAGES_EN=(
     [installer.error_root_required]="Root privileges required or run via 'sudo'. Running as regular user."
     [installer.ask_run_mode.question]="Run %s one-time?"
     [installer.ask_run_mode.options]="Y - run once / n - install / c - cancel"
-    [installer.ask_run_mode.prompt]="Your choice (Y/n/c)"
-    [installer.ask_run_mode.invalid]="Invalid choice [%s]. Please choose [ync]"
+    [installer.ask_run_mode.prompt]="Your choice (Y/i/c)"
+    [installer.ask_run_mode.invalid]="Invalid choice [%s]. Please choose [yic]"
     [installer.ask_run_mode.cancelled]="Cancel selected (%s)"
     [installer.ask_run_mode.install]="Install selected (%s)"
     [installer.ask_run_mode.onetime]="One-time run selected (%s)"
