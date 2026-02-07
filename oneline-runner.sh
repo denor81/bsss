@@ -267,7 +267,7 @@ install::permissions::check_root() {
 install::ui::ask_run_mode() {
     local choice
 
-    choice=$(installer::ask_value "$(_ "installer.ask_run_mode.prompt")" "y" "[yic]" "Y/i/c" "c")
+    choice=$(installer::ask_value "$(_ "installer.ask_run_mode.prompt")" "y" "[yic]" "Y/i/c" "c" | tr -d '\0')
 
     if [[ $choice =~ ^[Cc]$ ]]; then
         log_info "$(_ "installer.ask_run_mode.cancelled" "$choice")"
