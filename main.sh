@@ -221,7 +221,7 @@ runner::module::run_modify() {
             i18n::load
         elif [[ "$selected_module" == "EXIT" ]]; then
             break
-        fi 
+        fi
 
         # Обработка результата выполнения модуля
         if [[ -f "$selected_module" ]]; then

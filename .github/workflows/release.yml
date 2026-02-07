@@ -32,7 +32,16 @@ jobs:
           # ВАЖНО: 'git archive' берет файлы из коммита, а нам нужны измененные на диске.
           # Поэтому используем обычный tar, чтобы включить локальные правки sed.
           # tar -czf "$FILE_NAME" --exclude=".git" --exclude="$FILE_NAME" .
-          tar -czf "../$FILE_NAME" --exclude=".git" .
+          # tar -czf "../$FILE_NAME" --exclude=".git" .
+          tar -czf "/tmp/$FILE_NAME" \
+            --exclude=".git" \
+            --exclude=".github" \
+            --exclude=".gitattributes" \
+            --exclude=".gitignore" \
+            --exclude="modules" \
+            --exclude="utils" \
+            --exclude="main.sh" \
+            .
           mv "../$FILE_NAME" .
 
           sha256sum "$FILE_NAME" > "$CHECKSUM_NAME"

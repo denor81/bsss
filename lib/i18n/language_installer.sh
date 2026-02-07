@@ -17,7 +17,7 @@ i18n::installer::discover_languages() {
 # @stdout:      selected_lang_code\0
 # @exit_code:   0 - выбор сделан
 #               1 - нет доступных языков (критическая ошибка)
-i18n::installer::show_language_menu() {
+i18n::installer::select_language() {
     local -a lang_codes=()
     local i
 
@@ -32,11 +32,13 @@ i18n::installer::show_language_menu() {
     for ((i = 0; i < ${#lang_codes[@]}; i++)); do
         log_info_simple_tab "$(_ "no_translate" "$((i + 1)).") ${lang_codes[$i]}"
     done
-    log_info_simple_tab "$(_ "common.exit" "0")"
+    local menu_exit="0"
+    log_info_simple_tab "$(_ "common.exit" "$menu_exit")"
 
     local max_id=${#lang_codes[@]}
     local selection
-    read -r -d '' selection < <(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[0-$max_id]$" "0-$max_id")
+    selection=$(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[0-$max_id]$" "0-$max_id" "$menu_exit") || return 2
+    # read -r -d '' selection < <(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[0-$max_id]$" "0-$max_id" "$menu_exit")
 
     printf '%s\0' "${lang_codes[$((selection - 1))]}"
 }
@@ -60,9 +62,19 @@ i18n::installer::write_lang_file() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-#               1 - критическая ошибка
+#               1 - неизвестная ошибка
+#               2|130 - отмена пользователя
 i18n::installer::lang_setup() {
-    i18n::installer::discover_languages | i18n::installer::show_language_menu | i18n::installer::write_lang_file
+    # set -e завершает процесс, по этому лезем в код пайпа 1 и смотрим - была ли там отмена по коду 2
+    i18n::installer::discover_languages | i18n::installer::select_language | i18n::installer::write_lang_file || {
+        local rc_pipe=("${PIPESTATUS[@]}")
+        local rc=${rc_pipe[1]}
+        
+        case $rc in
+            2|130) return $rc ;; # Пробрасываем код 2/130
+            *) return 1 ;; # Неизвестная ошибка
+        esac
+    }
 }
 
 # @type:        Orchestrator
@@ -91,9 +103,14 @@ i18n::installer::lang_setup_from_param() {
 # @exit_code:   0 - успешно
 i18n::installer::dispatcher() { 
     local lang_code="$1"
-    [[ -n "$lang_code" ]] && i18n::installer::lang_setup_from_param "$lang_code"
-    [[ ! -f "$LANG_FILE" ]] && i18n::installer::lang_setup
-    return 0
+
+    if [[ -n "$lang_code" ]]; then
+        i18n::installer::lang_setup_from_param "$lang_code"
+    elif [[ ! -f "$LANG_FILE" ]]; then
+        i18n::installer::lang_setup
+    else
+        return # Код языка будет загружен из файла
+    fi
 }
 
 # @type:        Filter
