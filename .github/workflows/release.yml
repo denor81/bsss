@@ -31,8 +31,8 @@ jobs:
           # 2. Теперь создаем архив (в него попадут уже измененные файлы)
           # ВАЖНО: 'git archive' берет файлы из коммита, а нам нужны измененные на диске.
           # Поэтому используем обычный tar, чтобы включить локальные правки sed.
-          tar -czf "$FILE_NAME" --exclude=".git" . 
-          
+          tar -czf "$FILE_NAME" --exclude=".git" --exclude="$FILE_NAME" .
+
           sha256sum "$FILE_NAME" > "$CHECKSUM_NAME"
           
           echo "archive=$FILE_NAME" >> $GITHUB_OUTPUT
