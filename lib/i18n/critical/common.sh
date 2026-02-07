@@ -1,6 +1,10 @@
 # Critical messages (English)
 
+# Special message - pass through without translation
 I18N_MESSAGES["no_translate"]="%s"
+
+# Basic messages
+I18N_MESSAGES["common.exit"]="%s. Exit"
 
 # Exit signals
 I18N_MESSAGES["common.helpers.rollback.exit_received"]="Received EXIT signal [RC: %s]"
