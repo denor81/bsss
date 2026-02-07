@@ -9,6 +9,7 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 readonly ALLOWED_PARAMS="hul:"
 readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление | -l [ru|en] язык]"
 PARAMS_ACTION=""
+PARAMS_LANG=""
 
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
@@ -38,9 +39,9 @@ parse_params() {
         case "${opt}" in
             h)  PARAMS_ACTION="help" ;;
             u)  PARAMS_ACTION="uninstall" ;;
-            l)  i18n::installer::lang_setup_from_param "$OPTARG" ;;
-            \?) log_error "Invalid parameter -$OPTARG, available: $ALLOWED_PARAMS"; return 1 ;;
-            :)  log_error "Parameter -$OPTARG requires a value"; return 1 ;;
+            l)  PARAMS_LANG="$OPTARG" ;;
+            \?) log_error "$(_ "no_translate" "Invalid parameter -$OPTARG, available: $ALLOWED_PARAMS")"; return 1 ;;
+            :)  log_error "$(_ "no_translate" "Parameter -$OPTARG requires a value")"; return 1 ;;
         esac
     done
 }
@@ -75,7 +76,7 @@ show_help() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-log_init() {
+log_dir_init() {
     local real_log="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
     
     # 1. Создаем дерево директорий
@@ -177,16 +178,16 @@ runner::module::select_modify() {
     local menu_check="00"
     local menu_lang="01"
     
-    log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_exit" "$(_ "common.exit")")"
-    log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_check" "$(_ "common.menu_check")")"
-    log_info_simple_tab "$(_ "common.info_menu_item_format" "$menu_lang" "$(_ "common.menu_language")")"
+    log_info_simple_tab "$(_ "common.exit" "$menu_exit")"
+    log_info_simple_tab "$(_ "common.menu_check" "$menu_check")"
+    log_info_simple_tab "$(_ "common.menu_language" "$menu_lang")"
 
     # Запрашиваем выбор пользователя
     local selection
     read -r -d '' selection < <(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[0-$max_id])$" "0-$max_id")
 
     case "$selection" in
-        "$menu_exit") log_info "$(_ "common.exit")"; printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
+        "$menu_exit") printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
         "$menu_check") printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
         "$menu_lang") printf '%s\0' "LANG_CHANGE" ;; # Возвращаем маркер смены языка
         *)  printf '%s\0' "${module_paths[$((selection - 1))]}" ;; # Возвращаем выбранный путь
@@ -217,6 +218,7 @@ runner::module::run_modify() {
             runner::module::run_check
         elif [[ "$selected_module" == "LANG_CHANGE" ]]; then
             i18n::installer::lang_setup
+            i18n::load
         elif [[ "$selected_module" == "EXIT" ]]; then
             break
         fi 
@@ -263,15 +265,13 @@ run() {
 # @exit_code:   0 - успешно
 #               $? - ошибка проверки прав или параметров
 main() {
-    parse_params "$@"
-    
-    if (( ${#I18N_MESSAGES[@]} == 0 )); then
-        i18n::installer::check_lang_file && i18n::load || i18n::installer::lang_setup
-    fi
-
-    log_init
+    log_dir_init
     log_start
     check_permissions
+    parse_params "$@"
+
+    i18n::installer::dispatcher "$PARAMS_LANG"
+    i18n::load
 
     case "$PARAMS_ACTION" in
         help)      show_help ;;

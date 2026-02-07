@@ -11,7 +11,7 @@ readonly I18N_DIR="${PROJECT_ROOT}/lib/i18n"
 # @stdout:      lang_code\0 (например: ru\0en\0)
 # @exit_code:   0 - успех
 i18n::get_languages() {
-    find "$I18N_DIR" -maxdepth 1 -mindepth 1 -type d -not -path '*/.*' -printf '%f\0' | sort -z
+    find "$I18N_DIR" -maxdepth 1 -mindepth 1 -type d ! -path '*/.*' ! -name "critical" -printf '%f\0' | sort -z
 }
 
 # @type:        Filter
@@ -107,7 +107,7 @@ i18n::extract_keys_from_code() {
     for dir in "${search_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
             # Извлекаем ключи из метазаголовков (# MODULE_NAME: module.ufw.name)
-            find "$dir" -type f -name "*.sh" -print0 2>/dev/null | \
+            find "$dir" -type f -name "*.sh" ! -name "oneline-runner.sh" -print0 2>/dev/null | \
                 xargs -0 cat 2>/dev/null | \
                 gawk '
                     {
@@ -118,7 +118,7 @@ i18n::extract_keys_from_code() {
                 '
 
             # Извлекаем ключи из кода ($(_ "common.error_no_modules_available"))
-            find "$dir" -type f -name "*.sh" -not -name "oneline-runner.sh" -print0 2>/dev/null | \
+            find "$dir" -type f -name "*.sh" ! -name "oneline-runner.sh" -print0 2>/dev/null | \
                 xargs -0 cat 2>/dev/null | \
                 gawk '
                     {

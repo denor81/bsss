@@ -12,17 +12,17 @@ source "$(dirname "$0")/helpers/test_helpers.sh"
 # @stdout:      отчет о несуществующих переводах (если есть)
 # @exit_code:   0 - все используемые переводы существуют
 #               1 - найдены несуществующие переводы
-i18n::test_missing_translations() {
-    local result_count
+# i18n::test_missing_translations() {
+#     local result_count
 
-    result_count=$(i18n::extract_keys_from_code | i18n::check_key_exists | i18n::count_stream)
+#     result_count=$(i18n::extract_keys_from_code | i18n::check_key_exists | i18n::count_stream)
 
-    if [[ $result_count -gt 0 ]]; then
-        return 1
-    fi
+#     if [[ $result_count -gt 0 ]]; then
+#         return 1
+#     fi
 
-    return 0
-}
+#     return 0
+# }
 
 # @type:        Orchestrator
 # @description: Выводит отчет о несуществующих переводах

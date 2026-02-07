@@ -2,11 +2,20 @@
 # @description: Определяет текущий язык из файла .lang
 # @params:      нет
 # @stdin:       нет
-# @stdout:      lang_code (например: ru|en)
+# @stdout:      lang_code (без разделителей)
 # @exit_code:   0 - успех
+#               1 - файл переводов не найден
 i18n::detect_language() {
-    [[ -f "$LANG_FILE" ]] && cat "$LANG_FILE" 2>/dev/null || printf '%s' "$DEFAULT_LANG"
+    if [[ -f "$LANG_FILE" ]]; then
+        cat "$LANG_FILE" | tr -d '[:space:]'
+        return
+    fi
+
+    log_error "$(_ "no_translate" "File [.lang] does not exists")"
+    return 1
 }
+
+
 
 # @type:        Orchestrator
 # @description: Загружает все файлы переводов для выбранного языка
@@ -16,33 +25,26 @@ i18n::detect_language() {
 # @exit_code:   0 - успех
 #               1 - файл переводов не найден
 i18n::load_translations() {
-    local lang_code i18n_dir path
-
+    local lang_code
     read -r lang_code
-    i18n_dir="${I18N_DIR}/${lang_code}"
     
-    [[ ! -d "$i18n_dir" ]] && return 1
-    
-    declare -gA I18N_MESSAGES=() # Обнуляем массив
+    local path
     while IFS= read -r -d '' path; do
         [[ -f "$path" ]] && source "$path"
-    done < <(find "$i18n_dir" -type f -maxdepth 1 -name "*.sh" -print0)
+    done < <(find "${I18N_DIR}/${lang_code}" -type f -maxdepth 1 -name "*.sh" -print0)
 }
 
 # @type:        Orchestrator
 # @description: Инициализирует систему i18n (обнаруживает и загружает)
-# @params:      lang_code\0
+# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успех
 #               $? - pipefail
 i18n::load() {
-    local lang_code="${1:-}"
-    if [[ -n "$lang_code" ]]; then
-        i18n::load_translations <<< "$(printf '%s' "$lang_code")"
-    else
-        i18n::load_translations <<< "$(i18n::detect_language)"
-    fi
+    local lang_code
+    lang_code=$(i18n::detect_language)
+    i18n::load_translations <<< "$lang_code"
 }
 
 # @type:        Source
@@ -52,18 +54,22 @@ i18n::load() {
 # @stdin:       нет
 # @stdout:      Переведенное сообщение
 # @exit_code:   0 - успех
-#               1 - ключ не найден
 _() {
     local key="$1"
     shift
     
-    # if (( ${#I18N_MESSAGES[@]} == 0 )); then
-    #     i18n::load "$DEFAULT_LANG"
-    # fi
-
     if [[ -v I18N_MESSAGES["$key"] ]]; then
-        printf "${I18N_MESSAGES["$key"]}" "$@"
-    else
-        printf '%s' "[$key] NOT TRANSLATED" >&2
+        local template="${I18N_MESSAGES["$key"]}"
+        
+        if [[ $# -eq 0 ]]; then
+            printf '%s' "$template"
+        else
+            printf "$template" "$@"
+        fi
+        return
     fi
+    
+    # 4. Fallback для отсутствующего перевода
+    printf '%s' "$(_ "no_translate" "[Key '$key' NOT TRANSLATED]" "$@")"
 }
+

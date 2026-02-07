@@ -8,7 +8,7 @@ project-v1.0.0.tar.gz
 logs/
 .lang
 docs/plans/
-oneline-runner_copy.sh
+oneline-runner_copy.sh*
 
 # Git worktrees
 .worktrees/

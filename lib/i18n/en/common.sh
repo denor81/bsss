@@ -4,7 +4,7 @@
 I18N_MESSAGES["no_translate"]="%s"
 
 # Basic messages
-I18N_MESSAGES["common.exit"]="Exit"
+I18N_MESSAGES["common.exit"]="%s. Exit"
 
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Root privileges or run with 'sudo' required. Running as regular user."
@@ -26,7 +26,7 @@ I18N_MESSAGES["common.success_module_runner_started"]="Basic Server Security Set
 
 # Menu messages
 I18N_MESSAGES["common.menu_header"]="Available actions:"
-I18N_MESSAGES["common.menu_check"]="System check (check)"
+I18N_MESSAGES["common.menu_check"]="%s. System check"
 
 # Error messages - module runner
 I18N_MESSAGES["common.error_no_modules_found"]="Cannot run, modules not found"
