@@ -189,8 +189,7 @@ installer::ask_value() {
 # @exit_code:   0 - язык выбран
 installer::ui::ask_language() {
     local lang
-
-    lang=$(installer::ask_value "$(_ "installer.no_translate" "Русский [r] | English [e]")" "r" "[re]" "r/e")
+    read -r -d '' lang < <(installer::ask_value "$(_ "no_translate" "Русский [r] | English [e]")" "r" "[re]" "r/e")
 
     if [[ "$lang" =~ ^[Ee]$ ]]; then
         INSTALLER_LANG="en"
@@ -198,7 +197,7 @@ installer::ui::ask_language() {
         INSTALLER_LANG="ru"
     fi
 
-    log_info "$(_ "installer.ask_language.selected") [$INSTALLER_LANG]"
+    log_info "$(_ "ask_language.selected") [$INSTALLER_LANG]"
 }
 
 # @type:        Sink
@@ -208,7 +207,7 @@ installer::ui::ask_language() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 install::ui::hello() {
-    log_info "$(_ "installer.hello" "${UTIL_NAME^^}")"
+    log_info "$(_ "hello" "${UTIL_NAME^^}")"
 }
 
 # @type:        Orchestrator
@@ -225,20 +224,20 @@ install::cleanup::handler() {
         return 0
     fi
 
-    log_info "$(_ "installer.cleanup.start" "[RC: $rc]")"
+    log_info "$(_ "cleanup.start" "[RC: $rc]")"
 
     if [[ "${#CLEANUP_COMMANDS[@]}" -eq 0 ]]; then
-        log_info "$(_ "installer.cleanup.nothing_to_cleanup")"
+        log_info "$(_ "cleanup.nothing_to_cleanup")"
     fi
 
     local i
     for i in "${!CLEANUP_COMMANDS[@]}"; do
         local cmd="${CLEANUP_COMMANDS[$i]}"
-        log_info "$(_ "installer.cleanup.removing" "$cmd")"
+        log_info "$(_ "cleanup.removing" "$cmd")"
         rm -rf $cmd
         unset 'CLEANUP_COMMANDS[$i]'
     done
-    log_success "$(_ "installer.cleanup.complete")"
+    log_success "$(_ "cleanup.complete")"
     CLEANUP_DONE_FLAG=1
 }
 
@@ -251,7 +250,7 @@ install::cleanup::handler() {
 #               1 - недостаточно прав
 install::permissions::check_root() {
     if [[ $EUID -ne 0 ]]; then
-        log_error "$(_ "installer.error_root_required")"
+        log_error "$(_ "error_root_required")"
         return 1
     fi
 }
@@ -266,23 +265,22 @@ install::permissions::check_root() {
 #               2 - отменено пользователем
 install::ui::ask_run_mode() {
     local choice
-
-    choice=$(installer::ask_value "$(_ "installer.ask_run_mode.prompt")" "y" "[yic]" "Y/i/c" "c" | tr -d '\0')
+    read -r -d '' choice < <(installer::ask_value "$(_ "ask_run_mode.prompt")" "y" "[yic]" "Y/i/c" "c")
 
     if [[ $choice =~ ^[Cc]$ ]]; then
-        log_info "$(_ "installer.ask_run_mode.cancelled" "$choice")"
+        log_info "$(_ "ask_run_mode.cancelled" "$choice")"
         return 2
     elif [[ $choice =~ ^[Ii]$ ]]; then
-        log_info "$(_ "installer.ask_run_mode.install" "$choice")"
+        log_info "$(_ "ask_run_mode.install" "$choice")"
         if [[ -d "$INSTALL_DIR" ]]; then
-            log_error "$(_ "installer.error_already_installed")"
-            log_info "$(_ "installer.info_installed_usage")"
-            log_info "$(_ "installer.info_installed_uninstall")"
+            log_error "$(_ "error_already_installed")"
+            log_info "$(_ "info_installed_usage")"
+            log_info "$(_ "info_installed_uninstall")"
             return 1
         fi
         SYS_INSTALL_FLAG=1
     elif [[ $choice =~ ^[Yy]$ ]]; then
-        log_info "$(_ "installer.ask_run_mode.onetime" "$choice")"
+        log_info "$(_ "ask_run_mode.onetime" "$choice")"
         ONETIME_RUN_FLAG=1
     fi
 }
@@ -308,7 +306,7 @@ install::tmp::create() {
         CLEANUP_COMMANDS+=("$temp_dir")
     fi
 
-    log_info "$(_ "installer.tmpdir.created" "$temp_dir")"
+    log_info "$(_ "tmpdir.created" "$temp_dir")"
 }
 
 # @type:        Source
@@ -330,20 +328,20 @@ install::download::archive() {
         tmparchive=$(mktemp --tmpdir "$UTIL_NAME"-archive-XXXXXX.tar.gz)
     fi
 
-    log_info "$(_ "installer.download.start" "$archive_url")"
+    log_info "$(_ "download.start" "$archive_url")"
 
     if [[ "$add_to_cleanup" == "true" ]]; then
         CLEANUP_COMMANDS+=("$tmparchive")
     fi
 
     if ! curl -fL --progress-meter "$archive_url" -o "$tmparchive"; then
-        log_error "$(_ "installer.download.failed")"
+        log_error "$(_ "download.failed")"
         return 1
     fi
 
     local fsize=""
     fsize=$(stat -c "%s" "$tmparchive" | gawk '{printf "%.2f KB\n", $1/1024}')
-    log_info "$(_ "installer.downloaded" "$tmparchive" "$fsize" "$(file -ib "$tmparchive")")"
+    log_info "$(_ "downloaded" "$tmparchive" "$fsize" "$(file -ib "$tmparchive")")"
 
     TMPARCHIVE="$tmparchive"
 }
@@ -363,12 +361,12 @@ install::archive::unpack() {
 
     local tar_output=""
     tar_output=$(tar -xzf "$tmparchive" -C "$temp_project_dir" 2>&1 ) || {
-        log_error "$(_ "installer.unpack.failed" "$tar_output")"
+        log_error "$(_ "unpack.failed" "$tar_output")"
         return 1
     }
     local dir_size=""
     dir_size=$(du -sb "$temp_project_dir" | cut -f1 | gawk '{printf "%.2f KB\n", $1/1024}' )
-    log_info "$(_ "installer.unpacked" "$temp_project_dir" "$dir_size")"
+    log_info "$(_ "unpacked" "$temp_project_dir" "$dir_size")"
 }
 
 # @type:        Filter
@@ -387,10 +385,10 @@ install::archive::check() {
 
     TMP_MAIN_SCRIPT_PATH="${3:-$(find "$temp_project_dir" -type f -name "$main_script_file_name")}"
     if [[ -z "$TMP_MAIN_SCRIPT_PATH" ]]; then
-        log_error "$(_ "installer.check.not_found" "$main_script_file_name")"
+        log_error "$(_ "check.not_found" "$main_script_file_name")"
         return 1
     fi
-    log_info "$(_ "installer.check.found" "$main_script_file_name")"
+    log_info "$(_ "check.found" "$main_script_file_name")"
 }
 
 # @type:        Sink
@@ -407,13 +405,13 @@ install::log::add_path() {
     local install_log_path="${2:-$INSTALL_DIR/$INSTALL_LOG_FILE_NAME}"
 
     if [[ -z "$uninstall_path" ]]; then
-        log_error "$(_ "installer.log.no_path")"
+        log_error "$(_ "log.no_path")"
         return 1
     fi
 
     if ! grep -Fxq "$uninstall_path" "$install_log_path" 2>/dev/null; then
         echo "$uninstall_path" >> "$install_log_path"
-        log_info "$(_ "installer.log.path_added" "$uninstall_path" "$install_log_path")"
+        log_info "$(_ "log.path_added" "$uninstall_path" "$install_log_path")"
     fi
 }
 
@@ -429,7 +427,7 @@ install::symlink::check_exists() {
     local symlink_path="${1:-$SYMBOL_LINK_PATH}"
 
     if [[ -L "$symlink_path" ]]; then
-        log_error "$(_ "installer.symlink.exists" "$UTIL_NAME")"
+        log_error "$(_ "symlink.exists" "$UTIL_NAME")"
         return 1
     fi
 }
@@ -445,9 +443,9 @@ install::symlink::check_exists() {
 install::dir::create() {
     local install_dir="${1:-$INSTALL_DIR}"
 
-    log_info "$(_ "installer.dir.creating" "$install_dir")"
+    log_info "$(_ "dir.creating" "$install_dir")"
     mkdir -p "$install_dir" || {
-        log_error "$(_ "installer.dir.create_failed" "$install_dir")"
+        log_error "$(_ "dir.create_failed" "$install_dir")"
         return 1
     }
     install::log::add_path "$install_dir"
@@ -466,10 +464,10 @@ install::files::copy() {
     local tmp_dir_path="${1:-$(dirname "$TMP_MAIN_SCRIPT_PATH")}"
     local install_dir="${2:-$INSTALL_DIR}"
 
-    log_info "$(_ "installer.files.copying" "$tmp_dir_path" "$install_dir")"
+    log_info "$(_ "files.copying" "$tmp_dir_path" "$install_dir")"
 
     cp -r "$tmp_dir_path"/* "$install_dir/" || {
-        log_error "$(_ "installer.files.copy_failed")"
+        log_error "$(_ "files.copy_failed")"
         return 1
     }
 }
@@ -494,11 +492,11 @@ install::symlink::create() {
     local main_script_path="$install_dir/$main_script_file_name"
 
     ln -s "$main_script_path" "$symbol_link_path" || {
-        log_error "$(_ "installer.symlink.create_failed")"
+        log_error "$(_ "symlink.create_failed")"
         return 1
     }
 
-    log_info "$(_ "installer.symlink.created" "$util_name" "$main_script_path" "$(dirname "$symbol_link_path")")"
+    log_info "$(_ "symlink.created" "$util_name" "$main_script_path" "$(dirname "$symbol_link_path")")"
     install::log::add_path "$symbol_link_path"
 }
 
@@ -512,7 +510,7 @@ install::symlink::create() {
 install::permissions::set() {
     local install_dir="${1:-$INSTALL_DIR}"
 
-    log_info "$(_ "installer.permissions.setting" "$install_dir")"
+    log_info "$(_ "permissions.setting" "$install_dir")"
     # chmod +x "$install_dir"/*.sh 2>/dev/null
     chmod a+rwx,o+t "$install_dir" 2>/dev/null
 
@@ -532,8 +530,8 @@ install::to_system() {
     install::symlink::create
     install::permissions::set
 
-    log_success "$(_ "installer.install.complete")"
-    log_info "$(_ "installer.install.usage" "$UTIL_NAME" "$UTIL_NAME")"
+    log_success "$(_ "install.complete")"
+    log_info "$(_ "install.usage" "$UTIL_NAME" "$UTIL_NAME")"
 }
 
 # @type:        Orchestrator
@@ -558,7 +556,7 @@ sys::run_or_install::prepare() {
 # @exit_code:   0 - успешно
 #               $? - ошибка выполнения
 install::runner::main() {
-    log_info "$(_ "installer.no_translate" "For logs type [journalctl -t bsss --since '10 minutes ago']")"
+    log_info "$(_ "no_translate" "For logs type [journalctl -t bsss --since '10 minutes ago']")"
     installer::ui::ask_language
     install::ui::hello
     install::permissions::check_root
@@ -581,86 +579,86 @@ install::runner::main() {
 
 # Russian translations
 declare -gA I18N_MESSAGES_RU=(
-    [installer.no_translate]="%s"
-    [installer.hello]="Basic Server Security Setup (%s) - oneline запуск..."
-    [installer.ask_language.selected]="Выбран язык"
-    [installer.error_invalid_input]="Неверный выбор"
-    [installer.cleanup.start]="Запуск процедуры очистки: %s"
-    [installer.cleanup.nothing_to_cleanup]="Очистка не требуется - ничего не было установлено/распаковано"
-    [installer.cleanup.removing]="Удаляю: %s"
-    [installer.cleanup.complete]="Очистка завершена"
-    [installer.error_root_required]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
-    [installer.ask_run_mode.prompt]="Разовый запуск [Y] | Установка [i] | Отмена [c]"
-    [installer.ask_run_mode.invalid]="Неверный выбор [%s]. Пожалуйста, выберите [yic]"
-    [installer.ask_run_mode.cancelled]="Выбрана отмена (%s)"
-    [installer.ask_run_mode.install]="Выбрана установка (%s)"
-    [installer.ask_run_mode.onetime]="Выбран разовый запуск (%s)"
-    [installer.error_already_installed]="Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога."
-    [installer.info_installed_usage]="Для запуска Basic Server Security Setup (${UTIL_NAME^^}) используйте команду: sudo ${UTIL_NAME}, если не сработает - проверьте, что установлено в каталоге ${INSTALL_DIR} или куда ссылается ссылка ${UTIL_NAME} [find /bin /usr/bin /usr/local/bin -type l -ls | grep ${UTIL_NAME}] или [realpath ${UTIL_NAME}]"
-    [installer.info_installed_uninstall]="Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo ${UTIL_NAME} -u"
-    [installer.tmpdir.created]="Создана временная директория %s"
-    [installer.download.start]="Скачиваю архив: %s"
-    [installer.download.failed]="Не удалось скачать архив (проверьте интернет или URL)"
-    [installer.downloaded]="Архив скачан в %s (размер: %s, тип: %s)"
-    [installer.unpack.failed]="Ошибка распаковки архива - %s"
-    [installer.unpacked]="Архив распакован в %s (размер: %s)"
-    [installer.check.not_found]="При проверке наличия исполняемого файла произошла ошибка - файл %s не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
-    [installer.check.found]="Исполняемый файл %s найден"
-    [installer.log.no_path]="Не указан путь для добавления в лог удаления"
-    [installer.log.path_added]="Путь %s добавлен в лог удаления %s"
-    [installer.symlink.exists]="Символическая ссылка %s уже существует"
-    [installer.dir.creating]="Создаю директорию %s"
-    [installer.dir.create_failed]="Не удалось создать директорию %s"
-    [installer.files.copying]="Копирую файлы из %s в %s"
-    [installer.files.copy_failed]="Не удалось скопировать файлы"
-    [installer.symlink.create_failed]="Не удалось создать символическую ссылку"
-    [installer.symlink.created]="Создана символическая ссылка %s для запуска %s. (Расположение ссылки: %s)"
-    [installer.permissions.setting]="Устанавливаю права запуска (+x) в %s для .sh файлов"
-    [installer.install.start]="Устанавливаю %s в систему..."
-    [installer.install.complete]="Установка в систему завершена"
-    [installer.install.usage]="Используйте для запуска: sudo %s, для удаления: sudo %s -u"
+    [no_translate]="%s"
+    [hello]="Basic Server Security Setup (%s) - oneline запуск..."
+    [ask_language.selected]="Выбран язык"
+    [error_invalid_input]="Неверный выбор"
+    [cleanup.start]="Запуск процедуры очистки: %s"
+    [cleanup.nothing_to_cleanup]="Очистка не требуется - ничего не было установлено/распаковано"
+    [cleanup.removing]="Удаляю: %s"
+    [cleanup.complete]="Очистка завершена"
+    [error_root_required]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
+    [ask_run_mode.prompt]="Разовый запуск [Y] | Установка [i] | Отмена [c]"
+    [ask_run_mode.invalid]="Неверный выбор [%s]. Пожалуйста, выберите [yic]"
+    [ask_run_mode.cancelled]="Выбрана отмена (%s)"
+    [ask_run_mode.install]="Выбрана установка (%s)"
+    [ask_run_mode.onetime]="Выбран разовый запуск (%s)"
+    [error_already_installed]="Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога."
+    [info_installed_usage]="Для запуска Basic Server Security Setup (${UTIL_NAME^^}) используйте команду: sudo ${UTIL_NAME}, если не сработает - проверьте, что установлено в каталоге ${INSTALL_DIR} или куда ссылается ссылка ${UTIL_NAME} [find /bin /usr/bin /usr/local/bin -type l -ls | grep ${UTIL_NAME}] или [realpath ${UTIL_NAME}]"
+    [info_installed_uninstall]="Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo ${UTIL_NAME} -u"
+    [tmpdir.created]="Создана временная директория %s"
+    [download.start]="Скачиваю архив: %s"
+    [download.failed]="Не удалось скачать архив (проверьте интернет или URL)"
+    [downloaded]="Архив скачан в %s (размер: %s, тип: %s)"
+    [unpack.failed]="Ошибка распаковки архива - %s"
+    [unpacked]="Архив распакован в %s (размер: %s)"
+    [check.not_found]="При проверке наличия исполняемого файла произошла ошибка - файл %s не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
+    [check.found]="Исполняемый файл %s найден"
+    [log.no_path]="Не указан путь для добавления в лог удаления"
+    [log.path_added]="Путь %s добавлен в лог удаления %s"
+    [symlink.exists]="Символическая ссылка %s уже существует"
+    [dir.creating]="Создаю директорию %s"
+    [dir.create_failed]="Не удалось создать директорию %s"
+    [files.copying]="Копирую файлы из %s в %s"
+    [files.copy_failed]="Не удалось скопировать файлы"
+    [symlink.create_failed]="Не удалось создать символическую ссылку"
+    [symlink.created]="Создана символическая ссылка %s для запуска %s. (Расположение ссылки: %s)"
+    [permissions.setting]="Устанавливаю права запуска (+x) в %s для .sh файлов"
+    [install.start]="Устанавливаю %s в систему..."
+    [install.complete]="Установка в систему завершена"
+    [install.usage]="Используйте для запуска: sudo %s, для удаления: sudo %s -u"
 )
 
 # English translations
 declare -gA I18N_MESSAGES_EN=(
-    [installer.no_translate]="%s"
-    [installer.hello]="Basic Server Security Setup (%s) - oneline execution..."
-    [installer.ask_language.selected]="Language selected"
-    [installer.error_invalid_input]="Invalid choice"
-    [installer.cleanup.start]="Starting cleanup procedure: %s"
-    [installer.cleanup.nothing_to_cleanup]="Cleanup not required - nothing was installed/unpacked"
-    [installer.cleanup.removing]="Removing: %s"
-    [installer.cleanup.complete]="Cleanup completed"
-    [installer.error_root_required]="Root privileges required or run via 'sudo'. Running as regular user."
-    [installer.ask_run_mode.prompt]="One-time run [Y] | Install [i] | Cancel [c]"
-    [installer.ask_run_mode.invalid]="Invalid choice [%s]. Please choose [yic]"
-    [installer.ask_run_mode.cancelled]="Cancel selected (%s)"
-    [installer.ask_run_mode.install]="Install selected (%s)"
-    [installer.ask_run_mode.onetime]="One-time run selected (%s)"
-    [installer.error_already_installed]="Script already installed in the system or another script with the same directory name is installed."
-    [installer.info_installed_usage]="To launch Basic Server Security Setup (${UTIL_NAME^^}), use the command: sudo ${UTIL_NAME}. If it doesn't work, verify the installation directory is ${INSTALL_DIR} or check where the symlink points: ${UTIL_NAME} [find /bin /usr/bin /usr/local/bin -type l -ls | grep ${UTIL_NAME}] or [realpath ${UTIL_NAME}]"
-    [installer.info_installed_uninstall]="To uninstall previously installed script ${UTIL_NAME^^} run: sudo ${UTIL_NAME} -u"
-    [installer.tmpdir.created]="Created temporary directory %s"
-    [installer.download.start]="Downloading archive: %s"
-    [installer.download.failed]="Failed to download archive (check internet or URL)"
-    [installer.downloaded]="Archive downloaded to %s (size: %s, type: %s)"
-    [installer.unpack.failed]="Archive unpack error - %s"
-    [installer.unpacked]="Archive unpacked to %s (size: %s)"
-    [installer.check.not_found]="Error checking executable file - file %s not found - something is wrong... either archive unpack error or path error."
-    [installer.check.found]="Executable file %s found"
-    [installer.log.no_path]="Path not specified for uninstall log"
-    [installer.log.path_added]="Path %s added to uninstall log %s"
-    [installer.symlink.exists]="Symbolic link %s already exists"
-    [installer.dir.creating]="Creating directory %s"
-    [installer.dir.create_failed]="Failed to create directory %s"
-    [installer.files.copying]="Copying files from %s to %s"
-    [installer.files.copy_failed]="Failed to copy files"
-    [installer.symlink.create_failed]="Failed to create symbolic link"
-    [installer.symlink.created]="Created symbolic link %s for running %s. (Link location: %s)"
-    [installer.permissions.setting]="Setting execute permissions (+x) in %s for .sh files"
-    [installer.install.start]="Installing %s to system..."
-    [installer.install.complete]="System installation completed"
-    [installer.install.usage]="Use to run: sudo %s, to uninstall: sudo %s -u"
+    [no_translate]="%s"
+    [hello]="Basic Server Security Setup (%s) - oneline execution..."
+    [ask_language.selected]="Language selected"
+    [error_invalid_input]="Invalid choice"
+    [cleanup.start]="Starting cleanup procedure: %s"
+    [cleanup.nothing_to_cleanup]="Cleanup not required - nothing was installed/unpacked"
+    [cleanup.removing]="Removing: %s"
+    [cleanup.complete]="Cleanup completed"
+    [error_root_required]="Root privileges required or run via 'sudo'. Running as regular user."
+    [ask_run_mode.prompt]="One-time run [Y] | Install [i] | Cancel [c]"
+    [ask_run_mode.invalid]="Invalid choice [%s]. Please choose [yic]"
+    [ask_run_mode.cancelled]="Cancel selected (%s)"
+    [ask_run_mode.install]="Install selected (%s)"
+    [ask_run_mode.onetime]="One-time run selected (%s)"
+    [error_already_installed]="Script already installed in the system or another script with the same directory name is installed."
+    [info_installed_usage]="To launch Basic Server Security Setup (${UTIL_NAME^^}), use the command: sudo ${UTIL_NAME}. If it doesn't work, verify the installation directory is ${INSTALL_DIR} or check where the symlink points: ${UTIL_NAME} [find /bin /usr/bin /usr/local/bin -type l -ls | grep ${UTIL_NAME}] or [realpath ${UTIL_NAME}]"
+    [info_installed_uninstall]="To uninstall previously installed script ${UTIL_NAME^^} run: sudo ${UTIL_NAME} -u"
+    [tmpdir.created]="Created temporary directory %s"
+    [download.start]="Downloading archive: %s"
+    [download.failed]="Failed to download archive (check internet or URL)"
+    [downloaded]="Archive downloaded to %s (size: %s, type: %s)"
+    [unpack.failed]="Archive unpack error - %s"
+    [unpacked]="Archive unpacked to %s (size: %s)"
+    [check.not_found]="Error checking executable file - file %s not found - something is wrong... either archive unpack error or path error."
+    [check.found]="Executable file %s found"
+    [log.no_path]="Path not specified for uninstall log"
+    [log.path_added]="Path %s added to uninstall log %s"
+    [symlink.exists]="Symbolic link %s already exists"
+    [dir.creating]="Creating directory %s"
+    [dir.create_failed]="Failed to create directory %s"
+    [files.copying]="Copying files from %s to %s"
+    [files.copy_failed]="Failed to copy files"
+    [symlink.create_failed]="Failed to create symbolic link"
+    [symlink.created]="Created symbolic link %s for running %s. (Link location: %s)"
+    [permissions.setting]="Setting execute permissions (+x) in %s for .sh files"
+    [install.start]="Installing %s to system..."
+    [install.complete]="System installation completed"
+    [install.usage]="Use to run: sudo %s, to uninstall: sudo %s -u"
 )
 
 install::runner::main
