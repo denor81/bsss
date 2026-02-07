@@ -564,7 +564,7 @@ install::runner::main() {
 
     if [[ "$ONETIME_RUN_FLAG" -eq 1 ]]; then
         sys::run_or_install::prepare
-        bash "$TMP_MAIN_SCRIPT_PATH"
+        bash "$TMP_MAIN_SCRIPT_PATH" -l "$INSTALLER_LANG"
     fi
     if [[ "$SYS_INSTALL_FLAG" -eq 1 ]]; then
         log_info "Будет скачан архив последней версии релиза ${UTIL_NAME^^} [$ARCHIVE_URL]"
