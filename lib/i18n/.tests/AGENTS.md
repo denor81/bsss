@@ -13,7 +13,8 @@ lib/i18n/.tests/
 ├── run.sh                      # Запуск всех тестов одновременно
 ├── test_missing_translations.sh # Проверка неизвестных ключей перевода
 ├── test_translations.sh         # Проверка синхронизации между языками
-└── test_unused_translations.sh  # Проверка неиспользуемых ключей
+├── test_unused_translations.sh  # Проверка неиспользуемых ключей
+└── test_hardcoded_strings.sh   # Проверка захардкоженных строк
 ```
 
 ## Как запустить тесты
