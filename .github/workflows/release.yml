@@ -34,13 +34,16 @@ jobs:
           # tar -czf "$FILE_NAME" --exclude=".git" --exclude="$FILE_NAME" .
           # tar -czf "../$FILE_NAME" --exclude=".git" .
           tar -czf "/tmp/$FILE_NAME" \
-            --exclude=".git" \
+            --exclude="utils/generate_function_map.sh" \
             --exclude=".github" \
             --exclude=".gitattributes" \
+            --exclude="AGENTS.md" \
+            --exclude=".git" \
+            --exclude="oneline-runner.sh" \
+            --exclude="lib/i18n/README.md" \
+            --exclude="lib/i18n/.tests" \
             --exclude=".gitignore" \
-            --exclude="modules" \
-            --exclude="utils" \
-            --exclude="main.sh" \
+            --exclude="README.md" \
             .
           mv "../$FILE_NAME" .
 
