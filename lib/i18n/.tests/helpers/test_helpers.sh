@@ -166,3 +166,73 @@ i18n::format_missing_message() {
         printf 'Missing translation key [%s] in translation files\n' "$key" >&2
     done
 }
+
+# @type:        Source
+# @description: Ищет захардкоженные строки в printf/echo/print
+# @stdin:       нет
+# @stdout:      file_path:line_number:line_content\0
+# @exit_code:   0 - успех
+i18n::find_hardcoded_strings() {
+    local search_dirs=(
+        "${PROJECT_ROOT}/modules/helpers"
+        "${PROJECT_ROOT}/modules"
+        "${PROJECT_ROOT}/utils"
+        "${PROJECT_ROOT}"
+    )
+
+    for dir in "${search_dirs[@]}"; do
+        if [[ -d "$dir" ]]; then
+            find "$dir" -type f -name "*.sh" ! -name "oneline-runner.sh" -exec gawk '
+                BEGIN { ORS = "\0" }
+                {
+                    filename = FILENAME
+                    line = $0
+                    pos = 0
+
+                    if (line ~ /\$\(_[[:space:]]+"/) next
+
+                    if (line ~ /(printf|echo|print)/) {
+                        while (match(line, /"[^"]*"/, match_str)) {
+                            quoted_str = match_str[0]
+
+                            if (quoted_str != "\"\"" &&
+                                quoted_str !~ /\$[a-zA-Z_]/ &&
+                                quoted_str !~ /\$\{?color/ &&
+                                quoted_str !~ /color_reset/ &&
+                                quoted_str !~ /\$\(@/ &&
+                                quoted_str !~ /-[a-z][a-z] / &&
+                                quoted_str !~ /^"%[a-z]/ &&
+                                quoted_str !~ /%\\[0n]/ &&
+                                quoted_str !~ /#\.0s/ &&
+                                quoted_str ~ /[a-zA-Zа-яА-Я]{3,}/) {
+                                print filename ":" FNR ":" line
+                                break
+                            }
+
+                            pos = RSTART + RLENGTH
+                            line = substr(line, pos)
+                        }
+                    }
+                }
+            ' {} + 2>/dev/null
+        fi
+    done
+}
+
+# @type:        Transformer
+# @description: Форматирует сообщение о захардкоженной строке
+# @stdin:       file_path:line_number:line_content\0
+# @stdout:      сообщение в stderr
+# @exit_code:   0 - успех
+i18n::format_hardcoded_message() {
+    while IFS= read -r -d '' entry; do
+        local file_path line_number line_content
+        file_path="${entry%%:*}"
+        rest="${entry#*:}"
+        line_number="${rest%%:*}"
+        line_content="${rest#*:}"
+
+        printf 'Hardcoded string found in %s:%d\n' "$file_path" "$line_number" >&2
+        printf '  %s\n' "$line_content" >&2
+    done
+}
