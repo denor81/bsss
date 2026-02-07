@@ -231,8 +231,8 @@ i18n::format_hardcoded_message() {
         rest="${entry#*:}"
         line_number="${rest%%:*}"
         line_content="${rest#*:}"
+        line_content="$(echo $line_content | gawk '$1=$1')"
 
-        printf 'Hardcoded string found in %s:%d\n' "$file_path" "$line_number" >&2
-        printf '  %s\n' "$line_content" >&2
+        printf '[%s]\tin\t%s:%d\n' "$line_content" "$file_path" "$line_number" >&2
     done
 }
