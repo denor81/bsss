@@ -4,17 +4,9 @@
 I18N_MESSAGES["ssh.modify.confirm"]="Modify SSH port configuration?"
 
 # Menu UI
-I18N_MESSAGES["ssh.ui.get_action_choice.option_reset"]="Reset (delete ${UTIL_NAME^^} rule)"
-I18N_MESSAGES["ssh.ui.get_action_choice.option_reinstall"]="Reinstall (replace with new port)"
-I18N_MESSAGES["ssh.ui.get_action_choice.option_exit"]="Exit"
 I18N_MESSAGES["ssh.ui.get_action_choice.ask_select"]="Select action"
-I18N_MESSAGES["ssh.ui.get_action_choice.hint"]="Select number from 0 to 2"
 
 # Input prompts
-I18N_MESSAGES["ssh.ui.get_new_port.ask_port"]="Enter new SSH port"
-I18N_MESSAGES["ssh.ui.get_new_port.hint"]="Port must be from 1 to 65535"
-I18N_MESSAGES["ssh.ui.get_new_port.default"]="22"
-I18N_MESSAGES["ssh.ui.get_action_choice.ask_select"]="Select"
 I18N_MESSAGES["ssh.install.confirm_connection"]="Confirm connection - enter connected or 0 to cancel"
 
 # Info messages

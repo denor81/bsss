@@ -8,7 +8,6 @@ I18N_MESSAGES["common.exit"]="%s. Выход"
 
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
-I18N_MESSAGES["common.error_root_short"]="Требуются права root или запуск через 'sudo'"
 I18N_MESSAGES["common.error_invalid_input"]="Ошибка ввода. Ожидается: %s"
 
 # IO messages
@@ -16,13 +15,8 @@ I18N_MESSAGES["io.confirm_action.default_question"]="Продолжить?"
 I18N_MESSAGES["io.confirm_action.run_setup"]="Запустить настройку?"
 
 # Info messages
-I18N_MESSAGES["common.info_available_modules"]="Доступные модули настройки:"
 I18N_MESSAGES["common.info_short_params"]="Доступны короткие параметры %s %s"
-I18N_MESSAGES["common.info_start_module_runner"]="Запуск процедуры настройки Basic Server Security Setup (${UTIL_NAME^^}) - oneline запуск..."
 I18N_MESSAGES["common.default_actual_info"]="Информация"
-
-# Success messages
-I18N_MESSAGES["common.success_module_runner_started"]="Basic Server Security Setup (${UTIL_NAME^^}) - oneline запуск запущен"
 
 # Menu messages
 I18N_MESSAGES["common.menu_header"]="Доступные действия:"
@@ -41,7 +35,6 @@ I18N_MESSAGES["common.info_module_successful"]="Модуль успешно за
 I18N_MESSAGES["common.info_module_user_cancelled"]="Модуль завершен пользователем [Code: %s]"
 I18N_MESSAGES["common.info_module_rollback"]="Модуль завершен откатом [Code: %s]"
 I18N_MESSAGES["common.info_module_requires_ssh"]="Модуль требует предварительной настройки SSH [Code: %s]"
-I18N_MESSAGES["common.info_exit_menu"]="Выход из меню настройки"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
 
 # Info messages - uninstall

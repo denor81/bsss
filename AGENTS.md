@@ -307,10 +307,17 @@ ssh::port::generate_free_random_port() {
 
 ```
 lib/i18n/
- ├── test_translations.sh       # Проверка целостности переводов между языками
- ├── test_unused_translations.sh # Проверка неиспользуемых переводов
- ├── test_unknown_translations.sh # Проверка неизвестных переводов
+ ├── .tests/                      # Тесты системы переводов
+ │   ├── run.sh                   # Запуск всех тестов
+ │   ├── test_translations.sh     # Проверка целостности переводов между языками
+ │   ├── test_unused_translations.sh # Проверка неиспользуемых переводов
+ │   ├── test_missing_translations.sh # Проверка неизвестных переводов
+ │   └── helpers/
+ │       └── test_helpers.sh      # Общие хелперы для тестов
+ ├── critical/                    # Критические переводы (загружаются рано)
+ │   └── common.sh               # Специальный ключ no_translate
  ├── loader.sh                   # Загрузка переводов по языку Основная функция _()
+ ├── language_installer.sh        # Установщик выбора языка
  ├── ru/                         # Русские переводы
  │   ├── common.sh               # Общие сообщения
  │   ├── ssh.sh                  # SSH модуль
@@ -322,6 +329,8 @@ lib/i18n/
      ├── ufw.sh
      └── system.sh
 ```
+
+**Важно**: Для работы с тестами см. [lib/i18n/.tests/AGENTS.md](lib/i18n/.tests/AGENTS.md)
 
 ### Примеры хорошего кода
   - Предпочтительна потоковая архитектура

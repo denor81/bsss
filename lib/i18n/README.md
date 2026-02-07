@@ -10,10 +10,17 @@ BSSS uses a simple but effective i18n system based on Bash 4+ associative arrays
 
 ```
 lib/i18n/
-├── test_translations.sh        # Translation integrity checker
-├── test_unused_translations.sh  # Unused translation keys checker
-├── test_unknown_translations.sh  # Unknown translation keys checker
-├── loader.sh                    # Language detection and loader Core translation function _()
+├── .tests/                      # Test scripts directory
+│   ├── run.sh                   # Run all i18n tests
+│   ├── test_missing_translations.sh  # Unknown keys checker
+│   ├── test_translations.sh     # Translation integrity checker
+│   ├── test_unused_translations.sh   # Unused keys checker
+│   └── helpers/
+│       └── test_helpers.sh      # Common test helpers
+├── critical/                    # Critical translations (loaded early)
+│   └── common.sh               # no_translate special key
+├── loader.sh                    # Language detection and loader. Core translation function _()
+├── language_installer.sh        # Language selection installer
 ├── ru/                          # Russian translations
 │   ├── common.sh
 │   ├── ssh.sh
@@ -165,7 +172,20 @@ log_info "$(_ "ssh.success_port_up" "$port")"
 To verify that all translation keys are synchronized across languages:
 
 ```bash
-./lib/i18n/test_translations.sh
+bash lib/i18n/.tests/run.sh
+```
+
+Or run individual tests:
+
+```bash
+# Check synchronization between languages
+bash lib/i18n/.tests/test_translations.sh
+
+# Check for missing/unknown keys
+bash lib/i18n/.tests/test_missing_translations.sh
+
+# Check for unused keys
+bash lib/i18n/.tests/test_unused_translations.sh
 ```
 
 ### Output
@@ -177,156 +197,57 @@ To verify that all translation keys are synchronized across languages:
 ### Example Output
 
 ```bash
-$ ./lib/i18n/test_translations.sh
+$ bash lib/i18n/.tests/test_translations.sh
 
-========================================
-I18n Translation Integrity Check
-========================================
-[ ] Обнаруженные языки: en
-ru
-
-========================================
-Сравнение: en <-> ru
-========================================
-[!] ssh.sh: ключи в ru но НЕ в en:
-    - ssh.new.feature.msg
-
-========================================
-Summary
-========================================
-[x] Всего различий: 1
-[!] Добавьте недостающие переводы в соответствующие файлы
+Сверяет файлы переводов
+All translations are synchronized
 ```
 
 ### Integration with Development Workflow
 
-Recommended to run the translation check:
+Recommended to run translation check:
 1. **Before committing** - Ensure all new keys are translated
-2. **In CI/CD** - Add to automated tests
+2. **In CI/CD** - Add `bash lib/i18n/.tests/run.sh` to automated tests
 3. **After adding features** - Verify all new messages are translated
 
 ## Translation Tests
 
-### Unused Translation Keys Check
+### Running All Tests
 
-Finds translation keys that exist in translation files but are not used in the code:
-
+Run all i18n tests at once:
 ```bash
-./lib/i18n/test_unused_translations.sh
+bash lib/i18n/.tests/run.sh
 ```
 
-**Purpose**: Detects stale translations that should be removed or indicate code paths that were abandoned.
+### Individual Tests
 
-**Output**:
-- **Yellow**: Lists unused keys by language
-- **Summary**: Total unused keys count
-
-**Example**:
+#### Test 1: Translation Synchronization
+Checks that all translation keys exist in all language files:
 ```bash
-$ ./lib/i18n/test_unused_translations.sh
-
-========================================
-I18n Unused Translations Check
-========================================
-[ ] Обнаруженные языки: en ru
-
-========================================
-Проверка языка: en
-========================================
-[!] Неиспользуемые ключи в переводах (en):
-    - ssh.ui.get_action_choice.hint
-    - ufw.error.disable_failed
-[ ] Всего ключей в переводах: 175
-[ ] Используемых ключей в коде: 145
-[ ] Неиспользуемых ключей: 2
-
-========================================
-Summary
-========================================
-[!] Всего неиспользуемых ключей: 2
-[!] Рекомендуется удалить неиспользуемые ключи из файлов переводов
+bash lib/i18n/.tests/test_translations.sh
 ```
 
-**When to run**:
-- Before removing translation keys (verify they're truly unused)
-- After major refactoring
-- During code cleanup
-
-### Unknown Translation Keys Check
-
-Finds translation keys used in code that don't exist in translation files:
-
+#### Test 2: Missing/Unknown Keys
+Checks that all keys used in code exist in translation files:
 ```bash
-./lib/i18n/test_unknown_translations.sh
+bash lib/i18n/.tests/test_missing_translations.sh
 ```
 
-**Purpose**: Detects typos in translation keys or missing translations for new features.
-
-**Output**:
-- **Red**: Unknown keys with file locations
-- **Summary**: Total issues count
-
-**Example**:
+#### Test 3: Unused Keys
+Finds keys in translation files that are not used in code:
 ```bash
-$ ./lib/i18n/test_unknown_translations.sh
-
-========================================
-I18n Unknown Translations Check
-========================================
-[ ] Обнаруженные языки: en ru
-
-========================================
-Проверка неизвестных ключей в коде
-========================================
-[x] main.sh:35: неизвестный ключ перевода 'common.error_root'
-[ ] Всего ключей в переводах: 175
-[ ] Используемых ключей в коде: 148
-[ ] Неизвестных ключей в коде: 1
-
-========================================
-Summary
-========================================
-[x] Найдены проблемы: 1
-[!] Добавьте недостающие переводы в соответствующие файлы
+bash lib/i18n/.tests/test_unused_translations.sh
 ```
 
-**When to run**:
-- After adding new translation keys (verify they exist in all language files)
-- When changing translation keys (check for typos)
-- Before committing new features
+### Detailed Documentation
 
-### All Translation Checks
+For comprehensive information about:
+- How to interpret test results
+- Common issues and their solutions
+- Test architecture and implementation
+- Best practices for working with translations
 
-Run all translation tests together:
-
-```bash
-./lib/i18n/test_translations.sh
-./lib/i18n/test_unused_translations.sh
-./lib/i18n/test_unknown_translations.sh
-```
-
-Or create a wrapper script:
-```bash
-#!/bin/bash
-set -euo pipefail
-./lib/i18n/test_translations.sh
-./lib/i18n/test_unused_translations.sh
-./lib/i18n/test_unknown_translations.sh
-```
-
-### Test Interpretation Guide
-
-| Test Result | Meaning | Action |
-|------------|---------|--------|
-| **Unused keys found** | Keys in translations but not in code | Remove keys or verify code paths |
-| **Unknown keys found** | Keys in code but not in translations | Add translations or fix typos |
-| **No issues** | All translations are healthy | Proceed with development |
-
-### Test Limitations
-
-1. **Unused keys test**: Cannot detect conditional usage (keys used in `if` branches).
-2. **Unknown keys test**: May report false positives for dynamically constructed keys (e.g., using variables).
-3. **Code coverage**: Tests find keys in code but don't execute all code paths. Some keys might be unreachable.
+See **[`.tests/AGENTS.md`](.tests/AGENTS.md)** - Full guide for agents working with i18n tests.
 
 ## Adding New Language
 
@@ -374,9 +295,9 @@ To add a new language (e.g., German):
 
 ### Key shows "[key] NOT TRANSLATED"
 
-- Check that the key exists in translation files
-- Verify the `.lang` file contains valid language code
-- Run `test_translations.sh` to find inconsistencies
+- Check that key exists in translation files
+- Verify that `.lang` file contains valid language code
+- Run `bash lib/i18n/.tests/test_missing_translations.sh` to find inconsistencies
 
 ### Language not switching
 
@@ -384,11 +305,12 @@ To add a new language (e.g., German):
 - Verify language code is supported in `loader.sh` (ru, en, or your custom language)
 - Ensure no extra whitespace in `.lang` file
 
-### test_translations.sh shows false positives
+### Tests show false positives
 
 - Verify files are properly formatted (no syntax errors)
 - Check that keys are unique within each file
 - Ensure files use `I18N_MESSAGES["key"]="value"` format
+- Review [`.tests/AGENTS.md`](.tests/AGENTS.md) for detailed troubleshooting
 
 ## Reference: Complete Translation Files
 

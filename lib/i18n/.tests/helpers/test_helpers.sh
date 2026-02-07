@@ -124,8 +124,8 @@ i18n::extract_keys_from_code() {
                     {
                         while (match($0, /\$\(_[[:space:]]+"([^"]+)"/, arr)) {
                             key = arr[1]
-                            # Проверяем, что ключ содержит точку (формат module.key)
-                            if (key ~ /\./) {
+                            # Проверяем, что ключ содержит точку (формат module.key) или это no_translate
+                            if (key ~ /\./ || key == "no_translate") {
                                 print key
                             }
                             # Продвигаемся дальше в строке
