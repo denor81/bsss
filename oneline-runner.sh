@@ -536,6 +536,13 @@ install::to_system() {
     log_info "$(_ "installer.install.usage" "$UTIL_NAME" "$UTIL_NAME")"
 }
 
+# @type:        Orchestrator
+# @description: Подготавливает окружение для запуска или установки: временную директорию, архив, распаковку и проверку
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка подготовки
 sys::run_or_install::prepare() {
     install::tmp::create
     install::download::archive

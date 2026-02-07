@@ -23,7 +23,7 @@ trap log_stop EXIT
 # @stdout:      command\0
 # @exit_code:   0 - успешно
 #               1 - apt не найден
-    sys::update::get_command() {
+sys::update::get_command() {
     if ! command -v apt-get >/dev/null 2>&1; then
         log_error "$(_ "system.update.apt_not_found")"
         return 1
@@ -38,7 +38,7 @@ trap log_stop EXIT
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               1 - ошибка выполнения команды
-    sys::update::execute() {
+sys::update::execute() {
     local update_cmd=""
     [[ ! -t 0 ]] && IFS= read -r -d '' update_cmd || return 1
 

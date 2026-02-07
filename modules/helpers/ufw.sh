@@ -1,4 +1,4 @@
-# @type:        Filter
+# @type:        Validator
 # @description: Проверяет, есть ли правила UFW BSSS
 # @params:      нет
 # @stdin:       нет
@@ -156,7 +156,7 @@ ufw::status::force_enable() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-    log::rollback::instructions() {
+log::rollback::instructions() {
     log_attention "$(_ "ufw.rollback.warning_title")"
     log_attention "$(_ "ufw.rollback.test_access")"
 }
@@ -195,7 +195,7 @@ ufw::orchestrator::disable_ping() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-    ufw::log::status() {
+ufw::log::status() {
     ufw::status::is_active && \
     log_info "$(_ "ufw.status.enabled")" || \
     log_info "$(_ "ufw.status.disabled")"
@@ -207,7 +207,7 @@ ufw::orchestrator::disable_ping() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-    ufw::log::ping_status() {
+ufw::log::ping_status() {
     ufw::ping::is_configured && \
     log_info "$(_ "ufw.status.ping_blocked")" || \
     log_info "$(_ "ufw.status.ping_allowed")"
@@ -225,7 +225,7 @@ ufw::orchestrator::log_statuses() {
     ufw::log::ping_status
 }
 
-# @type:        Filter
+# @type:        Validator
 # @description: Проверяет, существует ли бэкап файл настроек PING
 # @params:      нет
 # @stdin:       нет
@@ -236,14 +236,14 @@ ufw::ping::is_configured() {
     [[ -f "$UFW_BEFORE_RULES_BACKUP" ]]
 }
 
-# @type:        Filter
+# @type:        Sink
 # @description: Создает бэкап файла before.rules
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - бэкап успешно создан
 #               $? - код ошибки команды cp
-    ufw::ping::backup_file() {
+ufw::ping::backup_file() {
     local res
     if res=$(cp -pv "$UFW_BEFORE_RULES" "$UFW_BEFORE_RULES_BACKUP" 2>&1); then
         log_info "$(_ "ufw.success.backup_created" "$res")"
@@ -254,14 +254,14 @@ ufw::ping::is_configured() {
     fi
 }
 
-# @type:        Transformer
-# @description: Заменяет ACCEPT на DROP в ICMP правилах через
+# @type:        Orchestrator
+# @description: Заменяет ACCEPT на DROP в ICMP правилах файла before.rules
 # @params:      нет
-# @stdin:       содержимое before.rules
-# @stdout:      преобразованный content (ACCEPT → DROP для ICMP)
+# @stdin:       нет
+# @stdout:      нет
 # @exit_code:   0 - успешно
-# @exit_code:   $? - код ошибки команды sed
-    ufw::ping::disable_in_rules() {
+#               $? - код ошибки команды sed
+ufw::ping::disable_in_rules() {
     if sed -i '/-p icmp/s/ACCEPT/DROP/g' "$UFW_BEFORE_RULES"; then
         log_info "$(_ "ufw.success.before_rules_edited" "$UFW_BEFORE_RULES")"
         log_info "$(_ "ufw.success.icmp_changed")"
@@ -271,14 +271,14 @@ ufw::ping::is_configured() {
     fi
 }
 
-# @type:        Filter
+# @type:        Orchestrator
 # @description: Восстанавливает файл before.rules из бэкапа и удаляет бэкап
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно восстановлено
 #               $? - код ошибки cp или rm
-    ufw::ping::restore() {
+ufw::ping::restore() {
     if res=$(cp -pv "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES" 2>&1); then
         log_info "$(_ "ufw.success.backup_restored" "$res")"
     else
@@ -297,7 +297,7 @@ ufw::ping::is_configured() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - код ошибки ufw reload
-    ufw::status::reload() {
+ufw::status::reload() {
     if ufw reload >/dev/null; then
         log_info "$(_ "ufw.success.reloaded")"
     else

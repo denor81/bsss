@@ -21,7 +21,7 @@ source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 # @stdout:      нет
 # @exit_code:   0 - UFW установлен или уже был установлен
 #               1 - ошибка установки или отказ от установки
-    check() {
+check() {
     if command -v ufw > /dev/null 2>&1; then
         ufw::orchestrator::log_statuses
     else

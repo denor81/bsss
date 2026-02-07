@@ -4,7 +4,7 @@
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-    ssh::menu::display_exists_scenario() {
+ssh::menu::display_exists_scenario() {
     ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
 
@@ -14,11 +14,11 @@
     log_info_simple_tab "$(_ "common.exit" "0")"
 }
 
-# @type:        Filter
+# @type:        Orchestrator
 # @description: Основной функционал установки/изменения SSH порта
 # @params:      нет
 # @stdin:       port\0
-# @stdout:      port\0
+# @stdout:      нет
 # @exit_code:   0 - порт успешно установлен
 #               $? - ошибка в процессе
 ssh::port::install_new() {
@@ -147,9 +147,9 @@ ssh::rule::delete_all_bsss() {
     sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::file::delete || true
 }
 
-# @type:        Source
+# @type:        Validator
 # @description: Проверяет, что указанный порт свободен
-# @params:      
+# @params:
 #   port        Номер порта для проверки
 # @stdin:       нет
 # @stdout:      нет
@@ -346,7 +346,7 @@ ssh::reset::port() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-    ssh::log::guard_instructions() {
+ssh::log::guard_instructions() {
     local port="$1"
     log_attention "$(_ "ssh.guard.dont_close")"
     log_attention "$(_ "ssh.guard.test_new" "$port")"
@@ -359,7 +359,7 @@ ssh::reset::port() {
 # @stdout:      нет
 # @exit_code:   0 - сервис успешно перезапущен
 #               1 - ошибка конфигурации
-    sys::service::restart() {
+sys::service::restart() {
     if sshd -t; then
         systemctl daemon-reload && log_info "$(_ "ssh.service.daemon_reloaded")"
         systemctl restart ssh.service && log_info "$(_ "ssh.service.restarted")"

@@ -47,10 +47,10 @@ log::to_journal() {
 }
 
 # @type:        Sink
-# @description: Выводит пустую строку
+# @description: Выводит пустую строку в stderr
 # @params:      нет
 # @stdin:       нет
-# @stdout:      новая строка
+# @stdout:      нет
 # @exit_code:   0 - всегда
 new_line() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
@@ -60,6 +60,12 @@ new_line() {
     fi
 }
 
+# @type:        Sink
+# @description: Записывает сообщение в лог-файл с timestamp
+# @params:      message - Текст сообщения для записи
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда (ошибки подавлены)
 log_formatted_msg() {
     { echo "$(date '+%H:%M:%S') $1" >> "$CURRENT_LOG_SYMLINK"; } 2>/dev/null || true
 }
