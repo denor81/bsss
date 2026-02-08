@@ -13,7 +13,7 @@ source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-socket.sh"
 
-# @type:        Filter
+# @type:        Validator
 # @description: Проверяет существование ssh.service юнита
 # @stdin:       нет
 # @stdout:      нет
@@ -25,6 +25,32 @@ check_unit() {
         log_info_simple_tab "$(_ "ssh.socket.script_purpose")"
         return 1
     fi
+
+    # Проверяем наличие ssh.socket - если его нет, это нормально для Ubuntu 20.04
+    # или если система уже была переведена в service mode
+    if sys::ssh::unit_exists "ssh.socket"; then
+        local socket_status
+        socket_status=$(systemctl is-enabled ssh.socket 2>/dev/null || true)
+
+        case "$socket_status" in
+            masked)
+                log_info "$(_ "ssh.socket.socket_masked")"
+                ;;
+            enabled|static)
+                log_info "$(_ "ssh.socket.socket_enabled")"
+                ;;
+            disabled)
+                log_info "$(_ "ssh.socket.socket_disabled")"
+                ;;
+            *)
+                log_info "$(_ "ssh.socket.socket_status" "$socket_status")"
+                ;;
+        esac
+    else
+        log_info "$(_ "ssh.socket.not_found_traditional_mode")"
+    fi
+
+    return 0
 }
 
 # @type:        Orchestrator

@@ -51,3 +51,14 @@ I18N_MESSAGES["ssh.guard.test_new"]="OPEN NEW WINDOW and test connection via por
 # Error messages
 I18N_MESSAGES["ssh.error_port_not_up"]="PORT %s DID NOT COME UP [%s attempts in %s sec]"
 I18N_MESSAGES["ssh.error_invalid_choice"]="Invalid choice"
+
+# Socket check messages
+I18N_MESSAGES["ssh.socket.configured"]="SSH is already properly configured in service mode"
+I18N_MESSAGES["ssh.socket.mode_warning"]="SSH is running in socket-based activation mode, which may conflict with port changes via sshd_config"
+I18N_MESSAGES["ssh.socket.mode_required"]="SSH needs to be switched to traditional service mode"
+I18N_MESSAGES["ssh.socket.switch_confirm"]="Switch SSH to traditional service mode?"
+I18N_MESSAGES["ssh.socket.socket_masked"]="ssh.socket is masked - SSH is running in traditional service mode"
+I18N_MESSAGES["ssh.socket.socket_enabled"]="ssh.socket is enabled - SSH is running in socket-based activation mode"
+I18N_MESSAGES["ssh.socket.socket_disabled"]="ssh.socket is disabled"
+I18N_MESSAGES["ssh.socket.socket_status"]="ssh.socket status: %s"
+I18N_MESSAGES["ssh.socket.not_found_traditional_mode"]="ssh.socket not found - SSH is running in traditional service mode (Ubuntu 20.04 or manually configured)"

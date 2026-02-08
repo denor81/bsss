@@ -48,14 +48,6 @@ I18N_MESSAGES["ufw.check.install_error"]="Error installing UFW"
 I18N_MESSAGES["ufw.check.install_success"]="UFW installed successfully"
 I18N_MESSAGES["ufw.check.installed_restart"]="UFW installed - restart the script"
 
-# SSH socket check
-I18N_MESSAGES["ssh.socket.unit_not_found"]="ssh.service unit not installed [ssh.service]"
-I18N_MESSAGES["ssh.socket.script_purpose"]="${UTIL_NAME^^} script is designed to run on a server with ssh.service unit installed"
-I18N_MESSAGES["ssh.socket.configured"]="SSH configured correctly [ssh.service]"
-I18N_MESSAGES["ssh.socket.mode_warning"]="SSH configured in [ssh.socket] mode, issues with port raising observed in this mode"
-I18N_MESSAGES["ssh.socket.mode_required"]="Script requires switching SSH to Service Mode [ssh.service]"
-I18N_MESSAGES["ssh.socket.switch_confirm"]="Switch SSH to Service Mode?"
-
 # SSH socket helpers
 I18N_MESSAGES["ssh.socket.force_mode"]="Forcing SSH switch to Service Mode..."
 I18N_MESSAGES["ssh.socket.service_not_active"]="Service not running. Trying to start..."

@@ -1,4 +1,4 @@
-# @type:        Filter
+# @type:        Validator
 # @description: Проверяет, настроен ли SSH в service mode
 # @stdin:       нет
 # @stdout:      нет
@@ -8,11 +8,15 @@ ssh::socket::is_already_configured() {
     local unit_socket="ssh.socket"
 
     # 1. Если сервис не активен — конфигурация точно не завершена
-    sys::ssh::is_service_active
+    if ! sys::ssh::is_service_active; then
+        return 1
+    fi
 
-    # 2. Проверяем состояние сокета
-    # Если его нет в системе — это нас устраивает выбрасываемся код 1
-    sys::ssh::unit_exists "$unit_socket"
+    # 2. Если ssh.socket не существует (Ubuntu 20.04 или был удален) —
+    # считаем, что SSH уже работает в традиционном service mode
+    if ! sys::ssh::unit_exists "$unit_socket"; then
+        return 0
+    fi
 
     # 3. Если сокет есть, проверяем его статус через is-enabled.
     # Нам нужно именно значение "masked".
@@ -22,18 +26,18 @@ ssh::socket::is_already_configured() {
     [[ "$socket_enabled_status" == "masked" ]]
 }
 
-# @type:        Source
-# @description: Проверяет, существует ли юнит ssh.service
+# @type:        Validator
+# @description: Проверяет, существует ли systemd юнит
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - существует
 #               1 - не существует
 sys::ssh::unit_exists() {
     local unit_name="$1"
-    systemctl list-unit-files "$unit_name" --quiet | grep -Fq "$unit_name"
+    systemctl list-unit-files "$unit_name" --quiet >/dev/null 2>&1
 }
 
-# @type:        Filter
+# @type:        Validator
 # @description: Проверяет, активен ли ssh.service
 # @stdin:       нет
 # @stdout:      нет

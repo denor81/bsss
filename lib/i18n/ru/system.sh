@@ -46,14 +46,6 @@ I18N_MESSAGES["ufw.check.install_error"]="Ошибка при установке
 I18N_MESSAGES["ufw.check.install_success"]="UFW успешно установлен"
 I18N_MESSAGES["ufw.check.installed_restart"]="UFW установлен - перезапустите скрипт"
 
-# SSH socket check
-I18N_MESSAGES["ssh.socket.unit_not_found"]="Юнит ssh.service не установлен [ssh.service]"
-I18N_MESSAGES["ssh.socket.script_purpose"]="Скрипт ${UTIL_NAME^^} предназначен для запуска на сервере с установленным ssh.service юнитом"
-I18N_MESSAGES["ssh.socket.configured"]="SSH настроен корректно [ssh.service]"
-I18N_MESSAGES["ssh.socket.mode_warning"]="SSH настроен в режиме [ssh.socket], в этом режиме наблюдаются проблемы с поднятием порта"
-I18N_MESSAGES["ssh.socket.mode_required"]="Для работы скрипта требуется переключение SSH в Service Mode [ssh.service]"
-I18N_MESSAGES["ssh.socket.switch_confirm"]="Переключить SSH в Service Mode?"
-
 # SSH socket helpers
 I18N_MESSAGES["ssh.socket.force_mode"]="Принудительное переключение SSH в Service Mode..."
 I18N_MESSAGES["ssh.socket.service_not_active"]="Сервис не запущен. Пытаюсь стартовать..."
