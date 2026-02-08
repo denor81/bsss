@@ -292,7 +292,7 @@ ssh::install::port() {
     local port
 
     log_info "$(_ "common.menu_header")"
-    log_info_simple_tab "$(_ "common.info_menu_item_format" "0" "$(_ "common.exit")")"
+    log_info_simple_tab "$(_ "common.exit" "0")"
 
     port=$(ssh::ui::get_new_port | tr -d '\0') || return
 
@@ -312,7 +312,7 @@ ssh::install::port() {
     fi
 
     log_info "$(_ "common.menu_header")"
-    log_info_simple_tab "$(_ "common.info_menu_item_format" "0" "$(_ "common.exit")")"
+    log_info_simple_tab "$(_ "common.exit" "0")"
 
     if io::ask_value "$(_ "ssh.install.confirm_connection")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
