@@ -640,9 +640,9 @@ declare -gA I18N_MESSAGES_RU=(
     [install.start]="Устанавливаю %s в систему..."
     [install.complete]="Установка в систему завершена"
     [install.usage]="Используйте для запуска: sudo %s, для удаления: sudo %s -u"
-    [install.info.download_archive"]="Будет скачан архив последней версии релиза %s [%s]"
-    [install.info.install_dir"]="Будет произведена установка %s в директорию [%s]"
-    [install.info.usage_run"]="Запускать sudo %s"
+    [install.info.download_archive]="Будет скачан архив последней версии релиза %s [%s]"
+    [install.info.install_dir]="Будет произведена установка %s в директорию [%s]"
+    [install.info.usage_run]="Запускать sudo %s"
 )
 
 # English translations
@@ -686,8 +686,8 @@ declare -gA I18N_MESSAGES_EN=(
     [install.start]="Installing %s to system..."
     [install.complete]="System installation completed"
     [install.usage]="Use to run: sudo %s, to uninstall: sudo %s -u"
-    [install.info.download_archive"]="Will download the latest release archive of %s [%s]"
-    [install.info.install_dir"]="Will install %s to directory [%s]"
+    [install.info.download_archive]="Will download the latest release archive of %s [%s]"
+    [install.info.install_dir]="Will install %s to directory [%s]"
     [install.info.usage_run]="Run with sudo %s"
 )
 

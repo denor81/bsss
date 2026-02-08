@@ -6,12 +6,10 @@ I18N_MESSAGES["common.pipefail.interrupted"]="Interrupted [RC: %d]"
 
 # Basic messages
 I18N_MESSAGES["common.exit"]="%s. Exit"
-I18N_MESSAGES["common.loaded"]="Loaded [%s]"
 
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Root privileges or run with 'sudo' required. Running as regular user."
 I18N_MESSAGES["common.error_invalid_input"]="Input error. Expected: %s"
-I18N_MESSAGES["common.unknown_error"]="Unknown error [%s]"
 
 # IO messages
 I18N_MESSAGES["io.confirm_action.default_question"]="Continue?"

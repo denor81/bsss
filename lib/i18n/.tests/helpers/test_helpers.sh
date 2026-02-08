@@ -182,7 +182,12 @@ i18n::find_hardcoded_strings() {
 
     for dir in "${search_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
-            find "$dir" -type f -name "*.sh" ! -name "oneline-runner.sh" -exec gawk '
+            find "$dir" -type f -name "*.sh" \
+            ! -name "generate_function_map.sh" \
+            ! -name "build-archive.sh" \
+            ! -name "run.sh" \
+            ! -name "test_helpers.sh" \
+            -exec gawk '
                 BEGIN { ORS = "\0" }
                 {
                     filename = FILENAME

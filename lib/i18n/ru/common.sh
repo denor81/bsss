@@ -2,6 +2,7 @@
 
 # Special message - pass through without translation
 I18N_MESSAGES["no_translate"]="%s"
+I18N_MESSAGES["common.pipefail.interrupted"]="Прервано [RC: %d]"
 
 # Basic messages
 I18N_MESSAGES["common.exit"]="%s. Выход"
