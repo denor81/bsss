@@ -31,9 +31,9 @@ I18N_MESSAGES["common.error_module_failed_code"]="Ошибка в модуле [
 I18N_MESSAGES["common.error_missing_meta_tags"]="Отсутствуют обязательные метатеги MODULE_ORDER [Code: %s]"
 
 # Info messages - module runner
-I18N_MESSAGES["common.info_module_successful"]="Модуль успешно завершен [Code: %s]"
-I18N_MESSAGES["common.info_module_user_cancelled"]="Модуль завершен пользователем [Code: %s]"
-I18N_MESSAGES["common.info_module_rollback"]="Модуль завершен откатом [Code: %s]"
+I18N_MESSAGES["common.info_module_successful"]="Успешно завершен [Code: %s]"
+I18N_MESSAGES["common.info_module_user_cancelled"]="Завершено пользователем [Code: %s]"
+I18N_MESSAGES["common.info_module_rollback"]="Завершен откатом [Code: %s]"
 I18N_MESSAGES["common.info_module_requires_ssh"]="Модуль требует предварительной настройки SSH [Code: %s]"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
 

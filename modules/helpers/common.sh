@@ -421,3 +421,29 @@ common::int::actions() {
     log_info "$(_ "common.helpers.rollback.int_received" "$rc")"
     exit $rc
 }
+
+# @type:        Sink
+# @description: Обработчик ошибки pipe
+# @params:      error_code
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   2
+#               130
+#               $?
+common::pipefail::fallback() {
+    local rc_pipe=("$@")
+    local final_rc=1
+
+    for rc in "${rc_pipe[@]}"; do
+        if [[ "$rc" == "2" || "$rc" == "130" ]]; then
+            final_rc=$rc
+            break
+        fi
+    done
+    
+    log_info "$(_ "common.pipefail.interrupted" "$final_rc")"
+    case $final_rc in
+        2|130) return $final_rc ;; # Пробрасываем код 2/130
+        *) return 1 ;; # Неизвестная ошибка
+    esac
+}

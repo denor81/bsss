@@ -12,3 +12,5 @@ I18N_MESSAGES["common.helpers.rollback.int_received"]="Received INT signal [RC: 
 
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Root privileges or run with 'sudo' required. Running as regular user."
+I18N_MESSAGES["common.error_invalid_input"]="Input error. Expected: %s"
+I18N_MESSAGES["common.loaded"]="Loaded [%s]"

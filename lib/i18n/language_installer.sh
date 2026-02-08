@@ -37,8 +37,7 @@ i18n::installer::select_language() {
 
     local max_id=${#lang_codes[@]}
     local selection
-    selection=$(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[0-$max_id]$" "0-$max_id" "$menu_exit") || return 2
-    # read -r -d '' selection < <(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[0-$max_id]$" "0-$max_id" "$menu_exit")
+    selection=$(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[0-$max_id]$" "0-$max_id" "$menu_exit" | tr -d '\0') || return
 
     printf '%s\0' "${lang_codes[$((selection - 1))]}"
 }
@@ -53,7 +52,7 @@ i18n::installer::select_language() {
 i18n::installer::write_lang_file() {
     local lang_code="${1:-}"
     [[ -z "$lang_code" ]] && read -r -d '' lang_code
-    printf '%s' "$lang_code" > "$LANG_FILE"
+    [[ -n "$lang_code" ]] && printf '%s' "$lang_code" > "$LANG_FILE"
 }
 
 # @type:        Orchestrator
@@ -62,19 +61,12 @@ i18n::installer::write_lang_file() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-#               1 - неизвестная ошибка
-#               2|130 - отмена пользователя
+#               $? - вернет common::pipefail::fallback
 i18n::installer::lang_setup() {
-    # set -e завершает процесс, по этому лезем в код пайпа 1 и смотрим - была ли там отмена по коду 2
-    i18n::installer::discover_languages | i18n::installer::select_language | i18n::installer::write_lang_file || {
-        local rc_pipe=("${PIPESTATUS[@]}")
-        local rc=${rc_pipe[1]}
-        
-        case $rc in
-            2|130) return $rc ;; # Пробрасываем код 2/130
-            *) return 1 ;; # Неизвестная ошибка
-        esac
-    }
+    i18n::installer::discover_languages \
+    | i18n::installer::select_language \
+    | i18n::installer::write_lang_file \
+    || { common::pipefail::fallback "${PIPESTATUS[@]}"; }
 }
 
 # @type:        Orchestrator
@@ -89,6 +81,7 @@ i18n::installer::lang_setup_from_param() {
 
     if i18n::installer::is_valid_language "$lang_code"; then
         i18n::installer::write_lang_file "$lang_code"
+        i18n::load
     else
         log_error "$(_ "no_translate" "Invalid lang code from parameter -l [$lang_code]")"
         return 1
@@ -102,14 +95,14 @@ i18n::installer::lang_setup_from_param() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 i18n::installer::dispatcher() { 
-    local lang_code="$1"
+    local lang_code="${1:-}"
 
     if [[ -n "$lang_code" ]]; then
         i18n::installer::lang_setup_from_param "$lang_code"
     elif [[ ! -f "$LANG_FILE" ]]; then
         i18n::installer::lang_setup
     else
-        return # Код языка будет загружен из файла
+        i18n::load
     fi
 }
 

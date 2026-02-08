@@ -2,13 +2,16 @@
 
 # Special message - pass through without translation
 I18N_MESSAGES["no_translate"]="%s"
+I18N_MESSAGES["common.pipefail.interrupted"]="Interrupted [RC: %d]"
 
 # Basic messages
 I18N_MESSAGES["common.exit"]="%s. Exit"
+I18N_MESSAGES["common.loaded"]="Loaded [%s]"
 
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Root privileges or run with 'sudo' required. Running as regular user."
 I18N_MESSAGES["common.error_invalid_input"]="Input error. Expected: %s"
+I18N_MESSAGES["common.unknown_error"]="Unknown error [%s]"
 
 # IO messages
 I18N_MESSAGES["io.confirm_action.default_question"]="Continue?"
@@ -21,7 +24,7 @@ I18N_MESSAGES["common.default_actual_info"]="Information"
 # Menu messages
 I18N_MESSAGES["common.menu_header"]="Available actions:"
 I18N_MESSAGES["common.menu_check"]="%s. System check"
-I18N_MESSAGES["common.menu_language"]="%s. Language • Language • 语言 • हिन्दी"
+I18N_MESSAGES["common.menu_language"]="%s. Язык • Language • 语言 • हिन्दी"
 
 # Error messages - module runner
 I18N_MESSAGES["common.error_no_modules_found"]="Cannot run, modules not found"
@@ -31,9 +34,9 @@ I18N_MESSAGES["common.error_module_failed_code"]="Error in module [%s] [Code: %s
 I18N_MESSAGES["common.error_missing_meta_tags"]="Missing required meta tags MODULE_ORDER [Code: %s]"
 
 # Info messages - module runner
-I18N_MESSAGES["common.info_module_successful"]="Module completed successfully [Code: %s]"
-I18N_MESSAGES["common.info_module_user_cancelled"]="Module cancelled by user [Code: %s]"
-I18N_MESSAGES["common.info_module_rollback"]="Module completed via rollback [Code: %s]"
+I18N_MESSAGES["common.info_module_successful"]="Completed successfully [Code: %s]"
+I18N_MESSAGES["common.info_module_user_cancelled"]="Cancelled by user [Code: %s]"
+I18N_MESSAGES["common.info_module_rollback"]="Completed via rollback [Code: %s]"
 I18N_MESSAGES["common.info_module_requires_ssh"]="Module requires preliminary SSH setup [Code: %s]"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
 

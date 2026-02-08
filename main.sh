@@ -184,13 +184,48 @@ runner::module::select_modify() {
 
     # Запрашиваем выбор пользователя
     local selection
-    read -r -d '' selection < <(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[0-$max_id])$" "0-$max_id")
-
+    selection=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[0-$max_id])$" "0-$max_id" "$menu_exit" | tr -d '\0') || return
     case "$selection" in
-        "$menu_exit") printf '%s\0' "EXIT" ;; # Возвращаем маркер EXIT
-        "$menu_check") printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
-        "$menu_lang") printf '%s\0' "LANG_CHANGE" ;; # Возвращаем маркер смены языка
-        *)  printf '%s\0' "${module_paths[$((selection - 1))]}" ;; # Возвращаем выбранный путь
+        "$menu_check")  printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
+        "$menu_lang")   printf '%s\0' "LANG_CHANGE" ;; # Возвращаем маркер смены языка
+        *)              printf '%s\0' "${module_paths[$((selection - 1))]}" ;; # Возвращаем выбранный путь
+    esac
+}
+
+runner::module::execute_modify() {
+    local exit_code=0
+    local selected_module
+
+    # При прерывании предыдущего пайпа - сюда ничего не придет и read упадет с ошибкой и переменная selected_module будет пустая
+    # что приведет к срабатыванию последнего элемента лога в блоке case - по этому гасим этот случай return 0
+    read -r -d '' selected_module || { [[ -z "$selected_module" ]] && return 0; }
+
+    if [[ "$selected_module" == "CHECK" ]]; then
+
+        runner::module::run_check || exit_code=$?
+
+    elif [[ "$selected_module" == "LANG_CHANGE" ]]; then
+
+        # Бросаем маркер из текущего пайпа наверх, что бы загрузить язык в главном процессе
+        i18n::installer::lang_setup && echo "RELOAD_I18N" || exit_code=$?
+
+    elif [[ -f "$selected_module" ]]; then
+
+        bash "$selected_module" || exit_code=$?
+
+    else
+
+        exit_code=1
+
+    fi
+
+    case "$exit_code" in
+        0) log_info "$(_ "common.info_module_successful" "$exit_code")" ;;
+        2|130) log_info "$(_ "common.info_module_user_cancelled" "$exit_code")" ;;
+        3) log_info "$(_ "common.info_module_rollback" "$exit_code")" ;;
+        4) log_info "$(_ "common.info_module_requires_ssh" "$exit_code")" ;;
+        5) log_error "$(_ "common.error_missing_meta_tags" "$exit_code")" ;;
+        *) log_error "$(_ "common.error_module_failed_code" "$selected_module" "$exit_code")" ;;
     esac
 }
 
@@ -203,39 +238,16 @@ runner::module::select_modify() {
 #               $? - проброс кода ошибки от модуля
 runner::module::run_modify() {
     while true; do
-        local exit_code=0
-        local selected_module
-
-        # Получаем выбранный модуль через пайплайн
-        read -r -d '' selected_module < <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
+        local res=""
+        res=$(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
             | sys::module::get_paths_w_type \
             | sys::module::get_by_type "$MODULE_TYPE_MODIFY" \
             | sys::module::sort_by_order \
-            | runner::module::select_modify) || return
-
-        # Обработка главного меню
-        if [[ "$selected_module" == "CHECK" ]]; then
-            runner::module::run_check
-        elif [[ "$selected_module" == "LANG_CHANGE" ]]; then
-            i18n::installer::lang_setup
-            i18n::load
-        elif [[ "$selected_module" == "EXIT" ]]; then
-            break
-        fi
-
-        # Обработка результата выполнения модуля
-        if [[ -f "$selected_module" ]]; then
-            bash "$selected_module" || exit_code=$?
-
-            case "$exit_code" in
-                0) log_info "$(_ "common.info_module_successful" "$exit_code")" ;;
-                2|130) log_info "$(_ "common.info_module_user_cancelled" "$exit_code")" ;;
-                3) log_info "$(_ "common.info_module_rollback" "$exit_code")" ;;
-                4) log_info "$(_ "common.info_module_requires_ssh" "$exit_code")" ;;
-                5) log_error "$(_ "common.error_missing_meta_tags" "$exit_code")" ;;
-                *) log_error "$(_ "common.error_module_failed_code" "$selected_module" "$exit_code")" ;;
-            esac
-        fi
+            | runner::module::select_modify \
+            | runner::module::execute_modify) \
+            || { common::pipefail::fallback "${PIPESTATUS[@]}"; }
+            
+        [[ "$res" == "RELOAD_I18N" ]] && i18n::load # Загружаем язык в главном процессе
     done
 }
 
@@ -271,7 +283,6 @@ main() {
     parse_params "$@"
 
     i18n::installer::dispatcher "$PARAMS_LANG"
-    i18n::load
 
     case "$PARAMS_ACTION" in
         help)      show_help ;;
