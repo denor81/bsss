@@ -24,6 +24,7 @@ readonly INSTALL_DIR="/opt/$UTIL_NAME"
 readonly INSTALL_LOG_FILE_NAME=".uninstall_paths"
 readonly MAIN_SCRIPT_FILE_NAME="main.sh"
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
+readonly LANG_FILE="${INSTALL_DIR}/.lang"
 
 declare -a CLEANUP_COMMANDS=()
 TMPARCHIVE=""
@@ -175,7 +176,7 @@ installer::ask_value() {
         [[ -n "$cancel_keyword" && "$choice" == "$cancel_keyword" ]] && return 2
 
         if [[ "$choice" =~ ^$pattern$ ]]; then
-            printf '%s\0' "$choice"
+            printf '%s\n' "$choice"
             break
         fi
         log_error "$(_ "common.error_invalid_input" "[$hint]")"
@@ -481,6 +482,17 @@ install::files::copy() {
     }
 }
 
+# @type:        Sink
+# @description: Запись/перезапись файла .lang (код без переноса строки)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка записи файла
+i18n::installer::write_lang_file() {
+    [[ -n "$INSTALLER_LANG" ]] && printf '%s' "$INSTALLER_LANG" > "$LANG_FILE"
+}
+
 # @type:        Orchestrator
 # @description: Создание символической ссылки
 # @params:
@@ -536,6 +548,7 @@ install::to_system() {
     install::symlink::check_exists
     install::dir::create
     install::files::copy
+    i18n::installer::write_lang_file
     install::symlink::create
     install::permissions::set
 
@@ -576,10 +589,10 @@ install::runner::main() {
         bash "$TMP_MAIN_SCRIPT_PATH" -l "$INSTALLER_LANG"
     fi
     if [[ "$SYS_INSTALL_FLAG" -eq 1 ]]; then
-        log_info "Будет скачан архив последней версии релиза ${UTIL_NAME^^} [$ARCHIVE_URL]"
-        log_info "Будет произведена установка ${UTIL_NAME^^} в директорию [$INSTALL_DIR]"
-        log_info "Запускать sudo $UTIL_NAME"
-        installer::ask_value "Продолжить?" "y" "[yn]" "Y/n" "n"
+        log_info "$(_ "install.info.download_archive" "${UTIL_NAME^^}" "$ARCHIVE_URL")"
+        log_info "$(_ "install.info.install_dir" "${UTIL_NAME^^}" "$INSTALL_DIR")"
+        log_info "$(_ "install.info.usage_run" "$UTIL_NAME")"
+        installer::ask_value "$(_ "continue")" "y" "[yn]" "Y/n" "n"
 
         sys::run_or_install::prepare
         install::to_system
@@ -589,6 +602,7 @@ install::runner::main() {
 # Russian translations
 declare -gA I18N_MESSAGES_RU=(
     [no_translate]="%s"
+    [continue]="Продолжить?"
     [hello]="Basic Server Security Setup (%s) - oneline запуск..."
     [ask_language.selected]="Выбран язык"
     [error_invalid_input]="Неверный выбор"
@@ -626,11 +640,15 @@ declare -gA I18N_MESSAGES_RU=(
     [install.start]="Устанавливаю %s в систему..."
     [install.complete]="Установка в систему завершена"
     [install.usage]="Используйте для запуска: sudo %s, для удаления: sudo %s -u"
+    [install.info.download_archive"]="Будет скачан архив последней версии релиза %s [%s]"
+    [install.info.install_dir"]="Будет произведена установка %s в директорию [%s]"
+    [install.info.usage_run"]="Запускать sudo %s"
 )
 
 # English translations
 declare -gA I18N_MESSAGES_EN=(
     [no_translate]="%s"
+    [continue]="Continue?"
     [hello]="Basic Server Security Setup (%s) - oneline execution..."
     [ask_language.selected]="Language selected"
     [error_invalid_input]="Invalid choice"
@@ -668,6 +686,9 @@ declare -gA I18N_MESSAGES_EN=(
     [install.start]="Installing %s to system..."
     [install.complete]="System installation completed"
     [install.usage]="Use to run: sudo %s, to uninstall: sudo %s -u"
+    [install.info.download_archive"]="Will download the latest release archive of %s [%s]"
+    [install.info.install_dir"]="Will install %s to directory [%s]"
+    [install.info.usage_run]="Run with sudo %s"
 )
 
 install::runner::main
