@@ -45,7 +45,7 @@ jobs:
             --exclude=".gitignore" \
             --exclude="README.md" \
             .
-          mv "../$FILE_NAME" .
+          mv "/tmp/$FILE_NAME" .
 
           sha256sum "$FILE_NAME" > "$CHECKSUM_NAME"
           
