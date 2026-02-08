@@ -290,6 +290,23 @@ ufw::ping::restore() {
     printf '%s\0' "$UFW_BEFORE_RULES_BACKUP" | sys::file::delete
 }
 
+# @type:        Filter
+# @description: Восстанавливает настройки пинга из бэкапа и передает данные дальше
+# @params:      нет
+# @stdin:       port\0 (опционально)
+# @stdout:      port\0 (опционально)
+# @exit_code:   0 - успешно
+#               $? - код ошибки при восстановлении
+ufw::ping::restore_and_pass() {
+    local port=""
+
+    [[ ! -t 0 ]] && read -r -d '' port || true
+
+    ufw::ping::is_configured && ufw::ping::restore
+
+    [[ -n "$port" ]] && printf '%s\0' "$port" || true
+}
+
 # @type:        Sink
 # @description: Выполняет ufw reload для применения изменений
 # @params:      нет

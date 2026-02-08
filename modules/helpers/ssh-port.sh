@@ -330,7 +330,7 @@ ssh::install::port() {
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
 ssh::reset::port() {
-    ssh::rule::reset_and_pass | ufw::rule::reset_and_pass
+    ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ufw::ping::restore_and_pass
 
     ufw::status::force_disable # Для гарантированного доступа
 
