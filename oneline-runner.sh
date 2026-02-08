@@ -44,6 +44,7 @@ readonly -A JOURNAL_MAP=(
     [ERROR]="err"
 )
 
+trap 'install::cleanup::int_handler' INT
 trap 'install::cleanup::handler' EXIT
 
 # Check if logger command is available for journal logging
@@ -165,7 +166,7 @@ installer::ask_value() {
     local choice
 
     while true; do
-        # log_question "$question [$hint]"
+        log_question "$question [$hint]"
         read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] $question [$hint]: " -r choice </dev/tty
         choice=${choice:-$default}
         log_answer "$choice"
@@ -189,7 +190,7 @@ installer::ask_value() {
 # @exit_code:   0 - язык выбран
 installer::ui::ask_language() {
     local lang
-    read -r -d '' lang < <(installer::ask_value "$(_ "no_translate" "Русский [r] | English [e]")" "r" "[re]" "r/e")
+    lang=$(installer::ask_value "$(_ "no_translate" "Русский [r] | English [e]")" "r" "[re]" "r/e" | tr -d '\0')
 
     if [[ "$lang" =~ ^[Ee]$ ]]; then
         INSTALLER_LANG="en"
@@ -210,6 +211,15 @@ install::ui::hello() {
     log_info "$(_ "hello" "${UTIL_NAME^^}")"
 }
 
+install::cleanup::int_handler() {
+    local rc=$?
+    if [[ $rc -eq 0 ]]; then
+        rc=130
+    fi
+    echo >&2
+    log_info "$(_ "no_translate" "Сигнал прерывания [RC: $rc]")"
+}
+
 # @type:        Orchestrator
 # @description: Очистка временных файлов
 # @params:
@@ -218,7 +228,8 @@ install::ui::hello() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 install::cleanup::handler() {
-    local rc="$?"
+    local rc=$?
+    
 
     if [ "$CLEANUP_DONE_FLAG" -eq 1 ]; then
         return 0
@@ -232,7 +243,8 @@ install::cleanup::handler() {
 
     local i
     for i in "${!CLEANUP_COMMANDS[@]}"; do
-        local cmd="${CLEANUP_COMMANDS[$i]}"
+        local cmd
+        cmd="${CLEANUP_COMMANDS[$i]}"
         log_info "$(_ "cleanup.removing" "$cmd")"
         rm -rf $cmd
         unset 'CLEANUP_COMMANDS[$i]'
@@ -265,12 +277,9 @@ install::permissions::check_root() {
 #               2 - отменено пользователем
 install::ui::ask_run_mode() {
     local choice
-    read -r -d '' choice < <(installer::ask_value "$(_ "ask_run_mode.prompt")" "y" "[yic]" "Y/i/c" "c")
+    choice=$(installer::ask_value "$(_ "ask_run_mode.prompt")" "y" "[yic]" "Y/i/c" "c" | tr -d '\0')
 
-    if [[ $choice =~ ^[Cc]$ ]]; then
-        log_info "$(_ "ask_run_mode.cancelled" "$choice")"
-        return 2
-    elif [[ $choice =~ ^[Ii]$ ]]; then
+    if [[ $choice =~ ^[Ii]$ ]]; then
         log_info "$(_ "ask_run_mode.install" "$choice")"
         if [[ -d "$INSTALL_DIR" ]]; then
             log_error "$(_ "error_already_installed")"

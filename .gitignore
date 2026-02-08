@@ -9,6 +9,7 @@ logs/
 .lang
 docs/plans/
 oneline-runner_copy.sh*
+RELEASE_NOTES_v1*
 
 # Git worktrees
 .worktrees/
