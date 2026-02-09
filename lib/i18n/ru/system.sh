@@ -8,6 +8,7 @@ I18N_MESSAGES["system.update.confirm"]="Обновить системные па
 # Reload check module
 I18N_MESSAGES["system.reload.not_required"]="Перезагрузка не требуется"
 I18N_MESSAGES["system.reload.reboot_required"]="Система нуждается в перезагрузке %s"
+I18N_MESSAGES["system.reload.pkgs_header"]="Пакеты требующие перезагрузки:"
 
 # Common helpers
 I18N_MESSAGES["common.helpers.validate_order.error_missing_tag"]="Отсутствует обязательный тег MODULE_ORDER: %s"

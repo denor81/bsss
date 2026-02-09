@@ -330,9 +330,13 @@ ssh::install::port() {
 # @exit_code:   0 - успешно
 #               $? - код ошибки дочернего процесса
 ssh::reset::port() {
-    ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ufw::ping::restore_and_pass
+    ssh::rule::reset_and_pass | ufw::rule::reset_and_pass
 
+    # Считаем этот откат полным и сбрасываем все установленные правила
+    # и даже настройки ping, хотя это не совсем верно
+    # TODO
     ufw::status::force_disable # Для гарантированного доступа
+    ufw::ping::is_configured && ufw::ping::restore
 
     sys::service::restart
     log_actual_info

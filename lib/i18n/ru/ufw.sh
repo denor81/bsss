@@ -44,4 +44,4 @@ I18N_MESSAGES["ufw.error.invalid_menu_id"]="Неверный ID действия
 I18N_MESSAGES["ufw.error.backup_failed"]="Не удалось создать бэкап %s [%s]"
 I18N_MESSAGES["ufw.error.restore_failed"]="Не удалось восстановить %s из бэкапа [%s]"
 I18N_MESSAGES["ufw.error.edit_failed"]="Ошибка при редактировании: [%s]"
-I18N_MESSAGES["ufw.error.reload_failed"]="Не удалось выполнить [ufw reload] [Code: %s]"
+I18N_MESSAGES["ufw.error.reload_failed"]="Не удалось выполнить [ufw reload] [RC: %s]"

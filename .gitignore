@@ -7,7 +7,7 @@ build-archive.sh
 project-v1.0.0.tar.gz
 logs/
 .lang
-docs/plans/
+docs/
 oneline-runner_copy.sh*
 RELEASE_NOTES_v1*
 

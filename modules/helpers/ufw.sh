@@ -18,12 +18,12 @@ ufw::rule::has_any_bsss() {
 #               4 - требования не выполнены
 ufw::rule::check_requirements() {
     if ufw::rule::has_any_bsss; then
-        return 0
+        return
     fi
 
     if ufw::status::is_active; then
         log_info "$(_ "ufw.info.no_rules_but_active")"
-        return 0
+        return
     else
         log_warn "$(_ "ufw.warning.continue_without_rules")"
         log_info "$(_ "ufw.warning.add_ssh_first")"
@@ -225,17 +225,6 @@ ufw::orchestrator::log_statuses() {
     ufw::log::ping_status
 }
 
-# @type:        Validator
-# @description: Проверяет, существует ли бэкап файл настроек PING
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - бэкап существует (PING отключен)
-#               1 - бэкап не существует (PING не отключен)
-ufw::ping::is_configured() {
-    [[ -f "$UFW_BEFORE_RULES_BACKUP" ]]
-}
-
 # @type:        Sink
 # @description: Создает бэкап файла before.rules
 # @params:      нет
@@ -269,42 +258,6 @@ ufw::ping::disable_in_rules() {
         log_error "$(_ "ufw.error.edit_failed" "$UFW_BEFORE_RULES")"
         return 1
     fi
-}
-
-# @type:        Orchestrator
-# @description: Восстанавливает файл before.rules из бэкапа и удаляет бэкап
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно восстановлено
-#               $? - код ошибки cp или rm
-ufw::ping::restore() {
-    if res=$(cp -pv "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES" 2>&1); then
-        log_info "$(_ "ufw.success.backup_restored" "$res")"
-    else
-        local rc=$?
-        log_error "$(_ "ufw.error.restore_failed" "$UFW_BEFORE_RULES" "$res")"
-        return "$rc"
-    fi
-
-    printf '%s\0' "$UFW_BEFORE_RULES_BACKUP" | sys::file::delete
-}
-
-# @type:        Filter
-# @description: Восстанавливает настройки пинга из бэкапа и передает данные дальше
-# @params:      нет
-# @stdin:       port\0 (опционально)
-# @stdout:      port\0 (опционально)
-# @exit_code:   0 - успешно
-#               $? - код ошибки при восстановлении
-ufw::ping::restore_and_pass() {
-    local port=""
-
-    [[ ! -t 0 ]] && read -r -d '' port || true
-
-    ufw::ping::is_configured && ufw::ping::restore
-
-    [[ -n "$port" ]] && printf '%s\0' "$port" || true
 }
 
 # @type:        Sink

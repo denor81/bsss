@@ -8,6 +8,7 @@ I18N_MESSAGES["system.update.confirm"]="Update system packages? [apt-get update 
 # Reload check module
 I18N_MESSAGES["system.reload.not_required"]="Reboot not required"
 I18N_MESSAGES["system.reload.reboot_required"]="System requires reboot %s"
+I18N_MESSAGES["system.reload.pkgs_header"]="Packages requiring reboot:"
 
 # Common helpers
 I18N_MESSAGES["common.helpers.validate_order.error_missing_tag"]="Missing required MODULE_ORDER tag: %s"

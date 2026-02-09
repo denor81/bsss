@@ -3,6 +3,7 @@
 # Special message - pass through without translation
 I18N_MESSAGES["no_translate"]="%s"
 I18N_MESSAGES["common.pipefail.interrupted"]="Interrupted [RC: %d]"
+I18N_MESSAGES["common.log_command"]="Command [%s]"
 
 # Basic messages
 I18N_MESSAGES["common.exit"]="%s. Exit"
@@ -28,14 +29,14 @@ I18N_MESSAGES["common.menu_language"]="%s. Язык • Language • 语言 • 
 I18N_MESSAGES["common.error_no_modules_found"]="Cannot run, modules not found"
 I18N_MESSAGES["common.error_module_error"]="Cannot run, one of the modules shows an error"
 I18N_MESSAGES["common.error_no_modules_available"]="No modules available for setup"
-I18N_MESSAGES["common.error_module_failed_code"]="Error in module [%s] [Code: %s]"
-I18N_MESSAGES["common.error_missing_meta_tags"]="Missing required meta tags MODULE_ORDER [Code: %s]"
+I18N_MESSAGES["common.unexpected_error_module_failed_code"]="Unexpected error [RC: %s] [%s]"
+I18N_MESSAGES["common.error_missing_meta_tags"]="Missing required meta tags MODULE_ORDER [RC: %s] [%s]"
 
 # Info messages - module runner
-I18N_MESSAGES["common.info_module_successful"]="Completed successfully [Code: %s]"
-I18N_MESSAGES["common.info_module_user_cancelled"]="Cancelled by user [Code: %s]"
-I18N_MESSAGES["common.info_module_rollback"]="Completed via rollback [Code: %s]"
-I18N_MESSAGES["common.info_module_requires_ssh"]="Module requires preliminary SSH setup [Code: %s]"
+I18N_MESSAGES["common.info_module_successful"]="Completed successfully"
+I18N_MESSAGES["common.info_module_user_cancelled"]="Cancelled by user [RC: %s] [%s]"
+I18N_MESSAGES["common.info_module_rollback"]="Completed via rollback [RC: %s] [%s]"
+I18N_MESSAGES["common.info_module_requires"]="Pre-configuration required [RC: %s] [%s]"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
 
 # Info messages - uninstall

@@ -331,7 +331,6 @@ ufw::status::is_active() {
 ufw::status::force_disable() {
     if ufw::status::is_active && ufw --force disable >/dev/null 2>&1; then
         log_info "$(_ "common.helpers.ufw.disabled")"
-        # ufw::orchestrator::log_statuses
     else
         log_info "$(_ "common.helpers.ufw.already_disabled")"
     fi
@@ -446,4 +445,34 @@ common::pipefail::fallback() {
         2|130) return $final_rc ;; # Пробрасываем код 2/130
         *) return 1 ;; # Неизвестная ошибка
     esac
+}
+
+# @type:        Validator
+# @description: Проверяет, существует ли бэкап файл настроек PING
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - бэкап существует (PING отключен)
+#               1 - бэкап не существует (PING не отключен)
+ufw::ping::is_configured() {
+    [[ -f "$UFW_BEFORE_RULES_BACKUP" ]]
+}
+
+# @type:        Orchestrator
+# @description: Восстанавливает файл before.rules из бэкапа и удаляет бэкап
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно восстановлено
+#               $? - код ошибки cp или rm
+ufw::ping::restore() {
+    if res=$(cp -pv "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES" 2>&1); then
+        log_info "$(_ "ufw.success.backup_restored" "$res")"
+    else
+        local rc=$?
+        log_error "$(_ "ufw.error.restore_failed" "$UFW_BEFORE_RULES" "$res")"
+        return "$rc"
+    fi
+
+    printf '%s\0' "$UFW_BEFORE_RULES_BACKUP" | sys::file::delete
 }

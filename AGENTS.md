@@ -287,15 +287,28 @@ ssh::port::is_port_free() {
          - `common.error_root_privileges` - общие ошибки
          - `ufw.status.enabled` - статусы UFW
 
-     - Заглушка `no_translate`:
-       * Используется для вывода текста без перевода (пути к файлам, динамические строки)
-       * Определена в common.sh: `I18N_MESSAGES["no_translate"]="%s"`
-       * Примеры использования:
+      - Заглушка `no_translate`:
+        * Используется для вывода текста без перевода (пути к файлам, динамические строки)
+        * Определена в common.sh: `I18N_MESSAGES["no_translate"]="%s"`
+        * Примеры использования:
 
-        ```bash
-        # Путь к файлу
-        log_info_simple_tab "$(_ \"no_translate\" \"/etc/ssh/sshd_config:Port 22\")"
-        ```
+         ```bash
+         # Путь к файлу
+         log_info_simple_tab "$(_ \"no_translate\" \"/etc/ssh/sshd_config:Port 22\")"
+         ```
+
+      - Универсальные переменные переводов:
+        * `common.log_command` — универсальная переменная для логирования команд без описания
+        * Формат: "Команда [%s]" / "Command [%s]"
+        * Используется когда нужно просто показать выполняемую команду пользователю
+        * Определена в common.sh: `I18N_MESSAGES["common.log_command"]="Команда [%s]"`
+        * Примеры использования:
+
+         ```bash
+         # Логирование выполнения команды
+         log_info "$(_ \"common.log_command\" \"systemctl stop ssh.socket\")"
+         systemctl stop ssh.socket >/dev/null 2>&1
+         ```
 
       - Файлы переводов:
         * lib/i18n/ru/common.sh - общие сообщения (русский)

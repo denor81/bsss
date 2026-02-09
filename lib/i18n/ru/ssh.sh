@@ -53,12 +53,16 @@ I18N_MESSAGES["ssh.error_port_not_up"]="ПОРТ %s НЕ ПОДНЯЛСЯ [%s п
 I18N_MESSAGES["ssh.error_invalid_choice"]="Не корректный выбор"
 
 # Socket check messages
-I18N_MESSAGES["ssh.socket.configured"]="SSH настроен корректно в service mode"
+I18N_MESSAGES["ssh.socket.configured"]="SSH корректно работает в режиме ssh.service"
 I18N_MESSAGES["ssh.socket.mode_warning"]="SSH работает в socket-based activation mode, что может конфликтовать с изменением порта через sshd_config"
 I18N_MESSAGES["ssh.socket.mode_required"]="Требуется переключение SSH в традиционный service mode"
 I18N_MESSAGES["ssh.socket.switch_confirm"]="Переключить SSH в традиционный service mode?"
-I18N_MESSAGES["ssh.socket.socket_masked"]="ssh.socket замаскирован (masked)"
+I18N_MESSAGES["ssh.socket.socket_masked"]="ssh.socket корректно замаскирован (masked)"
 I18N_MESSAGES["ssh.socket.socket_enabled"]="ssh.socket активен - SSH работает в socket-based activation mode"
 I18N_MESSAGES["ssh.socket.socket_disabled"]="ssh.socket отключен"
 I18N_MESSAGES["ssh.socket.socket_status"]="Статус ssh.socket: %s"
 I18N_MESSAGES["ssh.socket.not_found_traditional_mode"]="ssh.socket не найден - SSH работает в традиционном service mode (Ubuntu 20.04 или сконфигурирован вручную)"
+I18N_MESSAGES["ssh.socket.force_mode"]="Переключение SSH в традиционный service mode"
+I18N_MESSAGES["ssh.socket.service_not_active"]="SSH сервис не активен, запускаем..."
+I18N_MESSAGES["ssh.socket.start_error"]="Ошибка запуска SSH сервиса"
+I18N_MESSAGES["ssh.socket.active"]="SSH сервис активен в service mode"

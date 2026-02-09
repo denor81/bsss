@@ -100,6 +100,7 @@ log_dir_init() {
 
 # @type:        Orchestrator
 # @description: Поиск и запуск модулей с типом 'check'
+#               Используется дескриптор 3 что бы не забивать стандартные 1 и 2
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
@@ -109,21 +110,22 @@ log_dir_init() {
 #               5 - отсутствуют обязательные метатеги MODULE_ORDER
 runner::module::run_check() {
     local err=0
-    local found=0
+    local founded_modules=0
 
     log::draw_border
     while read -r -d '' m_path <&3; do
-        found=$((found + 1))
-        if ! bash "$m_path"; then
+        founded_modules=$((founded_modules + 1))
+        bash "$m_path" || {
+            main::process::exit_code $? "$(basename $m_path)"
             err=1
-        fi
+        }
     done 3< <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
     | sys::module::get_paths_w_type \
     | sys::module::get_by_type "$MODULE_TYPE_CHECK" \
     | sys::module::sort_by_order)
 
-    (( found == 0 )) && { log_error "$(_ "common.error_no_modules_found")"; log::draw_border; return 1; }
-    (( err )) && { log_error "$(_ "common.error_module_error")"; log::draw_border; return 4; }
+    (( founded_modules == 0 )) && { log_error "$(_ "common.error_no_modules_found")"; log::draw_border; return 1; }
+    (( err == 1 )) && { log_error "$(_ "common.error_module_error")"; log::draw_border; return 1; }
     log::draw_border
 }
 
@@ -218,14 +220,21 @@ runner::module::execute_modify() {
         exit_code=1
 
     fi
+    main::process::exit_code "$exit_code" "$(basename $selected_module)"
+}
+
+main::process::exit_code() {
+    local exit_code="${1:0}"
+    local module_tag="${2:-}"
+
+    (( exit_code == 0 )) && { log_info "$(_ "common.info_module_successful")"; return 0; }
 
     case "$exit_code" in
-        0) log_info "$(_ "common.info_module_successful" "$exit_code")" ;;
-        2|130) log_info "$(_ "common.info_module_user_cancelled" "$exit_code")" ;;
-        3) log_info "$(_ "common.info_module_rollback" "$exit_code")" ;;
-        4) log_info "$(_ "common.info_module_requires_ssh" "$exit_code")" ;;
-        5) log_error "$(_ "common.error_missing_meta_tags" "$exit_code")" ;;
-        *) log_error "$(_ "common.error_module_failed_code" "$selected_module" "$exit_code")" ;;
+        2|130) log_info "$(_ "common.info_module_user_cancelled" "$exit_code" "$module_tag")" ;;
+        3) log_warn "$(_ "common.info_module_rollback" "$exit_code" "$module_tag")" ;;
+        4) log_warn "$(_ "common.info_module_requires" "$exit_code" "$module_tag")" ;;
+        5) log_error "$(_ "common.error_missing_meta_tags" "$exit_code" "$module_tag")" ;;
+        *) log_error "$(_ "common.unexpected_error_module_failed_code" "$exit_code" "$module_tag")" ;;
     esac
 }
 
@@ -265,7 +274,7 @@ run() {
     sys::log::rotate_old_files
 
     runner::module::run_check
-    io::confirm_action "$(_ "io.confirm_action.run_setup")" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
+    # io::confirm_action "$(_ "io.confirm_action.run_setup")" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
     runner::module::run_modify
 }
 

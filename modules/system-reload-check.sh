@@ -21,7 +21,15 @@ source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 check() {
     if [[ -f "$REBOOT_REQUIRED_FILE_PATH" ]]; then
         log_error "$(_ "system.reload.reboot_required" "$REBOOT_REQUIRED_FILE_PATH")"
-        return 1
+        
+        local pkgs_file="${REBOOT_REQUIRED_FILE_PATH}.pkgs"
+        if [[ -f "$pkgs_file" ]]; then
+            log_info "$(_ "system.reload.pkgs_header")"
+            while IFS= read -r pkg; do
+                log_info_simple_tab "$(_ "no_translate" "$pkg")"
+            done < "$pkgs_file"
+        fi
+        return 4
     else
         log_info "$(_ "system.reload.not_required")"
     fi
@@ -36,10 +44,10 @@ check() {
 #               1 - требуется перезагрузка
 main() {
     i18n::load
-    check
+    check || exit $?
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+    main "$@" || exit $?
 fi

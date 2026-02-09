@@ -53,12 +53,16 @@ I18N_MESSAGES["ssh.error_port_not_up"]="PORT %s DID NOT COME UP [%s attempts in 
 I18N_MESSAGES["ssh.error_invalid_choice"]="Invalid choice"
 
 # Socket check messages
-I18N_MESSAGES["ssh.socket.configured"]="SSH properly configured in service mode"
+I18N_MESSAGES["ssh.socket.configured"]="SSH works correctly in ssh.service mode"
 I18N_MESSAGES["ssh.socket.mode_warning"]="SSH is running in socket-based activation mode, which may conflict with port changes via sshd_config"
 I18N_MESSAGES["ssh.socket.mode_required"]="SSH needs to be switched to traditional service mode"
 I18N_MESSAGES["ssh.socket.switch_confirm"]="Switch SSH to traditional service mode?"
-I18N_MESSAGES["ssh.socket.socket_masked"]="ssh.socket is masked"
+I18N_MESSAGES["ssh.socket.socket_masked"]="ssh.socket properly masked"
 I18N_MESSAGES["ssh.socket.socket_enabled"]="ssh.socket is enabled - SSH is running in socket-based activation mode"
 I18N_MESSAGES["ssh.socket.socket_disabled"]="ssh.socket is disabled"
 I18N_MESSAGES["ssh.socket.socket_status"]="ssh.socket status: %s"
 I18N_MESSAGES["ssh.socket.not_found_traditional_mode"]="ssh.socket not found - SSH is running in traditional service mode (Ubuntu 20.04 or manually configured)"
+I18N_MESSAGES["ssh.socket.force_mode"]="Switching SSH to traditional service mode"
+I18N_MESSAGES["ssh.socket.service_not_active"]="SSH service is not active, starting..."
+I18N_MESSAGES["ssh.socket.start_error"]="Failed to start SSH service"
+I18N_MESSAGES["ssh.socket.active"]="SSH service is active in service mode"

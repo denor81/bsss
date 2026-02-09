@@ -56,20 +56,30 @@ sys::ssh::is_service_active() {
 ssh::socket::force_service_mode() {
     log_info "$(_ "ssh.socket.force_mode")"
 
+    log_info "$(_ "common.log_command" "systemctl stop ssh.socket")"
     systemctl stop ssh.socket >/dev/null 2>&1
+
+    log_info "$(_ "common.log_command" "systemctl disable ssh.socket")"
     systemctl disable ssh.socket >/dev/null 2>&1
+
+    log_info "$(_ "common.log_command" "systemctl mask ssh.socket")"
     systemctl mask ssh.socket >/dev/null 2>&1
 
+    log_info "$(_ "common.log_command" "systemctl unmask ssh.service")"
     systemctl unmask ssh.service >/dev/null 2>&1
+
+    log_info "$(_ "common.log_command" "systemctl enable ssh.service")"
     systemctl enable ssh.service >/dev/null 2>&1
 
     if ! systemctl is-active --quiet ssh.service; then
         log_info "$(_ "ssh.socket.service_not_active")"
+        log_info "$(_ "common.log_command" "systemctl start ssh.service")"
         if ! systemctl start ssh.service; then
             log_error "$(_ "ssh.socket.start_error")"
             return 1
         fi
     else
+        log_info "$(_ "common.log_command" "systemctl restart ssh.service")"
         systemctl restart ssh.service >/dev/null 2>&1
     fi
 

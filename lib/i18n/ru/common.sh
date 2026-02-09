@@ -3,6 +3,7 @@
 # Special message - pass through without translation
 I18N_MESSAGES["no_translate"]="%s"
 I18N_MESSAGES["common.pipefail.interrupted"]="Прервано [RC: %d]"
+I18N_MESSAGES["common.log_command"]="Команда [%s]"
 
 # Basic messages
 I18N_MESSAGES["common.exit"]="%s. Выход"
@@ -28,14 +29,14 @@ I18N_MESSAGES["common.menu_language"]="%s. Язык • Language • 语言 • 
 I18N_MESSAGES["common.error_no_modules_found"]="Запуск не возможен, Модули не найдены"
 I18N_MESSAGES["common.error_module_error"]="Запуск не возможен, один из модулей показывает ошибку"
 I18N_MESSAGES["common.error_no_modules_available"]="Нет доступных модулей для настройки"
-I18N_MESSAGES["common.error_module_failed_code"]="Ошибка в модуле [%s] [Code: %s]"
-I18N_MESSAGES["common.error_missing_meta_tags"]="Отсутствуют обязательные метатеги MODULE_ORDER [Code: %s]"
+I18N_MESSAGES["common.unexpected_error_module_failed_code"]="Непредвиденная ошибка [RC: %s] [%s]"
+I18N_MESSAGES["common.error_missing_meta_tags"]="Отсутствуют обязательные метатеги MODULE_ORDER [RC: %s] [%s]"
 
 # Info messages - module runner
-I18N_MESSAGES["common.info_module_successful"]="Успешно завершен [Code: %s]"
-I18N_MESSAGES["common.info_module_user_cancelled"]="Завершено пользователем [Code: %s]"
-I18N_MESSAGES["common.info_module_rollback"]="Завершен откатом [Code: %s]"
-I18N_MESSAGES["common.info_module_requires_ssh"]="Модуль требует предварительной настройки SSH [Code: %s]"
+I18N_MESSAGES["common.info_module_successful"]="Успешно завершен"
+I18N_MESSAGES["common.info_module_user_cancelled"]="Завершено пользователем [RC: %s] [%s]"
+I18N_MESSAGES["common.info_module_rollback"]="Завершен откатом [RC: %s] [%s]"
+I18N_MESSAGES["common.info_module_requires"]="Требуется предварительная настройка [RC: %s] [%s]"
 I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
 
 # Info messages - uninstall

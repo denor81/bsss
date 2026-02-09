@@ -33,18 +33,10 @@ check_unit() {
         socket_status=$(systemctl is-enabled ssh.socket 2>/dev/null || true)
 
         case "$socket_status" in
-            masked)
-                log_info "$(_ "ssh.socket.socket_masked")"
-                ;;
-            enabled|static)
-                log_info "$(_ "ssh.socket.socket_enabled")"
-                ;;
-            disabled)
-                log_info "$(_ "ssh.socket.socket_disabled")"
-                ;;
-            *)
-                log_info "$(_ "ssh.socket.socket_status" "$socket_status")"
-                ;;
+            masked) log_info "$(_ "ssh.socket.socket_masked")" ;;
+            enabled|static) log_info "$(_ "ssh.socket.socket_enabled")" ;;
+            disabled) log_info "$(_ "ssh.socket.socket_disabled")" ;;
+            *) log_info "$(_ "ssh.socket.socket_status" "$socket_status")" ;;
         esac
     else
         log_info "$(_ "ssh.socket.not_found_traditional_mode")"

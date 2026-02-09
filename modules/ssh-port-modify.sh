@@ -12,7 +12,6 @@ source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
-source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 
@@ -29,7 +28,6 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
 ssh::orchestrator::dispatch_logic() {
-    # if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | read -r -d '' _; then
     if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" >/dev/null; then
         ssh::orchestrator::config_exists_handler
     else
