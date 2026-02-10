@@ -186,7 +186,7 @@ runner::module::select_modify() {
 
     # Запрашиваем выбор пользователя
     local selection
-    selection=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[0-$max_id])$" "0-$max_id" "$menu_exit" | tr -d '\0') || return
+    selection=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[$menu_exit-$max_id])$" "$menu_exit-$max_id" "$menu_exit" | tr -d '\0') || return
     case "$selection" in
         "$menu_check")  printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
         "$menu_lang")   printf '%s\0' "LANG_CHANGE" ;; # Возвращаем маркер смены языка
