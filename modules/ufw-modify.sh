@@ -36,7 +36,7 @@ ufw::orchestrator::run_module() {
     ufw::menu::display
 
     local menu_id
-    menu_id=$(ufw::menu::get_user_choice | tr -d '\0') || return
+    menu_id=$(ufw::menu::get_user_choice | tr -d '\0')
     # Запускаем в текущем процессе, что бы корректно завершать read при получении сигнала отката SIGUSR1
     ufw::orchestrator::dispatch_logic "$menu_id"
 }
@@ -55,9 +55,9 @@ main() {
     i18n::load
     log_start
 
-    io::confirm_action "$(_ "ufw.modify.confirm")" || return
+    io::confirm_action "$(_ "ufw.modify.confirm")"
 
-    ufw::rule::check_requirements || return
+    ufw::rule::check_requirements
 
     ufw::orchestrator::run_module
 }

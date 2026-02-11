@@ -128,6 +128,23 @@ log_info() {
 }
 
 # @type:        Sink
+# @description: Выводит информационное сообщение БЕЗ логирования в файл и журнал
+#               Используется для вывода чувствительной информации (например, паролей)
+# @params:      message - Уже переведенное сообщение
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log_info_no_log() {
+    local msg="$1"
+
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
+    else
+        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
+}
+
+# @type:        Sink
 # @description: ТОЛЬКО в файл - вопрос с символом [?]
 #               В терминал вопрос выводится стандартными средствами read
 # @params:      question - вопрос
