@@ -151,3 +151,17 @@ user::pass::set() {
 
     echo "$cred" | chpasswd 2>&1
 }
+
+# @type:        Sink
+# @description: Создает файл в /etc/sudoers.d/ для парольного доступа к sudo
+#               Файл создается с правами 0440
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка создания файла или установки прав
+user::sudoers::create_file() {
+    local sudoers_file="${SUDOERS_D_DIR}/${BSSS_USER_NAME}"
+
+    echo "${BSSS_USER_NAME} ALL=(ALL) NOPASSWD:ALL" | sudo tee "$sudoers_file" > /dev/null || return 1
+    sudo chmod 0440 "$sudoers_file" || return 1
+}

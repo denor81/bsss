@@ -23,6 +23,7 @@ user::orchestrator::create_dispatcher() {
 
     user::create::execute || { log_error "Ошибка при создании пользователя"; return; }
     printf '%s:%s\0' "$BSSS_USER_NAME" "$password" | user::pass::set
+    user::sudoers::create_file || log_error "Ошибка при создании файла sudoers"
 
     printf '%s:%s' "$BSSS_USER_NAME" "$password"
 }
@@ -40,6 +41,7 @@ user::orchestrator::create_user() {
     log_info "Что будет происходить:"
     log_info_simple_tab "Создание: [useradd -m -d /home/$BSSS_USER_NAME -s /bin/bash -G sudo $BSSS_USER_NAME]"
     log_info_simple_tab "Генерация пароля: [openssl rand -base64 $BSSS_USER_PASS_LEN]"
+    log_info_simple_tab "Создание правил в ${SUDOERS_D_DIR}/${BSSS_USER_NAME}"
     log_info_simple_tab "Пароль будет выведен только раз на экран терминала (в логи не пишется)"
     log_info "После создания пользователя необходимо скопировать ваш ключ командой ssh-copy-id"
     log_info "Проверить авторизацию по ключу и если все ок, то можно запрещать доступ по паролю и доступ от имени root"
