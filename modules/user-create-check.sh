@@ -9,6 +9,7 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/modules/helpers/user.sh"
 
 # @type:        Orchestrator
@@ -18,11 +19,8 @@ source "${PROJECT_ROOT}/modules/helpers/user.sh"
 # @stdout:      нет
 # @exit_code:   0 - успешно
 check() {
-    if user::system::is_only_root; then
-        log_info "В системе только один пользователь root [UID: 0]"
-    else
-        user::info::block
-    fi
+    user::info::block
+    user::log::configs
 }
 
 # @type:        Orchestrator
@@ -32,6 +30,7 @@ check() {
 # @stdout:      нет
 # @exit_code:   0 - проверка прошла успешно
 main() {
+    i18n::load
     check
 }
 

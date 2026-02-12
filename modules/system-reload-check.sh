@@ -44,10 +44,10 @@ check() {
 #               1 - требуется перезагрузка
 main() {
     i18n::load
-    check || exit $?
+    check
 }
 
 # (Guard): Выполнять main ТОЛЬКО если скрипт запущен, а не импортирован
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@" || exit $?
+    main "$@"
 fi

@@ -10,6 +10,7 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" &
 
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
+source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/user.sh"
@@ -55,22 +56,20 @@ user::orchestrator::create_user() {
     log_info "После копирования SSH ключа и успешного подключения можно бует запретить авторизацию о паролю"
 }
 
-user::dispatch::logic() {
-    if user::system::is_only_root; then
-        user::orchestrator::create_user
-    else
+user::auth::dispatcher() {
         local current_conn_type=$(user::system::get_auth_method | tr -d '\0')
-        log_success "Пользователь отличный от root уже создан"
+        log_info "Пользователь отличный от root уже создан"
+        log_info "Создание дополнительного пользователя не требуется"
         user::info::block
 
         if [[ "$current_conn_type" == "PUBLICKEY" ]]; then
             local root_id=$(id -u root)
             local auth_id=$(id -u $(logname))
-            log_success "Текущее подключение через [${current_conn_type}]"
-
-            log_info "Текущий подключенный пользователь [Username: $(logname), UID: ${auth_id}]"
+            log_info "Текущее подключение через [${current_conn_type}]"
+            log_info "Текущий подключенный пользователь [$(logname):${auth_id}]"
+            
             if (( ! (root_id == auth_id) )); then
-                log_success "Можно отключать PermitRootLogin и PasswordAuthentication"
+                log_info "Можно отключать PermitRootLogin и PasswordAuthentication"
                 io::confirm_action "Отключить?"
             else
                 log_warn "Нельзя отключать PermitRootLogin и PasswordAuthentication"
@@ -80,7 +79,16 @@ user::dispatch::logic() {
             log_warn "Текущее подключение через [${current_conn_type}]"
             log_warn "Подключитесь по SSH ключу пользователем отличным от root"
         fi
-    fi
+}
+
+user::dispatch::logic() {
+    local rc
+    user::system::is_only_root || rc=$?
+    case "$rc" in
+        0) user::orchestrator::create_user ;; # Только root
+        1) user::auth::dispatcher ;; # Есть другие пользователи
+        2) log_error "Ошибка проверки состава пользователей" ;;
+    esac
 }
 
 # @type:        Orchestrator
@@ -90,6 +98,7 @@ user::dispatch::logic() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 main() {
+    i18n::load
     log_start
     io::confirm_action "Запустить модуль?"
     user::dispatch::logic

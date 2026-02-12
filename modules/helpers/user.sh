@@ -28,9 +28,7 @@ user::system::is_only_root() {
     done < <(user::list::get)
 
     if [[ "${#lines[@]}" -eq 1 ]]; then
-        IFS=":" read -r username passwd id rest <<< "${lines[0]}"
-        
-        if [[ "$id" -eq 0 ]]; then
+        if (( id == 0 )); then
             return 0  # существует только root (uid: 0)
         else
             return 2  # существует только 1 пользователь, но uid не равен 0 (это не root) 
@@ -66,8 +64,13 @@ user::info::block() {
     local login_user=$(logname 2>/dev/null || echo "N/A")
     local auth_method=$(user::system::get_auth_method | tr -d '\0')
     local i=0
-    log_info "В системе несколько пользователей:"
 
+    if user::system::is_only_root; then
+        log_info "В системе только один пользователь root [UID: 0]"
+        return 0
+    fi
+
+    log_info "В системе несколько пользователей:"
     while IFS=":" read -r -d '' username pass uid rest; do
         i=$(( i + 1 ))
 
@@ -119,4 +122,30 @@ user::pass::set() {
     [[ ! -t 0 ]] && IFS= read -r -d '' cred || return 1
 
     echo "$cred" | chpasswd 2>&1
+}
+
+# @type:        Sink
+# @description: Надо придумать
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+user::log::configs() {
+    local grep_result
+    local found=0
+
+    while IFS= read -r grep_result || break; do
+
+        if (( found == 0 )); then
+            log_info "Найдены правила настроек доступа"
+            found=$((found + 1))
+        fi
+
+        log_info_simple_tab "$(_ "no_translate" "$grep_result")"
+
+    done < <(grep -EiHs '^\s*(PubkeyAuthentication|PasswordAuthentication|PubkeyAuthentication)\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
+
+    if (( found == 0 )); then
+        log_info "Активные правила не найдены [PubkeyAuthentication|PasswordAuthentication|PubkeyAuthentication]"
+    fi
 }
