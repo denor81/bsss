@@ -47,27 +47,53 @@ permissions::ssh::find_last_prefix() {
 }
 
 # @type:        Sink
-# @description: Логирует найденные правила настроек доступа SSH
+# @description: Логирует все BSSS конфигурации permissions с портами
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0
-permissions::log::configs() {
+# @exit_code:   0 - успешно
+permissions::log::bsss_configs() {
     local grep_result
     local found=0
 
     while IFS= read -r grep_result || break; do
 
         if (( found == 0 )); then
-            log_info "Найдены правила настроек доступа"
+            log_info "Есть правила ${UTIL_NAME^^} для доступа:"
             found=$((found + 1))
         fi
 
         log_info_simple_tab "$grep_result"
 
-    done < <(grep -EiHs '^\s*(PubkeyAuthentication|PasswordAuthentication|PermitRootLogin)\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
+    done < <(grep -EiHs '^\s*(PubkeyAuthentication|PasswordAuthentication|PermitRootLogin)\b' "${SSH_CONFIGD_DIR}/"$BSSS_PERMISSIONS_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
-        log_info "Активные правила не найдены [PermitRootLogin|PasswordAuthentication|PubkeyAuthentication]"
+        log_info "Нет правил ${UTIL_NAME^^} для доступа"
+    fi
+}
+
+# @type:        Sink
+# @description: Логирует все сторонние конфигурации permissions с портами
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+permissions::log::other_configs() {
+    local grep_result
+    local found=0
+
+    while IFS= read -r grep_result || break; do
+
+        if (( found == 0 )); then
+            log_info "Найдены сторонние правила для доступа"
+            found=$((found + 1))
+        fi
+
+        log_info_simple_tab "$grep_result"
+
+    done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR}/"$BSSS_PERMISSIONS_CONFIG_FILE_MASK '^\s*(PubkeyAuthentication|PasswordAuthentication|PermitRootLogin)\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
+
+    if (( found == 0 )); then
+        log_info "Нет стоонних правил для доступа"
     fi
 }
