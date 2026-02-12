@@ -80,29 +80,11 @@ ufw::menu::count_items() {
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
 ufw::menu::get_user_choice() {
-    local qty_items=$(ufw::menu::count_items)
+    local qty_items=$(($(ufw::menu::count_items) - 1)) # вычитаем один элемент - 0 пункт меню, что бы корректно отображать маску
     local pattern="^[0-$qty_items]$"
     local hint="0-$qty_items"
 
     io::ask_value "$(_ "ufw.menu.ask_select")" "" "$pattern" "$hint" "0" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
-}
-
-# @type:        Orchestrator
-# @description: Применяет изменения UFW на основе выбранного действия
-# @params:
-#   menu_id     ID выбранного действия
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - ошибка в процессе
-ufw::orchestrator::dispatch_logic() {
-    local menu_id="$1"
-
-    case "$menu_id" in
-        1) ufw::toggle::status ;;
-        2) ufw::toggle::ping ;;
-        *) log_error "$(_ "ufw.error.invalid_menu_id" "$menu_id")"; return 1 ;;
-    esac
 }
 
 # @type:        Orchestrator

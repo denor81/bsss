@@ -355,20 +355,3 @@ ssh::log::guard_instructions() {
     log_attention "$(_ "ssh.guard.dont_close")"
     log_attention "$(_ "ssh.guard.test_new" "$port")"
 }
-
-# @type:        Orchestrator
-# @description: Перезапускает SSH сервис после проверки конфигурации
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - сервис успешно перезапущен
-#               1 - ошибка конфигурации
-sys::service::restart() {
-    if sshd -t; then
-        systemctl daemon-reload && log_info "$(_ "ssh.service.daemon_reloaded")"
-        systemctl restart ssh.service && log_info "$(_ "ssh.service.restarted")"
-    else
-        log_error "$(_ "ssh.error_config_sshd")"
-        return 1
-    fi
-}

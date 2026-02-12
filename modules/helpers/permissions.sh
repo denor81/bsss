@@ -1,47 +1,24 @@
 # @type:        Source
-# @description: Возвращает метод подключения пользователя [logname]
-# @params:      нет
-# @stdin:       нет
-# @stdout:      connection_type\0 (PUBLICKEY/PASSWORD/UNKNOWN)
-# @exit_code:   0
-permissions::auth::get_method() {
-    local auth_info
-
-    auth_info=$(journalctl _COMM=sshd --since "12h ago" 2>/dev/null | grep "Accepted" | grep "for $(logname)" | tail -1)
-
-    [[ -z "$auth_info" ]] && { printf '%s\0' "UNKNOWN"; return; }
-
-    if [[ "$auth_info" == *"publickey"* ]]; then
-        printf '%s\0' "PUBLICKEY"
-    elif [[ "$auth_info" == *"password"* ]] || [[ "$auth_info" == *"keyboard-interactive"* ]]; then
-        printf '%s\0' "PASSWORD"
-    else
-        printf '%s\0' "UNKNOWN"
-    fi
-}
-
-# @type:        Source
 # @description: Находит последний префикс файла, содержащего настройки SSH доступа
+#               Не учитыввет bsss файлы по маске BSSS_PERMISSIONS_CONFIG_FILE_MASK
 # @stdin:       нет
 # @stdout:      prefix (число) или пустая строка если файлов нет
 # @exit_code:   0
 permissions::ssh::find_last_prefix() {
-    local file path prefix max_prefix=""
+    local file prefix max_prefix=""
 
     while IFS= read -r -d '' file; do
         [[ ! -f "$file" ]] && continue
 
-        path="$file"
-        
-        if grep -qE '^\s*(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)\b' "$path" 2>/dev/null; then
-            basename_file=$(basename "$path")
+        if grep -qE '^\s*(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)\b' "$file" 2>/dev/null; then
+            basename_file=$(basename "$file")
             prefix="${basename_file%%-*}"
             
             if [[ "$prefix" =~ ^[0-9]+$ ]]; then
                 [[ -z "$max_prefix" ]] || (( prefix > max_prefix )) && max_prefix="$prefix"
             fi
         fi
-    done < <(find "${SSH_CONFIGD_DIR}" -maxdepth 1 -type f -name "*.conf" -print0 2>/dev/null)
+    done < <(find "${SSH_CONFIGD_DIR}" -maxdepth 1 -type f -name "*.conf" ! -name "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" -print0 2>/dev/null)
 
     printf '%s' "$max_prefix"
 }
@@ -96,4 +73,54 @@ permissions::log::other_configs() {
     if (( found == 0 )); then
         log_info "Нет стоонних правил для доступа"
     fi
+}
+
+permissions::rules::is_configured() {
+    # ls "${SSH_CONFIGD_DIR}"/*"${BSSS_PERMISSIONS_CONFIG_FILE_MASK}" >/dev/null 2>&1
+    compgen -G "${SSH_CONFIGD_DIR}/*${BSSS_PERMISSIONS_CONFIG_FILE_MASK}" >/dev/null
+}
+
+permissions::rules::restore() {
+    sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" | sys::file::delete || true
+}
+
+permissions::menu::get_items() {
+    if permissions::rules::is_configured; then
+        printf '%s|%s\0' "1" "Удалить правила (откат)"
+    else
+        printf '%s|%s\0' "1" "Создать правила"
+    fi
+    printf '%s|%s\0' "0" "Выход"
+}
+
+permissions::menu::display() {
+    local id
+    local text
+
+    log_info "$(_ "common.menu_header")"
+
+    while IFS='|' read -r -d '' id text || break; do
+        log_info_simple_tab "$(_ "no_translate" "$id. $text")"
+    done < <(permissions::menu::get_items)
+}
+
+permissions::menu::count_items() {
+    permissions::menu::get_items | grep -cz '^'
+}
+
+permissions::menu::get_user_choice() {
+    local qty_items=$(($(permissions::menu::count_items) - 1)) # вычитаем один элемент - 0 пункт меню, что бы корректно отображать маску
+    local pattern="^[0-$qty_items]$"
+    local hint="0-$qty_items"
+
+    io::ask_value "Выберите пункт" "" "$pattern" "$hint" "0" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
+}
+
+permissions::toggle::rules() {
+    if permissions::rules::is_configured; then
+        permissions::rules::restore
+    else
+        permissions::rules::make_bsss_rules
+    fi
+    sys::service::restart
 }

@@ -476,3 +476,42 @@ ufw::ping::restore() {
 
     printf '%s\0' "$UFW_BEFORE_RULES_BACKUP" | sys::file::delete
 }
+
+# @type:        Source
+# @description: Возвращает метод подключения пользователя [logname]
+# @params:      нет
+# @stdin:       нет
+# @stdout:      connection_type\0 (PUBLICKEY/PASSWORD/UNKNOWN)
+# @exit_code:   0
+user::system::get_auth_method() {
+    local auth_info
+
+    auth_info=$(journalctl _COMM=sshd --since "12h ago" 2>/dev/null | grep "Accepted" | grep "for $(logname)" | tail -1)
+
+    [[ -z "$auth_info" ]] && { printf '%s\0' "UNKNOWN"; return; }
+
+    if [[ "$auth_info" == *"publickey"* ]]; then
+        printf '%s\0' "key"
+    elif [[ "$auth_info" == *"password"* ]] || [[ "$auth_info" == *"keyboard-interactive"* ]]; then
+        printf '%s\0' "pass"
+    else
+        printf '%s\0' "n/a"
+    fi
+}
+
+# @type:        Orchestrator
+# @description: Перезапускает SSH сервис после проверки конфигурации
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - сервис успешно перезапущен
+#               1 - ошибка конфигурации
+sys::service::restart() {
+    if sshd -t; then
+        systemctl daemon-reload && log_info "$(_ "ssh.service.daemon_reloaded")"
+        systemctl restart ssh.service && log_info "$(_ "ssh.service.restarted")"
+    else
+        log_error "$(_ "ssh.error_config_sshd")"
+        return 1
+    fi
+}

@@ -20,6 +20,24 @@ trap common::exit::actions EXIT
 trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
+# @description: Применяет изменения UFW на основе выбранного действия
+# @params:
+#   menu_id     ID выбранного действия
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка в процессе
+ufw::orchestrator::dispatch_logic() {
+    local menu_id="$1"
+
+    case "$menu_id" in
+        1) ufw::toggle::status ;;
+        2) ufw::toggle::ping ;;
+        *) log_error "$(_ "ufw.error.invalid_menu_id" "$menu_id")"; return 1 ;;
+    esac
+}
+
+# @type:        Orchestrator
 # @description: Запускает модуль UFW с механизмом rollback только при включении UFW
 # @params:      нет
 # @stdin:       нет
