@@ -13,17 +13,6 @@ source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/modules/helpers/user.sh"
 
 # @type:        Orchestrator
-# @description: Проверяет состояние пользователей системы
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-check() {
-    user::info::block
-    user::log::configs
-}
-
-# @type:        Orchestrator
 # @description: Точка входа модуля проверки пользователей
 # @params:      нет
 # @stdin:       нет
@@ -31,7 +20,7 @@ check() {
 # @exit_code:   0 - проверка прошла успешно
 main() {
     i18n::load
-    check
+    user::info::block
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

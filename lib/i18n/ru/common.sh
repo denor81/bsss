@@ -81,6 +81,8 @@ I18N_MESSAGES["rollback.time_expired"]="Время истекло - выполн
 # Module names
 I18N_MESSAGES["module.system.update.name"]="Обновление системы"
 I18N_MESSAGES["module.user.create.name"]="Создание пользователя"
+I18N_MESSAGES["module.permissions.check.name"]="Проверка прав доступа SSH"
+I18N_MESSAGES["module.permissions.modify.name"]="Настройка прав доступа SSH"
 I18N_MESSAGES["module.ssh.name"]="Настройка SSH порта"
 I18N_MESSAGES["module.ufw.name"]="Настройка брандмауэра UFW"
 

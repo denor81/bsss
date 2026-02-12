@@ -17,25 +17,42 @@ user::list::get() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 существует только root (uid: 0)
-#               1 существует несколько пользователей
-#               2 существует только 1 пользователь, но uid не равен 0 (это не root) 
+#               1 существует несколько пользователей (bsssuser не создан)
+#               2 существует несколько пользователей (bsssuser создан)
+#               3 существует только 1 пользователь, но uid не равен 0 (это не root) 
 user::system::is_only_root() {
-    local lines=()
-    local line
+    local usernames=()
+    local uids=()
+    local username pass uid rest
+    local has_bsssuser=false
 
-    while read -r -d '' line; do
-        lines+=("$line")
+    # Читаем данные из gawk (он выдает строки целиком, разделенные \0)
+    # Нам нужно распарсить строку внутри цикла, чтобы достать UID
+    while IFS=":" read -r -d '' username pass uid rest; do
+        usernames+=("$username")
+        uids+=("$uid")
+        [[ "$username" == "$BSSS_USER_NAME" ]] && has_bsssuser=true
     done < <(user::list::get)
 
-    if [[ "${#lines[@]}" -eq 1 ]]; then
-        if (( id == 0 )); then
-            return 0  # существует только root (uid: 0)
+    local count=${#usernames[@]}
+
+    # Сценарий: Только один пользователь
+    if [[ "$count" -eq 1 ]]; then
+        if [[ "${uids[0]}" -eq 0 ]]; then
+            return 0  # Только root (uid: 0)
         else
-            return 2  # существует только 1 пользователь, но uid не равен 0 (это не root) 
+            return 3  # Только 1 пользователь, но это не root (UID != 0)
         fi
     fi
 
-    return 1 # существует несколько пользователей
+    # Сценарий: Несколько пользователей
+    if [[ "$count" -gt 1 ]]; then
+        if [[ "$has_bsssuser" == "true" ]]; then
+            return 2  # Несколько пользователей, bsssuser среди них есть
+        else
+            return 1  # Несколько пользователей, но bsssuser нет
+        fi
+    fi
 }
 
 # @type:        Source
@@ -52,11 +69,11 @@ user::system::get_auth_method() {
     [[ -z "$auth_info" ]] && { printf '%s\0' "UNKNOWN"; return; }
 
     if [[ "$auth_info" == *"publickey"* ]]; then
-        printf '%s\0' "PUBLICKEY"
+        printf '%s\0' "key"
     elif [[ "$auth_info" == *"password"* ]] || [[ "$auth_info" == *"keyboard-interactive"* ]]; then
-        printf '%s\0' "PASSWORD"
+        printf '%s\0' "pass"
     else
-        printf '%s\0' "UNKNOWN"
+        printf '%s\0' "n/a"
     fi
 }
 
@@ -65,19 +82,30 @@ user::info::block() {
     local auth_method=$(user::system::get_auth_method | tr -d '\0')
     local i=0
 
-    if user::system::is_only_root; then
-        log_info "В системе только один пользователь root [UID: 0]"
-        return 0
-    fi
-
-    log_info "В системе несколько пользователей:"
+    log_info "Пользователи в системе:"
+    # log_info "[superuser-root пользователь] [sudo:pass-пользователь в группе sudo с вводом пароля] [sudo:nopass-пользователь в группе sudo без необходимости ввода пароля] [nosudo-пользователь без sudo]"
     while IFS=":" read -r -d '' username pass uid rest; do
         i=$(( i + 1 ))
 
         local active_mark=""
-        [[ "$username" == "$login_user" ]] && active_mark+=" [ORIGIN] [${auth_method}]"
+        [[ "$username" == "$login_user" ]] && active_mark+="<<<session owner|auth:${auth_method}"
+        active_mark+="|"
 
-        log_info_simple_tab "${i}. ${username}:${pass}:${uid}:${rest}${active_mark}"
+        if [[ "$uid" -eq 0 ]]; then
+            active_mark+="sudo:superuser"
+            # log_success "Пользователь $username имеет права sudo БЕЗ пароля."
+        elif sudo -l -U "$username" 2>/dev/null | grep -Eq "NOPASSWD\:\s+ALL"; then
+            active_mark+="sudo:nopass"
+            # log_info "Пользователь $username в группе sudo (требуется пароль)."
+        elif id -nG "$username" | grep -qw "sudo"; then
+            active_mark+="sudo:pass"
+            # log_info "Пользователь $username в группе sudo (требуется пароль)."
+        else
+            active_mark+="sudo:nosudo"
+            # log_error "У пользователя $username НЕТ прав sudo!"
+        fi
+
+        log_info_simple_tab "${i}. ${username}|id:${uid}${active_mark}"
     done < <(user::list::get)
 }
 
@@ -122,30 +150,4 @@ user::pass::set() {
     [[ ! -t 0 ]] && IFS= read -r -d '' cred || return 1
 
     echo "$cred" | chpasswd 2>&1
-}
-
-# @type:        Sink
-# @description: Надо придумать
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-user::log::configs() {
-    local grep_result
-    local found=0
-
-    while IFS= read -r grep_result || break; do
-
-        if (( found == 0 )); then
-            log_info "Найдены правила настроек доступа"
-            found=$((found + 1))
-        fi
-
-        log_info_simple_tab "$(_ "no_translate" "$grep_result")"
-
-    done < <(grep -EiHs '^\s*(PubkeyAuthentication|PasswordAuthentication|PubkeyAuthentication)\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
-
-    if (( found == 0 )); then
-        log_info "Активные правила не найдены [PubkeyAuthentication|PasswordAuthentication|PubkeyAuthentication]"
-    fi
 }

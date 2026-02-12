@@ -73,3 +73,19 @@ I18N_MESSAGES["user.create.check_auth"]="Проверьте возможност
 I18N_MESSAGES["user.create.copy_ssh_key"]="Скопируйте на сервер ключ для подключения по SSH [ssh-copy-id]"
 I18N_MESSAGES["user.create.other_users_exist"]="Дополнительный пользователь уже создан"
 I18N_MESSAGES["user.create.openssl_not_found"]="openssl не найден, невозможно сгенерировать пароль"
+
+# Permissions check module
+I18N_MESSAGES["permissions.check.header"]="=== Проверка прав доступа SSH ==="
+I18N_MESSAGES["permissions.check.current_connection"]="Текущее подключение: [%s]"
+I18N_MESSAGES["permissions.check.current_user"]="Текущий пользователь: [%s]"
+I18N_MESSAGES["permissions.check.root_uid"]="Root UID: [%s]"
+I18N_MESSAGES["permissions.check.status_header"]="=== Статус отключения логина по паролю и root ==="
+I18N_MESSAGES["permissions.check.require_ssh_key"]="Требуется подключение по SSH ключу"
+I18N_MESSAGES["permissions.check.require_nonroot"]="Требуется подключение пользователем отличным от root"
+I18N_MESSAGES["permissions.check.can_disable"]="Можно отключать PermitRootLogin и PasswordAuthentication"
+
+# Permissions modify module
+I18N_MESSAGES["permissions.modify.no_config_files"]="Файлы с настройками не найдены, используется префикс: %s"
+I18N_MESSAGES["permissions.modify.found_prefix"]="Найден последний префикс: %s"
+I18N_MESSAGES["permissions.modify.creating_config"]="Создание файла конфигурации: %s"
+I18N_MESSAGES["permissions.modify.file_created"]="Файл создан"
