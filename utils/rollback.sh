@@ -100,7 +100,9 @@ rollback::orchestrator::ssh() {
     sys::service::restart
     log_actual_info
     ssh::orchestrator::log_statuses
-    ufw::orchestrator::log_statuses
+    ufw::log::status
+    ufw::log::rules
+    ufw::log::ping_status
 
     log_success "$(_ "rollback.system_restored")"
 }
@@ -116,7 +118,9 @@ rollback::orchestrator::ufw() {
 
     ufw::status::force_disable
     log_actual_info
-    ufw::orchestrator::log_statuses
+    ufw::log::status
+    ufw::log::rules
+    ufw::log::ping_status
 
     log_success "$(_ "rollback.ufw_disabled")"
 }

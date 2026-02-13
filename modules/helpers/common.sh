@@ -194,149 +194,6 @@ ssh::log::active_ports_from_ss() {
 }
 
 # @type:        Orchestrator
-# @description: Выводит активные правила UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::log::rules() {
-    local rule
-    local found=0
-
-    while read -r -d '' rule || break; do
-
-        if (( found == 0 )); then
-            log_info "$(_ "common.helpers.ufw.rules_found")"
-            log_bold_info "$(_ "common.helpers.ufw.rules.sync")"
-            log_bold_info "$(_ "common.helpers.ufw.rules.delete_warning")"
-            found=$((found + 1))
-        fi
-        log_info_simple_tab "$(_ "no_translate" "$rule")"
-
-    done < <(ufw::rule::get_all)
-
-    if (( found == 0 )); then
-        log_info "$(_ "common.helpers.ufw.rules_not_found")"
-    fi
-}
-
-# @type:        Filter
-# @description: Удаляет все правила UFW BSSS и передает порт дальше
-# @params:      нет
-# @stdin:       port\0 (опционально)
-# @stdout:      port\0 (опционально)
-# @exit_code:   0 - успешно
-ufw::rule::reset_and_pass() {
-    local port=""
-
-    # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
-    [[ ! -t 0 ]] && read -r -d '' port || true
-
-    ufw::rule::delete_all_bsss
-
-    # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
-    [[ -n "$port" ]] && printf '%s\0' "$port" || true
-}
-
-# @type:        Orchestrator
-# @description: Удаляет все правила UFW BSSS
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::rule::delete_all_bsss() {
-    # local found_any=0
-
-    local rule_args
-    while IFS= read -r -d '' rule_args || break; do
-        # found_any=1
-
-        if printf '%s' "$rule_args" | xargs ufw --force delete >/dev/null 2>&1; then
-            log_info "$(_ "common.helpers.ufw.rule.deleted" "$rule_args")"
-        else
-            log_error "$(_ "common.helpers.ufw.rule.delete_error" "$rule_args")"
-        fi
-    done < <(ufw::rule::get_all_bsss)
-}
-
-# @type:        Source
-# @description: Получает все правила UFW BSSS
-# @params:      нет
-# @stdin:       нет
-# @stdout:      rule\0 (0..N)
-# @exit_code:   0 - всегда
-ufw::rule::get_all_bsss() {
-    ufw show added \
-    | gawk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
-        BEGIN { ORS="\0" }
-        $0 ~ marker {
-            sub(/^ufw[[:space:]]+/, "");
-            print $0;
-        }
-    '
-}
-
-# @type:        Source
-# @description: Получает все правила UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      rule\0 (0..N)
-# @exit_code:   0 - всегда
-ufw::rule::get_all() {
-    if command -v ufw > /dev/null 2>&1; then
-        ufw show added \
-        | gawk -v marker="^ufw.*" '
-            BEGIN { ORS="\0" }
-            $0 ~ marker {
-                print $0;
-            }
-        '
-    fi
-}
-
-# @type:        Filter
-# @description: Добавляет правило UFW для BSSS
-# @params:      нет
-# @stdin:       port\0 (0..N)
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::rule::add_bsss() {
-    local port
-    while read -r -d '' port; do
-        if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >/dev/null 2>&1; then
-            log_info "$(_ "common.helpers.ufw.rule.added" "$port")"
-        else
-            log_info "$(_ "common.helpers.ufw.rule.add_error" "$port")"
-        fi
-    done
-}
-
-# @type:        Filter
-# @description: Проверяет, активен ли UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - UFW активен
-#               1 - UFW неактивен
-ufw::status::is_active() {
-    ufw status | grep -wq active
-}
-
-# @type:        Filter
-# @description: Деактивирует UFW (пропускает если уже деактивирован)
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::status::force_disable() {
-    if ufw::status::is_active && ufw --force disable >/dev/null 2>&1; then
-        log_info "$(_ "common.helpers.ufw.disabled")"
-    else
-        log_info "$(_ "common.helpers.ufw.already_disabled")"
-    fi
-}
-
-# @type:        Orchestrator
 # @description: Запускает фоновый процесс rollback (watchdog)
 # @params:
 #   watchdog_fifo путь к FIFO для коммуникации
@@ -447,36 +304,6 @@ common::pipefail::fallback() {
     esac
 }
 
-# @type:        Validator
-# @description: Проверяет, существует ли бэкап файл настроек PING
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - бэкап существует (PING отключен)
-#               1 - бэкап не существует (PING не отключен)
-ufw::ping::is_configured() {
-    [[ -f "$UFW_BEFORE_RULES_BACKUP" ]]
-}
-
-# @type:        Orchestrator
-# @description: Восстанавливает файл before.rules из бэкапа и удаляет бэкап
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно восстановлено
-#               $? - код ошибки cp или rm
-ufw::ping::restore() {
-    if res=$(cp -pv "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES" 2>&1); then
-        log_info "$(_ "ufw.success.backup_restored" "$res")"
-    else
-        local rc=$?
-        log_error "$(_ "ufw.error.restore_failed" "$UFW_BEFORE_RULES" "$res")"
-        return "$rc"
-    fi
-
-    printf '%s\0' "$UFW_BEFORE_RULES_BACKUP" | sys::file::delete
-}
-
 # @type:        Source
 # @description: Возвращает метод подключения пользователя [logname]
 # @params:      нет
@@ -514,4 +341,173 @@ sys::service::restart() {
         log_error "$(_ "ssh.error_config_sshd")"
         return 1
     fi
+}
+# @type:        Orchestrator
+# @description: Выводит активные правила UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::log::rules() {
+    local rule
+    local found=0
+
+    while read -r -d '' rule || break; do
+
+        if (( found == 0 )); then
+            log_info "$(_ "common.helpers.ufw.rules_found")"
+            log_bold_info "$(_ "common.helpers.ufw.rules.sync")"
+            log_bold_info "$(_ "common.helpers.ufw.rules.delete_warning")"
+            found=$((found + 1))
+        fi
+        log_info_simple_tab "$(_ "no_translate" "$rule")"
+
+    done < <(ufw::rule::get_all)
+
+    if (( found == 0 )); then
+        log_info "$(_ "common.helpers.ufw.rules_not_found")"
+    fi
+}
+
+# @type:        Filter
+# @description: Удаляет все правила UFW BSSS и передает порт дальше
+# @params:      нет
+# @stdin:       port\0 (опционально)
+# @stdout:      port\0 (опционально)
+# @exit_code:   0 - успешно
+ufw::rule::reset_and_pass() {
+    local port=""
+
+    # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
+    [[ ! -t 0 ]] && read -r -d '' port || true
+
+    ufw::rule::delete_all_bsss
+
+    # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
+    [[ -n "$port" ]] && printf '%s\0' "$port" || true
+}
+
+# @type:        Sink
+# @description: Удаляет все правила UFW BSSS
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::rule::delete_all_bsss() {
+    local rule_args
+    while IFS= read -r -d '' rule_args || break; do
+
+        if printf '%s' "$rule_args" | xargs ufw --force delete >/dev/null 2>&1; then
+            log_info "$(_ "common.helpers.ufw.rule.deleted" "$rule_args")"
+        else
+            log_error "$(_ "common.helpers.ufw.rule.delete_error" "$rule_args")"
+        fi
+    done < <(ufw::rule::get_all_bsss)
+}
+
+# @type:        Source
+# @description: Получает все правила UFW BSSS
+# @params:      нет
+# @stdin:       нет
+# @stdout:      rule\0 (0..N)
+# @exit_code:   0 - всегда
+ufw::rule::get_all_bsss() {
+    ufw show added \
+    | gawk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
+        BEGIN { ORS="\0" }
+        $0 ~ marker {
+            sub(/^ufw[[:space:]]+/, "");
+            print $0;
+        }
+    '
+}
+
+# @type:        Source
+# @description: Получает все правила UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      rule\0 (0..N)
+# @exit_code:   0 - всегда
+ufw::rule::get_all() {
+    if command -v ufw > /dev/null 2>&1; then
+        ufw show added \
+        | gawk -v marker="^ufw.*" '
+            BEGIN { ORS="\0" }
+            $0 ~ marker {
+                print $0;
+            }
+        '
+    fi
+}
+
+# @type:        Filter
+# @description: Добавляет правило UFW для BSSS
+# @params:      нет
+# @stdin:       port\0 (0..N)
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::rule::add_bsss() {
+    local port
+    while read -r -d '' port; do
+        if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >/dev/null 2>&1; then
+            log_info "$(_ "common.helpers.ufw.rule.added" "$port")"
+        else
+            log_info "$(_ "common.helpers.ufw.rule.add_error" "$port")"
+        fi
+    done
+}
+
+# @type:        Filter
+# @description: Проверяет, активен ли UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - UFW активен
+#               1 - UFW неактивен
+ufw::status::is_active() {
+    ufw status | grep -wq active
+}
+
+# @type:        Filter
+# @description: Деактивирует UFW (пропускает если уже деактивирован)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::status::force_disable() {
+    if ufw::status::is_active && ufw --force disable >/dev/null 2>&1; then
+        log_info "$(_ "common.helpers.ufw.disabled")"
+    else
+        log_info "$(_ "common.helpers.ufw.already_disabled")"
+    fi
+}
+
+# @type:        Validator
+# @description: Проверяет, существует ли бэкап файл настроек PING
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - бэкап существует (PING отключен)
+#               1 - бэкап не существует (PING не отключен)
+ufw::ping::is_configured() {
+    [[ -f "$UFW_BEFORE_RULES_BACKUP" ]]
+}
+
+# @type:        Orchestrator
+# @description: Восстанавливает файл before.rules из бэкапа и удаляет бэкап
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно восстановлено
+#               $? - код ошибки cp или rm
+ufw::ping::restore() {
+    if res=$(cp -pv "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES" 2>&1); then
+        log_info "$(_ "ufw.success.backup_restored" "$res")"
+    else
+        local rc=$?
+        log_error "$(_ "ufw.error.restore_failed" "$UFW_BEFORE_RULES" "$res")"
+        return "$rc"
+    fi
+
+    printf '%s\0' "$UFW_BEFORE_RULES_BACKUP" | sys::file::delete
 }

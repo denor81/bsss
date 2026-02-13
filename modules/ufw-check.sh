@@ -23,7 +23,9 @@ source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 #               1 - ошибка установки или отказ от установки
 check() {
     if command -v ufw > /dev/null 2>&1; then
-        ufw::orchestrator::log_statuses
+        ufw::log::status
+        ufw::log::rules
+        ufw::log::ping_status
     else
         log_error "$(_ "ufw.check.not_installed")"
         if io::confirm_action "$(_ "ufw.check.install_confirm")" || return; then
