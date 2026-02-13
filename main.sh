@@ -227,7 +227,7 @@ main::process::exit_code() {
     local exit_code="${1:0}"
     local module_tag="${2:-}"
 
-    (( exit_code == 0 )) && { log_info "$(_ "common.info_module_successful")"; return 0; }
+    (( exit_code == 0 )) && { log_info "$(_ "common.info_module_successful" "$exit_code" "$module_tag")"; return 0; }
 
     case "$exit_code" in
         2|130) log_info "$(_ "common.info_module_user_cancelled" "$exit_code" "$module_tag")" ;;

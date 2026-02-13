@@ -20,26 +20,47 @@ trap common::int::actions INT
 trap common::exit::actions EXIT
 trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
+# @type:        Orchestrator
+# @description: Обрабатывает выбор пользователя из меню и выполняет соответствующее действие
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - неверный выбор меню
 permissions::orchestrator::toggle_logic() {
-    local menu_id
+    local menu_id action
 
     permissions::menu::display
     menu_id=$(permissions::menu::get_user_choice | tr -d '\0')
 
     case "$menu_id" in
-        1) permissions::toggle::rules ;;
+        1)
+            action=$(permissions::toggle::rules | tr -d '\n')
+            case "$action" in
+                restore) permissions::orchestrator::restore::rules ;;
+                install) permissions::orchestrator::install::rules ;;
+            esac
+            ;;
         *) log_error "$(_ "ufw.error.invalid_menu_id" "$menu_id")"; return 1 ;;
     esac
 }
 
+# @type:        Orchestrator
+# @description: Проверяет текущего пользователя и запускает логику переключения
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - пользователь авторизован как root
 permissions::orchestrator::check_current_user() {
     local root_id auth_id auth_type
     root_id=$(id -u root)
     auth_id=$(id -u "$(logname)")
 
+    user::info::block
     log_info "[nosudo>нет прав sudo] [nopass>не требует пароль при выполнении sudo]"
     log_info "[pass>требует пароль при выполнении sudo] [superuser>superuser]"
-    user::info::block
+    permissions::orchestrator::log_statuses
 
     if (( root_id == auth_id )); then
         log_warn "Авторизируйтесь по SSH ключу обычным пользователем"
@@ -47,7 +68,7 @@ permissions::orchestrator::check_current_user() {
         return 1
     fi
 
-    permissions::orchestrator::toggle_logic 
+    permissions::orchestrator::toggle_logic
 }
 
 # @type:        Orchestrator
@@ -66,7 +87,12 @@ permissions::orchestrator::dispatch_logic() {
             log_info "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]"
             permissions::orchestrator::check_current_user
         ;;
-        pass) log_warn "Подключитесь по SSH ключу пользователем отличным от root"; return 1 ;;
+        pass)
+            log_attention "Обнаружено подключение по паролю"
+            log_warn "Вам придется вводить пароль каждый раз при sudo"
+            log_warn "Для того, что бы пароль не запрашивался нужно создать файл-правило [$SUDOERS_D_DIR/${BSSS_USER_NAME}] со строкой [${BSSS_USER_NAME} ALL=(ALL) NOPASSWD:ALL] и установить права на файл [chmod 0440] после этого пароль в сессии запрашиваться не будет, либо создать пользователя через пункт меню - там все настраивается автоматически"
+            permissions::orchestrator::check_current_user
+        ;;
         timeout) 
             log_warn "Сессия длиннее 72 часов [невозможно определить тип подключения - ограничения журнала]"
             log_warn "Подключитесь заново в новом окне нерминала ["$current_conn_type"]"

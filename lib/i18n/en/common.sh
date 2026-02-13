@@ -33,7 +33,7 @@ I18N_MESSAGES["common.unexpected_error_module_failed_code"]="Unexpected error [R
 I18N_MESSAGES["common.error_missing_meta_tags"]="Missing required meta tags MODULE_ORDER [RC: %s] [%s]"
 
 # Info messages - module runner
-I18N_MESSAGES["common.info_module_successful"]="Completed successfully"
+I18N_MESSAGES["common.info_module_successful"]="Completed successfully [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_user_cancelled"]="Cancelled by user [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_rollback"]="Completed via rollback [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_requires"]="Pre-configuration required [RC: %s] [%s]"

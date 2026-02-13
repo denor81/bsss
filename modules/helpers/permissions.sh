@@ -1,10 +1,10 @@
 # @type:        Source
-# @description: Находит последний префикс файла, содержащего настройки SSH доступа
-#               Не учитыввет bsss файлы по маске BSSS_PERMISSIONS_CONFIG_FILE_MASK
+# @description: Находит последний префикс файла конфигурации permissions
+#               Не учитывает bsss файлы по маске BSSS_PERMISSIONS_CONFIG_FILE_MASK
 # @stdin:       нет
 # @stdout:      prefix (число) или пустая строка если файлов нет
 # @exit_code:   0
-permissions::ssh::find_last_prefix() {
+permissions::config::find_last_prefix() {
     local file prefix max_prefix=""
 
     while IFS= read -r -d '' file; do
@@ -13,7 +13,7 @@ permissions::ssh::find_last_prefix() {
         if grep -qE '^\s*(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)\b' "$file" 2>/dev/null; then
             basename_file=$(basename "$file")
             prefix="${basename_file%%-*}"
-            
+
             if [[ "$prefix" =~ ^[0-9]+$ ]]; then
                 [[ -z "$max_prefix" ]] || (( prefix > max_prefix )) && max_prefix="$prefix"
             fi
@@ -23,8 +23,65 @@ permissions::ssh::find_last_prefix() {
     printf '%s' "$max_prefix"
 }
 
+# @type:        Source
+# @description: Генерирует пункты меню в зависимости от текущего состояния
+# @params:      нет
+# @stdin:       нет
+# @stdout:      id|text\0 (NUL-separated)
+# @exit_code:   0
+permissions::menu::get_items() {
+    if permissions::rules::is_configured; then
+        printf '%s|%s\0' "1" "Удалить правила ${UTIL_NAME^^} (откат)"
+    else
+        printf '%s|%s\0' "1" "Создать правила"
+    fi
+    printf '%s|%s\0' "0" "Выход"
+}
+
+# === FILTER ===
+
+# @type:        Filter
+# @description: Подсчитывает количество пунктов меню
+# @params:      нет
+# @stdin:       нет
+# @stdout:      count (число)
+# @exit_code:   0
+permissions::menu::count_items() {
+    permissions::menu::get_items | grep -cz '^'
+}
+
+# @type:        Filter
+# @description: Получает выбор пользователя из меню
+# @params:      нет
+# @stdin:       нет
+# @stdout:      menu_id
+# @exit_code:   0 - выбран пункт
+#               2 - отмена пользователем (выбран 0 или отказ)
+permissions::menu::get_user_choice() {
+    local qty_items=$(($(permissions::menu::count_items) - 1))
+    local pattern="^[0-$qty_items]$"
+    local hint="0-$qty_items"
+
+    io::ask_value "Выберите пункт" "" "$pattern" "$hint" "0"
+}
+
+# === VALIDATOR ===
+
+# @type:        Validator
+# @description: Проверяет наличие BSSS конфигурации permissions
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - конфигурация существует
+#               1 - конфигурация отсутствует
+permissions::rules::is_configured() {
+    compgen -G "${SSH_CONFIGD_DIR}/*${BSSS_PERMISSIONS_CONFIG_FILE_MASK}" >/dev/null
+}
+
+# === SINK ===
+
 # @type:        Sink
-# @description: Логирует все BSSS конфигурации permissions с портами
+# @description: Логирует все BSSS конфигурации permissions
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
@@ -50,7 +107,7 @@ permissions::log::bsss_configs() {
 }
 
 # @type:        Sink
-# @description: Логирует все сторонние конфигурации permissions с портами
+# @description: Логирует все сторонние конфигурации permissions
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
@@ -75,9 +132,15 @@ permissions::log::other_configs() {
     fi
 }
 
-permissions::rules::is_configured() {
-    # ls "${SSH_CONFIGD_DIR}"/*"${BSSS_PERMISSIONS_CONFIG_FILE_MASK}" >/dev/null 2>&1
-    compgen -G "${SSH_CONFIGD_DIR}/*${BSSS_PERMISSIONS_CONFIG_FILE_MASK}" >/dev/null
+# @type:        Sink
+# @description: Отображает инструкции guard для пользователя
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+permissions::log::guard_instructions() {
+    log_attention "$(_ "permissions.guard.dont_close")"
+    log_attention "$(_ "permissions.guard.test_access")"
 }
 
 # @type:        Orchestrator
@@ -90,7 +153,7 @@ permissions::rules::is_configured() {
 permissions::rules::make_bsss_rules() {
     local last_prefix new_prefix path
 
-    last_prefix=$(permissions::ssh::find_last_prefix)
+    last_prefix=$(permissions::config::find_last_prefix)
 
     if [[ -z "$last_prefix" ]]; then
         new_prefix="10"
@@ -100,7 +163,6 @@ permissions::rules::make_bsss_rules() {
 
     path="${SSH_CONFIGD_DIR}/${new_prefix}${BSSS_PERMISSIONS_CONFIG_FILE_NAME}"
 
-    # Создаем файл с правами
     if cat > "$path" << EOF
 # $BSSS_MARKER_COMMENT
 # User permissions
@@ -117,8 +179,45 @@ EOF
     fi
 }
 
+# @type:        Sink
+# @description: Удаляет все BSSS конфигурации permissions
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 permissions::rules::restore() {
     sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" | sys::file::delete || true
+}
+
+# @type:        Filter
+# @description: Определяет действие для правил в зависимости от состояния
+# @params:      нет
+# @stdin:       нет
+# @stdout:      action (restore или install)
+# @exit_code:   0
+permissions::toggle::rules() {
+    if permissions::rules::is_configured; then
+        printf 'restore\n'
+    else
+        printf 'install\n'
+    fi
+}
+
+# @type:        Sink
+# @description: Отображает меню пользователю
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0
+permissions::menu::display() {
+    local id
+    local text
+
+    log_info "$(_ "common.menu_header")"
+
+    while IFS='|' read -r -d '' id text || break; do
+        log_info_simple_tab "$(_ "no_translate" "$id. $text")"
+    done < <(permissions::menu::get_items)
 }
 
 # @type:        Orchestrator
@@ -132,53 +231,17 @@ permissions::orchestrator::log_statuses() {
     permissions::log::other_configs
 }
 
-permissions::menu::get_items() {
-    if permissions::rules::is_configured; then
-        printf '%s|%s\0' "1" "Удалить правила (откат)"
-    else
-        printf '%s|%s\0' "1" "Создать правила"
-    fi
-    printf '%s|%s\0' "0" "Выход"
-}
-
-permissions::menu::display() {
-    local id
-    local text
-
-    log_info "$(_ "common.menu_header")"
-
-    while IFS='|' read -r -d '' id text || break; do
-        log_info_simple_tab "$(_ "no_translate" "$id. $text")"
-    done < <(permissions::menu::get_items)
-}
-
-permissions::menu::count_items() {
-    permissions::menu::get_items | grep -cz '^'
-}
-
-permissions::menu::get_user_choice() {
-    local qty_items=$(($(permissions::menu::count_items) - 1)) # вычитаем один элемент - 0 пункт меню, что бы корректно отображать маску
-    local pattern="^[0-$qty_items]$"
-    local hint="0-$qty_items"
-
-    io::ask_value "Выберите пункт" "" "$pattern" "$hint" "0" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
-}
-
-
-
+# @type:        Orchestrator
+# @description: Выполняет откат правил permissions и рестарт сервиса
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 permissions::orchestrator::restore::rules() {
     permissions::rules::restore
     sys::service::restart
     log_actual_info
     permissions::orchestrator::log_statuses
-}
-
-permissions::toggle::rules() {
-    if permissions::rules::is_configured; then
-        permissions::orchestrator::restore::rules
-    else
-        permissions::orchestrator::install::rules
-    fi
 }
 
 # @type:        Orchestrator
@@ -223,15 +286,4 @@ permissions::orchestrator::trigger_immediate_rollback() {
     kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
     wait "$WATCHDOG_PID" 2>/dev/null || true
     while true; do sleep 1; done
-}
-
-# @type:        Sink
-# @description: Отображает инструкции guard для пользователя
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-permissions::log::guard_instructions() {
-    log_attention "$(_ "permissions.guard.dont_close")"
-    log_attention "$(_ "permissions.guard.test_access")"
 }

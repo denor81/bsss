@@ -33,7 +33,7 @@ I18N_MESSAGES["common.unexpected_error_module_failed_code"]="Непредвид�
 I18N_MESSAGES["common.error_missing_meta_tags"]="Отсутствуют обязательные метатеги MODULE_ORDER [RC: %s] [%s]"
 
 # Info messages - module runner
-I18N_MESSAGES["common.info_module_successful"]="Успешно завершен"
+I18N_MESSAGES["common.info_module_successful"]="Успешно завершен [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_user_cancelled"]="Завершено пользователем [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_rollback"]="Завершен откатом [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_requires"]="Требуется предварительная настройка [RC: %s] [%s]"
