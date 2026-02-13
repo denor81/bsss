@@ -110,6 +110,85 @@ ssh::install::port() {
     fi
 }
 
+# === MENU FUNCTIONS ===
+
+# @type:        Source
+# @description: Генерирует пункты меню для сценария с существующими конфигами
+# @stdin:       нет
+# @stdout:      id|text\0 (NUL-separated)
+# @exit_code:   0
+ssh::menu::get_items() {
+    printf '%s|%s\0' "1" "$(_ "ssh.menu.item_reset" "${UTIL_NAME^^}")"
+    printf '%s|%s\0' "2" "$(_ "ssh.menu.item_reinstall")"
+    printf '%s|%s\0' "0" "$(_ "common.exit" "0")"
+}
+
+# @type:        Sink
+# @description: Отображает меню сценария с существующими конфигами
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0
+ssh::menu::display() {
+    local id text
+
+    ssh::log::active_ports_from_ss
+    ssh::log::bsss_configs
+
+    log_info "$(_ "common.menu_header")"
+
+    while IFS='|' read -r -d '' id text || break; do
+        log_info_simple_tab "$(_ "no_translate" "$id. $text")"
+    done < <(ssh::menu::get_items)
+}
+
+# @type:        Filter
+# @description: Запрашивает выбор пользователя из меню SSH
+# @stdin:       нет
+# @stdout:      menu_id\0
+# @exit_code:   0
+#               2 - отмена (выбран пункт 0)
+ssh::menu::get_user_choice() {
+    local qty_items=$(($(ssh::menu::count_items) - 1))
+    local pattern="^[0-$qty_items]$"
+    local hint="0-$qty_items"
+
+    io::ask_value "$(_ "ssh.ui.get_action_choice.ask_select")" "" "$pattern" "$hint" "0"
+}
+
+# @type:        Filter
+# @description: Подсчитывает количество пунктов меню SSH
+# @stdin:       нет
+# @stdout:      count
+# @exit_code:   0
+ssh::menu::count_items() {
+    ssh::menu::get_items | grep -cz '^'
+}
+
+# @type:        Orchestrator
+# @description: Диспетчеризация действий по выбранному пункту меню
+# @params:
+#   menu_id     ID выбранного пункта меню
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - код ошибки дочернего процесса (автоматический проброс)
+#
+# ВАЖНО:
+#   - Нет явных return - код возврата пробрасывается автоматически
+#   - io::ask_value сама возвращает код 2 при выборе cancel_keyword (пункт 0)
+#   - Эта функция никогда не получит menu_id == 0 (обрабатывается io::ask_value)
+ssh::orchestrator::dispatch_menu() {
+    local menu_id="$1"
+
+    case "$menu_id" in
+        1) ssh::reset::port ;;
+        2) ssh::install::port ;;
+        *) log_error "$(_ "ssh.error_invalid_choice" "$menu_id")"; return 1 ;;
+    esac
+}
+
+# === SSH ORCHESTRATORS ===
+
 # @type:        Orchestrator
 # @description: Сбрасывает SSH порт (удаляет все BSSS правила)
 # @params:      нет
@@ -140,15 +219,12 @@ ssh::reset::port() {
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
 ssh::orchestrator::config_exists_handler() {
-    ssh::menu::display_exists_scenario
-    local choice
-    choice=$(io::ask_value "$(_ "ssh.ui.get_action_choice.ask_select")" "" "^[012]$" "0-2" "0" | tr -d '\0') || return
+    ssh::menu::display
 
-    case "$choice" in
-        1) ssh::reset::port ;;
-        2) ssh::install::port ;;
-        *) log_warn "$(_ "ssh.error_invalid_choice")" ;;
-    esac
+    local menu_id
+    menu_id=$(ssh::menu::get_user_choice | tr -d '\0')
+
+    ssh::orchestrator::dispatch_menu "$menu_id"
 }
 
 # @type:        Orchestrator

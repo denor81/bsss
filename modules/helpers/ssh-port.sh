@@ -142,22 +142,6 @@ ssh::orchestrator::log_statuses() {
 }
 
 # @type:        Sink
-# @description: Отображает меню сценария с существующими конфигами
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ssh::menu::display_exists_scenario() {
-    ssh::log::active_ports_from_ss
-    ssh::log::bsss_configs
-
-    log_info "$(_ "common.menu_header")"
-    log_info_simple_tab "$(_ "ssh.menu.item_reset" "1" "${UTIL_NAME^^}")"
-    log_info_simple_tab "$(_ "ssh.menu.item_reinstall" "2")"
-    log_info_simple_tab "$(_ "common.exit" "0")"
-}
-
-# @type:        Sink
 # @description: Логирует все BSSS конфигурации SSH с портами
 # @params:      нет
 # @stdin:       нет

@@ -33,8 +33,8 @@ I18N_MESSAGES["ssh.warning_no_external_rules"]="Нет сторонних пра
 I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Ожидание поднятия SSH порта %s (таймаут: %s сек)..."
 
 # Menu items
-I18N_MESSAGES["ssh.menu.item_reset"]="%s. Сброс (удаление правила %s)"
-I18N_MESSAGES["ssh.menu.item_reinstall"]="%s. Переустановка (замена на новый порт)"
+I18N_MESSAGES["ssh.menu.item_reset"]="Сброс (удаление правила %s)"
+I18N_MESSAGES["ssh.menu.item_reinstall"]="Переустановка (замена на новый порт)"
 
 # Input messages
 I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Введите новый SSH порт"
@@ -50,7 +50,7 @@ I18N_MESSAGES["ssh.guard.test_new"]="ОТКРОЙТЕ НОВОЕ ОКНО и п�
 
 # Error messages
 I18N_MESSAGES["ssh.error_port_not_up"]="ПОРТ %s НЕ ПОДНЯЛСЯ [%s попыток в течение %s сек]"
-I18N_MESSAGES["ssh.error_invalid_choice"]="Не корректный выбор"
+I18N_MESSAGES["ssh.error_invalid_choice"]="Неверный выбор: %s"
 
 # Socket check messages
 I18N_MESSAGES["ssh.socket.configured"]="SSH корректно работает в режиме ssh.service"

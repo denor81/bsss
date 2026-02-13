@@ -33,8 +33,8 @@ I18N_MESSAGES["ssh.warning_no_external_rules"]="No external SSH rules [%s]"
 I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Waiting for SSH port %s to come up (timeout: %s sec)..."
 
 # Menu items
-I18N_MESSAGES["ssh.menu.item_reset"]="%s. Reset (delete %s rule)"
-I18N_MESSAGES["ssh.menu.item_reinstall"]="%s. Reinstall (replace with new port)"
+I18N_MESSAGES["ssh.menu.item_reset"]="Reset (delete %s rule)"
+I18N_MESSAGES["ssh.menu.item_reinstall"]="Reinstall (replace with new port)"
 
 # Input messages
 I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Enter new SSH port"
@@ -50,7 +50,7 @@ I18N_MESSAGES["ssh.guard.test_new"]="OPEN NEW WINDOW and test connection via por
 
 # Error messages
 I18N_MESSAGES["ssh.error_port_not_up"]="PORT %s DID NOT COME UP [%s attempts in %s sec]"
-I18N_MESSAGES["ssh.error_invalid_choice"]="Invalid choice"
+I18N_MESSAGES["ssh.error_invalid_choice"]="Invalid choice: %s"
 
 # Socket check messages
 I18N_MESSAGES["ssh.socket.configured"]="SSH works correctly in ssh.service mode"
