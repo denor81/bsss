@@ -31,7 +31,8 @@ user::orchestrator::create_dispatcher() {
 user_info_del_block() {
     log_info "Напоминание, как удалить пользователя:"
     log_info_simple_tab "deluser --remove-home --remove-all-files USERNAME # Удалить пользователя"
-    log_info_simple_tab "find / -uid USERID 2>/dev/null # Проверка найти все созданные файлы по id"
+    log_info_simple_tab "find / -uid USERID 2>/dev/null # Найти все созданные файлы по id"
+    log_info_simple_tab "grep -r -E 'USERNAME.*ALL' /etc/sudoers.d/ # Поиск правил пользователя"
     log_info_simple_tab "pgrep -u USERNAME # посмотреть PID процессов"
     log_info_simple_tab "killall -9 -u USERNAME # завершить все процессы"
 }
