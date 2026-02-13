@@ -57,7 +57,7 @@ user::system::is_only_root() {
 
 user::info::block() {
     local login_user=$(logname 2>/dev/null || echo "N/A")
-    local auth_method=$(user::system::get_auth_method | tr -d '\0')
+    local auth_method=$(sys::user::get_auth_method | tr -d '\0')
     local i=0
 
     log_info "Пользователи в системе:"

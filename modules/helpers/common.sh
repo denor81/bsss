@@ -483,7 +483,7 @@ ufw::ping::restore() {
 # @stdin:       нет
 # @stdout:      connection_type\0 (PUBLICKEY/PASSWORD/UNKNOWN)
 # @exit_code:   0
-user::system::get_auth_method() {
+sys::user::get_auth_method() {
     local auth_info
 
     auth_info=$(journalctl _COMM=sshd --since "72h ago" 2>/dev/null | grep "Accepted" | grep "for $(logname)" | tail -1)

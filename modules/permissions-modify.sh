@@ -13,7 +13,6 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
-source "${PROJECT_ROOT}/modules/helpers/user.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 
 trap common::int::actions INT
@@ -38,7 +37,14 @@ permissions::orchestrator::toggle_logic() {
             action=$(permissions::toggle::rules | tr -d '\n')
             case "$action" in
                 restore) permissions::orchestrator::restore::rules ;;
-                install) permissions::orchestrator::install::rules ;;
+                install) 
+                    log_info "Будет создан файл с правилами в каталоге $SSH_CONFIGD_DIR"
+                    log_info_simple_tab "PermitRootLogin no"
+                    log_info_simple_tab "PasswordAuthentication no"
+                    log_info_simple_tab "PubkeyAuthentication yes"
+                    io::confirm_action "$(_ "io.confirm_action.default_question")"
+                    permissions::orchestrator::install::rules
+                ;;
             esac
             ;;
         *) log_error "$(_ "ufw.error.invalid_menu_id" "$menu_id")"; return 1 ;;
@@ -57,9 +63,9 @@ permissions::orchestrator::check_current_user() {
     root_id=$(id -u root)
     auth_id=$(id -u "$(logname)")
 
-    user::info::block
-    log_info "[nosudo>нет прав sudo] [nopass>не требует пароль при выполнении sudo]"
-    log_info "[pass>требует пароль при выполнении sudo] [superuser>superuser]"
+    # user::info::block
+    # log_info "[nosudo>нет прав sudo] [nopass>не требует пароль при выполнении sudo]"
+    # log_info "[pass>требует пароль при выполнении sudo] [superuser>superuser]"
     permissions::orchestrator::log_statuses
 
     if (( root_id == auth_id )); then
@@ -80,13 +86,12 @@ permissions::orchestrator::check_current_user() {
 permissions::orchestrator::dispatch_logic() {
     local current_conn_type
 
-    current_conn_type=$(user::system::get_auth_method | tr -d '\0')
+    current_conn_type=$(sys::user::get_auth_method | tr -d '\0')
+
+    log_info "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]"
 
     case "$current_conn_type" in
-        key) 
-            log_info "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]"
-            permissions::orchestrator::check_current_user
-        ;;
+        key) permissions::orchestrator::check_current_user ;;
         pass)
             log_attention "Обнаружено подключение по паролю"
             log_warn "Вам придется вводить пароль каждый раз при sudo"
