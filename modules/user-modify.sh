@@ -17,6 +17,13 @@ source "${PROJECT_ROOT}/modules/helpers/user.sh"
 
 trap log_stop EXIT
 
+# @type:        Orchestrator
+# @description: Диспетчер создания пользователя - генерирует пароль, создает пользователя, устанавливает права
+# @params:      нет
+# @stdin:       нет
+# @stdout:      username:password
+# @exit_code:   0 - успешно
+#               $? - ошибка при создании пользователя
 user::orchestrator::create_dispatcher() {
     local password
     password="$(user::pass::generate)"
@@ -28,14 +35,6 @@ user::orchestrator::create_dispatcher() {
     printf '%s:%s' "$BSSS_USER_NAME" "$password"
 }
 
-user_info_del_block() {
-    log_info "Напоминание, как удалить пользователя:"
-    log_info_simple_tab "deluser --remove-home --remove-all-files USERNAME # Удалить пользователя"
-    log_info_simple_tab "find / -uid USERID 2>/dev/null # Найти все созданные файлы по id"
-    log_info_simple_tab "grep -r -E 'USERNAME.*ALL' /etc/sudoers.d/ # Поиск правил пользователя"
-    log_info_simple_tab "pgrep -u USERNAME # посмотреть PID процессов"
-    log_info_simple_tab "killall -9 -u USERNAME # завершить все процессы"
-}
 # @type:        Orchestrator
 # @description: Создает пользователя BSSS
 # @params:      нет
@@ -52,7 +51,7 @@ user::orchestrator::create_user() {
     log_info_simple_tab "Пароль будет выведен только раз на экран терминала (в логи не пишется)"
     log_info "После создания пользователя необходимо скопировать ваш SSH ключ на сервер командой ssh-copy-id"
     log_info "Проверить авторизацию по ключу и если все ок, то можно запрещать доступ по паролю и доступ от имени root"
-    user_info_del_block
+    user::log::delete_block
 
     io::confirm_action "Создать пользователя $BSSS_USER_NAME?"
     local cred
@@ -65,6 +64,12 @@ user::orchestrator::create_user() {
     log_info "После копирования SSH ключа и успешного подключения можно будет запретить авторизацию по паролю"
 }
 
+# @type:        Orchestrator
+# @description: Обработчик сценария когда в системе только root
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 user::orchestrator::need_add_bsssuser() {
     log_info "В системе один единственный пользователь root"
     log_info "Настоятельно рекомендуется создать второго пользователя с правами sudo"
@@ -73,6 +78,12 @@ user::orchestrator::need_add_bsssuser() {
     user::orchestrator::create_user
 }
 
+# @type:        Orchestrator
+# @description: Обработчик сценария когда есть другие пользователи, но нет bsssuser
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 user::orchestrator::can_add_bsssuser() {
     log_info "Помимо пользователя root уже созданы другие пользователи"
     log_info "Можно создать отдельного пользователя $BSSS_USER_NAME"
@@ -80,20 +91,33 @@ user::orchestrator::can_add_bsssuser() {
     user::orchestrator::create_user
 }
 
+# @type:        Orchestrator
+# @description: Логирует сообщение что пользователь уже существует
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
 user::log::no_new_user_needed() {
     log_info "Пользователь $BSSS_USER_NAME уже создан"
     log_info "Созание дополнительного пользователя возможно только вручную"
     user::info::block
-    user_info_del_block
+    user::log::delete_block
 }
 
+# @type:        Orchestrator
+# @description: Диспетчер логики проверки состояния пользователей
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               3 - ошибка проверки состава пользователей
 user::dispatch::logic() {
     local rc
     user::system::is_only_root || rc=$?
     case "$rc" in
-        0) user::orchestrator::need_add_bsssuser ;; # Только root > предлагаем создать пользователя
-        1) user::orchestrator::can_add_bsssuser ;; # Есть другие пользователи, но нет bsssuser > предлагаем создать
-        2) user::log::no_new_user_needed ;; # bsssuser создан > нет необходимости создавать нового
+        0) user::orchestrator::need_add_bsssuser ;;
+        1) user::orchestrator::can_add_bsssuser ;;
+        2) user::log::no_new_user_needed ;;
         3) log_error "Ошибка проверки состава пользователей" ;;
     esac
 }
