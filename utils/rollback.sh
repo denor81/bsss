@@ -133,7 +133,8 @@ rollback::orchestrator::permissions() {
     permissions::rules::restore
     sys::service::restart
     log_actual_info
-    permissions::orchestrator::log_statuses
+    permissions::log::bsss_configs
+    permissions::log::other_configs
 
     log_success "$(_ "rollback.permissions_restored")"
 }

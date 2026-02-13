@@ -20,6 +20,72 @@ trap common::exit::actions EXIT
 trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
+# @description: Инициирует немедленный откат через SIGUSR2 и ожидает завершения watchdog
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - откат выполнен, процесс заблокирован
+permissions::orchestrator::trigger_immediate_rollback() {
+    kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
+    wait "$WATCHDOG_PID" 2>/dev/null || true
+    while true; do sleep 1; done
+}
+
+# @type:        Orchestrator
+# @description: Отображает статусы permissions: BSSS правила, сторонние правила
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - Всегда успешно
+permissions::orchestrator::log_statuses() {
+    permissions::log::bsss_configs
+    permissions::log::other_configs
+}
+
+# @type:        Orchestrator
+# @description: Выполняет откат правил permissions и рестарт сервиса
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+permissions::orchestrator::restore::rules() {
+    permissions::rules::restore
+    sys::service::restart
+    log_actual_info
+    permissions::orchestrator::log_statuses
+}
+
+# @type:        Orchestrator
+# @description: Создает правила permissions с механизмом rollback
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               2 - выход по запросу пользователя
+#               $? - код ошибки дочернего процесса
+permissions::orchestrator::install::rules() {
+
+    make_fifo_and_start_reader
+    WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "permissions")
+
+    permissions::log::guard_instructions
+
+    permissions::rules::make_bsss_rules
+    sys::service::restart
+    log_actual_info
+    permissions::orchestrator::log_statuses
+
+    log_info "$(_ "common.menu_header")"
+    log_info_simple_tab "$(_ "common.exit" "0")"
+
+    if io::ask_value "$(_ "permissions.install.confirm_connection")" "" "^connected$" "connected" "0" >/dev/null; then
+        rollback::orchestrator::watchdog_stop
+        log_info "$(_ "permissions.success_changes_committed")"
+    else
+        permissions::orchestrator::trigger_immediate_rollback
+    fi
+}
+
+# @type:        Orchestrator
 # @description: Обрабатывает выбор пользователя из меню и выполняет соответствующее действие
 # @params:      нет
 # @stdin:       нет
