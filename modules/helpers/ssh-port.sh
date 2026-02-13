@@ -238,38 +238,6 @@ ssh::port::wait_for_up() {
 }
 
 # @type:        Orchestrator
-# @description: Обработчик сценария с существующими конфигами
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               $? - код ошибки дочернего процесса
-ssh::orchestrator::config_exists_handler() {
-    ssh::menu::display_exists_scenario
-    local choice
-    choice=$(io::ask_value "$(_ "ssh.ui.get_action_choice.ask_select")" "" "^[012]$" "0-2" "0" | tr -d '\0') || return
-
-    case "$choice" in
-        1) ssh::reset::port ;;
-        2) ssh::install::port ;;
-        *) log_warn "$(_ "ssh.error_invalid_choice")" ;;
-    esac
-}
-
-# @type:        Orchestrator
-# @description: Обработчик сценария отсутствия конфигов
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               $? - код ошибки дочернего процесса
-ssh::orchestrator::config_not_exists_handler() {
-    ssh::install::port
-}
-
-# @type:        Orchestrator
 # @description: Инициирует немедленный откат через SIGUSR2 и ожидает завершения watchdog
 # @stdin:       нет
 # @stdout:      нет

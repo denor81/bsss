@@ -16,49 +16,15 @@ source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/user.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 
-trap log_stop EXIT
+trap common::int::actions INT
+trap common::exit::actions EXIT
+trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
-# @type:        Orchestrator
-# @description: Создает файл конфигурации SSH с настройками доступа
-#               Отключает логин root и по паролю, включает вход по ключам
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               1 - ошибка создания файла
-permissions::rules::make_bsss_rules() {
-    local last_prefix new_prefix path
+permissions::orchestrator::toggle_logic() {
+    local menu_id
 
-    last_prefix=$(permissions::ssh::find_last_prefix)
-
-    if [[ -z "$last_prefix" ]]; then
-        new_prefix="10"
-    else
-        new_prefix=$(( last_prefix + 10 ))
-    fi
-
-    path="${SSH_CONFIGD_DIR}/${new_prefix}${BSSS_PERMISSIONS_CONFIG_FILE_NAME}"
-
-    log_info "Будет создан файл [$path]"
-    io::confirm_action "Создать файл с правилами?"
-
-    # Создаем файл с правами
-    if cat > "$path" << EOF
-# $BSSS_MARKER_COMMENT
-# User permissions
-PermitRootLogin no
-PasswordAuthentication no
-PubkeyAuthentication yes
-EOF
-    then
-        log_info "Файл создан [$path]"
-    else
-        log_error "Ошибка при создании файла с правами доступа [$path])"
-        return 1
-    fi
-}
-
-permissions::orchestrator::dispatch_logic() {
-    local menu_id="$1"
+    permissions::menu::display
+    menu_id=$(permissions::menu::get_user_choice | tr -d '\0')
 
     case "$menu_id" in
         1) permissions::toggle::rules ;;
@@ -66,13 +32,11 @@ permissions::orchestrator::dispatch_logic() {
     esac
 }
 
-check_current_user() {
+permissions::orchestrator::check_current_user() {
     local root_id auth_id auth_type
     root_id=$(id -u root)
     auth_id=$(id -u "$(logname)")
-    auth_type="$1"
 
-    log_info "Владелец сессии [$(logname)]|Тип подключения [$auth_type]"
     log_info "[nosudo>нет прав sudo] [nopass>не требует пароль при выполнении sudo]"
     log_info "[pass>требует пароль при выполнении sudo] [superuser>superuser]"
     user::info::block
@@ -83,12 +47,7 @@ check_current_user() {
         return 1
     fi
 
-    permissions::menu::display
-
-    local menu_id
-    menu_id=$(permissions::menu::get_user_choice | tr -d '\0')
-
-    permissions::orchestrator::dispatch_logic "$menu_id"    
+    permissions::orchestrator::toggle_logic 
 }
 
 # @type:        Orchestrator
@@ -97,14 +56,24 @@ check_current_user() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               2 - отмена пользователем или несоответствие условий
-permissions::orchestrator::apply() {
+permissions::orchestrator::dispatch_logic() {
     local current_conn_type
 
     current_conn_type=$(user::system::get_auth_method | tr -d '\0')
 
     case "$current_conn_type" in
-        key) check_current_user "$current_conn_type" ;;
+        key) 
+            log_info "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]"
+            permissions::orchestrator::check_current_user
+        ;;
         pass) log_warn "Подключитесь по SSH ключу пользователем отличным от root"; return 1 ;;
+        timeout) 
+            log_warn "Сессия длиннее 72 часов [невозможно определить тип подключения - ограничения журнала]"
+            log_warn "Подключитесь заново в новом окне нерминала ["$current_conn_type"]"
+            log_warn "В таком режиме возможен только сброс настроек"
+            io::confirm_action "Выполнить сброс правил ${UTIL_NAME^^} для доступа?"
+            permissions::orchestrator::restore::rules
+        ;;
         n/a) log_warn "Не удалось определить тип подключения"; return 1 ;;
     esac
 }
@@ -120,7 +89,7 @@ main() {
     i18n::load
     log_start
     io::confirm_action "Запустить модуль?"
-    permissions::orchestrator::apply
+    permissions::orchestrator::dispatch_logic
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

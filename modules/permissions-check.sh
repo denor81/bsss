@@ -15,8 +15,6 @@ source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 
-trap log_stop EXIT
-
 # @type:        Sink
 # @description: Выводит информацию о текущем состоянии прав доступа SSH
 # @stdin:       нет

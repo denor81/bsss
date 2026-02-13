@@ -21,6 +21,7 @@ source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
+source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 
 LOG_STRICT_MODE=false
 MAIN_SCRIPT_PID=""
@@ -121,6 +122,23 @@ rollback::orchestrator::ufw() {
 }
 
 # @type:        Orchestrator
+# @description: Откат для permissions модуля - удаление правил и перезапуск сервиса
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+rollback::orchestrator::permissions() {
+    log_warn "$(_ "rollback.permissions_executing")"
+
+    permissions::rules::restore
+    sys::service::restart
+    log_actual_info
+    permissions::orchestrator::log_statuses
+
+    log_success "$(_ "rollback.permissions_restored")"
+}
+
+# @type:        Orchestrator
 # @description: Полная очистка системы от следов BSSS и деактивация UFW.
 #               Вызывается при критическом сбое или таймауте.
 # @params:      нет
@@ -131,6 +149,7 @@ rollback::orchestrator::full() {
     case "$ROLLBACK_TYPE" in
         "ssh") rollback::orchestrator::ssh ;;
         "ufw") rollback::orchestrator::ufw ;;
+        "permissions") rollback::orchestrator::permissions ;;
         *) log_error "$(_ "rollback.unknown_type" "$ROLLBACK_TYPE")"; return 1 ;;
     esac
 }
@@ -157,6 +176,7 @@ rollback::orchestrator::watchdog_timer() {
     case "$ROLLBACK_TYPE" in
         "ssh") log_bold_info "$(_ "rollback.timeout_ssh")" ;;
         "ufw") log_bold_info "$(_ "rollback.timeout_ufw")" ;;
+        "permissions") log_bold_info "$(_ "rollback.timeout_permissions")" ;;
         *) log_bold_info "$(_ "rollback.timeout_generic")" ;;
     esac
 

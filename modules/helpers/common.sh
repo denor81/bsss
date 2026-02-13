@@ -486,14 +486,14 @@ ufw::ping::restore() {
 user::system::get_auth_method() {
     local auth_info
 
-    auth_info=$(journalctl _COMM=sshd --since "12h ago" 2>/dev/null | grep "Accepted" | grep "for $(logname)" | tail -1)
-
-    [[ -z "$auth_info" ]] && { printf '%s\0' "UNKNOWN"; return; }
+    auth_info=$(journalctl _COMM=sshd --since "72h ago" 2>/dev/null | grep "Accepted" | grep "for $(logname)" | tail -1)
 
     if [[ "$auth_info" == *"publickey"* ]]; then
         printf '%s\0' "key"
     elif [[ "$auth_info" == *"password"* ]] || [[ "$auth_info" == *"keyboard-interactive"* ]]; then
         printf '%s\0' "pass"
+    elif [[ -z "$auth_info" ]]; then
+        printf '%s\0' "timeout"
     else
         printf '%s\0' "n/a"
     fi
