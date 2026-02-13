@@ -5,23 +5,22 @@
 # @stdout:      prefix (число) или пустая строка если файлов нет
 # @exit_code:   0
 permissions::config::find_last_prefix() {
-    local file prefix max_prefix=""
+    local file prefix="10"
 
     while IFS= read -r -d '' file; do
-        [[ ! -f "$file" ]] && continue
-
-        if grep -qE '^\s*(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)\b' "$file" 2>/dev/null; then
+        if grep -qEi '^\s*(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)\b' "$file"; then
             basename_file=$(basename "$file")
             prefix="${basename_file%%-*}"
 
             if [[ "$prefix" =~ ^[0-9]+$ ]]; then
-                [[ -z "$max_prefix" ]] || (( prefix > max_prefix )) && max_prefix="$prefix"
+                printf '%s' "$prefix"
+                return 0
             fi
+            printf '%s' "$prefix"
         fi
-    done < <(find "${SSH_CONFIGD_DIR}" -maxdepth 1 -type f -name "*.conf" ! -name "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" -print0 2>/dev/null)
-
-    printf '%s' "$max_prefix"
+    done < <(sudo find "${SSH_CONFIGD_DIR}" -maxdepth 1 -type f -name "*.conf" ! -name "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" -print0 | sort -z 2>/dev/null)
 }
+
 
 # @type:        Source
 # @description: Генерирует пункты меню в зависимости от текущего состояния
@@ -158,7 +157,7 @@ permissions::rules::make_bsss_rules() {
     if [[ -z "$last_prefix" ]]; then
         new_prefix="10"
     else
-        new_prefix=$(( last_prefix + 10 ))
+        printf -v new_prefix "%02d" $(( 10#$last_prefix - 1 ))
     fi
 
     path="${SSH_CONFIGD_DIR}/${new_prefix}${BSSS_PERMISSIONS_CONFIG_FILE_NAME}"
@@ -253,8 +252,6 @@ permissions::orchestrator::restore::rules() {
 #               2 - выход по запросу пользователя
 #               $? - код ошибки дочернего процесса
 permissions::orchestrator::install::rules() {
-    log_info "$(_ "common.menu_header")"
-    log_info_simple_tab "$(_ "common.exit" "0")"
 
     make_fifo_and_start_reader
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "permissions")
