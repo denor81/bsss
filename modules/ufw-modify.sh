@@ -144,19 +144,23 @@ ufw::ping::disable_in_rules() {
     fi
 }
 
-ufw::orchestrator::run_module() {
+ufw::main::menu::dispatcher() {
     ufw::status::is_active && log_info_simple_tab "1. $(_ "ufw.menu.item_disable")" || log_info_simple_tab "1. $(_ "ufw.menu.item_enable")"
     ufw::ping::is_configured && log_info_simple_tab "2. $(_ "ufw.menu.item_ping_enable")" >&2 || log_info_simple_tab "2. $(_ "ufw.menu.item_ping_disable")" >&2
     log_info_simple_tab "0. $(_ "common.exit")" >&2
 
     local menu_id
-    menu_id=$(io::ask_value "Пункт:" "" "^[0-3]$" "0-3" "0" | tr -d '\0') || return
+    menu_id=$(io::ask_value "Пункт:" "" "^[0-2]$" "0-2" "0" | tr -d '\0') || return
 
     # Валидация производится в io::ask_value - по этому нет пункта case отлавливающего неверный выбор
     case "$menu_id" in
         1) ufw::toggle::status ;;
         2) ufw::toggle::ping ;;
     esac
+}
+
+ufw::orchestrator::run_module() {
+    ufw::main::menu::dispatcher
 }
 
 # @type:        Orchestrator
