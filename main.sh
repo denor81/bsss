@@ -46,7 +46,7 @@ parse_params() {
     done
 }
 
-# @type:        Filter
+# @type:        Validator
 # @description: Проверяет права доступа для запуска скрипта
 # @params:      нет
 # @stdin:       нет
@@ -194,6 +194,13 @@ runner::module::select_modify() {
     esac
 }
 
+# @type:        Orchestrator
+# @description: Запускает выбранный модуль или действие
+# @params:      нет
+# @stdin:       path\0 или CHECK\0 или LANG_CHANGE\0 - выбор из select_modify
+# @stdout:      RELOAD_I18N - если требуется перезагрузка локализации
+# @exit_code:   0 - успешно
+#               $? - код ошибки модуля или действия
 runner::module::execute_modify() {
     local exit_code=0
     local selected_module
@@ -223,6 +230,14 @@ runner::module::execute_modify() {
     main::process::exit_code "$exit_code" "$(basename $selected_module)"
 }
 
+# @type:        Sink
+# @description: Логирует статус завершения модуля
+# @params:
+#   exit_code   Код завершения модуля
+#   module_tag  Имя модуля для логирования
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
 main::process::exit_code() {
     local exit_code="${1:0}"
     local module_tag="${2:-}"
@@ -266,7 +281,8 @@ runner::module::run_modify() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-#               $? - ошибка проверки или запуска модулей
+#               1 - ошибка проверки
+#               $? - код ошибки от модуля
 run() {
     sys::gawk::check_dependency
     sys::module::validate_order
@@ -280,11 +296,13 @@ run() {
 
 # @type:        Orchestrator
 # @description: Основная точка входа
-# @params:      @ - параметры командной строки
+# @params:
+#   @           Параметры командной строки для передачи в parse_params
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-#               $? - ошибка проверки прав или параметров
+#               1 - ошибка проверки прав или параметров
+#               $? - ошибка выполнения действия
 main() {
     log_dir_init
     log_start
