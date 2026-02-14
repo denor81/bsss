@@ -87,3 +87,6 @@ I18N_MESSAGES["module.ufw.name"]="Настройка брандмауэра UFW"
 
 # IO ask_value
 I18N_MESSAGES["io.ask_value.select_module"]="Выберите модуль"
+I18N_MESSAGES["common.ask_select_action"]="Выберите пункт"
+I18N_MESSAGES["common.confirm_connection"]="Подтвердите подключение - введите %s или %s для отмены"
+I18N_MESSAGES["common.success_changes_committed"]="Изменения зафиксированы, Rollback отключен"

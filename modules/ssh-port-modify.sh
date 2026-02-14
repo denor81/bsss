@@ -79,9 +79,6 @@ ssh::orchestrator::trigger_immediate_rollback() {
 ssh::install::port() {
     local port
 
-    log_info "$(_ "common.menu_header")"
-    log_info_simple_tab "$(_ "common.exit" "0")"
-
     port=$(ssh::ui::get_new_port | tr -d '\0') || return
 
     make_fifo_and_start_reader
@@ -99,12 +96,9 @@ ssh::install::port() {
         ssh::orchestrator::trigger_immediate_rollback
     fi
 
-    log_info "$(_ "common.menu_header")"
-    log_info_simple_tab "$(_ "common.exit" "0")"
-
-    if io::ask_value "$(_ "ssh.install.confirm_connection")" "" "^connected$" "connected" "0" >/dev/null; then
+    if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
-        log_info "$(_ "ssh.success_changes_committed")"
+        log_info "$(_ "common.success_changes_committed")"
     else
         ssh::orchestrator::trigger_immediate_rollback
     fi
@@ -122,24 +116,20 @@ ssh::install::port() {
 #               2 - выход по выбору пользователя
 #               $? - ошибка при выполнении действия
 ssh::main::menu::dispatcher() {
-    # === ШАГ 1: Отображение пунктов меню ===
     ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
 
     log_info "$(_ "common.menu_header")"
     log_info_simple_tab "1. $(_ "ssh.menu.item_reset" "${UTIL_NAME^^}")"
     log_info_simple_tab "2. $(_ "ssh.menu.item_reinstall")"
-    log_info_simple_tab "0. $(_ "common.exit")" >&2
+    log_info_simple_tab "0. $(_ "common.exit")"
 
-    # === ШАГ 2: Получение выбора пользователя ===
     local menu_id
-    menu_id=$(io::ask_value "$(_ "ssh.ui.get_action_choice.ask_select")" "" "^[0-2]$" "0-2" "0" | tr -d '\0') || return
+    menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-2]$" "0-2" "0" | tr -d '\0') || return
 
-    # === ШАГ 3: Диспетчеризация действий ===
     case "$menu_id" in
         1) ssh::reset::port ;;
         2) ssh::install::port ;;
-        *) log_error "$(_ "ssh.error_invalid_choice" "$menu_id")"; return 1 ;;
     esac
 }
 

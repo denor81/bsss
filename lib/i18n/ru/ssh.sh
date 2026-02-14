@@ -4,10 +4,8 @@
 I18N_MESSAGES["ssh.modify.confirm"]="Изменить конфигурацию SSH порта?"
 
 # Menu UI
-I18N_MESSAGES["ssh.ui.get_action_choice.ask_select"]="Выберите действие"
 
 # Input prompts
-I18N_MESSAGES["ssh.install.confirm_connection"]="Подтвердите подключение - введите connected или 0 для отмены"
 
 # Info messages
 I18N_MESSAGES["ssh.info_rules_found"]="Есть правила ${UTIL_NAME^^} для SSH:"
@@ -16,7 +14,6 @@ I18N_MESSAGES["ssh.info_no_rules"]="Нет правил ${UTIL_NAME^^} для SS
 # Success messages
 I18N_MESSAGES["ssh.success_port_up"]="SSH порт %s успешно поднят после %s попыток в течение %s сек"
 I18N_MESSAGES["ssh.success_rule_created"]="Создано правило ${UTIL_NAME^^} для SSH: [%s:%s]"
-I18N_MESSAGES["ssh.success_changes_committed"]="Изменения зафиксированы, Rollback отключен"
 
 # Error messages
 I18N_MESSAGES["ssh.error_port_busy"]="SSH порт %s уже занят другим сервисом."

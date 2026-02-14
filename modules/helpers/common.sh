@@ -477,10 +477,10 @@ ufw::ping::is_configured() {
 ufw::ping::restore() {
     if res=$(cp -pv "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES" 2>&1); then
         log_info "$(_ "ufw.success.backup_restored" "$res")"
-    else
-        local rc=$?
-        log_error "$(_ "ufw.error.restore_failed" "$UFW_BEFORE_RULES" "$res")"
-        return "$rc"
+    # else
+    #     local rc=$?
+    #     log_error "$(_ "ufw.error.restore_failed" "$UFW_BEFORE_RULES" "$res")"
+    #     return "$rc"
     fi
 
     printf '%s\0' "$UFW_BEFORE_RULES_BACKUP" | sys::file::delete

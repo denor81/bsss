@@ -15,10 +15,8 @@ I18N_MESSAGES["ufw.warning.continue_without_rules"]="Невозможно про
 I18N_MESSAGES["ufw.warning.add_ssh_first"]="Сначала добавьте SSH-порт через модуль SSH"
 I18N_MESSAGES["ufw.rollback.warning_title"]="НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
 I18N_MESSAGES["ufw.rollback.test_access"]="Проверьте доступ к серверу после включения UFW в новом окне терминала"
-I18N_MESSAGES["ufw.install.confirm_connection"]="Подключитесь в новом окне терминала - введите connected или 0 для отмены"
 
 # Menu messages
-I18N_MESSAGES["ufw.menu.ask_select"]="Выберите действие"
 I18N_MESSAGES["ufw.menu.item_disable"]="Выключить UFW"
 I18N_MESSAGES["ufw.menu.item_enable"]="Включить UFW"
 I18N_MESSAGES["ufw.menu.item_ping_enable"]="Ping будет включен [ACCEPT] [По умолчанию]"

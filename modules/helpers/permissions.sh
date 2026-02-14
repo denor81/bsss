@@ -61,7 +61,7 @@ permissions::menu::get_user_choice() {
     local pattern="^[0-$qty_items]$"
     local hint="0-$qty_items"
 
-    io::ask_value "Выберите пункт" "" "$pattern" "$hint" "0"
+    io::ask_value "$(_ "common.ask_select_action")" "" "$pattern" "$hint" "0"
 }
 
 # === VALIDATOR ===

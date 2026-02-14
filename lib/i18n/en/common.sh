@@ -85,3 +85,6 @@ I18N_MESSAGES["module.ufw.name"]="UFW firewall configuration"
 
 # IO ask_value
 I18N_MESSAGES["io.ask_value.select_module"]="Select module"
+I18N_MESSAGES["common.ask_select_action"]="Select item"
+I18N_MESSAGES["common.confirm_connection"]="Confirm connection - enter %s or %s to cancel"
+I18N_MESSAGES["common.success_changes_committed"]="Changes committed, Rollback disabled"

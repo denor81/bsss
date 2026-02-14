@@ -4,10 +4,8 @@
 I18N_MESSAGES["ssh.modify.confirm"]="Modify SSH port configuration?"
 
 # Menu UI
-I18N_MESSAGES["ssh.ui.get_action_choice.ask_select"]="Select action"
 
 # Input prompts
-I18N_MESSAGES["ssh.install.confirm_connection"]="Confirm connection - enter connected or 0 to cancel"
 
 # Info messages
 I18N_MESSAGES["ssh.info_rules_found"]="${UTIL_NAME^^} rules found for SSH:"
@@ -16,7 +14,6 @@ I18N_MESSAGES["ssh.info_no_rules"]="No ${UTIL_NAME^^} rules for SSH [%s]"
 # Success messages
 I18N_MESSAGES["ssh.success_port_up"]="SSH port %s successfully raised after %s attempts in %s sec"
 I18N_MESSAGES["ssh.success_rule_created"]="${UTIL_NAME^^} rule created for SSH: [%s:%s]"
-I18N_MESSAGES["ssh.success_changes_committed"]="Changes committed, Rollback disabled"
 
 # Error messages
 I18N_MESSAGES["ssh.error_port_busy"]="SSH port %s is already in use by another service."

@@ -15,10 +15,8 @@ I18N_MESSAGES["ufw.warning.continue_without_rules"]="Cannot continue: no BSSS ru
 I18N_MESSAGES["ufw.warning.add_ssh_first"]="First add SSH port via SSH module"
 I18N_MESSAGES["ufw.rollback.warning_title"]="DO NOT CLOSE THIS TERMINAL WINDOW"
 I18N_MESSAGES["ufw.rollback.test_access"]="Check server access after enabling UFW in a new terminal window"
-I18N_MESSAGES["ufw.install.confirm_connection"]="Connect in a new terminal window - enter connected or 0 to cancel"
 
 # Menu messages
-I18N_MESSAGES["ufw.menu.ask_select"]="Select action"
 I18N_MESSAGES["ufw.menu.item_disable"]="Disable UFW"
 I18N_MESSAGES["ufw.menu.item_enable"]="Enable UFW"
 I18N_MESSAGES["ufw.menu.item_ping_enable"]="Ping will be enabled [ACCEPT] [Default]"

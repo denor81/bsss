@@ -81,7 +81,7 @@ ufw::status::force_enable() {
     log_actual_info
     ufw::orchestrator::log_statuses
 
-    if io::ask_value "$(_ "ufw.install.confirm_connection")" "" "^connected$" "connected" "0" >/dev/null; then
+    if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop
     else
         rollback::orchestrator::immediate_usr2
@@ -150,7 +150,7 @@ ufw::main::menu::dispatcher() {
     log_info_simple_tab "0. $(_ "common.exit")" >&2
 
     local menu_id
-    menu_id=$(io::ask_value "Пункт:" "" "^[0-2]$" "0-2" "0" | tr -d '\0') || return
+    menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-2]$" "0-2" "0" | tr -d '\0') || return
 
     # Валидация производится в io::ask_value - по этому нет пункта case отлавливающего неверный выбор
     case "$menu_id" in

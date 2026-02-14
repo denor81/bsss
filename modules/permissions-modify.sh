@@ -77,9 +77,9 @@ permissions::orchestrator::install::rules() {
     log_info "$(_ "common.menu_header")"
     log_info_simple_tab "$(_ "common.exit" "0")"
 
-    if io::ask_value "$(_ "permissions.install.confirm_connection")" "" "^connected$" "connected" "0" >/dev/null; then
+    if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop
-        log_info "$(_ "permissions.success_changes_committed")"
+        log_info "$(_ "common.success_changes_committed")"
     else
         permissions::orchestrator::trigger_immediate_rollback
     fi
