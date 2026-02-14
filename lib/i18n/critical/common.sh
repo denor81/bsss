@@ -4,7 +4,7 @@
 I18N_MESSAGES["no_translate"]="%s"
 
 # Basic messages
-I18N_MESSAGES["common.exit"]="%s. Выход / Exit"
+I18N_MESSAGES["common.exit"]="Выход / Exit"
 
 # Exit signals
 I18N_MESSAGES["common.helpers.rollback.exit_received"]="Received EXIT signal [RC: %s]"

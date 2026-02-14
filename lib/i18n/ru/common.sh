@@ -1,12 +1,9 @@
 # Common messages (Russian)
 
-# Special message - pass through without translation
 I18N_MESSAGES["no_translate"]="%s"
 I18N_MESSAGES["common.pipefail.interrupted"]="Прервано [RC: %d]"
 I18N_MESSAGES["common.log_command"]="Команда [%s]"
-
-# Basic messages
-I18N_MESSAGES["common.exit"]="%s. Выход"
+I18N_MESSAGES["common.exit"]="Выход"
 
 # Error messages
 I18N_MESSAGES["common.error_root_privileges"]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."

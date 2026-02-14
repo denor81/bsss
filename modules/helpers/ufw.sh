@@ -17,11 +17,11 @@ ufw::rule::has_any_bsss() {
 # @stdin:       нет
 # @stdout:      id|text\0 (0..N)
 # @exit_code:   0 - успешно
-ufw::menu::get_items() {
-    ufw::status::is_active && printf '%s|%s\0' "1" "$(_ "ufw.menu.item_disable")" || printf '%s|%s\0' "1" "$(_ "ufw.menu.item_enable")"
-    ufw::ping::is_configured && printf '%s|%s\0' "2" "$(_ "ufw.menu.item_ping_enable")" || printf '%s|%s\0' "2" "$(_ "ufw.menu.item_ping_disable")"
-    printf '%s|%s\0' "0" "$(_ "ufw.menu.item_exit")"
-}
+# ufw::menu::get_items() {
+#     ufw::status::is_active && printf '%s|%s\0' "1" "$(_ "ufw.menu.item_disable")" || printf '%s|%s\0' "1" "$(_ "ufw.menu.item_enable")"
+#     ufw::ping::is_configured && printf '%s|%s\0' "2" "$(_ "ufw.menu.item_ping_enable")" || printf '%s|%s\0' "2" "$(_ "ufw.menu.item_ping_disable")"
+#     printf '%s|%s\0' "0" "$(_ "common.exit")"
+# }
 
 # @type:        Source
 # @description: Считает количество пунктов меню (Корректно работает до 9 пунктов)
@@ -29,9 +29,9 @@ ufw::menu::get_items() {
 # @stdin:       нет
 # @stdout:      number - количество пунктов меню
 # @exit_code:   0 - успешно
-ufw::menu::count_items() {
-    ufw::menu::get_items | grep -cz '^'
-}
+# ufw::menu::count_items() {
+#     ufw::menu::get_items | grep -cz '^'
+# }
 
 # === FILTER ===
 
@@ -42,13 +42,13 @@ ufw::menu::count_items() {
 # @stdout:      id\0 (0..2) - выбранный ID или 0 (выход)
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
-ufw::menu::get_user_choice() {
-    local qty_items=$(($(ufw::menu::count_items) - 1)) # вычитаем один элемент - 0 пункт меню, что бы корректно отображать маску
-    local pattern="^[0-$qty_items]$"
-    local hint="0-$qty_items"
+# ufw::menu::get_user_choice() {
+#     local qty_items=$(($(ufw::menu::count_items) - 1)) # вычитаем один элемент - 0 пункт меню, что бы корректно отображать маску
+#     local pattern="^[0-$qty_items]$"
+#     local hint="0-$qty_items"
 
-    io::ask_value "$(_ "ufw.menu.ask_select")" "" "$pattern" "$hint" "0" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
-}
+#     io::ask_value "$(_ "ufw.menu.ask_select")" "" "$pattern" "$hint" "0" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
+# }
 
 # === VALIDATOR ===
 
@@ -60,18 +60,29 @@ ufw::menu::get_user_choice() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-ufw::menu::display() {
-    local id
-    local text
+# ufw::menu::display() {
+#     local id
+#     local text
 
-    ufw::orchestrator::log_statuses
+#     ufw::orchestrator::log_statuses
 
-    log_info "$(_ "common.menu_header")"
+#     log_info "$(_ "common.menu_header")"
 
-    while IFS='|' read -r -d '' id text || break; do
-        log_info_simple_tab "$(_ "no_translate" "$id. $text")"
-    done < <(ufw::menu::get_items)
-}
+#     while IFS='|' read -r -d '' id text || break; do
+#         log_info_simple_tab "$(_ "no_translate" "$id. $text")"
+#     done < <(ufw::menu::get_items)
+# }
+# ufw::menu::display() {
+#     local id text
+
+#     ufw::orchestrator::log_statuses
+
+#     log_info "$(_ "common.menu_header")"
+
+#     while IFS='|' read -r -d '' id text || break; do
+#         log_info_simple_tab "$(_ "no_translate" "$id. $text")"
+#     done
+# }
 
 # @type:        Sink
 # @description: Создает бэкап файла before.rules
