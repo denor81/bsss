@@ -152,10 +152,10 @@ ufw::orchestrator::run_module() {
     local menu_id
     menu_id=$(io::ask_value "Пункт:" "" "^[0-3]$" "0-3" "0" | tr -d '\0') || return
 
+    # Валидация производится в io::ask_value - по этому нет пункта case отлавливающего неверный выбор
     case "$menu_id" in
         1) ufw::toggle::status ;;
         2) ufw::toggle::ping ;;
-        *) log_error "$(_ "ufw.error.invalid_menu_id" "$menu_id")"; return 1 ;;
     esac
 }
 
