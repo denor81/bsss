@@ -95,7 +95,7 @@ ufw::status::force_enable() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::log::rollback::instructions() {
-    log_attention "$(_ "ufw.rollback.warning_title")"
+    log_attention "$(_ "common.warning.dont_close_terminal")"
     log_attention "$(_ "ufw.rollback.test_access")"
 }
 

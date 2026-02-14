@@ -53,11 +53,6 @@ I18N_MESSAGES["common.error_uninstall_delete_failed"]="Failed to delete: %s"
 # Init messages
 I18N_MESSAGES["init.gawk.version"]="Critical dependencies:"
 I18N_MESSAGES["init.gawk.installed"]="gawk installed [%s]"
-I18N_MESSAGES["init.gawk.not_installed"]="gawk not installed"
-I18N_MESSAGES["init.gawk.nul_explanation"]="gawk is required for associative arrays in Bash"
-I18N_MESSAGES["init.gawk.install_confirm"]="Install gawk?"
-I18N_MESSAGES["init.gawk.install_success"]="gawk installed successfully"
-I18N_MESSAGES["init.gawk.install_error"]="Failed to install gawk"
 
 # Rollback messages
 I18N_MESSAGES["rollback.exit_received"]="Received EXIT signal"
@@ -88,3 +83,16 @@ I18N_MESSAGES["io.ask_value.select_module"]="Select module"
 I18N_MESSAGES["common.ask_select_action"]="Select item"
 I18N_MESSAGES["common.confirm_connection"]="Confirm connection - enter %s or %s to cancel"
 I18N_MESSAGES["common.success_changes_committed"]="Changes committed, Rollback disabled"
+
+# Common warnings
+I18N_MESSAGES["common.warning.dont_close_terminal"]="DO NOT CLOSE THIS TERMINAL WINDOW"
+
+# Common install actions
+I18N_MESSAGES["common.install.confirm"]="Install %s?"
+I18N_MESSAGES["common.install.error"]="Error installing %s"
+I18N_MESSAGES["common.install.success"]="%s installed successfully"
+I18N_MESSAGES["common.install.not_installed"]="%s not installed"
+
+# Common auth/check actions
+I18N_MESSAGES["common.check_auth"]="Check ability to authenticate via login and password"
+I18N_MESSAGES["common.copy_ssh_key"]="Copy SSH key to server for connection [ssh-copy-id]"

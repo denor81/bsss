@@ -36,24 +36,9 @@ I18N_MESSAGES["common.helpers.rollback.exit_received"]="Received EXIT signal [RC
 I18N_MESSAGES["common.helpers.rollback.int_received"]="Received INT signal [RC: %s]"
 
 # Init helpers
-I18N_MESSAGES["init.gawk.not_installed"]="Critical dependency - 'gawk' not installed"
-I18N_MESSAGES["init.gawk.nul_explanation"]="This project uses NUL-separators, which are only correctly supported by GNU Awk"
-I18N_MESSAGES["init.gawk.install_confirm"]="Install gawk now? [apt update && apt install gawk -y]"
-I18N_MESSAGES["init.gawk.install_success"]="gawk installed successfully"
-I18N_MESSAGES["init.gawk.install_error"]="Error installing gawk"
 
 # UFW check
-I18N_MESSAGES["ufw.check.not_installed"]="UFW not installed"
-I18N_MESSAGES["ufw.check.install_confirm"]="Install UFW now? [apt update && apt install ufw -y]"
-I18N_MESSAGES["ufw.check.install_error"]="Error installing UFW"
-I18N_MESSAGES["ufw.check.install_success"]="UFW installed successfully"
 I18N_MESSAGES["ufw.check.installed_restart"]="UFW installed - restart the script"
-
-# SSH socket helpers
-I18N_MESSAGES["ssh.socket.force_mode"]="Forcing SSH switch to Service Mode..."
-I18N_MESSAGES["ssh.socket.service_not_active"]="Service not running. Trying to start..."
-I18N_MESSAGES["ssh.socket.start_error"]="Failed to start ssh.service. Check 'journalctl -xeu ssh.service'"
-I18N_MESSAGES["ssh.socket.active"]="SSH active (Service Mode)"
 
 # OS check
 I18N_MESSAGES["os.check.file_not_found"]="File does not exist: %s"

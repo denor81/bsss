@@ -27,14 +27,14 @@ check() {
         ufw::log::rules
         ufw::log::ping_status
     else
-        log_error "$(_ "ufw.check.not_installed")"
-        if io::confirm_action "$(_ "ufw.check.install_confirm")" || return; then
+        log_error "$(_ "common.install.not_installed" "UFW")"
+        if io::confirm_action "$(_ "common.install.confirm" "UFW")" || return; then
             if ! (apt update && apt install ufw -y); then
-                log_error "$(_ "ufw.check.install_error")"
+                log_error "$(_ "common.install.error" "UFW")"
                 return 1
             else
                 if command -v ufw > /dev/null 2>&1; then
-                    log_info "$(_ "ufw.check.install_success")"
+                    log_info "$(_ "common.install.success" "UFW")"
                 else
                     log_info "$(_ "ufw.check.installed_restart")"
                     return 1

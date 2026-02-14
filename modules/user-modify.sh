@@ -42,8 +42,8 @@ user::create::execute_with_logging() {
 
     log_info "$(_ "user.create.menu.user_created" "$BSSS_USER_NAME")"
     log_info_no_log "$(_ "user.create.menu.password_no_log" "${BSSS_USER_NAME}:${password}")"
-    log_info "$(_ "user.create.menu.check_auth")"
-    log_info "$(_ "user.create.menu.copy_ssh_key")"
+    log_info "$(_ "common.check_auth")"
+    log_info "$(_ "common.copy_ssh_key")"
     log_info "$(_ "user.create.menu.after_copy_key")"
     user::log::del_reminder
 }

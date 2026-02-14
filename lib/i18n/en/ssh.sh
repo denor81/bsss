@@ -42,7 +42,6 @@ I18N_MESSAGES["ssh.service.daemon_reloaded"]="Configuration reloaded [systemctl 
 I18N_MESSAGES["ssh.service.restarted"]="SSH service restarted [systemctl restart ssh.service]"
 
 # Guard instructions
-I18N_MESSAGES["ssh.guard.dont_close"]="DO NOT CLOSE THIS TERMINAL WINDOW"
 I18N_MESSAGES["ssh.guard.test_new"]="OPEN NEW WINDOW and test connection via port %s"
 
 # Error messages

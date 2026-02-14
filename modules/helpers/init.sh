@@ -15,16 +15,16 @@ sys::gawk::check_dependency() {
         return 0
     fi
 
-    log_error "$(_ "init.gawk.not_installed")"
+    log_error "$(_ "common.install.not_installed" "gawk")"
     log_info "$(_ "init.gawk.nul_explanation")"
 
-    if io::confirm_action "$(_ "init.gawk.install_confirm")" || return; then
+    if io::confirm_action "$(_ "common.install.confirm" "gawk")" || return; then
         if apt update && apt install gawk -y; then
-            log_info "$(_ "init.gawk.install_success")"
+            log_info "$(_ "common.install.success" "gawk")"
         else
             local rc
             rc=$?
-            log_error "$(_ "init.gawk.install_error")"
+            log_error "$(_ "common.install.error" "gawk")"
             return $rc
         fi
     fi

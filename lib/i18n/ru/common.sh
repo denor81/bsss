@@ -50,11 +50,6 @@ I18N_MESSAGES["common.error_uninstall_delete_failed"]="Не удалось уд�
 # Init messages
 I18N_MESSAGES["init.gawk.version"]="Ключевые зависимости:"
 I18N_MESSAGES["init.gawk.installed"]="gawk установлен [%s]"
-I18N_MESSAGES["init.gawk.not_installed"]="gawk не установлен"
-I18N_MESSAGES["init.gawk.nul_explanation"]="gawk требуется для работы ассоциативных массивов в Bash"
-I18N_MESSAGES["init.gawk.install_confirm"]="Установить gawk?"
-I18N_MESSAGES["init.gawk.install_success"]="gawk успешно установлен"
-I18N_MESSAGES["init.gawk.install_error"]="Ошибка установки gawk"
 
 # Rollback messages
 I18N_MESSAGES["rollback.exit_received"]="Получен сигнал EXIT"
@@ -90,3 +85,16 @@ I18N_MESSAGES["io.ask_value.select_module"]="Выберите модуль"
 I18N_MESSAGES["common.ask_select_action"]="Выберите пункт"
 I18N_MESSAGES["common.confirm_connection"]="Подтвердите подключение - введите %s или %s для отмены"
 I18N_MESSAGES["common.success_changes_committed"]="Изменения зафиксированы, Rollback отключен"
+
+# Common warnings
+I18N_MESSAGES["common.warning.dont_close_terminal"]="НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
+
+# Common install actions
+I18N_MESSAGES["common.install.confirm"]="Установить %s?"
+I18N_MESSAGES["common.install.error"]="Ошибка установки %s"
+I18N_MESSAGES["common.install.success"]="%s успешно установлен"
+I18N_MESSAGES["common.install.not_installed"]="%s не установлен"
+
+# Common auth/check actions
+I18N_MESSAGES["common.check_auth"]="Проверьте возможность авторизации по логину и паролю"
+I18N_MESSAGES["common.copy_ssh_key"]="Скопируйте на сервер ключ для подключения по SSH [ssh-copy-id]"

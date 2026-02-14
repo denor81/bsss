@@ -13,7 +13,6 @@ I18N_MESSAGES["ufw.success.before_rules_edited"]="Отредактирован: 
 I18N_MESSAGES["ufw.success.reloaded"]="UFW перезагружен [ufw reload]"
 I18N_MESSAGES["ufw.warning.continue_without_rules"]="Невозможно продолжить: нет правил BSSS в UFW"
 I18N_MESSAGES["ufw.warning.add_ssh_first"]="Сначала добавьте SSH-порт через модуль SSH"
-I18N_MESSAGES["ufw.rollback.warning_title"]="НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
 I18N_MESSAGES["ufw.rollback.test_access"]="Проверьте доступ к серверу после включения UFW в новом окне терминала"
 
 # Menu messages

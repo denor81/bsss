@@ -202,6 +202,6 @@ ssh::log::other_configs() {
 # @exit_code:   0 - успешно
 ssh::log::guard_instructions() {
     local port="$1"
-    log_attention "$(_ "ssh.guard.dont_close")"
+    log_attention "$(_ "common.warning.dont_close_terminal")"
     log_attention "$(_ "ssh.guard.test_new" "$port")"
 }

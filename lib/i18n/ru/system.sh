@@ -34,24 +34,9 @@ I18N_MESSAGES["common.helpers.rollback.int_received"]="Получен сигна
 I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Создан FIFO: %s"
 
 # Init helpers
-I18N_MESSAGES["init.gawk.not_installed"]="Критическая зависимость - 'gawk' не установлен"
-I18N_MESSAGES["init.gawk.nul_explanation"]="Этот проект использует NUL-разделители, которые корректно поддерживает только GNU Awk"
-I18N_MESSAGES["init.gawk.install_confirm"]="Установить gawk сейчас? [apt update && apt install gawk -y]"
-I18N_MESSAGES["init.gawk.install_success"]="gawk успешно установлен"
-I18N_MESSAGES["init.gawk.install_error"]="Ошибка при установке gawk"
 
 # UFW check
-I18N_MESSAGES["ufw.check.not_installed"]="UFW не установлен"
-I18N_MESSAGES["ufw.check.install_confirm"]="Установить UFW сейчас? [apt update && apt install ufw -y]"
-I18N_MESSAGES["ufw.check.install_error"]="Ошибка при установке UFW"
-I18N_MESSAGES["ufw.check.install_success"]="UFW успешно установлен"
 I18N_MESSAGES["ufw.check.installed_restart"]="UFW установлен - перезапустите скрипт"
-
-# SSH socket helpers
-I18N_MESSAGES["ssh.socket.force_mode"]="Принудительное переключение SSH в Service Mode..."
-I18N_MESSAGES["ssh.socket.service_not_active"]="Сервис не запущен. Пытаюсь стартовать..."
-I18N_MESSAGES["ssh.socket.start_error"]="Не удалось запустить ssh.service. Проверьте 'journalctl -xeu ssh.service'"
-I18N_MESSAGES["ssh.socket.active"]="SSH активен (Service Mode)"
 
 # OS check
 I18N_MESSAGES["os.check.file_not_found"]="Файл не существует: %s"
@@ -63,14 +48,11 @@ I18N_MESSAGES["user.check.user_count"]="Количество пользоват�
 I18N_MESSAGES["user.check.only_root"]="В системе только пользователь root"
 I18N_MESSAGES["user.check.user_exists"]="Пользователь: %s"
 I18N_MESSAGES["user.create.confirm"]="Создать пользователя %s?"
-I18N_MESSAGES["user.create.dont_close"]="Не закрывайте это окно терминала"
 I18N_MESSAGES["user.create.creating_user"]="Создание пользователя: %s"
 I18N_MESSAGES["user.create.user_created"]="Пользователь создан"
 I18N_MESSAGES["user.create.create_error"]="Ошибка при создании пользователя"
 I18N_MESSAGES["user.create.password_set"]="Пароль установлен"
 I18N_MESSAGES["user.create.user_created_with_password"]="Пользователь '%s' создан. Пароль: %s"
-I18N_MESSAGES["user.create.check_auth"]="Проверьте возможность авторизации по логину и паролю"
-I18N_MESSAGES["user.create.copy_ssh_key"]="Скопируйте на сервер ключ для подключения по SSH [ssh-copy-id]"
 I18N_MESSAGES["user.create.other_users_exist"]="Дополнительный пользователь уже создан"
 I18N_MESSAGES["user.create.openssl_not_found"]="openssl не найден, невозможно сгенерировать пароль"
 
@@ -91,8 +73,6 @@ I18N_MESSAGES["user.create.menu.reminder_killall"]="killall -9 -u USERNAME # з�
 I18N_MESSAGES["user.create.menu.item_create"]="Создать пользователя"
 I18N_MESSAGES["user.create.menu.user_created"]="Пользователь %s создан, пароль назначен"
 I18N_MESSAGES["user.create.menu.password_no_log"]="Не логируется >>>[%s]<<<"
-I18N_MESSAGES["user.create.menu.check_auth"]="Проверьте возможность авторизации по логину и паролю"
-I18N_MESSAGES["user.create.menu.copy_ssh_key"]="Скопируйте на сервер ключ для подключения по SSH [ssh-copy-id]"
 I18N_MESSAGES["user.create.menu.after_copy_key"]="После копирования SSH ключа и успешного подключения можно будет запретить авторизацию по паролю"
 
 # Permissions check module

@@ -42,7 +42,6 @@ I18N_MESSAGES["ssh.service.daemon_reloaded"]="Конфигурация пере�
 I18N_MESSAGES["ssh.service.restarted"]="SSH сервис перезагружен [systemctl restart ssh.service]"
 
 # Guard instructions
-I18N_MESSAGES["ssh.guard.dont_close"]="НЕ ЗАКРЫВАЙТЕ ЭТО ОКНО ТЕРМИНАЛА"
 I18N_MESSAGES["ssh.guard.test_new"]="ОТКРОЙТЕ НОВОЕ ОКНО и проверьте связь через порт %s"
 
 # Error messages
