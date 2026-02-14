@@ -21,7 +21,6 @@ I18N_MESSAGES["ufw.menu.item_disable"]="Disable UFW"
 I18N_MESSAGES["ufw.menu.item_enable"]="Enable UFW"
 I18N_MESSAGES["ufw.menu.item_ping_enable"]="Ping will be enabled [ACCEPT] [Default]"
 I18N_MESSAGES["ufw.menu.item_ping_disable"]="Ping will be disabled [DROP]"
-I18N_MESSAGES["ufw.menu.item_exit"]="Exit"
 
 # Status messages
 I18N_MESSAGES["ufw.status.enabled"]="UFW enabled"

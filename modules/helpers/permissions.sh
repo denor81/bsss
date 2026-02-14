@@ -21,49 +21,6 @@ permissions::config::find_last_prefix() {
     done < <(sudo find "${SSH_CONFIGD_DIR}" -maxdepth 1 -type f -name "*.conf" ! -name "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" -print0 | sort -z 2>/dev/null)
 }
 
-
-# @type:        Source
-# @description: Генерирует пункты меню в зависимости от текущего состояния
-# @params:      нет
-# @stdin:       нет
-# @stdout:      id|text\0 (NUL-separated)
-# @exit_code:   0
-permissions::menu::get_items() {
-    if permissions::rules::is_configured; then
-        printf '%s|%s\0' "1" "Удалить правила ${UTIL_NAME^^} (откат)"
-    else
-        printf '%s|%s\0' "1" "Создать правила"
-    fi
-    printf '%s|%s\0' "0" "Выход"
-}
-
-# === FILTER ===
-
-# @type:        Filter
-# @description: Подсчитывает количество пунктов меню
-# @params:      нет
-# @stdin:       нет
-# @stdout:      count (число)
-# @exit_code:   0
-permissions::menu::count_items() {
-    permissions::menu::get_items | grep -cz '^'
-}
-
-# @type:        Filter
-# @description: Получает выбор пользователя из меню
-# @params:      нет
-# @stdin:       нет
-# @stdout:      menu_id
-# @exit_code:   0 - выбран пункт
-#               2 - отмена пользователем (выбран 0 или отказ)
-permissions::menu::get_user_choice() {
-    local qty_items=$(($(permissions::menu::count_items) - 1))
-    local pattern="^[0-$qty_items]$"
-    local hint="0-$qty_items"
-
-    io::ask_value "$(_ "common.ask_select_action")" "" "$pattern" "$hint" "0"
-}
-
 # === VALIDATOR ===
 
 # @type:        Validator
@@ -186,35 +143,4 @@ EOF
 # @exit_code:   0 - успешно
 permissions::rules::restore() {
     sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" | sys::file::delete || true
-}
-
-# @type:        Filter
-# @description: Определяет действие для правил в зависимости от состояния
-# @params:      нет
-# @stdin:       нет
-# @stdout:      action (restore или install)
-# @exit_code:   0
-permissions::toggle::rules() {
-    if permissions::rules::is_configured; then
-        printf 'restore\n'
-    else
-        printf 'install\n'
-    fi
-}
-
-# @type:        Sink
-# @description: Отображает меню пользователю
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0
-permissions::menu::display() {
-    local id
-    local text
-
-    log_info "$(_ "common.menu_header")"
-
-    while IFS='|' read -r -d '' id text || break; do
-        log_info_simple_tab "$(_ "no_translate" "$id. $text")"
-    done < <(permissions::menu::get_items)
 }

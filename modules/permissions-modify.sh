@@ -74,9 +74,6 @@ permissions::orchestrator::install::rules() {
     log_actual_info
     permissions::orchestrator::log_statuses
 
-    log_info "$(_ "common.menu_header")"
-    log_info_simple_tab "$(_ "common.exit" "0")"
-
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop
         log_info "$(_ "common.success_changes_committed")"
@@ -86,39 +83,50 @@ permissions::orchestrator::install::rules() {
 }
 
 # @type:        Orchestrator
-# @description: Обрабатывает выбор пользователя из меню и выполняет соответствующее действие
+# @description: Запускает модуль с интерактивным меню
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               1 - неверный выбор меню
-permissions::orchestrator::toggle_logic() {
-    local menu_id action
+# @exit_code:   0 - успешно выполнено действие
+#               2 - выход по выбору пользователя
+#               $? - ошибка при выполнении действия
+permissions::orchestrator::run_module() {
+    log_info "$(_ "common.menu_header")"
+    permissions::rules::is_configured && log_info_simple_tab "1. $(_ "permissions.menu.item_remove")" || log_info_simple_tab "1. $(_ "permissions.menu.item_create")"
+    log_info_simple_tab "0. $(_ "common.exit")"
 
-    permissions::menu::display
-    menu_id=$(permissions::menu::get_user_choice | tr -d '\0')
+    local menu_id
+    menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-1]$" "0-1" "0" | tr -d '\0') || return
 
     case "$menu_id" in
-        1)
-            action=$(permissions::toggle::rules | tr -d '\n')
-            case "$action" in
-                restore) permissions::orchestrator::restore::rules ;;
-                install) 
-                    log_info "Будет создан файл с правилами в каталоге $SSH_CONFIGD_DIR"
-                    log_info_simple_tab "PermitRootLogin no"
-                    log_info_simple_tab "PasswordAuthentication no"
-                    log_info_simple_tab "PubkeyAuthentication yes"
-                    io::confirm_action "$(_ "io.confirm_action.default_question")"
-                    permissions::orchestrator::install::rules
-                ;;
-            esac
-            ;;
-        *) log_error "$(_ "ufw.error.invalid_menu_id" "$menu_id")"; return 1 ;;
+        1) permissions::toggle::rules ;;
+        *) log_error "$(_ "permissions.error.invalid_menu_id" "$menu_id")"; return 1 ;;
     esac
 }
 
 # @type:        Orchestrator
-# @description: Проверяет текущего пользователя и запускает логику переключения
+# @description: Выполняет переключение правил в зависимости от состояния
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка при выполнении действия
+permissions::toggle::rules() {
+    if permissions::rules::is_configured; then
+        permissions::orchestrator::restore::rules
+    else
+        log_info "$(_ "permissions.info.create_rules" "$SSH_CONFIGD_DIR")"
+        log_info_simple_tab "PermitRootLogin no"
+        log_info_simple_tab "PasswordAuthentication no"
+        log_info_simple_tab "PubkeyAuthentication yes"
+        if io::confirm_action "$(_ "io.confirm_action.default_question")"; then
+            permissions::orchestrator::install::rules
+        fi
+    fi
+}
+
+# @type:        Orchestrator
+# @description: Проверяет текущего пользователя и запускает модуль
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
@@ -140,11 +148,11 @@ permissions::orchestrator::check_current_user() {
         return 1
     fi
 
-    permissions::orchestrator::toggle_logic
+    permissions::orchestrator::run_module
 }
 
 # @type:        Orchestrator
-# @description: Проверяет условия и создает файл конфигурации при выполнении
+# @description: Проверяет условия и запускает модуль при выполнении
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
@@ -164,7 +172,7 @@ permissions::orchestrator::dispatch_logic() {
             log_warn "Для того, что бы пароль не запрашивался нужно создать файл-правило [$SUDOERS_D_DIR/${BSSS_USER_NAME}] со строкой [${BSSS_USER_NAME} ALL=(ALL) NOPASSWD:ALL] и установить права на файл [chmod 0440] после этого пароль в сессии запрашиваться не будет, либо создать пользователя через пункт меню - там все настраивается автоматически"
             permissions::orchestrator::check_current_user
         ;;
-        timeout) 
+        timeout)
             log_warn "Сессия длиннее 72 часов [невозможно определить тип подключения - ограничения журнала]"
             log_warn "Подключитесь заново в новом окне нерминала ["$current_conn_type"]"
             log_warn "В таком режиме возможен только сброс настроек"
@@ -181,11 +189,9 @@ permissions::orchestrator::dispatch_logic() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-#               2 - отмена пользователем или несоответствие условий
 main() {
     i18n::load
     log_start
-    io::confirm_action "Запустить модуль?"
     permissions::orchestrator::dispatch_logic
 }
 

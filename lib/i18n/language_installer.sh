@@ -33,7 +33,7 @@ i18n::installer::select_language() {
         log_info_simple_tab "$(_ "no_translate" "$((i + 1)).") ${lang_codes[$i]}"
     done
     local menu_exit="0"
-    log_info_simple_tab "$(_ "common.exit" "$menu_exit")"
+    log_info_simple_tab "0. $(_ "common.exit")"
 
     local max_id=${#lang_codes[@]}
     local selection

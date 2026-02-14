@@ -111,21 +111,6 @@ user::info::block() {
 }
 
 # @type:        Sink
-# @description: Выводит инструкции по удалению пользователя
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-user::log::delete_block() {
-    log_info "Напоминание, как удалить пользователя:"
-    log_info_simple_tab "deluser --remove-home --remove-all-files USERNAME # Удалить пользователя"
-    log_info_simple_tab "find / -uid USERID 2>/dev/null # Найти все созданные файлы по id"
-    log_info_simple_tab "grep -r -E 'USERNAME.*ALL' /etc/sudoers.d/ # Поиск правил пользователя"
-    log_info_simple_tab "pgrep -u USERNAME # посмотреть PID процессов"
-    log_info_simple_tab "killall -9 -u USERNAME # завершить все процессы"
-}
-
-# @type:        Sink
 # @description: Создает пользователя $BSSS_USER_NAME
 # @stdin:       нет
 # @stdout:      нет

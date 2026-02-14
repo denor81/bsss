@@ -18,50 +18,71 @@ source "${PROJECT_ROOT}/modules/helpers/user.sh"
 trap log_stop EXIT
 
 # @type:        Orchestrator
-# @description: Диспетчер создания пользователя - генерирует пароль, создает пользователя, устанавливает права
-# @params:      нет
-# @stdin:       нет
-# @stdout:      username:password
-# @exit_code:   0 - успешно
-#               $? - ошибка при создании пользователя
-user::orchestrator::create_dispatcher() {
-    local password
-    password="$(user::pass::generate)"
-
-    user::create::execute || { log_error "Ошибка при создании пользователя"; return; }
-    printf '%s:%s\0' "$BSSS_USER_NAME" "$password" | user::pass::set
-    user::sudoers::create_file || log_error "Ошибка при создании файла sudoers"
-
-    printf '%s:%s' "$BSSS_USER_NAME" "$password"
-}
-
-# @type:        Orchestrator
-# @description: Создает пользователя BSSS
+# @description: Создает пользователя BSSS и логирует результат
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               $? - ошибка при создании пользователя
-user::orchestrator::create_user() {
+user::create::execute_with_logging() {
+    local password
+    password="$(user::pass::generate)"
 
-    log_info "Что будет происходить:"
-    log_info_simple_tab "Создание: [useradd -m -d /home/$BSSS_USER_NAME -s /bin/bash -G sudo $BSSS_USER_NAME]"
-    log_info_simple_tab "Генерация пароля: [openssl rand -base64 $BSSS_USER_PASS_LEN]"
-    log_info_simple_tab "Создание правил в ${SUDOERS_D_DIR}/${BSSS_USER_NAME}"
-    log_info_simple_tab "Пароль будет выведен только раз на экран терминала (в логи не пишется)"
-    log_info "После создания пользователя необходимо скопировать ваш SSH ключ на сервер командой ssh-copy-id"
-    log_info "Проверить авторизацию по ключу и если все ок, то можно запрещать доступ по паролю и доступ от имени root"
-    user::log::delete_block
+    if ! user::create::execute; then
+        log_error "$(_ "user.create.create_error")"
+        return 1
+    fi
 
-    io::confirm_action "Создать пользователя $BSSS_USER_NAME?"
-    local cred
-    cred=$(user::orchestrator::create_dispatcher)
+    printf '%s:%s\0' "$BSSS_USER_NAME" "$password" | user::pass::set
 
-    log_info "Пользователь $BSSS_USER_NAME создан, пароль назначен"
-    log_info_no_log "Не логируется >>>[${cred}]<<<"
-    log_info "Проверьте возможность авторизации по логину и паролю"
-    log_info "Скопируйте на сервер ключ для подключения по SSH [ssh-copy-id]"
-    log_info "После копирования SSH ключа и успешного подключения можно будет запретить авторизацию по паролю"
+    if ! user::sudoers::create_file; then
+        log_error "$(_ "user.create.create_error")"
+        return 1
+    fi
+
+    log_info "$(_ "user.create.menu.user_created" "$BSSS_USER_NAME")"
+    log_info_no_log "$(_ "user.create.menu.password_no_log" "${BSSS_USER_NAME}:${password}")"
+    log_info "$(_ "user.create.menu.check_auth")"
+    log_info "$(_ "user.create.menu.copy_ssh_key")"
+    log_info "$(_ "user.create.menu.after_copy_key")"
+    user::log::del_reminder
+}
+
+user::log::del_reminder() {
+    log_info "$(_ "user.create.menu.reminder")"
+    log_info_simple_tab "$(_ "user.create.menu.reminder_deluser")"
+    log_info_simple_tab "$(_ "user.create.menu.reminder_find")"
+    log_info_simple_tab "$(_ "user.create.menu.reminder_sudoers")"
+    log_info_simple_tab "$(_ "user.create.menu.reminder_pgrep")"
+    log_info_simple_tab "$(_ "user.create.menu.reminder_killall")"
+}
+
+# @type:        Orchestrator
+# @description: Отображает информацию и меню для создания пользователя
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               2 - выход по выбору пользователя
+user::main::menu::dispatcher() {
+    log_info "$(_ "user.create.menu.header")"
+    log_info_simple_tab "$(_ "user.create.menu.create_user" "$BSSS_USER_NAME" "$BSSS_USER_NAME")"
+    log_info_simple_tab "$(_ "user.create.menu.generate_pass" "$BSSS_USER_PASS_LEN")"
+    log_info_simple_tab "$(_ "user.create.menu.create_sudoers" "$SUDOERS_D_DIR" "$BSSS_USER_NAME")"
+    log_info_simple_tab "$(_ "user.create.menu.password_once")"
+    log_info "$(_ "user.create.menu.after_create")"
+    log_info "$(_ "user.create.menu.check_key")"
+
+    log_info "$(_ "common.menu_header")"
+    log_info_simple_tab "1. $(_ "user.create.menu.item_create")"
+    log_info_simple_tab "0. $(_ "common.exit")"
+
+    local menu_id
+    menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-1]$" "0-1" "0" | tr -d '\0') || return
+
+    case "$menu_id" in
+        1) user::create::execute_with_logging ;;
+    esac
 }
 
 # @type:        Orchestrator
@@ -71,11 +92,11 @@ user::orchestrator::create_user() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 user::orchestrator::need_add_bsssuser() {
-    log_info "В системе один единственный пользователь root"
-    log_info "Настоятельно рекомендуется создать второго пользователя с правами sudo"
+    log_info "$(_ "user.check.only_root")"
+    log_info "$(_ "user.create.menu.after_create")"
     user::info::block
-    log_info "Вы можете создать пользователя $BSSS_USER_NAME автоматически (права будут добавлены) или создать любого другого пользователя самостоятельно"
-    user::orchestrator::create_user
+    log_info "$(_ "user.create.menu.check_key")"
+    user::main::menu::dispatcher
 }
 
 # @type:        Orchestrator
@@ -85,10 +106,12 @@ user::orchestrator::need_add_bsssuser() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 user::orchestrator::can_add_bsssuser() {
-    log_info "Помимо пользователя root уже созданы другие пользователи"
-    log_info "Можно создать отдельного пользователя $BSSS_USER_NAME"
+    log_info "$(_ "user.check.user_count")"
+    log_info "$(_ "user.create.other_users_exist")"
+    log_info "$(_ "user.create.menu.after_create")"
     user::info::block
-    user::orchestrator::create_user
+    log_info "$(_ "user.create.menu.check_key")"
+    user::main::menu::dispatcher
 }
 
 # @type:        Orchestrator
@@ -98,10 +121,10 @@ user::orchestrator::can_add_bsssuser() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 user::log::no_new_user_needed() {
-    log_info "Пользователь $BSSS_USER_NAME уже создан"
-    log_info "Созание дополнительного пользователя возможно только вручную"
+    log_info "$(_ "user.check.user_exists" "$BSSS_USER_NAME")"
+    log_info "$(_ "user.create.other_users_exist")"
     user::info::block
-    user::log::delete_block
+    user::log::del_reminder
 }
 
 # @type:        Orchestrator
@@ -131,7 +154,6 @@ user::dispatch::logic() {
 main() {
     i18n::load
     log_start
-    io::confirm_action "Запустить модуль?"
     user::dispatch::logic
 }
 

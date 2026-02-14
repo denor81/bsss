@@ -34,18 +34,11 @@ sys::update::orchestrator() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-#               2 - отказ пользователя (io::confirm_action)
-#               $? - код ошибки дочернего процесса
 main() {
     i18n::load
     log_start
-    
-    # Запуск или возврат кода 2 при отказе пользователя
-    if io::confirm_action "$(_ "system.update.confirm")"; then
-        sys::update::orchestrator
-    else
-        return
-    fi
+    io::confirm_action "$(_ "system.update.confirm")"
+    sys::update::orchestrator
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

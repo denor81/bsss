@@ -206,11 +206,9 @@ ssh::orchestrator::run_module() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-#               $? - ошибка выполнения модулей
 main() {
     i18n::load
     log_start
-    io::confirm_action "$(_ "ssh.modify.confirm")"
     ssh::orchestrator::run_module
 }
 

@@ -170,15 +170,9 @@ ufw::orchestrator::run_module() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-#               2 - отказ пользователя
-#               4 - требования не выполнены
-#               130 - прерывание по Ctrl+C
-#               $? - ошибка выполнения модулей
 main() {
     i18n::load
     log_start
-
-    # io::confirm_action "$(_ "ufw.modify.confirm")"
 
     ufw::rule::check_requirements
 

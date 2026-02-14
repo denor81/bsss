@@ -74,6 +74,27 @@ I18N_MESSAGES["user.create.copy_ssh_key"]="Скопируйте на серве�
 I18N_MESSAGES["user.create.other_users_exist"]="Дополнительный пользователь уже создан"
 I18N_MESSAGES["user.create.openssl_not_found"]="openssl не найден, невозможно сгенерировать пароль"
 
+# User create menu
+I18N_MESSAGES["user.create.menu.header"]="Что будет происходить:"
+I18N_MESSAGES["user.create.menu.create_user"]="Создание: [useradd -m -d /home/%s -s /bin/bash -G sudo %s]"
+I18N_MESSAGES["user.create.menu.generate_pass"]="Генерация пароля: [openssl rand -base64 %s]"
+I18N_MESSAGES["user.create.menu.create_sudoers"]="Создание правил в %s/%s"
+I18N_MESSAGES["user.create.menu.password_once"]="Пароль будет выведен только раз на экран терминала (в логи не пишется)"
+I18N_MESSAGES["user.create.menu.after_create"]="После создания пользователя необходимо скопировать ваш SSH ключ на сервер командой ssh-copy-id"
+I18N_MESSAGES["user.create.menu.check_key"]="Проверить авторизацию по ключу и если все ок, то можно запрещать доступ по паролю и доступ от имени root"
+I18N_MESSAGES["user.create.menu.reminder"]="Напоминание, как удалить пользователя:"
+I18N_MESSAGES["user.create.menu.reminder_deluser"]="deluser --remove-home --remove-all-files USERNAME # Удалить пользователя"
+I18N_MESSAGES["user.create.menu.reminder_find"]="find / -uid USERID 2>/dev/null # Найти все созданные файлы по id"
+I18N_MESSAGES["user.create.menu.reminder_sudoers"]="grep -r -E 'USERNAME.*ALL' /etc/sudoers.d/ # Поиск правил пользователя"
+I18N_MESSAGES["user.create.menu.reminder_pgrep"]="pgrep -u USERNAME # посмотреть PID процессов"
+I18N_MESSAGES["user.create.menu.reminder_killall"]="killall -9 -u USERNAME # завершить все процессы"
+I18N_MESSAGES["user.create.menu.item_create"]="Создать пользователя"
+I18N_MESSAGES["user.create.menu.user_created"]="Пользователь %s создан, пароль назначен"
+I18N_MESSAGES["user.create.menu.password_no_log"]="Не логируется >>>[%s]<<<"
+I18N_MESSAGES["user.create.menu.check_auth"]="Проверьте возможность авторизации по логину и паролю"
+I18N_MESSAGES["user.create.menu.copy_ssh_key"]="Скопируйте на сервер ключ для подключения по SSH [ssh-copy-id]"
+I18N_MESSAGES["user.create.menu.after_copy_key"]="После копирования SSH ключа и успешного подключения можно будет запретить авторизацию по паролю"
+
 # Permissions check module
 I18N_MESSAGES["permissions.check.header"]="=== Проверка прав доступа SSH ==="
 I18N_MESSAGES["permissions.check.current_connection"]="Текущее подключение: [%s]"

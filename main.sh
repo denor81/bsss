@@ -180,9 +180,9 @@ runner::module::select_modify() {
     local menu_check="00"
     local menu_lang="01"
     
-    log_info_simple_tab "$(_ "common.exit" "$menu_exit")"
-    log_info_simple_tab "$(_ "common.menu_check" "$menu_check")"
-    log_info_simple_tab "$(_ "common.menu_language" "$menu_lang")"
+    log_info_simple_tab "0. $(_ "common.exit")"
+    log_info_simple_tab "00. $(_ "common.menu_check")"
+    log_info_simple_tab "01. $(_ "common.menu_language")"
 
     # Запрашиваем выбор пользователя
     local selection
