@@ -144,61 +144,6 @@ ufw::ping::disable_in_rules() {
     fi
 }
 
-# ufw::orchestrator::dispatch_logic() {
-
-#     ufw::status::is_active && printf '%s|%s\0' "1" "$(_ "ufw.menu.item_disable")" || printf '%s|%s\0' "1" "$(_ "ufw.menu.item_enable")"
-#     ufw::ping::is_configured && printf '%s|%s\0' "2" "$(_ "ufw.menu.item_ping_enable")" || printf '%s|%s\0' "2" "$(_ "ufw.menu.item_ping_disable")"
-#     printf '%s|%s\0' "0" "$(_ "common.exit")"
-
-#     local menu_id
-#     menu_id=$(io::ask_value "Пункт:" "" "^[0-3]$" "[0-3]" "0") || return
-
-#     case "$menu_id" in
-#         1) ufw::toggle::status ;;
-#         2) ufw::toggle::ping ;;
-#         *) log_error "$(_ "ufw.error.invalid_menu_id" "$menu_id")"; return 1 ;;
-#     esac
-# }
-
-# @type:        Orchestrator
-# @description: Применяет изменения UFW на основе выбранного действия
-# @params:
-#   menu_id     ID выбранного действия
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - ошибка в процессе
-# ufw::orchestrator::dispatch_logic() {
-#     local menu_id="$1"
-
-#     case "$menu_id" in
-#         1) ufw::toggle::status ;;
-#         2) ufw::toggle::ping ;;
-#         *) log_error "$(_ "ufw.error.invalid_menu_id" "$menu_id")"; return 1 ;;
-#     esac
-# }
-
-# @type:        Orchestrator
-# @description: Запускает модуль UFW с механизмом rollback только при включении UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               $? - код ошибки дочернего процесса
-# ufw::orchestrator::run_module() {
-#     #
-#     # Через пайп и сабшелл не получается потому что в get_user_choice есть read и он в случае пайпа запускается с иным PID
-#     # ufw::menu::get_user_choice | ufw::orchestrator::dispatch_logic
-#     #
-
-#     ufw::menu::display
-
-#     local menu_id
-#     menu_id=$(ufw::menu::get_user_choice | tr -d '\0')
-#     # Запускаем в текущем процессе, что бы корректно завершать read при получении сигнала отката SIGUSR1
-#     ufw::orchestrator::dispatch_logic "$menu_id"
-# }
 ufw::orchestrator::run_module() {
     ufw::status::is_active && log_info_simple_tab "1. $(_ "ufw.menu.item_disable")" || log_info_simple_tab "1. $(_ "ufw.menu.item_enable")"
     ufw::ping::is_configured && log_info_simple_tab "2. $(_ "ufw.menu.item_ping_enable")" >&2 || log_info_simple_tab "2. $(_ "ufw.menu.item_ping_disable")" >&2

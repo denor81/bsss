@@ -236,8 +236,59 @@ ssh::port::is_port_free() {
    - Примеры нейминга:
      * Оркестраторы: ssh::ssh::orchestrator::log_statuses, ufw::orchestrator::run_module
 
-   14. I18n (Internationalization)
-     - Подробная документация: [lib/i18n/README.md](lib/i18n/README.md)
+   14. Меню (Menu System)
+      - Подробная документация: [docs/menu/MENU_TEMPLATE.md](docs/menu/MENU_TEMPLATE.md)
+      - Шаблон кода: [docs/menu/menu_template.sh](docs/menu/menu_template.sh)
+
+      - **ИСКЛЮЧЕНИЯ** (не соответствуют шаблону):
+        * `main.sh` — динамическое меню модулей на основе файлов в modules/
+        * `lib/i18n/language_installer.sh` — динамическое меню выбора языка на основе файлов в lib/i18n/
+        * Причина: динамическая логика завязанная на файловой системе, сохранение контекста между этапами
+
+      - **ПРАВИЛО**: Во всех остальных случаях (модули, хелперы) используйте шаблон из docs/menu/MENU_TEMPLATE.md
+
+      - Архитектура меню (Новый подход 2026):
+        * Три простых шага в одной функции: отображение → выбор → диспетчеризация
+        * Явное описание пунктов меню через `log_info_simple_tab`
+        * Получение выбора через `io::ask_value` с cancel_keyword "0"
+        * Обработка выхода через `|| return` - пункт 0 в case НЕ нужен
+        * Жёсткая валидация ввода (паттерн `^[0-N]$`, hint `0-N`)
+
+      - Пример полного меню:
+        ```bash
+        domain::orchestrator::run_module() {
+            # Шаг 1: Отображение
+            domain::status::is_active && log_info_simple_tab "1. $(_ "domain.menu.item_disable")" || log_info_simple_tab "1. $(_ "domain.menu.item_enable")"
+            log_info_simple_tab "0. $(_ "common.exit")" >&2
+
+            # Шаг 2: Получение выбора
+            local menu_id
+            menu_id=$(io::ask_value "Пункт:" "" "^[0-1]$" "0-1" "0" | tr -d '\0') || return
+
+            # Шаг 3: Диспетчеризация
+            case "$menu_id" in
+                1) domain::toggle::status ;;
+                *) log_error "$(_ "domain.error.invalid_menu_id" "$menu_id")"; return 1 ;;
+            esac
+        }
+        ```
+
+      - Ключевые принципы:
+        * **Явность превыше DRY**: дублирование логики в отображении и диспетчеризации допустимо
+        * **Обработка выхода**: `io::ask_value` с cancel_keyword "0" возвращает код 2 при выборе выхода
+        * **Валидация**: жёстко задаём паттерн `^[0-N]$` при добавлении новых пунктов
+        * **Вывод в stderr**: все функции `log_*` выводят в stderr, stdout остаётся чистым
+
+      - Чеклист для создания нового меню:
+        1. Создать функцию `domain::orchestrator::run_module()`
+        2. Вывести пункты меню через `log_info_simple_tab` (включая пункт 0)
+        3. Получить выбор через `io::ask_value` с правильным паттерном
+        4. Добавить `|| return` для обработки выхода
+        5. Создать `case` для диспетчеризации (без пункта 0)
+        6. Добавить переводы в `lib/i18n/ru/domain.sh`
+
+   15. I18n (Internationalization)
+      - Подробная документация: [lib/i18n/README.md](lib/i18n/README.md)
 
      - Архитектура:
        * Использует ассоциативные массивы Bash 4+ для переводов
