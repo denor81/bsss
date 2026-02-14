@@ -196,6 +196,10 @@ ssh::orchestrator::dispatch_logic() {
     fi
 }
 
+ssh::orchestrator::run_module() {
+    ssh::orchestrator::dispatch_logic
+}
+
 # @type:        Orchestrator
 # @description: Основная точка входа для модуля изменения SSH порта
 # @params:      нет
@@ -206,8 +210,8 @@ ssh::orchestrator::dispatch_logic() {
 main() {
     i18n::load
     log_start
-    io::confirm_action "$(_ "ssh.modify.confirm")" # Вернет 0 или 2 при отказе (или 130 при ctrl+c)
-    ssh::orchestrator::dispatch_logic
+    io::confirm_action "$(_ "ssh.modify.confirm")"
+    ssh::orchestrator::run_module
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

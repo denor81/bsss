@@ -145,9 +145,10 @@ ufw::ping::disable_in_rules() {
 }
 
 ufw::main::menu::dispatcher() {
+    log_info "$(_ "common.menu_header")"
     ufw::status::is_active && log_info_simple_tab "1. $(_ "ufw.menu.item_disable")" || log_info_simple_tab "1. $(_ "ufw.menu.item_enable")"
-    ufw::ping::is_configured && log_info_simple_tab "2. $(_ "ufw.menu.item_ping_enable")" >&2 || log_info_simple_tab "2. $(_ "ufw.menu.item_ping_disable")" >&2
-    log_info_simple_tab "0. $(_ "common.exit")" >&2
+    ufw::ping::is_configured && log_info_simple_tab "2. $(_ "ufw.menu.item_ping_enable")" || log_info_simple_tab "2. $(_ "ufw.menu.item_ping_disable")"
+    log_info_simple_tab "0. $(_ "common.exit")"
 
     local menu_id
     menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-2]$" "0-2" "0" | tr -d '\0') || return
