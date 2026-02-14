@@ -64,39 +64,13 @@ ufw::menu::display() {
     local id
     local text
 
-    ufw::log::status
-    ufw::log::rules
-    ufw::log::ping_status
+    ufw::orchestrator::log_statuses
 
     log_info "$(_ "common.menu_header")"
 
     while IFS='|' read -r -d '' id text || break; do
         log_info_simple_tab "$(_ "no_translate" "$id. $text")"
     done < <(ufw::menu::get_items)
-}
-
-# @type:        Sink
-# @description: Логирует состояние UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::log::status() {
-    ufw::status::is_active && \
-    log_info "$(_ "ufw.status.enabled")" || \
-    log_info "$(_ "ufw.status.disabled")"
-}
-
-# @type:        Sink
-# @description: Логирует состояние PING
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::log::ping_status() {
-    ufw::ping::is_configured && \
-    log_info "$(_ "ufw.status.ping_blocked")" || \
-    log_info "$(_ "ufw.status.ping_allowed")"
 }
 
 # @type:        Sink

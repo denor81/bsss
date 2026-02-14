@@ -73,7 +73,7 @@ rollback::orchestrator::stop_usr1() {
 rollback::orchestrator::immediate_usr2() {
     log_info "$(_ "rollback.immediate_usr2_received")"
     kill "$SLEEP_PID" 2>/dev/null
-    rollback::orchestrator::full
+    rollback::dispatcher
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
         log_info "$(_ "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID")"
@@ -96,13 +96,12 @@ rollback::orchestrator::ssh() {
     ssh::rule::delete_all_bsss
     ufw::rule::delete_all_bsss
     ufw::status::force_disable
+    ufw::ping::restore
 
     sys::service::restart
     log_actual_info
     ssh::orchestrator::log_statuses
-    ufw::log::status
-    ufw::log::rules
-    ufw::log::ping_status
+    ufw::orchestrator::log_statuses
 
     log_success "$(_ "rollback.system_restored")"
 }
@@ -117,10 +116,9 @@ rollback::orchestrator::ufw() {
     log_warn "$(_ "rollback.ufw_executing")"
 
     ufw::status::force_disable
+    ufw::ping::restore
     log_actual_info
-    ufw::log::status
-    ufw::log::rules
-    ufw::log::ping_status
+    ufw::orchestrator::log_statuses
 
     log_success "$(_ "rollback.ufw_disabled")"
 }
@@ -144,13 +142,13 @@ rollback::orchestrator::permissions() {
 }
 
 # @type:        Orchestrator
-# @description: Полная очистка системы от следов BSSS и деактивация UFW.
+# @description: Диспетчеризация в зависимости от переданного параметра
 #               Вызывается при критическом сбое или таймауте.
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
-rollback::orchestrator::full() {
+rollback::dispatcher() {
     case "$ROLLBACK_TYPE" in
         "ssh") rollback::orchestrator::ssh ;;
         "ufw") rollback::orchestrator::ufw ;;
@@ -193,7 +191,7 @@ rollback::orchestrator::watchdog_timer() {
     if wait "$SLEEP_PID" 2>/dev/null; then
         new_line
         log_info "$(_ "rollback.time_expired")"
-        rollback::orchestrator::full
+        rollback::dispatcher
 
         if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
             log_info "$(_ "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID")"

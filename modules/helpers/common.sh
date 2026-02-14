@@ -342,32 +342,6 @@ sys::service::restart() {
         return 1
     fi
 }
-# @type:        Orchestrator
-# @description: Выводит активные правила UFW
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-ufw::log::rules() {
-    local rule
-    local found=0
-
-    while read -r -d '' rule || break; do
-
-        if (( found == 0 )); then
-            log_info "$(_ "common.helpers.ufw.rules_found")"
-            log_bold_info "$(_ "common.helpers.ufw.rules.sync")"
-            log_bold_info "$(_ "common.helpers.ufw.rules.delete_warning")"
-            found=$((found + 1))
-        fi
-        log_info_simple_tab "$(_ "no_translate" "$rule")"
-
-    done < <(ufw::rule::get_all)
-
-    if (( found == 0 )); then
-        log_info "$(_ "common.helpers.ufw.rules_not_found")"
-    fi
-}
 
 # @type:        Filter
 # @description: Удаляет все правила UFW BSSS и передает порт дальше
@@ -510,4 +484,67 @@ ufw::ping::restore() {
     fi
 
     printf '%s\0' "$UFW_BEFORE_RULES_BACKUP" | sys::file::delete
+}
+
+# @type:        Orchestrator
+# @description: Выводит активные правила UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::log::rules() {
+    local rule
+    local found=0
+
+    while read -r -d '' rule || break; do
+
+        if (( found == 0 )); then
+            log_info "$(_ "common.helpers.ufw.rules_found")"
+            log_bold_info "$(_ "common.helpers.ufw.rules.sync")"
+            log_bold_info "$(_ "common.helpers.ufw.rules.delete_warning")"
+            found=$((found + 1))
+        fi
+        log_info_simple_tab "$(_ "no_translate" "$rule")"
+
+    done < <(ufw::rule::get_all)
+
+    if (( found == 0 )); then
+        log_info "$(_ "common.helpers.ufw.rules_not_found")"
+    fi
+}
+
+# @type:        Sink
+# @description: Логирует состояние UFW
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::log::status() {
+    ufw::status::is_active && \
+    log_info "$(_ "ufw.status.enabled")" || \
+    log_info "$(_ "ufw.status.disabled")"
+}
+
+# @type:        Sink
+# @description: Логирует состояние PING
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+ufw::log::ping_status() {
+    ufw::ping::is_configured && \
+    log_info "$(_ "ufw.status.ping_blocked")" || \
+    log_info "$(_ "ufw.status.ping_allowed")"
+}
+
+# @type:        Orchestrator
+# @description: Отображает статусы ufw: BSSS правила, сторонние правила
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - Всегда успешно
+ufw::orchestrator::log_statuses() {
+    ufw::log::status
+    ufw::log::rules
+    ufw::log::ping_status
 }

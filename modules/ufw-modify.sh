@@ -79,9 +79,7 @@ ufw::status::force_enable() {
 
     log_info "$(_ "ufw.success.enabled")"
     log_actual_info
-    ufw::log::status
-    ufw::log::rules
-    ufw::log::ping_status
+    ufw::orchestrator::log_statuses
 
     if io::ask_value "$(_ "ufw.install.confirm_connection")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop
