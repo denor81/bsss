@@ -107,7 +107,10 @@ i18n::extract_keys_from_code() {
     for dir in "${search_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
             # Извлекаем ключи из метазаголовков (# MODULE_NAME: module.ufw.name)
-            find "$dir" -type f -name "*.sh" ! -name "oneline-runner.sh" -print0 2>/dev/null | \
+            find "$dir" -type f -name "*.sh" \
+                ! -path "*/docs/*" \
+                ! -name "oneline-runner.sh" \
+                -print0 2>/dev/null | \
                 xargs -0 cat 2>/dev/null | \
                 gawk '
                     {
@@ -118,7 +121,10 @@ i18n::extract_keys_from_code() {
                 '
 
             # Извлекаем ключи из кода ($(_ "common.error_no_modules_available"))
-            find "$dir" -type f -name "*.sh" ! -name "oneline-runner.sh" -print0 2>/dev/null | \
+            find "$dir" -type f -name "*.sh" \
+                ! -path "*/docs/*" \
+                ! -name "oneline-runner.sh" \
+                -print0 2>/dev/null | \
                 xargs -0 cat 2>/dev/null | \
                 gawk '
                     {
@@ -177,12 +183,14 @@ i18n::find_hardcoded_strings() {
         "${PROJECT_ROOT}/modules/helpers"
         "${PROJECT_ROOT}/modules"
         "${PROJECT_ROOT}/utils"
+        "${PROJECT_ROOT}/lib"
         "${PROJECT_ROOT}"
     )
 
     for dir in "${search_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
             find "$dir" -type f -name "*.sh" \
+            ! -path "*/docs/*" \
             ! -name "generate_function_map.sh" \
             ! -name "build-archive.sh" \
             ! -name "run.sh" \
@@ -239,5 +247,53 @@ i18n::format_hardcoded_message() {
         line_content="$(echo $line_content | gawk '$1=$1')"
 
         printf '[%s]\tin\t%s:%d\n' "$line_content" "$file_path" "$line_number" >&2
+    done
+}
+
+# @type:        Filter
+# @description: Ищет местоположение ключа перевода в исходном коде
+# @stdin:       key\0
+# @stdout:      file_path:line_number\0 (первое место где найден ключ)
+# @exit_code:   0 - успех
+i18n::find_key_location() {
+    local key
+    while IFS= read -r -d '' key; do
+        local search_dirs=(
+            "${PROJECT_ROOT}/modules/helpers"
+            "${PROJECT_ROOT}/modules"
+            "${PROJECT_ROOT}/utils"
+            "${PROJECT_ROOT}"
+        )
+
+        for dir in "${search_dirs[@]}"; do
+            if [[ -d "$dir" ]]; then
+                local result
+                result=$(grep -rn --include="*.sh" --exclude-dir="docs" -F -- "$key" "$dir" 2>/dev/null | head -1)
+                if [[ -n "$result" ]]; then
+                    local file_path line_number
+                    file_path=$(echo "$result" | cut -d: -f1)
+                    line_number=$(echo "$result" | cut -d: -f2)
+                    printf '%s:%s\0' "$file_path" "$line_number"
+                    break
+                fi
+            fi
+        done
+    done
+}
+
+# @type:        Transformer
+# @description: Форматирует сообщение о несуществующем переводе с местоположением
+# @stdin:       key\0
+# @stdout:      сообщение в stderr
+# @exit_code:   0 - успех
+i18n::format_missing_message_with_location() {
+    while IFS= read -r -d '' key; do
+        local location
+        location=$(printf '%s\0' "$key" | i18n::find_key_location | tr '\0' '\n')
+        if [[ -n "$location" ]]; then
+            printf 'Missing translation key [%s] in translation files (found in: %s)\n' "$key" "$location" >&2
+        else
+            printf 'Missing translation key [%s] in translation files\n' "$key" >&2
+        fi
     done
 }

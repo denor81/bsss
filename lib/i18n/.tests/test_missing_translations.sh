@@ -30,7 +30,7 @@ source "$(dirname "$0")/helpers/test_helpers.sh"
 # @stdout:      отчет в stderr
 # @exit_code:   0 - успех
 i18n::report_missing_translations() {
-    i18n::extract_keys_from_code | i18n::check_key_exists | i18n::format_missing_message
+    i18n::extract_keys_from_code | i18n::check_key_exists | i18n::format_missing_message_with_location
 }
 
 main() {

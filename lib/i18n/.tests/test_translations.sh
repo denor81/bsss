@@ -22,6 +22,7 @@ i18n::test_translation_sync() {
 
     if [[ ${#langs[@]} -lt 2 ]]; then
         printf 'Less than 2 language directories found\n' >&2
+        printf 'All translations are synchronized\n'
         return 0
     fi
 

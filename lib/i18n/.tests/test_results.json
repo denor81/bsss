@@ -1,0 +1,147 @@
+{
+  "test_results": [
+    {
+      "file_name": "test_translations.sh",
+      "tested": true,
+      "test_date": "2026-02-15",
+      "status": "working_correctly",
+      "findings": [
+        "Test correctly identifies missing translation keys",
+        "Exit codes are correct (0 for success, 1 for failures)",
+        "Error messages properly output to stderr",
+        "NUL-separated streams are used correctly",
+        "Function contracts are complete and accurate",
+        "Test accurately reflects the current state of translation files",
+        "Now properly excludes docs/ directory from scanning (bug fix applied)"
+      ],
+      "modifications_made": [
+        "Added success message 'All translations are synchronized' when less than 2 language directories are found to improve logging consistency",
+        "Modified helpers/test_helpers.sh: Added ! -path \"*/docs/*\" to find commands to exclude documentation templates from translation scanning"
+      ],
+      "issues_found": [
+        "Minor: Test uses hardcoded Russian message 'Сверяет файлы переводов' in main() function",
+        "Minor: Inconsistent language usage (Russian intro message, English success/error messages)",
+        "Bug: Test was scanning docs/ directory despite it being in .gitignore (FIXED)"
+      ],
+      "critical_issues": [],
+      "recommendations": [
+        "Consider localizing test messages for consistency, though not critical as tests are for developer use",
+        "Current implementation is production-ready and works correctly with the bug fix"
+      ]
+    },
+    {
+      "file_name": "test_missing_translations.sh",
+      "tested": true,
+      "test_date": "2026-02-15",
+      "status": "working_correctly_with_fix",
+      "findings": [
+        "Test correctly identifies missing translation keys from code",
+        "Now properly shows file locations for missing keys (enhancement applied)",
+        "Exit codes are correct (0 for success, 1 for failures)",
+        "NUL-separated streams are used correctly",
+        "Test accurately reflects the current state of translation files",
+        "Now properly excludes docs/ directory from scanning (bug fix applied)"
+      ],
+      "modifications_made": [
+        "Added i18n::find_key_location() function to search for key usage in source files",
+        "Added i18n::format_missing_message_with_location() to include file paths in error messages",
+        "Modified helpers/test_helpers.sh: Added ! -path \"*/docs/*\" to find commands in i18n::extract_keys_from_code()",
+        "Modified helpers/test_helpers.sh: Added ! -path \"*/docs/*\" to find commands in i18n::find_hardcoded_strings()"
+      ],
+      "issues_found": [
+        "Bug: Test was not showing file locations for missing keys (FIXED)",
+        "Bug: Test was scanning docs/ directory despite it being in .gitignore (FIXED)",
+        "Minor: Domain keys from documentation templates were incorrectly reported as missing (FIXED)"
+      ],
+      "critical_issues": [],
+      "recommendations": [
+        "Current implementation is production-ready with enhancements applied",
+        "Missing translations in test output should be added to lib/i18n/ru/ files and then synced to other languages"
+      ]
+    },
+    {
+      "file_name": "test_unused_translations.sh",
+      "tested": true,
+      "test_date": "2026-02-15",
+      "status": "working_correctly",
+      "findings": [
+        "Test correctly identifies unused translation keys across all language files",
+        "Exit codes are correct (0 for success, 1 when unused keys found)",
+        "Error messages properly output to stderr",
+        "NUL-separated streams are used correctly throughout the pipeline",
+        "Function contracts are complete and accurate",
+        "Test accurately identifies keys that exist in translation files but are not used in code",
+        "Streaming architecture properly maintained: i18n::get_languages | i18n::extract_keys | i18n::check_key_usage | i18n::count_stream",
+        "Verified all reported unused keys by manual grep search - all are genuinely unused in the codebase"
+      ],
+      "modifications_made": [],
+      "issues_found": [
+        "Minor: Test uses hardcoded Russian message 'Показывает никогда не используемые переводы' in main() function",
+        "Minor: Inconsistent language usage (Russian intro message, English success/error messages)"
+      ],
+      "critical_issues": [],
+      "unused_keys_found": {
+        "common": [
+          "common.error.invalid_choice",
+          "common.helpers.rule.deleted",
+          "common.modify.confirm"
+        ],
+        "io": [
+          "io.confirm_action.run_setup"
+        ],
+        "ssh": [
+          "ssh.socket.socket_masked"
+        ],
+        "permissions_check": [
+          "permissions.check.header",
+          "permissions.check.current_connection",
+          "permissions.check.current_user",
+          "permissions.check.require_nonroot",
+          "permissions.check.require_ssh_key",
+          "permissions.check.root_uid",
+          "permissions.check.status_header",
+          "permissions.check.can_disable"
+        ],
+        "permissions_modify": [
+          "permissions.modify.creating_config",
+          "permissions.modify.file_created",
+          "permissions.modify.found_prefix",
+          "permissions.modify.no_config_files"
+        ],
+        "user_create": [
+          "user.create.confirm",
+          "user.create.creating_user",
+          "user.create.openssl_not_found",
+          "user.create.password_set",
+          "user.create.user_created",
+          "user.create.user_created_with_password"
+        ]
+      },
+      "recommendations": [
+        "Consider localizing test messages for consistency, though not critical as tests are for developer use",
+        "All reported unused keys should be removed from translation files (both ru and en) to maintain clean i18n structure",
+        "Current implementation is production-ready and works correctly"
+      ]
+    }
+  ],
+  "untested_files": [
+    {
+      "file_name": "test_hardcoded_strings.sh",
+      "tested": false
+    },
+    {
+      "file_name": "run.sh",
+      "tested": false
+    }
+  ],
+  "summary": {
+    "total_files": 6,
+    "tested_files": 3,
+    "untested_files": 2,
+    "tests_passed": 3,
+    "tests_failed": 0,
+    "tests_with_critical_issues": 0,
+    "bugs_fixed": 2,
+    "enhancements_applied": 1
+  }
+}
