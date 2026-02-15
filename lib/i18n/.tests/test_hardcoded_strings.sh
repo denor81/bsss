@@ -11,6 +11,6 @@ echo "These strings might need localization using the _() function."
 echo "Review the output below and decide if each case requires translation."
 echo
 
-grep -rnE "($FUNC_NAMES)\s".*"" --include=*.sh "$PROJECT_ROOT" \
+grep -rnE "($FUNC_NAMES)\s+\"[^\"]+\"" --include="*.sh" "$PROJECT_ROOT" \
 | grep -vE '"(\$|.*[^"]\$\(_)' \
 | sed 's/:[[:space:]]*/:/g' || echo "No strings found"

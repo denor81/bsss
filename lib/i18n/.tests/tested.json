@@ -1,0 +1,26 @@
+{
+  "lib/i18n/.tests/test_missing_translations.sh": {
+    "tested": true,
+    "date": "2026-02-15",
+    "status": "correct",
+    "comment": "Тест работает корректно после исправления. Обнаруживает 5 отсутствующих переводов: permissions.guard.dont_close, permissions.guard.test_access, rollback.timeout_permissions, ufw.success.enabled, ufw.success.icmp_changed. Ключ init.gawk.nul_explanation (из critical/common.sh) больше не помечается как отсутствующий после того, как тест был исправлен для проверки каталога critical. Все найденные ключи действительно используются в коде и действительно отсутствуют в файлах переводов."
+  },
+  "lib/i18n/.tests/test_translations.sh": {
+    "tested": true,
+    "date": "2026-02-15",
+    "status": "correct",
+    "comment": "Тест работает корректно. Обнаруживает 65 отсутствующих переводов в английском языке. Проверка показала: (1) Все найденные ключи действительно присутствуют в русских переводах (203 ключа) и отсутствуют в английских (138 ключей). Разница составляет ровно 65 ключей, что совпадает с количеством сообщений теста. (2) Примеры проверенных ключей: ufw.success.backup_created используется в modules/helpers/ufw.sh, ufw.success.reloaded используется в modules/helpers/ufw.sh, ufw.warning.continue_without_rules используется в modules/ufw-modify.sh, ufw.warning.add_ssh_first используется в modules/ufw-modify.sh, user.check.only_root используется в modules/user-modify.sh. Все проверенные ключи действительно используются в коде. (3) Ключи, которые присутствуют в обоих языках (например, ufw.error.enable_failed), не помечаются как отсутствующие. Тест корректно выявляет несинхронизацию переводов между языками."
+  },
+  "lib/i18n/.tests/test_unused_translations.sh": {
+    "tested": true,
+    "date": "2026-02-15",
+    "status": "correct",
+    "comment": "Тест работает корректно. Обнаруживает 39 неиспользуемых переводов. Проверка показала: (1) Ключи из critical/init.gawk.* (install_confirm, install_error, install_success, not_installed) существуют в lib/i18n/critical/common.sh, но не используются в коде. Вместо них в modules/helpers/init.sh используются общие ключи common.install.* (not_installed, confirm, success, error). (2) Ключи user.create.* (confirm, creating_user, user_created, create_error, password_set, user_created_with_password, other_users_exist, openssl_not_found, menu.*, reminder.*) существуют в lib/i18n/ru/common.sh и lib/i18n/ru/system.sh, но не используются в коде проекта. (3) Ключи permissions.check.* (can_disable, current_connection, current_user, header, require_nonroot, require_ssh_key, root_uid, status_header) и permissions.modify.* (creating_config, file_created, found_prefix, no_config_files) существуют в lib/i18n/ru/system.sh, но не используются в коде. (4) Общие ключи: common.error.invalid_choice, common.helpers.rule.deleted, common.modify.confirm, io.confirm_action.run_setup, ssh.socket.socket_masked существуют в файлах переводов, но не используются в коде. (5) Все проверенные ключи действительно существуют в файлах переводов и действительно не используются в коде проекта. Тест корректно выявляет мертвый код в переводах."
+  },
+  "lib/i18n/.tests/test_hardcoded_strings.sh": {
+    "tested": true,
+    "date": "2026-02-15",
+    "status": "correct",
+    "comment": "Тест работает корректно. Обнаруживает 26 потенциально требующих локализации строк. Проверка показала: (1) Тест правильно исключает строки, которые уже используют локализацию (например, modules/ssh-port-modify.sh:42 log_info \"\$(_ \\\"ssh.success_port_up\\\"...\\\")\"). (2) Найдены захардкоженные строки в modules/permissions-check.sh:24 (\"Проверка:PubkeyAuthentication|PasswordAuthentication|PermitRootLogin\"), modules/helpers/permissions.sh (\"Есть правила ${UTIL_NAME^^} для доступа:\", \"Нет правил ${UTIL_NAME^^} для доступа\", \"Найдены сторонние правила для доступа\", \"Нет стоонних правил для доступа\"), modules/helpers/user.sh:91 (\"Пользователи в системе:\"), modules/user-modify.sh:144 (\"Ошибка проверки состава пользователей\"). (3) Некоторые найденные строки имеют переводы, но не используют их: permissions.modify.file_created=\"Файл создан\" существует в lib/i18n/ru/system.sh, но в коде используется захардкоженная \"Файл создан [\$path]\" в modules/helpers/permissions.sh:130. (4) Найдены строки с подстановкой команд ($()), которые не исключаются паттерном исключения (например, \"Владелец сессии [\$(logname)]|Тип подключения [\$current_conn_type]\"). Это корректно, так как текст может требовать локализации. (5) Комментарии в документации (docs/menu/menu_template.sh) не требуют локализации, но показаны в выводе теста. (6) Тест корректно выявляет строки, требующие локализации, позволяя разработчику принять решение о необходимости перевода для каждого случая."
+  }
+}
