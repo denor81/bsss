@@ -16,23 +16,7 @@ i18n::get_languages() {
     find "$I18N_DIR" -maxdepth 1 -mindepth 1 -type d ! -path '*/.*' -printf '%f\0' | sort -z
 }
 
-# @type:        Orchestrator
-# @description: Проверяет неиспользуемые переводы
-# @stdin:       нет
-# @stdout:      отчет о неиспользуемых переводах (если есть)
-# @exit_code:   0 - все переводы используются
-#               1 - найдены неиспользуемые переводы
-i18n::test_unused_translations() {
-    local result_count
 
-    result_count=$(i18n::get_languages | i18n::extract_keys | i18n::check_key_usage | i18n::count_stream)
-
-    if [[ $result_count -gt 0 ]]; then
-        return 1
-    fi
-
-    return 0
-}
 
 # @type:        Transformer
 # @description: Форматирует сообщение о неиспользуемом переводе
