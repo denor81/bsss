@@ -100,7 +100,7 @@ permissions::orchestrator::run_module() {
 
     case "$menu_id" in
         1) permissions::toggle::rules ;;
-        *) log_error "$(_ "permissions.error.invalid_menu_id" "$menu_id")"; return 1 ;;
+        *) log_error "$(_ "common.error.invalid_menu_id" "$menu_id")"; return 1 ;;
     esac
 }
 

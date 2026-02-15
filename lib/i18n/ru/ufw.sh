@@ -31,13 +31,9 @@ I18N_MESSAGES["ufw.status.ping_allowed"]="UFW ping разрешен [ACCEPT] [С
 I18N_MESSAGES["ufw.info.no_rules_but_active"]="Нет правил BSSS, но UFW активен - можно отключить"
 
 # Success messages
-I18N_MESSAGES["ufw.success.enabled"]="UFW: Активирован [ufw --force enable]"
-I18N_MESSAGES["ufw.success.icmp_changed"]="ICMP правила изменены на DROP"
 I18N_MESSAGES["ufw.success.backup_restored"]="Восстановлен файл before.rules: [%s]"
 
 # Error messages
-I18N_MESSAGES["ufw.error.invalid_menu_id"]="Неверный ID действия: [%s]"
-I18N_MESSAGES["ufw.error.backup_failed"]="Не удалось создать бэкап %s [%s]"
 I18N_MESSAGES["ufw.error.restore_failed"]="Не удалось восстановить %s из бэкапа [%s]"
 I18N_MESSAGES["ufw.error.edit_failed"]="Ошибка при редактировании: [%s]"
 I18N_MESSAGES["ufw.error.reload_failed"]="Не удалось выполнить [ufw reload] [RC: %s]"

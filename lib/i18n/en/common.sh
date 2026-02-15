@@ -96,3 +96,10 @@ I18N_MESSAGES["common.install.not_installed"]="%s not installed"
 # Common auth/check actions
 I18N_MESSAGES["common.check_auth"]="Check ability to authenticate via login and password"
 I18N_MESSAGES["common.copy_ssh_key"]="Copy SSH key to server for connection [ssh-copy-id]"
+
+# Common action messages
+I18N_MESSAGES["common.error.invalid_menu_id"]="Invalid action ID: [%s]"
+I18N_MESSAGES["common.helpers.rule.deleted"]="Rule deleted: %s"
+I18N_MESSAGES["common.error.delete.failed"]="Error deleting: %s"
+I18N_MESSAGES["common.info.delete.success"]="Deleted: %s"
+I18N_MESSAGES["common.modify.confirm"]="Modify %s?"

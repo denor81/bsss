@@ -98,3 +98,10 @@ I18N_MESSAGES["common.install.not_installed"]="%s не установлен"
 # Common auth/check actions
 I18N_MESSAGES["common.check_auth"]="Проверьте возможность авторизации по логину и паролю"
 I18N_MESSAGES["common.copy_ssh_key"]="Скопируйте на сервер ключ для подключения по SSH [ssh-copy-id]"
+
+# Common action messages
+I18N_MESSAGES["common.error.invalid_menu_id"]="Неверный ID действия: [%s]"
+I18N_MESSAGES["common.helpers.rule.deleted"]="Удалено правило: %s"
+I18N_MESSAGES["common.error.delete.failed"]="Ошибка при удалении: %s"
+I18N_MESSAGES["common.info.delete.success"]="Удалено: %s"
+I18N_MESSAGES["common.modify.confirm"]="Изменить %s?"

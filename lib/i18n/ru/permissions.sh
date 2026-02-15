@@ -8,4 +8,3 @@ I18N_MESSAGES["permissions.menu.item_remove"]="Удалить правила ${U
 I18N_MESSAGES["permissions.info.create_rules"]="Будет создан файл с правилами в каталоге %s"
 
 # Error messages
-I18N_MESSAGES["permissions.error.invalid_menu_id"]="Неверный ID действия: [%s]"
