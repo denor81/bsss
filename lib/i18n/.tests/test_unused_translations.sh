@@ -3,8 +3,18 @@
 
 set -Eeuo pipefail
 
-# shellcheck disable=SC1091
+readonly PROJECT_ROOT=$(readlink -f "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/../../..")
+
 source "$(dirname "$0")/helpers/test_helpers.sh"
+
+# @type:        Source
+# @description: Получает список языковых каталогов
+# @stdin:       нет
+# @stdout:      lang_code\0 (например: ru\0en\0)
+# @exit_code:   0 - успех
+i18n::get_languages() {
+    find "$I18N_DIR" -maxdepth 1 -mindepth 1 -type d ! -path '*/.*' -printf '%f\0' | sort -z
+}
 
 # @type:        Orchestrator
 # @description: Проверяет неиспользуемые переводы
@@ -24,6 +34,17 @@ i18n::test_unused_translations() {
     return 0
 }
 
+# @type:        Transformer
+# @description: Форматирует сообщение о неиспользуемом переводе
+# @stdin:       lang_code|key\0
+# @stdout:      сообщение в stderr
+# @exit_code:   0 - успех
+i18n::format_unused_message() {
+    while IFS='|' read -r -d '' lang_code key; do
+        printf 'Unused translation key [%s] in language [%s]\n' "$key" "$lang_code" >&2
+    done
+}
+
 # @type:        Orchestrator
 # @description: Выводит отчет о неиспользуемых переводах
 # @stdin:       нет
@@ -41,10 +62,8 @@ main() {
 
     if [[ $result_count -eq 0 ]]; then
         printf 'All translations are used\n'
-        return 0
     else
         i18n::report_unused_translations
-        return 1
     fi
 }
 

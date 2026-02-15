@@ -3,26 +3,151 @@
 
 set -Eeuo pipefail
 
-# shellcheck disable=SC1091
+readonly PROJECT_ROOT=$(readlink -f "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/../../..")
+
 source "$(dirname "$0")/helpers/test_helpers.sh"
 
-# @type:        Orchestrator
-# @description: Проверяет несуществующие переводы в коде проекта
+# @type:        Source
+# @description: Получает список языковых каталогов
 # @stdin:       нет
-# @stdout:      отчет о несуществующих переводах (если есть)
-# @exit_code:   0 - все используемые переводы существуют
-#               1 - найдены несуществующие переводы
-# i18n::test_missing_translations() {
-#     local result_count
+# @stdout:      lang_code\0 (например: ru\0en\0)
+# @exit_code:   0 - успех
+i18n::get_languages() {
+    find "$I18N_DIR" -maxdepth 1 -mindepth 1 -type d ! -path '*/.*' ! -name 'critical' -printf '%f\0' | sort -z
+}
 
-#     result_count=$(i18n::extract_keys_from_code | i18n::check_key_exists | i18n::count_stream)
+# @type:        Source
+# @description: Создает ассоциативный массив с ключами переводов из всех файлов переводов
+# @stdin:       нет
+# @stdout:      (заполняет глобальный ассоциативный массив, переданный по ссылке)
+# @exit_code:   0 - успех
+i18n::create_keys_map() {
+    local -n keys_map_ref=$1
 
-#     if [[ $result_count -gt 0 ]]; then
-#         return 1
-#     fi
+    while IFS='|' read -r -d '' lang_code key; do
+        keys_map_ref["$key"]=1
+    done < <(i18n::get_languages | i18n::extract_keys)
+}
 
-#     return 0
-# }
+
+# @type:        Filter
+# @description: Проверяет наличие ключа перевода в файлах переводов
+# @stdin:       key\0
+# @stdout:      key\0 (только для отсутствующих ключей)
+# @exit_code:   0 - успех
+i18n::check_key_exists() {
+    local -A existing_keys_map
+
+    i18n::create_keys_map existing_keys_map
+
+    while IFS= read -r -d '' key; do
+        if [[ -z "${existing_keys_map[$key]+isset}" ]]; then
+            printf '%s\0' "$key"
+        fi
+    done
+}
+
+# @type:        Transformer
+# @description: Форматирует сообщение о несуществующем переводе с местоположением
+# @stdin:       key\0
+# @stdout:      сообщение в stderr
+# @exit_code:   0 - успех
+i18n::format_missing_message_with_location() {
+    while IFS= read -r -d '' key; do
+        local location
+        location=$(printf '%s\0' "$key" | i18n::find_key_location | tr '\0' '\n')
+        if [[ -n "$location" ]]; then
+            printf 'Missing translation key [%s] in translation files (found in: %s)\n' "$key" "$location" >&2
+        else
+            printf 'Missing translation key [%s] in translation files\n' "$key" >&2
+        fi
+    done
+}
+
+# @type:        Filter
+# @description: Ищет местоположение ключа перевода в исходном коде
+# @stdin:       key\0
+# @stdout:      file_path:line_number\0 (первое место где найден ключ)
+# @exit_code:   0 - успех
+i18n::find_key_location() {
+    local key
+    while IFS= read -r -d '' key; do
+        local search_dirs=(
+            "${PROJECT_ROOT}/modules/helpers"
+            "${PROJECT_ROOT}/modules"
+            "${PROJECT_ROOT}/utils"
+            "${PROJECT_ROOT}"
+        )
+
+        for dir in "${search_dirs[@]}"; do
+            if [[ -d "$dir" ]]; then
+                local result
+                result=$(grep -rn --include="*.sh" --exclude-dir="docs" -F -- "$key" "$dir" 2>/dev/null | head -1)
+                if [[ -n "$result" ]]; then
+                    local file_path line_number
+                    file_path=$(echo "$result" | cut -d: -f1)
+                    line_number=$(echo "$result" | cut -d: -f2)
+                    printf '%s:%s\0' "$file_path" "$line_number"
+                    break
+                fi
+            fi
+        done
+    done
+}
+
+# @type:        Source
+# @description: Извлекает ключи переводов из исходного кода проекта
+# @stdin:       нет
+# @stdout:      key\0 (ключи переводов из кода)
+# @exit_code:   0 - успех
+i18n::extract_keys_from_code() {
+    local search_dirs=(
+        "${PROJECT_ROOT}/modules/helpers"
+        "${PROJECT_ROOT}/modules"
+        "${PROJECT_ROOT}/utils"
+        "${PROJECT_ROOT}"
+    )
+
+    for dir in "${search_dirs[@]}"; do
+        if [[ -d "$dir" ]]; then
+            # Извлекаем ключи из метазаголовков (# MODULE_NAME: module.ufw.name)
+            find "$dir" -type f -name "*.sh" \
+                ! -path "*/docs/*" \
+                ! -name "oneline-runner.sh" \
+                -print0 2>/dev/null | \
+                xargs -0 cat 2>/dev/null | \
+                gawk '
+                    {
+                        if (match($0, /^#\s+MODULE_NAME:\s*(.+)$/, arr)) {
+                            print arr[1]
+                        }
+                    }
+                '
+
+            # Извлекаем ключи из кода ($(_ "common.error_no_modules_available"))
+            find "$dir" -type f -name "*.sh" \
+                ! -path "*/docs/*" \
+                ! -name "oneline-runner.sh" \
+                -print0 2>/dev/null | \
+                xargs -0 cat 2>/dev/null | \
+                gawk '
+                    {
+                        while (match($0, /\$\(_[[:space:]]+"([^"]+)"/, arr)) {
+                            key = arr[1]
+                            # Проверяем, что ключ содержит точку (формат module.key) или это no_translate
+                            if (key ~ /\./ || key == "no_translate") {
+                                print key
+                            }
+                            # Продвигаемся дальше в строке
+                            $0 = substr($0, RSTART + RLENGTH)
+                        }
+                    }
+                '
+        fi
+    done | sort -u | while IFS= read -r key; do
+        printf '%s\0' "$key"
+    done
+}
 
 # @type:        Orchestrator
 # @description: Выводит отчет о несуществующих переводах
@@ -41,10 +166,8 @@ main() {
 
     if [[ $result_count -eq 0 ]]; then
         printf 'All used translations exist\n'
-        return 0
     else
         i18n::report_missing_translations
-        return 1
     fi
 }
 

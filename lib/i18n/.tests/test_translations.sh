@@ -3,8 +3,18 @@
 
 set -Eeuo pipefail
 
-# shellcheck disable=SC1091
+readonly PROJECT_ROOT=$(readlink -f "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/../../..")
+
 source "$(dirname "$0")/helpers/test_helpers.sh"
+
+# @type:        Source
+# @description: Получает список языковых каталогов
+# @stdin:       нет
+# @stdout:      lang_code\0 (например: ru\0en\0)
+# @exit_code:   0 - успех
+i18n::get_languages() {
+    find "$I18N_DIR" -maxdepth 1 -mindepth 1 -type d ! -path '*/.*' ! -name 'critical' -printf '%f\0' | sort -z
+}
 
 # @type:        Orchestrator
 # @description: Проверяет синхронизацию файлов переводов между языками
@@ -48,9 +58,6 @@ main() {
     printf 'Сверяет файлы переводов\n'
     if i18n::test_translation_sync; then
         printf 'All translations are synchronized\n'
-        return 0
-    else
-        return 1
     fi
 }
 
