@@ -13,8 +13,8 @@ I18N_MESSAGES["system.reload.pkgs_header"]="Пакеты требующие пе
 # Common helpers
 I18N_MESSAGES["common.helpers.validate_order.error_missing_tag"]="Отсутствует обязательный тег MODULE_ORDER: %s"
 I18N_MESSAGES["common.helpers.validate_order.error_duplicate"]="Дублирующийся MODULE_ORDER (%s): %s"
-I18N_MESSAGES["common.helpers.file.delete.error"]="Ошибка удаления %s: %s"
-I18N_MESSAGES["common.helpers.file.delete.success"]="Удалено: %s"
+I18N_MESSAGES["common.delete.error"]="Ошибка при удалении: %s"
+I18N_MESSAGES["common.delete.success"]="Удалено: %s"
 I18N_MESSAGES["common.helpers.ssh.no_active_ports"]="Нет активных SSH портов [ss -ltnp]"
 I18N_MESSAGES["common.helpers.ssh.active_ports"]="Есть активные SSH порты [ss -ltnp]: %s"
 I18N_MESSAGES["common.helpers.ufw.rules_found"]="Есть правила UFW [ufw show added]"

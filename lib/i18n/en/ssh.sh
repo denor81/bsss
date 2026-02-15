@@ -1,8 +1,5 @@
 # SSH port messages (English)
 
-# Modify messages
-I18N_MESSAGES["ssh.modify.confirm"]="Modify SSH port configuration?"
-
 # Menu UI
 
 # Input prompts
@@ -46,7 +43,6 @@ I18N_MESSAGES["ssh.guard.test_new"]="OPEN NEW WINDOW and test connection via por
 
 # Error messages
 I18N_MESSAGES["ssh.error_port_not_up"]="PORT %s DID NOT COME UP [%s attempts in %s sec]"
-I18N_MESSAGES["ssh.error_invalid_choice"]="Invalid choice: %s"
 
 # Socket check messages
 I18N_MESSAGES["ssh.socket.configured"]="SSH works correctly in ssh.service mode"

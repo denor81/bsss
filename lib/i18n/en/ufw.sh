@@ -1,8 +1,5 @@
 # UFW messages (English)
 
-# Modify messages
-I18N_MESSAGES["ufw.modify.confirm"]="Modify UFW status?"
-
 # Error messages
 I18N_MESSAGES["ufw.error.enable_failed"]="Error during activation [ufw --force enable]"
 

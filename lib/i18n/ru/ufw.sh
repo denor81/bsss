@@ -1,8 +1,5 @@
 # UFW messages (Russian)
 
-# Modify messages
-I18N_MESSAGES["ufw.modify.confirm"]="Изменить состояние UFW?"
-
 # Error messages
 I18N_MESSAGES["ufw.error.enable_failed"]="Ошибка при активации [ufw --force enable]"
 

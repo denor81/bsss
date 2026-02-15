@@ -145,9 +145,9 @@ sys::file::delete() {
         [[ ! -e "$path" ]] && continue
 
         if resp=$(rm -rfv "$path" 2>&1); then
-            log_info "$(_ "common.helpers.file.delete.success" "$resp")"
+            log_info "$(_ "common.delete.success" "$resp")"
         else
-            log_error "$(_ "common.helpers.file.delete.error" "$path" "$resp")"
+            log_error "$(_ "common.delete.error" "$path")"
             return 1
         fi
     done
