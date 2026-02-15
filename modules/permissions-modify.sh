@@ -119,7 +119,7 @@ permissions::toggle::rules() {
         log_info_simple_tab "PermitRootLogin no"
         log_info_simple_tab "PasswordAuthentication no"
         log_info_simple_tab "PubkeyAuthentication yes"
-        if io::confirm_action "$(_ "io.confirm_action.default_question")"; then
+        if io::confirm_action; then
             permissions::orchestrator::install::rules
         fi
     fi
