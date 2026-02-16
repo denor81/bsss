@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Изменяет состояние UFW
-# MODULE_ORDER: 80
+# MODULE_ORDER: 100
 # MODULE_TYPE: modify
 # MODULE_NAME: module.ufw.name
 

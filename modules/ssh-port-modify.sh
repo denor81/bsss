@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Изменяет SSH порт
-# MODULE_ORDER: 60
+# MODULE_ORDER: 80
 # MODULE_TYPE: modify
 # MODULE_NAME: module.ssh.name
 

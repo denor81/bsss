@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Проверяет текущие права доступа SSH
-# MODULE_ORDER: 12
+# MODULE_ORDER: 30
 # MODULE_TYPE: check
 # MODULE_NAME: module.permissions.check.name
 

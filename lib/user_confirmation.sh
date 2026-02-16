@@ -22,7 +22,7 @@ io::ask_value() {
         log_answer "$choice"
 
         # Возвращаем код 2 при отмене
-        [[ -n "$cancel_keyword" && "$choice" == "$cancel_keyword" ]] && return 2
+        [[ -n "$cancel_keyword" && "$choice" =~ ^$cancel_keyword$ ]] && return 2
 
         if [[ "$choice" =~ ^$pattern$ ]]; then
             printf '%s\0' "$choice"
@@ -45,5 +45,5 @@ io::confirm_action() {
     local question=${1:-"$(_ "io.confirm_action.default_question")"}
     
     # при выборе n io::ask_value вернет код 2
-    io::ask_value "$question" "y" "[yn]" "Y/n" "n" >/dev/null
+    io::ask_value "$question" "y" "[yn0]" "Y/n" "[n0]" >/dev/null
 }

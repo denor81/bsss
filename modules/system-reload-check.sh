@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Проверяет необходимость перезагрузки системы
-# MODULE_ORDER: 40
+# MODULE_ORDER: 60
 # MODULE_TYPE: check
 
 set -Eeuo pipefail

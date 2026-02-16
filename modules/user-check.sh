@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Проверяет состояние пользователей системы
-# MODULE_ORDER: 11
+# MODULE_ORDER: 20
 # MODULE_TYPE: check
 
 set -Eeuo pipefail

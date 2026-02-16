@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Создает файл конфигурации SSH для отключения логина по паролю и root
-# MODULE_ORDER: 26
+# MODULE_ORDER: 120
 # MODULE_TYPE: modify
 # MODULE_NAME: module.permissions.modify.name
 
@@ -121,9 +121,8 @@ permissions::toggle::rules() {
         log_info_simple_tab "$(_ "no_translate" "PermitRootLogin no")"
         log_info_simple_tab "$(_ "no_translate" "PasswordAuthentication no")"
         log_info_simple_tab "$(_ "no_translate" "PubkeyAuthentication yes")"
-        if io::confirm_action; then
-            permissions::orchestrator::install::rules
-        fi
+        io::confirm_action
+        permissions::orchestrator::install::rules
     fi
 }
 
