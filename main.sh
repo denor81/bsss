@@ -248,7 +248,6 @@ main::process::exit_code() {
         2|130) log_info "$(_ "common.info_module_user_cancelled" "$exit_code" "$module_tag")" ;;
         3) log_warn "$(_ "common.info_module_rollback" "$exit_code" "$module_tag")" ;;
         4) log_warn "$(_ "common.info_module_requires" "$exit_code" "$module_tag")" ;;
-        5) log_error "$(_ "common.error_missing_meta_tags" "$exit_code" "$module_tag")" ;;
         *) log_error "$(_ "common.unexpected_error_module_failed_code" "$exit_code" "$module_tag")" ;;
     esac
 }

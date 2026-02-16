@@ -26,7 +26,6 @@ I18N_MESSAGES["common.error_no_modules_found"]="Запуск не возможе
 I18N_MESSAGES["common.error_module_error"]="Запуск не возможен, один из модулей показывает ошибку"
 I18N_MESSAGES["common.error_no_modules_available"]="Нет доступных модулей для настройки"
 I18N_MESSAGES["common.unexpected_error_module_failed_code"]="Непредвиденная ошибка [RC: %s] [%s]"
-I18N_MESSAGES["common.error_missing_meta_tags"]="Отсутствуют обязательные метатеги MODULE_ORDER [RC: %s] [%s]"
 
 # Info messages - module runner
 I18N_MESSAGES["common.info_module_successful"]="Успешно завершен [RC: %s] [%s]"
@@ -230,8 +229,8 @@ I18N_MESSAGES["common.helpers.ufw.disabled"]="UFW: Полностью деакт
 I18N_MESSAGES["common.helpers.ufw.already_disabled"]="UFW: деактивирован"
 I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Посылаем сигнал отключения rollback USR1 [PID: %s]"
 I18N_MESSAGES["common.helpers.rollback.stop_received"]="Получен сигнал USR1 - остановка скрипта из-за отката"
-I18N_MESSAGES["common.helpers.rollback.exit_received"]="Получен сигнал EXIT [RC: %s]"
-I18N_MESSAGES["common.helpers.rollback.int_received"]="Получен сигнал INT [RC: %s]"
+I18N_MESSAGES["common.exit_received"]="Получен сигнал EXIT [RC: %s]"
+I18N_MESSAGES["common.int_received"]="Получен сигнал INT [RC: %s]"
 I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Создан FIFO: %s"
 
 # UFW check

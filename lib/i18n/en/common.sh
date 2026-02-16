@@ -26,7 +26,6 @@ I18N_MESSAGES["common.error_no_modules_found"]="Cannot run, modules not found"
 I18N_MESSAGES["common.error_module_error"]="Cannot run, one of the modules shows an error"
 I18N_MESSAGES["common.error_no_modules_available"]="No modules available for setup"
 I18N_MESSAGES["common.unexpected_error_module_failed_code"]="Unexpected error [RC: %s] [%s]"
-I18N_MESSAGES["common.error_missing_meta_tags"]="Missing required meta tags MODULE_ORDER [RC: %s] [%s]"
 
 # Info messages - module runner
 I18N_MESSAGES["common.info_module_successful"]="Completed successfully [RC: %s] [%s]"
@@ -231,8 +230,8 @@ I18N_MESSAGES["common.helpers.ufw.already_disabled"]="UFW: deactivated"
 I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Sending rollback disable signal USR1 [PID: %s]"
 I18N_MESSAGES["common.helpers.rollback.stop_received"]="Received USR1 signal - stopping script due to rollback"
 I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Created FIFO: %s"
-I18N_MESSAGES["common.helpers.rollback.exit_received"]="Received EXIT signal [RC: %s]"
-I18N_MESSAGES["common.helpers.rollback.int_received"]="Received INT signal [RC: %s]"
+I18N_MESSAGES["common.exit_received"]="Received EXIT signal [RC: %s]"
+I18N_MESSAGES["common.int_received"]="Received INT signal [RC: %s]"
 
 # UFW check
 I18N_MESSAGES["ufw.check.installed_restart"]="UFW installed - restart the script"

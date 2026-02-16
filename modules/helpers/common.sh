@@ -259,7 +259,7 @@ common::rollback::stop_script_by_rollback_timer() {
 # @exit_code:   $?
 common::exit::actions() {
     local rc=$?
-    log_info "$(_ "common.helpers.rollback.exit_received" "$rc")"
+    log_info "$(_ "common.exit_received" "$rc")"
     [[ -n "$WATCHDOG_FIFO" ]] && printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
     log_stop
     exit $rc
@@ -277,7 +277,7 @@ common::int::actions() {
         rc=130
     fi
     new_line
-    log_info "$(_ "common.helpers.rollback.int_received" "$rc")"
+    log_info "$(_ "common.int_received" "$rc")"
     exit $rc
 }
 
