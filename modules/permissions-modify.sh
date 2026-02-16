@@ -168,7 +168,7 @@ permissions::orchestrator::dispatch_logic() {
         pass)
             log_attention "$(_ "permissions.attention.password_connection")"
             log_warn "$(_ "permissions.warn.sudo_password_required")"
-            log_warn "$(_ "permissions.warn.sudoers_file_instruction" "$SUDOERS_D_DIR/${BSSS_USER_NAME}" "${BSSS_USER_NAME}")"
+            log_warn "$(_ "permissions.warn.sudoers_file_instruction" "$SUDOERS_D_DIR/$(logname)" "$(logname)")"
             permissions::orchestrator::check_current_user
         ;;
         timeout)
