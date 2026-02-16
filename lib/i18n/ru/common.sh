@@ -135,7 +135,7 @@ I18N_MESSAGES["ssh.menu.item_reset"]="Сброс (удаление правил�
 I18N_MESSAGES["ssh.menu.item_reinstall"]="Переустановка (замена на новый порт)"
 
 # Input messages
-I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Введите новый SSH порт"
+I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Введите новый SSH порт или 0 для отмены"
 I18N_MESSAGES["ssh.ui.get_new_port.hint_range"]="1-65535, Enter для %s"
 
 # Service messages

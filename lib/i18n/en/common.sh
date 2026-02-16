@@ -135,7 +135,7 @@ I18N_MESSAGES["ssh.menu.item_reset"]="Reset (delete %s rule)"
 I18N_MESSAGES["ssh.menu.item_reinstall"]="Reinstall (replace with new port)"
 
 # Input messages
-I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Enter new SSH port"
+I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Enter new SSH port or 0 for cancel"
 I18N_MESSAGES["ssh.ui.get_new_port.hint_range"]="1-65535, Enter for %s"
 
 # Service messages
