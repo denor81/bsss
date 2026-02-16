@@ -104,3 +104,169 @@ I18N_MESSAGES["common.error.invalid_menu_id"]="Неверный ID действ�
 # Delete messages (unified)
 I18N_MESSAGES["common.delete.error"]="Ошибка при удалении: %s"
 I18N_MESSAGES["common.delete.success"]="Удалено: %s"
+
+# SSH messages
+
+# Info messages
+I18N_MESSAGES["ssh.info_rules_found"]="Есть правила ${UTIL_NAME^^} для SSH:"
+I18N_MESSAGES["ssh.info_no_rules"]="Нет правил ${UTIL_NAME^^} для SSH [%s]"
+
+# Success messages
+I18N_MESSAGES["ssh.success_port_up"]="SSH порт %s успешно поднят после %s попыток в течение %s сек"
+I18N_MESSAGES["ssh.success_rule_created"]="Создано правило ${UTIL_NAME^^} для SSH: [%s:%s]"
+
+# Error messages
+I18N_MESSAGES["ssh.error_port_busy"]="SSH порт %s уже занят другим сервисом."
+I18N_MESSAGES["ssh.error_rule_creation_failed"]="Не удалось создать правило SSH: %s"
+I18N_MESSAGES["ssh.error_config_sshd"]="Ошибка конфигурации ssh [sshd -t]"
+I18N_MESSAGES["ssh.socket.unit_not_found"]="Юнит ssh.service не найден в системе"
+I18N_MESSAGES["ssh.socket.script_purpose"]="Этот скрипт переключает SSH в режим service"
+
+# Warning messages
+I18N_MESSAGES["ssh.warning_external_rules_found"]="Есть сторонние правила SSH:"
+I18N_MESSAGES["ssh.warning_no_external_rules"]="Нет сторонних правил SSH [%s]"
+
+# Wait messages
+I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Ожидание поднятия SSH порта %s (таймаут: %s сек)..."
+
+# Menu items
+I18N_MESSAGES["ssh.menu.item_reset"]="Сброс (удаление правила %s)"
+I18N_MESSAGES["ssh.menu.item_reinstall"]="Переустановка (замена на новый порт)"
+
+# Input messages
+I18N_MESSAGES["ssh.ui.get_new_port.prompt"]="Введите новый SSH порт"
+I18N_MESSAGES["ssh.ui.get_new_port.hint_range"]="1-65535, Enter для %s"
+
+# Service messages
+I18N_MESSAGES["ssh.service.daemon_reloaded"]="Конфигурация перезагружена [systemctl daemon-reload]"
+I18N_MESSAGES["ssh.service.restarted"]="SSH сервис перезагружен [systemctl restart ssh.service]"
+
+# Guard instructions
+I18N_MESSAGES["ssh.guard.test_new"]="ОТКРОЙТЕ НОВОЕ ОКНО и проверьте связь через порт %s"
+
+# Error messages
+I18N_MESSAGES["ssh.error_port_not_up"]="ПОРТ %s НЕ ПОДНЯЛСЯ [%s попыток в течение %s сек]"
+
+# Socket check messages
+I18N_MESSAGES["ssh.socket.configured"]="SSH корректно работает в режиме ssh.service"
+I18N_MESSAGES["ssh.socket.mode_warning"]="SSH работает в socket-based activation mode, что может конфликтовать с изменением порта через sshd_config"
+I18N_MESSAGES["ssh.socket.mode_required"]="Требуется переключение SSH в традиционный service mode"
+I18N_MESSAGES["ssh.socket.switch_confirm"]="Переключить SSH в традиционный service mode?"
+I18N_MESSAGES["ssh.socket.socket_enabled"]="ssh.socket активен - SSH работает в socket-based activation mode"
+I18N_MESSAGES["ssh.socket.socket_disabled"]="ssh.socket отключен"
+I18N_MESSAGES["ssh.socket.socket_status"]="Статус ssh.socket: %s"
+I18N_MESSAGES["ssh.socket.not_found_traditional_mode"]="ssh.socket не найден - SSH работает в традиционном service mode (Ubuntu 20.04 или сконфигурирован вручную)"
+I18N_MESSAGES["ssh.socket.force_mode"]="Переключение SSH в традиционный service mode"
+I18N_MESSAGES["ssh.socket.service_not_active"]="SSH сервис не активен, запускаем..."
+I18N_MESSAGES["ssh.socket.start_error"]="Ошибка запуска SSH сервиса"
+I18N_MESSAGES["ssh.socket.active"]="SSH сервис активен в service mode"
+
+# UFW messages
+
+# Error messages
+I18N_MESSAGES["ufw.error.enable_failed"]="Ошибка при активации [ufw --force enable]"
+
+# Success messages
+I18N_MESSAGES["ufw.success.backup_created"]="Создан бэкап: [%s]"
+I18N_MESSAGES["ufw.error.backup_failed"]="Не удалось создать бэкап %s [%s]"
+I18N_MESSAGES["ufw.success.before_rules_edited"]="Отредактирован: [%s]"
+I18N_MESSAGES["ufw.success.reloaded"]="UFW перезагружен [ufw reload]"
+I18N_MESSAGES["ufw.warning.continue_without_rules"]="Невозможно продолжить: нет правил BSSS в UFW"
+I18N_MESSAGES["ufw.warning.add_ssh_first"]="Сначала добавьте SSH-порт через модуль SSH"
+I18N_MESSAGES["ufw.rollback.test_access"]="Проверьте доступ к серверу после включения UFW в новом окне терминала"
+
+# Menu messages
+I18N_MESSAGES["ufw.menu.item_disable"]="Выключить UFW"
+I18N_MESSAGES["ufw.menu.item_enable"]="Включить UFW"
+I18N_MESSAGES["ufw.menu.item_ping_enable"]="Ping будет включен [ACCEPT] [По умолчанию]"
+I18N_MESSAGES["ufw.menu.item_ping_disable"]="Ping будет отключен [DROP]"
+
+# Status messages
+I18N_MESSAGES["ufw.status.enabled"]="UFW включен"
+I18N_MESSAGES["ufw.status.disabled"]="UFW отключен"
+I18N_MESSAGES["ufw.status.ping_blocked"]="UFW ping запрещен [DROP] [Состояние: модифицировано]"
+I18N_MESSAGES["ufw.status.ping_allowed"]="UFW ping разрешен [ACCEPT] [Состояние: по умолчанию]"
+
+# Info messages
+I18N_MESSAGES["ufw.info.no_rules_but_active"]="Нет правил BSSS, но UFW активен - можно отключить"
+
+# Success messages
+I18N_MESSAGES["ufw.success.backup_restored"]="Восстановлен файл before.rules: [%s]"
+
+# Error messages
+I18N_MESSAGES["ufw.error.restore_failed"]="Не удалось восстановить %s из бэкапа [%s]"
+I18N_MESSAGES["ufw.error.edit_failed"]="Ошибка при редактировании: [%s]"
+I18N_MESSAGES["ufw.error.reload_failed"]="Не удалось выполнить [ufw reload] [RC: %s]"
+
+# System messages
+
+# Update module
+I18N_MESSAGES["system.update.apt_not_found"]="Менеджер пакетов apt-get не найден"
+I18N_MESSAGES["system.update.error"]="Ошибка при обновлении системных пакетов"
+I18N_MESSAGES["system.update.confirm"]="Обновить системные пакеты? [apt-get update && apt-get upgrade -y]"
+
+# Reload check module
+I18N_MESSAGES["system.reload.not_required"]="Перезагрузка не требуется"
+I18N_MESSAGES["system.reload.reboot_required"]="Система нуждается в перезагрузке %s"
+I18N_MESSAGES["system.reload.pkgs_header"]="Пакеты требующие перезагрузки:"
+
+# Common helpers
+I18N_MESSAGES["common.helpers.validate_order.error_missing_tag"]="Отсутствует обязательный тег MODULE_ORDER: %s"
+I18N_MESSAGES["common.helpers.validate_order.error_duplicate"]="Дублирующийся MODULE_ORDER (%s): %s"
+
+I18N_MESSAGES["common.helpers.ssh.no_active_ports"]="Нет активных SSH портов [ss -ltnp]"
+I18N_MESSAGES["common.helpers.ssh.active_ports"]="Есть активные SSH порты [ss -ltnp]: %s"
+I18N_MESSAGES["common.helpers.ufw.rules_found"]="Есть правила UFW [ufw show added]"
+I18N_MESSAGES["common.helpers.ufw.rules_not_found"]="Нет правил UFW [ufw show added]"
+I18N_MESSAGES["common.helpers.ufw.rules.sync"]="Правила UFW синхронизированы с настройками ${UTIL_NAME^^} для SSH порта"
+I18N_MESSAGES["common.helpers.ufw.rules.delete_warning"]="Удаляя правила SSH, также будут удалены связанные правила UFW"
+I18N_MESSAGES["common.helpers.ufw.rule.deleted"]="Удалено правило UFW: ufw --force delete %s"
+I18N_MESSAGES["common.helpers.ufw.rule.delete_error"]="Ошибка при удалении правила UFW: ufw --force delete %s"
+I18N_MESSAGES["common.helpers.ufw.rule.added"]="Создано правило UFW: [ufw allow %s/tcp comment '$BSSS_MARKER_COMMENT']"
+I18N_MESSAGES["common.helpers.ufw.rule.add_error"]="Ошибка при добавлении правила UFW: [ufw allow %s/tcp comment ${UTIL_NAME^^}]"
+I18N_MESSAGES["common.helpers.ufw.disabled"]="UFW: Полностью деактивирован [ufw --force disable]"
+I18N_MESSAGES["common.helpers.ufw.already_disabled"]="UFW: деактивирован"
+I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Посылаем сигнал отключения rollback USR1 [PID: %s]"
+I18N_MESSAGES["common.helpers.rollback.stop_received"]="Получен сигнал USR1 - остановка скрипта из-за отката"
+I18N_MESSAGES["common.helpers.rollback.exit_received"]="Получен сигнал EXIT [RC: %s]"
+I18N_MESSAGES["common.helpers.rollback.int_received"]="Получен сигнал INT [RC: %s]"
+I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Создан FIFO: %s"
+
+# UFW check
+I18N_MESSAGES["ufw.check.installed_restart"]="UFW установлен - перезапустите скрипт"
+
+# OS check
+I18N_MESSAGES["os.check.file_not_found"]="Файл не существует: %s"
+I18N_MESSAGES["os.check.unsupported"]="Система %s не поддерживается (ожидалось: %s)"
+I18N_MESSAGES["os.check.supported"]="Система %s поддерживается"
+
+# User create module
+I18N_MESSAGES["user.check.user_count"]="Количество пользователей (UID >= 1000): %s"
+I18N_MESSAGES["user.check.only_root"]="В системе только пользователь root"
+I18N_MESSAGES["user.check.user_exists"]="Пользователь: %s"
+I18N_MESSAGES["user.create.create_error"]="Ошибка при создании пользователя"
+I18N_MESSAGES["user.create.other_users_exist"]="Дополнительный пользователь уже создан"
+
+# User create menu
+I18N_MESSAGES["user.create.menu.header"]="Что будет происходить:"
+I18N_MESSAGES["user.create.menu.create_user"]="Создание: [useradd -m -d /home/%s -s /bin/bash -G sudo %s]"
+I18N_MESSAGES["user.create.menu.generate_pass"]="Генерация пароля: [openssl rand -base64 %s]"
+I18N_MESSAGES["user.create.menu.create_sudoers"]="Создание правил в %s/%s"
+I18N_MESSAGES["user.create.menu.password_once"]="Пароль будет выведен только раз на экран терминала (в логи не пишется)"
+I18N_MESSAGES["user.create.menu.after_create"]="После создания пользователя необходимо скопировать ваш SSH ключ на сервер командой ssh-copy-id"
+I18N_MESSAGES["user.create.menu.check_key"]="Проверить авторизацию по ключу и если все ок, то можно запрещать доступ по паролю и доступ от имени root"
+I18N_MESSAGES["user.create.menu.reminder"]="Напоминание, как удалить пользователя:"
+I18N_MESSAGES["user.create.menu.reminder_deluser"]="deluser --remove-home --remove-all-files USERNAME # Удалить пользователя"
+I18N_MESSAGES["user.create.menu.reminder_find"]="find / -uid USERID 2>/dev/null # Найти все созданные файлы по id"
+I18N_MESSAGES["user.create.menu.reminder_sudoers"]="grep -r -E 'USERNAME.*ALL' /etc/sudoers.d/ # Поиск правил пользователя"
+I18N_MESSAGES["user.create.menu.reminder_pgrep"]="pgrep -u USERNAME # посмотреть PID процессов"
+I18N_MESSAGES["user.create.menu.reminder_killall"]="killall -9 -u USERNAME # завершить все процессы"
+I18N_MESSAGES["user.create.menu.item_create"]="Создать пользователя"
+I18N_MESSAGES["user.create.menu.user_created"]="Пользователь %s создан, пароль назначен"
+I18N_MESSAGES["user.create.menu.password_no_log"]="Не логируется >>>[%s]<<<"
+I18N_MESSAGES["user.create.menu.after_copy_key"]="После копирования SSH ключа и успешного подключения можно будет запретить авторизацию по паролю"
+
+# Permissions messages
+I18N_MESSAGES["permissions.menu.item_create"]="Создать правила ${UTIL_NAME^^} для доступа"
+I18N_MESSAGES["permissions.menu.item_remove"]="Удалить правила ${UTIL_NAME^^} для доступа"
+I18N_MESSAGES["permissions.info.create_rules"]="Будет создан файл с правилами в каталоге %s"

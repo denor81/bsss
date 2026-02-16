@@ -39,7 +39,7 @@ i18n::report_unused_translations() {
 }
 
 main() {
-    printf 'Показывает никогда не используемые переводы\n'
+    printf 'Показывает никогда не используемые переводы, на которые нет ссылок из проекта\n'
     local result_count
 
     result_count=$(i18n::get_languages | i18n::extract_keys | i18n::check_key_usage | i18n::count_stream)
