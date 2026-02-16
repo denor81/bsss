@@ -17,11 +17,6 @@ I18N_MESSAGES["common.error_invalid_input"]="Input error. Expected: %s"
 # Init messages
 I18N_MESSAGES["init.gawk.version"]="Critical dependencies:"
 I18N_MESSAGES["init.gawk.installed"]="gawk installed [%s]"
-I18N_MESSAGES["init.gawk.not_installed"]="gawk not installed"
-I18N_MESSAGES["init.gawk.nul_explanation"]="gawk is required for associative arrays in Bash"
-I18N_MESSAGES["init.gawk.install_confirm"]="Install gawk?"
-I18N_MESSAGES["init.gawk.install_success"]="gawk installed successfully"
-I18N_MESSAGES["init.gawk.install_error"]="Failed to install gawk"
 
 # IO messages
 I18N_MESSAGES["io.confirm_action.default_question"]="Продолжить? / Continue?"

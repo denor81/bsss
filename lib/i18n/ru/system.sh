@@ -46,14 +46,8 @@ I18N_MESSAGES["os.check.supported"]="Система %s поддерживает�
 I18N_MESSAGES["user.check.user_count"]="Количество пользователей (UID >= 1000): %s"
 I18N_MESSAGES["user.check.only_root"]="В системе только пользователь root"
 I18N_MESSAGES["user.check.user_exists"]="Пользователь: %s"
-I18N_MESSAGES["user.create.confirm"]="Создать пользователя %s?"
-I18N_MESSAGES["user.create.creating_user"]="Создание пользователя: %s"
-I18N_MESSAGES["user.create.user_created"]="Пользователь создан"
 I18N_MESSAGES["user.create.create_error"]="Ошибка при создании пользователя"
-I18N_MESSAGES["user.create.password_set"]="Пароль установлен"
-I18N_MESSAGES["user.create.user_created_with_password"]="Пользователь '%s' создан. Пароль: %s"
 I18N_MESSAGES["user.create.other_users_exist"]="Дополнительный пользователь уже создан"
-I18N_MESSAGES["user.create.openssl_not_found"]="openssl не найден, невозможно сгенерировать пароль"
 
 # User create menu
 I18N_MESSAGES["user.create.menu.header"]="Что будет происходить:"
@@ -75,17 +69,5 @@ I18N_MESSAGES["user.create.menu.password_no_log"]="Не логируется >>>
 I18N_MESSAGES["user.create.menu.after_copy_key"]="После копирования SSH ключа и успешного подключения можно будет запретить авторизацию по паролю"
 
 # Permissions check module
-I18N_MESSAGES["permissions.check.header"]="=== Проверка прав доступа SSH ==="
-I18N_MESSAGES["permissions.check.current_connection"]="Текущее подключение: [%s]"
-I18N_MESSAGES["permissions.check.current_user"]="Текущий пользователь: [%s]"
-I18N_MESSAGES["permissions.check.root_uid"]="Root UID: [%s]"
-I18N_MESSAGES["permissions.check.status_header"]="=== Статус отключения логина по паролю и root ==="
-I18N_MESSAGES["permissions.check.require_ssh_key"]="Требуется подключение по SSH ключу"
-I18N_MESSAGES["permissions.check.require_nonroot"]="Требуется подключение пользователем отличным от root"
-I18N_MESSAGES["permissions.check.can_disable"]="Можно отключать PermitRootLogin и PasswordAuthentication"
 
 # Permissions modify module
-I18N_MESSAGES["permissions.modify.no_config_files"]="Файлы с настройками не найдены, используется префикс: %s"
-I18N_MESSAGES["permissions.modify.found_prefix"]="Найден последний префикс: %s"
-I18N_MESSAGES["permissions.modify.creating_config"]="Создание файла конфигурации: %s"
-I18N_MESSAGES["permissions.modify.file_created"]="Файл создан"

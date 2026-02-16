@@ -11,7 +11,6 @@ I18N_MESSAGES["common.error_invalid_input"]="Ошибка ввода. Ожида
 
 # IO messages
 I18N_MESSAGES["io.confirm_action.default_question"]="Продолжить?"
-I18N_MESSAGES["io.confirm_action.run_setup"]="Запустить настройку?"
 
 # Info messages
 I18N_MESSAGES["common.info_short_params"]="Доступны короткие параметры %s %s"
@@ -101,10 +100,7 @@ I18N_MESSAGES["common.copy_ssh_key"]="Скопируйте на сервер к�
 
 # Common action messages
 I18N_MESSAGES["common.error.invalid_menu_id"]="Неверный ID действия: [%s]"
-I18N_MESSAGES["common.helpers.rule.deleted"]="Удалено правило: %s"
-I18N_MESSAGES["common.modify.confirm"]="Изменить %s?"
 
 # Delete messages (unified)
 I18N_MESSAGES["common.delete.error"]="Ошибка при удалении: %s"
 I18N_MESSAGES["common.delete.success"]="Удалено: %s"
-I18N_MESSAGES["common.error.invalid_choice"]="Неверный выбор: %s"

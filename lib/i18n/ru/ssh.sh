@@ -49,7 +49,6 @@ I18N_MESSAGES["ssh.socket.configured"]="SSH корректно работает 
 I18N_MESSAGES["ssh.socket.mode_warning"]="SSH работает в socket-based activation mode, что может конфликтовать с изменением порта через sshd_config"
 I18N_MESSAGES["ssh.socket.mode_required"]="Требуется переключение SSH в традиционный service mode"
 I18N_MESSAGES["ssh.socket.switch_confirm"]="Переключить SSH в традиционный service mode?"
-I18N_MESSAGES["ssh.socket.socket_masked"]="ssh.socket корректно замаскирован (masked)"
 I18N_MESSAGES["ssh.socket.socket_enabled"]="ssh.socket активен - SSH работает в socket-based activation mode"
 I18N_MESSAGES["ssh.socket.socket_disabled"]="ssh.socket отключен"
 I18N_MESSAGES["ssh.socket.socket_status"]="Статус ssh.socket: %s"

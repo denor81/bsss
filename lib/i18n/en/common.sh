@@ -14,7 +14,6 @@ I18N_MESSAGES["common.error_invalid_input"]="Input error. Expected: %s"
 
 # IO messages
 I18N_MESSAGES["io.confirm_action.default_question"]="Continue?"
-I18N_MESSAGES["io.confirm_action.run_setup"]="Run setup?"
 
 # Info messages
 I18N_MESSAGES["common.info_short_params"]="Available short parameters %s %s"
@@ -99,10 +98,7 @@ I18N_MESSAGES["common.copy_ssh_key"]="Copy SSH key to server for connection [ssh
 
 # Common action messages
 I18N_MESSAGES["common.error.invalid_menu_id"]="Invalid action ID: [%s]"
-I18N_MESSAGES["common.helpers.rule.deleted"]="Rule deleted: %s"
-I18N_MESSAGES["common.modify.confirm"]="Modify %s?"
 
 # Delete messages (unified)
 I18N_MESSAGES["common.delete.error"]="Error deleting: %s"
 I18N_MESSAGES["common.delete.success"]="Deleted: %s"
-I18N_MESSAGES["common.error.invalid_choice"]="Invalid choice: %s"
