@@ -137,9 +137,6 @@ permissions::orchestrator::check_current_user() {
     root_id=$(id -u root)
     auth_id=$(id -u "$(logname)")
 
-    # user::info::block
-    # log_info "[nosudo>нет прав sudo] [nopass>не требует пароль при выполнении sudo]"
-    # log_info "[pass>требует пароль при выполнении sudo] [superuser>superuser]"
     permissions::orchestrator::log_statuses
 
     if (( root_id == auth_id )); then
