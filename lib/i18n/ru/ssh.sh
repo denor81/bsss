@@ -43,7 +43,6 @@ I18N_MESSAGES["ssh.guard.test_new"]="ОТКРОЙТЕ НОВОЕ ОКНО и п�
 
 # Error messages
 I18N_MESSAGES["ssh.error_port_not_up"]="ПОРТ %s НЕ ПОДНЯЛСЯ [%s попыток в течение %s сек]"
-I18N_MESSAGES["common.error.invalid_choice"]="Неверный выбор: %s"
 
 # Socket check messages
 I18N_MESSAGES["ssh.socket.configured"]="SSH корректно работает в режиме ssh.service"
