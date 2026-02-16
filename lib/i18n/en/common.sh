@@ -1,11 +1,8 @@
 # Common messages (English)
 
-# Special message - pass through without translation
 I18N_MESSAGES["no_translate"]="%s"
 I18N_MESSAGES["common.pipefail.interrupted"]="Interrupted [RC: %d]"
 I18N_MESSAGES["common.log_command"]="Command [%s]"
-
-# Basic messages
 I18N_MESSAGES["common.exit"]="Exit"
 
 # Error messages
@@ -110,11 +107,7 @@ I18N_MESSAGES["common.error.invalid_menu_id"]="Invalid action ID: [%s]"
 I18N_MESSAGES["common.delete.error"]="Error deleting: %s"
 I18N_MESSAGES["common.delete.success"]="Deleted: %s"
 
-# SSH port messages (English)
-
-# Menu UI
-
-# Input prompts
+# SSH messages
 
 # Info messages
 I18N_MESSAGES["ssh.info_rules_found"]="${UTIL_NAME^^} rules found for SSH:"
@@ -222,8 +215,7 @@ I18N_MESSAGES["system.reload.pkgs_header"]="Packages requiring reboot:"
 # Common helpers
 I18N_MESSAGES["common.helpers.validate_order.error_missing_tag"]="Missing required MODULE_ORDER tag: %s"
 I18N_MESSAGES["common.helpers.validate_order.error_duplicate"]="Duplicate MODULE_ORDER (%s): %s"
-I18N_MESSAGES["common.delete.error"]="Error deleting: %s"
-I18N_MESSAGES["common.delete.success"]="Deleted: %s"
+
 I18N_MESSAGES["common.helpers.ssh.no_active_ports"]="No active SSH ports [ss -ltnp]"
 I18N_MESSAGES["common.helpers.ssh.active_ports"]="Active SSH ports found [ss -ltnp]: %s"
 I18N_MESSAGES["common.helpers.ufw.rules_found"]="UFW rules found [ufw show added]"
@@ -239,12 +231,8 @@ I18N_MESSAGES["common.helpers.ufw.already_disabled"]="UFW: deactivated"
 I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Sending rollback disable signal USR1 [PID: %s]"
 I18N_MESSAGES["common.helpers.rollback.stop_received"]="Received USR1 signal - stopping script due to rollback"
 I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Created FIFO: %s"
-
-# Exit signals
 I18N_MESSAGES["common.helpers.rollback.exit_received"]="Received EXIT signal [RC: %s]"
 I18N_MESSAGES["common.helpers.rollback.int_received"]="Received INT signal [RC: %s]"
-
-# Init helpers
 
 # UFW check
 I18N_MESSAGES["ufw.check.installed_restart"]="UFW installed - restart the script"
