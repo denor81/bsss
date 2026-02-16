@@ -72,7 +72,6 @@ log_formatted_msg() {
     # || true: Запись в лог-файл может не сработать (нет прав, диск переполнен, дескриптор закрыт)
     { echo "$(date '+%H:%M:%S') $1" >> "$CURRENT_LOG_SYMLINK"; } 2>/dev/null || true
 }
-}
 
 # @type:        Sink
 # @description: Выводит успешное сообщение с символом [v]
@@ -89,7 +88,6 @@ log_success() {
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2 || true
-    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -111,7 +109,6 @@ log_error() {
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
-    fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
@@ -132,7 +129,6 @@ log_info() {
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
-    fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
@@ -152,7 +148,6 @@ log_info_no_log() {
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
-    fi
     fi
 }
 
@@ -202,7 +197,6 @@ log_debug() {
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
-    fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
@@ -225,7 +219,6 @@ log_bold_info() {
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
-    fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
@@ -245,7 +238,6 @@ log_warn() {
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2 || true
-    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -269,7 +261,6 @@ log_attention() {
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
-    fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
@@ -292,7 +283,6 @@ log_actual_info() {
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
-    fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
@@ -312,7 +302,6 @@ log_info_simple_tab() {
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2 || true
-    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -335,7 +324,6 @@ log_start() {
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2 || true
     fi
-    fi
     log_formatted_msg "[$type] [$module_name] PID: $pid"
     log::to_journal "PID: $pid" "$type"
 }
@@ -357,7 +345,6 @@ log_stop() {
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2 || true
     fi
-    fi
     log_formatted_msg "[$type] [$module_name] PID: $pid"
     log::to_journal "PID: $pid" "$type"
 }
@@ -374,6 +361,5 @@ log::draw_border() {
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf '%.0s#' {1..80} >&2 || true; echo >&2 || true
-    fi
     fi
 }
