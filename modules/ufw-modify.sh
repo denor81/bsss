@@ -77,7 +77,7 @@ ufw::status::force_enable() {
         return 1
     fi
 
-    log_info "$(_ "ufw.success.enabled")"
+    log_info "$(_ "common.success_changes_committed")"
     log_actual_info
     ufw::orchestrator::log_statuses
 
@@ -137,7 +137,6 @@ ufw::orchestrator::disable_ping() {
 ufw::ping::disable_in_rules() {
     if sed -i '/-p icmp/s/ACCEPT/DROP/g' "$UFW_BEFORE_RULES"; then
         log_info "$(_ "ufw.success.before_rules_edited" "$UFW_BEFORE_RULES")"
-        log_info "$(_ "ufw.success.icmp_changed")"
     else
         log_error "$(_ "ufw.error.edit_failed" "$UFW_BEFORE_RULES")"
         return 1

@@ -21,7 +21,7 @@ source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 # @stdout:      нет
 # @exit_code:   0
 permissions::check::info() {
-    log_info "Проверка: PubkeyAuthentication|PasswordAuthentication|PermitRootLogin"
+    log_info "$(_ "permissions.check.info.check_params")"
     permissions::log::bsss_configs
     permissions::log::other_configs
 }

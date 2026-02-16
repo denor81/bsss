@@ -116,9 +116,9 @@ permissions::toggle::rules() {
         permissions::orchestrator::restore::rules
     else
         log_info "$(_ "permissions.info.create_rules" "$SSH_CONFIGD_DIR")"
-        log_info_simple_tab "PermitRootLogin no"
-        log_info_simple_tab "PasswordAuthentication no"
-        log_info_simple_tab "PubkeyAuthentication yes"
+        log_info_simple_tab "$(_ "no_translate" "PermitRootLogin no")"
+        log_info_simple_tab "$(_ "no_translate" "PasswordAuthentication no")"
+        log_info_simple_tab "$(_ "no_translate" "PubkeyAuthentication yes")"
         if io::confirm_action; then
             permissions::orchestrator::install::rules
         fi
@@ -143,8 +143,8 @@ permissions::orchestrator::check_current_user() {
     permissions::orchestrator::log_statuses
 
     if (( root_id == auth_id )); then
-        log_warn "Авторизируйтесь по SSH ключу обычным пользователем"
-        log_warn "Подключитесь по SSH ключу пользователем отличным от root"
+        log_warn "$(_ "permissions.warn.auth_by_ssh_key_user")"
+        log_warn "$(_ "permissions.warn.connect_ssh_key_not_root")"
         return 1
     fi
 
@@ -162,24 +162,24 @@ permissions::orchestrator::dispatch_logic() {
 
     current_conn_type=$(sys::user::get_auth_method | tr -d '\0')
 
-    log_info "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]"
+    log_info "$(_ "no_translate" "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]")"
 
     case "$current_conn_type" in
         key) permissions::orchestrator::check_current_user ;;
         pass)
-            log_attention "Обнаружено подключение по паролю"
-            log_warn "Вам придется вводить пароль каждый раз при sudo"
-            log_warn "Для того, что бы пароль не запрашивался нужно создать файл-правило [$SUDOERS_D_DIR/${BSSS_USER_NAME}] со строкой [${BSSS_USER_NAME} ALL=(ALL) NOPASSWD:ALL] и установить права на файл [chmod 0440] после этого пароль в сессии запрашиваться не будет, либо создать пользователя через пункт меню - там все настраивается автоматически"
+            log_attention "$(_ "permissions.attention.password_connection")"
+            log_warn "$(_ "permissions.warn.sudo_password_required")"
+            log_warn "$(_ "permissions.warn.sudoers_file_instruction" "$SUDOERS_D_DIR/${BSSS_USER_NAME}" "${BSSS_USER_NAME}")"
             permissions::orchestrator::check_current_user
         ;;
         timeout)
-            log_warn "Сессия длиннее 72 часов [невозможно определить тип подключения - ограничения журнала]"
-            log_warn "Подключитесь заново в новом окне нерминала ["$current_conn_type"]"
-            log_warn "В таком режиме возможен только сброс настроек"
-            io::confirm_action "Выполнить сброс правил ${UTIL_NAME^^} для доступа?"
+            log_warn "$(_ "permissions.warn.session_timeout_limitations")"
+            log_warn "$(_ "permissions.warn.reconnect_new_window" "$current_conn_type")"
+            log_warn "$(_ "permissions.info.only_reset_available")"
+            io::confirm_action "$(_ "permissions.confirm.reset_rules" "${UTIL_NAME^^}")"
             permissions::orchestrator::restore::rules
         ;;
-        n/a) log_warn "Не удалось определить тип подключения"; return 1 ;;
+        n/a) log_warn "$(_ "permissions.warn.cannot_determine_connection")"; return 1 ;;
     esac
 }
 

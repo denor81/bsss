@@ -49,6 +49,7 @@ I18N_MESSAGES["common.error_uninstall_delete_failed"]="Не удалось уд�
 # Init messages
 I18N_MESSAGES["init.gawk.version"]="Ключевые зависимости:"
 I18N_MESSAGES["init.gawk.installed"]="gawk установлен [%s]"
+I18N_MESSAGES["init.gawk.nul_explanation"]="Требуется gawk для поддержки NUL-разделителей (\0) в потоках данных"
 
 # Rollback messages
 I18N_MESSAGES["rollback.exit_received"]="Получен сигнал EXIT"
@@ -67,6 +68,7 @@ I18N_MESSAGES["rollback.redirection_opened"]="Открыто перенапра�
 I18N_MESSAGES["rollback.timer_started"]="Фоновый таймер запущен на %s сек..."
 I18N_MESSAGES["rollback.timeout_ssh"]="По истечению таймера будут сброшены настройки ${UTIL_NAME^^} для SSH порта и отключен UFW"
 I18N_MESSAGES["rollback.timeout_ufw"]="По истечению таймера будет отключен UFW"
+I18N_MESSAGES["rollback.timeout_permissions"]="По истечению таймера будут удалены правила ${UTIL_NAME^^} для доступа"
 I18N_MESSAGES["rollback.timeout_generic"]="По истечению таймера будут сброшены настройки"
 I18N_MESSAGES["rollback.timeout_reconnect"]="В случае разрыва текущей сессии подключайтесь к серверу по старым параметрам после истечения таймера"
 I18N_MESSAGES["rollback.time_expired"]="Время истекло - выполняется ОТКАТ"
@@ -270,3 +272,33 @@ I18N_MESSAGES["user.create.menu.after_copy_key"]="После копирован�
 I18N_MESSAGES["permissions.menu.item_create"]="Создать правила ${UTIL_NAME^^} для доступа"
 I18N_MESSAGES["permissions.menu.item_remove"]="Удалить правила ${UTIL_NAME^^} для доступа"
 I18N_MESSAGES["permissions.info.create_rules"]="Будет создан файл с правилами в каталоге %s"
+I18N_MESSAGES["permissions.guard.test_access"]="Проверьте доступ к серверу в новом окне терминала"
+
+# Permissions check
+I18N_MESSAGES["permissions.check.info.check_params"]="Проверка: PubkeyAuthentication|PasswordAuthentication|PermitRootLogin"
+
+# Permissions warnings
+I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Авторизуйтесь по SSH ключу обычным пользователем"
+I18N_MESSAGES["permissions.warn.connect_ssh_key_not_root"]="Подключитесь по SSH ключу пользователем отличным от root"
+I18N_MESSAGES["permissions.attention.password_connection"]="Обнаружено подключение по паролю"
+I18N_MESSAGES["permissions.warn.sudo_password_required"]="Вам придется вводить пароль каждый раз при sudo"
+I18N_MESSAGES["permissions.warn.sudoers_file_instruction"]="Для того, чтобы пароль не запрашивался нужно создать файл-правило [%s] со строкой [%s ALL=(ALL) NOPASSWD:ALL] и установить права на файл [chmod 0440] после этого пароль в сессии запрашиваться не будет, либо создать пользователя через пункт меню - там все настраивается автоматически"
+I18N_MESSAGES["permissions.warn.session_timeout_limitations"]="Сессия длиннее 72 часов [невозможно определить тип подключения - ограничения журнала]"
+I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Подключитесь заново в новом окне терминала [%s]"
+I18N_MESSAGES["permissions.warn.cannot_determine_connection"]="Не удалось определить тип подключения"
+
+# Permissions confirm
+I18N_MESSAGES["permissions.confirm.reset_rules"]="Выполнить сброс правил %s для доступа?"
+
+# Permissions info
+I18N_MESSAGES["permissions.info.only_reset_available"]="В таком режиме возможен только сброс настроек"
+
+# Common unified messages (reusable across modules)
+I18N_MESSAGES["common.info.rules_found"]="Есть правила %s для доступа:"
+I18N_MESSAGES["common.info.no_rules"]="Нет правил %s для доступа"
+I18N_MESSAGES["common.info.external_rules_found"]="Найдены сторонние правила для доступа"
+I18N_MESSAGES["common.info.no_external_rules"]="Нет сторонних правил для доступа"
+I18N_MESSAGES["common.file.created"]="Файл создан: %s"
+I18N_MESSAGES["common.error.create_file"]="Ошибка при создании файла: %s"
+I18N_MESSAGES["common.info.users_in_system"]="Пользователи в системе:"
+I18N_MESSAGES["common.error.check_users"]="Ошибка проверки состава пользователей"

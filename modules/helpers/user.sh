@@ -88,7 +88,7 @@ user::info::block() {
     local auth_method=$(sys::user::get_auth_method | tr -d '\0')
     local i=0
 
-    log_info "Пользователи в системе:"
+    log_info "$(_ "common.info.users_in_system")"
     while IFS=":" read -r -d '' username pass uid rest; do
         i=$(( i + 1 ))
 

@@ -52,6 +52,7 @@ I18N_MESSAGES["common.error_uninstall_delete_failed"]="Failed to delete: %s"
 # Init messages
 I18N_MESSAGES["init.gawk.version"]="Critical dependencies:"
 I18N_MESSAGES["init.gawk.installed"]="gawk installed [%s]"
+I18N_MESSAGES["init.gawk.nul_explanation"]="gawk required for NUL delimiter (\0) support in data streams"
 
 # Rollback messages
 I18N_MESSAGES["rollback.exit_received"]="Received EXIT signal"
@@ -63,17 +64,23 @@ I18N_MESSAGES["rollback.full_dismantle"]="Full dismantling of ${UTIL_NAME^^} set
 I18N_MESSAGES["rollback.system_restored"]="System restored to original state. Check access via old ports."
 I18N_MESSAGES["rollback.ufw_executing"]="Performing UFW rollback..."
 I18N_MESSAGES["rollback.ufw_disabled"]="UFW disabled. Check server access."
+I18N_MESSAGES["rollback.permissions_executing"]="Performing permissions rules rollback..."
+I18N_MESSAGES["rollback.permissions_restored"]="Permissions rules removed. Check server access."
 I18N_MESSAGES["rollback.unknown_type"]="Unknown rollback type: %s"
 I18N_MESSAGES["rollback.redirection_opened"]="Opened redirection 2>FIFO>parent_script"
 I18N_MESSAGES["rollback.timer_started"]="Background timer started for %s seconds..."
 I18N_MESSAGES["rollback.timeout_ssh"]="On timeout, ${UTIL_NAME^^} SSH port settings will be reset and UFW disabled"
 I18N_MESSAGES["rollback.timeout_ufw"]="On timeout, UFW will be disabled"
 I18N_MESSAGES["rollback.timeout_generic"]="On timeout, settings will be reset"
+I18N_MESSAGES["rollback.timeout_permissions"]="On timeout, ${UTIL_NAME^^} access rules will be removed"
 I18N_MESSAGES["rollback.timeout_reconnect"]="In case of current session loss, connect to server via old parameters after timeout"
 I18N_MESSAGES["rollback.time_expired"]="Time expired - performing ROLLBACK"
 
 # Module names
 I18N_MESSAGES["module.system.update.name"]="System update"
+I18N_MESSAGES["module.user.create.name"]="Create user"
+I18N_MESSAGES["module.permissions.check.name"]="Check SSH access rights"
+I18N_MESSAGES["module.permissions.modify.name"]="Configure SSH access rights"
 I18N_MESSAGES["module.ssh.name"]="SSH port configuration"
 I18N_MESSAGES["module.ufw.name"]="UFW firewall configuration"
 
@@ -169,6 +176,30 @@ I18N_MESSAGES["ssh.socket.active"]="SSH service is active in service mode"
 I18N_MESSAGES["ufw.error.enable_failed"]="Error during activation [ufw --force enable]"
 
 # Success messages
+I18N_MESSAGES["ufw.success.backup_created"]="Backup created: [%s]"
+I18N_MESSAGES["ufw.error.backup_failed"]="Failed to create backup %s [%s]"
+I18N_MESSAGES["ufw.success.before_rules_edited"]="Edited: [%s]"
+I18N_MESSAGES["ufw.success.reloaded"]="UFW reloaded [ufw reload]"
+I18N_MESSAGES["ufw.warning.continue_without_rules"]="Cannot continue: no BSSS rules in UFW"
+I18N_MESSAGES["ufw.warning.add_ssh_first"]="Add SSH port via SSH module first"
+I18N_MESSAGES["ufw.rollback.test_access"]="Test server access after enabling UFW in new terminal window"
+
+# Menu messages
+I18N_MESSAGES["ufw.menu.item_disable"]="Disable UFW"
+I18N_MESSAGES["ufw.menu.item_enable"]="Enable UFW"
+I18N_MESSAGES["ufw.menu.item_ping_enable"]="Ping will be enabled [ACCEPT] [Default]"
+I18N_MESSAGES["ufw.menu.item_ping_disable"]="Ping will be disabled [DROP]"
+
+# Status messages
+I18N_MESSAGES["ufw.status.enabled"]="UFW enabled"
+I18N_MESSAGES["ufw.status.disabled"]="UFW disabled"
+I18N_MESSAGES["ufw.status.ping_blocked"]="UFW ping blocked [DROP] [State: modified]"
+I18N_MESSAGES["ufw.status.ping_allowed"]="UFW ping allowed [ACCEPT] [State: default]"
+
+# Info messages
+I18N_MESSAGES["ufw.info.no_rules_but_active"]="No BSSS rules, but UFW is active - can be disabled"
+
+# Success messages
 I18N_MESSAGES["ufw.success.backup_restored"]="before.rules file restored: [%s]"
 
 # Error messages
@@ -222,3 +253,64 @@ I18N_MESSAGES["ufw.check.installed_restart"]="UFW installed - restart the script
 I18N_MESSAGES["os.check.file_not_found"]="File does not exist: %s"
 I18N_MESSAGES["os.check.unsupported"]="System %s not supported (expected: %s)"
 I18N_MESSAGES["os.check.supported"]="System %s supported"
+
+# User create module
+I18N_MESSAGES["user.check.user_count"]="Number of users (UID >= 1000): %s"
+I18N_MESSAGES["user.check.only_root"]="Only root user exists in system"
+I18N_MESSAGES["user.check.user_exists"]="User: %s"
+I18N_MESSAGES["user.create.create_error"]="Error creating user"
+I18N_MESSAGES["user.create.other_users_exist"]="Additional user already created"
+
+# User create menu
+I18N_MESSAGES["user.create.menu.header"]="What will happen:"
+I18N_MESSAGES["user.create.menu.create_user"]="Creating: [useradd -m -d /home/%s -s /bin/bash -G sudo %s]"
+I18N_MESSAGES["user.create.menu.generate_pass"]="Generating password: [openssl rand -base64 %s]"
+I18N_MESSAGES["user.create.menu.create_sudoers"]="Creating rules in %s/%s"
+I18N_MESSAGES["user.create.menu.password_once"]="Password will be shown only once on terminal screen (not logged)"
+I18N_MESSAGES["user.create.menu.after_create"]="After creating user, copy your SSH key to server with ssh-copy-id command"
+I18N_MESSAGES["user.create.menu.check_key"]="Test key-based authentication and if OK, disable password authentication and root access"
+I18N_MESSAGES["user.create.menu.reminder"]="Reminder, how to delete user:"
+I18N_MESSAGES["user.create.menu.reminder_deluser"]="deluser --remove-home --remove-all-files USERNAME # Delete user"
+I18N_MESSAGES["user.create.menu.reminder_find"]="find / -uid USERID 2>/dev/null # Find all created files by id"
+I18N_MESSAGES["user.create.menu.reminder_sudoers"]="grep -r -E 'USERNAME.*ALL' /etc/sudoers.d/ # Search user rules"
+I18N_MESSAGES["user.create.menu.reminder_pgrep"]="pgrep -u USERNAME # view process PIDs"
+I18N_MESSAGES["user.create.menu.reminder_killall"]="killall -9 -u USERNAME # terminate all processes"
+I18N_MESSAGES["user.create.menu.item_create"]="Create user"
+I18N_MESSAGES["user.create.menu.user_created"]="User %s created, password assigned"
+I18N_MESSAGES["user.create.menu.password_no_log"]="Not logged >>>[%s]<<<"
+I18N_MESSAGES["user.create.menu.after_copy_key"]="After copying SSH key and successful connection, you can disable password authentication"
+
+# Permissions messages
+I18N_MESSAGES["permissions.menu.item_create"]="Create ${UTIL_NAME^^} access rules"
+I18N_MESSAGES["permissions.menu.item_remove"]="Remove ${UTIL_NAME^^} access rules"
+I18N_MESSAGES["permissions.info.create_rules"]="File with rules will be created in directory %s"
+I18N_MESSAGES["permissions.guard.test_access"]="Test server access in new terminal window"
+
+# Permissions check
+I18N_MESSAGES["permissions.check.info.check_params"]="Check: PubkeyAuthentication|PasswordAuthentication|PermitRootLogin"
+
+# Permissions warnings
+I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Authenticate via SSH key as a regular user"
+I18N_MESSAGES["permissions.warn.connect_ssh_key_not_root"]="Connect via SSH key as a user other than root"
+I18N_MESSAGES["permissions.attention.password_connection"]="Password connection detected"
+I18N_MESSAGES["permissions.warn.sudo_password_required"]="You will need to enter password every time for sudo"
+I18N_MESSAGES["permissions.warn.sudoers_file_instruction"]="To stop password prompts, create a rule file [%s] with line [%s ALL=(ALL) NOPASSWD:ALL] and set file permissions [chmod 0440] after which password will not be required in session, or create user via menu item - everything is configured automatically there"
+I18N_MESSAGES["permissions.warn.session_timeout_limitations"]="Session longer than 72 hours [cannot determine connection type - log limitations]"
+I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Reconnect in new terminal window [%s]"
+I18N_MESSAGES["permissions.warn.cannot_determine_connection"]="Failed to determine connection type"
+
+# Permissions confirm
+I18N_MESSAGES["permissions.confirm.reset_rules"]="Execute reset of %s access rules?"
+
+# Permissions info
+I18N_MESSAGES["permissions.info.only_reset_available"]="In this mode only reset is possible"
+
+# Common unified messages (reusable across modules)
+I18N_MESSAGES["common.info.rules_found"]="%s access rules found:"
+I18N_MESSAGES["common.info.no_rules"]="No %s access rules"
+I18N_MESSAGES["common.info.external_rules_found"]="External access rules found"
+I18N_MESSAGES["common.info.no_external_rules"]="No external access rules"
+I18N_MESSAGES["common.file.created"]="File created: %s"
+I18N_MESSAGES["common.error.create_file"]="Error creating file: %s"
+I18N_MESSAGES["common.info.users_in_system"]="Users in system:"
+I18N_MESSAGES["common.error.check_users"]="Error checking user composition"

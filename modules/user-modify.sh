@@ -141,7 +141,7 @@ user::dispatch::logic() {
         0) user::orchestrator::need_add_bsssuser ;;
         1) user::orchestrator::can_add_bsssuser ;;
         2) user::log::no_new_user_needed ;;
-        3) log_error "Ошибка проверки состава пользователей" ;;
+        3) log_error "$(_ "common.error.check_users")" ;;
     esac
 }
 

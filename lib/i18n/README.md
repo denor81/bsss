@@ -10,27 +10,21 @@ BSSS uses a simple but effective i18n system based on Bash 4+ associative arrays
 
 ```
 lib/i18n/
-├── .tests/                      # Test scripts directory
-│   ├── run.sh                   # Run all i18n tests
-│   ├── test_missing_translations.sh  # Unknown keys checker
-│   ├── test_translations.sh     # Translation integrity checker
-│   ├── test_unused_translations.sh   # Unused keys checker
-│   └── helpers/
-│       └── test_helpers.sh      # Common test helpers
-├── critical/                    # Critical translations (loaded early)
-│   └── common.sh               # no_translate special key
-├── loader.sh                    # Language detection and loader. Core translation function _()
-├── language_installer.sh        # Language selection installer
-├── ru/                          # Russian translations
-│   ├── common.sh
-│   ├── ssh.sh
-│   ├── system.sh
-│   └── ufw.sh
-└── en/                          # English translations
-    ├── common.sh
-    ├── ssh.sh
-    ├── system.sh
-    └── ufw.sh
+ ├── .tests/                      # Test scripts directory
+ │   ├── run.sh                   # Run all i18n tests
+ │   ├── test_missing_translations.sh  # Unknown keys checker
+ │   ├── test_translations.sh     # Translation integrity checker
+ │   ├── test_unused_translations.sh   # Unused keys checker
+ │   └── helpers/
+ │       └── test_helpers.sh      # Common test helpers
+ ├── critical/                    # Critical translations (loaded early)
+ │   └── common.sh               # no_translate special key
+ ├── loader.sh                    # Language detection and loader. Core translation function _()
+ ├── language_installer.sh        # Language selection installer
+ ├── ru/                          # Russian translations
+ │   └── common.sh               # All Russian translations in single file
+ └── en/                          # English translations
+     └── common.sh               # All English translations in single file
 ```
 
 ### Core Translation Function
@@ -135,20 +129,20 @@ Format: `module.submodule.action.message_type`
 
 ### Step 1: Add Translation Key
 
-Add the key to `lib/i18n/ru/domain.sh` (Russian):
+Add the key to `lib/i18n/ru/common.sh` (Russian):
 
 ```bash
-# lib/i18n/ru/ssh.sh
+# lib/i18n/ru/common.sh
 I18N_MESSAGES["common.menu_header"]="Доступные действия:"
 I18N_MESSAGES["ssh.success_port_up"]="SSH порт %s успешно поднят"
 ```
 
 ### Step 2: Add English Translation
 
-Add the same key with English translation to `lib/i18n/en/domain.sh`:
+Add the same key with English translation to `lib/i18n/en/common.sh`:
 
 ```bash
-# lib/i18n/en/ssh.sh
+# lib/i18n/en/common.sh
 I18N_MESSAGES["common.menu_header"]="Available actions:"
 I18N_MESSAGES["ssh.success_port_up"]="SSH port %s successfully raised"
 ```
@@ -260,14 +254,14 @@ To add a new language (e.g., German):
    mkdir -p lib/i18n/de
    ```
 
-2. Copy all translation files from `ru/`:
+2. Copy translation file from `ru/`:
    ```bash
-   cp lib/i18n/ru/*.sh lib/i18n/de/
+   cp lib/i18n/ru/common.sh lib/i18n/de/common.sh
    ```
 
 3. Translate all values:
    ```bash
-   # Edit lib/i18n/de/common.sh, ssh.sh, system.sh, ufw.sh
+   # Edit lib/i18n/de/common.sh
    ```
 
 4. Update `loader.sh` to recognize new language:
@@ -316,14 +310,24 @@ To add a new language (e.g., German):
 
 ### Available Translation Files
 
-- `lib/i18n/ru/common.sh` - Common messages (Russian)
-- `lib/i18n/ru/ssh.sh` - SSH module (Russian)
-- `lib/i18n/ru/ufw.sh` - UFW module (Russian)
-- `lib/i18n/ru/system.sh` - System messages (Russian)
-- `lib/i18n/en/common.sh` - Common messages (English)
-- `lib/i18n/en/ssh.sh` - SSH module (English)
-- `lib/i18n/en/ufw.sh` - UFW module (English)
-- `lib/i18n/en/system.sh` - System messages (English)
+- `lib/i18n/ru/common.sh` - All Russian translations (common, SSH, UFW, system, permissions, user modules)
+- `lib/i18n/en/common.sh` - All English translations (common, SSH, UFW, system, permissions, user modules)
+
+### Translation File Organization
+
+All translations for each language are consolidated in a single `common.sh` file. Keys are organized by domain prefix:
+
+- `common.*` - Shared/common messages
+- `ssh.*` - SSH-related messages
+- `ufw.*` - UFW/firewall messages
+- `system.*` - System-level messages
+- `permissions.*` - SSH access permissions messages
+- `user.*` - User creation messages
+- `rollback.*` - Rollback messages
+- `io.*` - Input/output messages
+- `init.*` - Initialization messages
+- `os.*` - OS check messages
+- `module.*` - Module names
 
 ### Special Keys
 

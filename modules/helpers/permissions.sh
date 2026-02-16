@@ -49,7 +49,7 @@ permissions::log::bsss_configs() {
     while IFS= read -r grep_result || break; do
 
         if (( found == 0 )); then
-            log_info "Есть правила ${UTIL_NAME^^} для доступа:"
+            log_info "$(_ "common.info.rules_found" "${UTIL_NAME^^}")"
             found=$((found + 1))
         fi
 
@@ -58,7 +58,7 @@ permissions::log::bsss_configs() {
     done < <(grep -EiHs '^\s*(PubkeyAuthentication|PasswordAuthentication|PermitRootLogin)\b' "${SSH_CONFIGD_DIR}/"$BSSS_PERMISSIONS_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
-        log_info "Нет правил ${UTIL_NAME^^} для доступа"
+        log_info "$(_ "common.info.no_rules" "${UTIL_NAME^^}")"
     fi
 }
 
@@ -75,7 +75,7 @@ permissions::log::other_configs() {
     while IFS= read -r grep_result || break; do
 
         if (( found == 0 )); then
-            log_info "Найдены сторонние правила для доступа"
+            log_info "$(_ "common.info.external_rules_found")"
             found=$((found + 1))
         fi
 
@@ -84,7 +84,7 @@ permissions::log::other_configs() {
     done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR}/"$BSSS_PERMISSIONS_CONFIG_FILE_MASK '^\s*(PubkeyAuthentication|PasswordAuthentication|PermitRootLogin)\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
 
     if (( found == 0 )); then
-        log_info "Нет стоонних правил для доступа"
+        log_info "$(_ "common.info.no_external_rules")"
     fi
 }
 
@@ -95,7 +95,7 @@ permissions::log::other_configs() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 permissions::log::guard_instructions() {
-    log_attention "$(_ "permissions.guard.dont_close")"
+    log_attention "$(_ "common.warning.dont_close_terminal")"
     log_attention "$(_ "permissions.guard.test_access")"
 }
 
@@ -127,10 +127,10 @@ PasswordAuthentication no
 PubkeyAuthentication yes
 EOF
     then
-        log_info "Файл создан [$path]"
+        log_info "$(_ "common.file.created" "$path")"
         printf '%s\n' "$path"
     else
-        log_error "Ошибка при создании файла с правами доступа [$path])"
+        log_error "$(_ "common.error.create_file" "$path")"
         return 1
     fi
 }
