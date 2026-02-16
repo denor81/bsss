@@ -51,12 +51,12 @@ ssh::port::generate_free_random_port() {
 ssh::rule::reset_and_pass() {
     local port=""
 
-    # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
+    # || true: Гасим код 1 если [[ ! -t 0 ]] возвращает false (stdin не подключен)
     [[ ! -t 0 ]] && read -r -d '' port || true
-    
+
     ssh::rule::delete_all_bsss
 
-    # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
+    # || true: Гасим код 1 если [[ -n "$port" ]] возвращает false (port пустой)
     [[ -n "$port" ]] && printf '%s\0' "$port" || true
 }
 
@@ -124,7 +124,7 @@ ssh::port::install_new() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ssh::rule::delete_all_bsss() {
-    # || true нужен что бы гасить код 1 при отсутствии файлов
+    # || true: Ошибка допустима если конфигурационных файлов нет
     sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::file::delete || true
 }
 
@@ -160,6 +160,7 @@ ssh::log::bsss_configs() {
 
         log_info_simple_tab "$(_ "no_translate" "$grep_result")"
 
+    # || true: grep возвращает код 1 если ничего не найдено - это нормальная ситуация
     done < <(grep -EiHs '^\s*port\b' "${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
@@ -186,6 +187,7 @@ ssh::log::other_configs() {
 
         log_info_simple_tab "$(_ "no_translate" "$grep_result")"
 
+    # || true: grep возвращает код 1 если ничего не найдено - это нормальная ситуация
     done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK '^\s*port\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
 
     if (( found == 0 )); then

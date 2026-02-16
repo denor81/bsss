@@ -25,7 +25,9 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 # @stdout:      нет
 # @exit_code:   0 - откат выполнен, процесс заблокирован
 permissions::orchestrator::trigger_immediate_rollback() {
+    # || true: WATCHDOG_PID может уже не существовать или завершиться во время kill/wait
     kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
+    # || true: Процесс может уже завершиться к моменту вызова wait
     wait "$WATCHDOG_PID" 2>/dev/null || true
     while true; do sleep 1; done
 }

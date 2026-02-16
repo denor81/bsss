@@ -114,6 +114,7 @@ sys::module::check_duplicate_order() {
     local duplicates
     local has_dup=0
 
+    # || true: Ошибка допустима если grep/awk/sort не нашел дубликатов (пустой вывод)
     duplicates=$(grep -EiHs '^# MODULE_ORDER:' "${PROJECT_ROOT}/$MODULES_DIR"/*.sh \
     | gawk -F': ' '{print $2}' | sort | uniq -d) || true
 
@@ -219,7 +220,9 @@ rollback::orchestrator::watchdog_start() {
 rollback::orchestrator::watchdog_stop() {
     # Посылаем сигнал успешного завершения (USR1)
     log_info "$(_ "common.helpers.rollback.stop_signal" "$WATCHDOG_PID")"
+    # || true: WATCHDOG_PID может уже не существовать
     kill -USR1 "$WATCHDOG_PID" 2>/dev/null || true
+    # || true: Процесс может уже завершиться к моменту вызова wait
     wait "$WATCHDOG_PID" 2>/dev/null || true
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
 }
@@ -352,12 +355,12 @@ sys::service::restart() {
 ufw::rule::reset_and_pass() {
     local port=""
 
-    # || true нужен что бы гасить код 1 при false кода [[ ! -t 0 ]]
+    # || true: Гасим код 1 если [[ ! -t 0 ]] возвращает false (stdin не подключен)
     [[ ! -t 0 ]] && read -r -d '' port || true
 
     ufw::rule::delete_all_bsss
 
-    # || true нужен что бы гасить код 1 при false кода [[ -n "$port" ]]
+    # || true: Гасим код 1 если [[ -n "$port" ]] возвращает false (port пустой)
     [[ -n "$port" ]] && printf '%s\0' "$port" || true
 }
 

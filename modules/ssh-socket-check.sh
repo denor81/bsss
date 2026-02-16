@@ -30,6 +30,7 @@ check_unit() {
     # или если система уже была переведена в service mode
     if sys::ssh::unit_exists "ssh.socket"; then
         local socket_status
+        # || true: is-enabled возвращает код 1 если юнит не включен - это нормально
         socket_status=$(systemctl is-enabled ssh.socket 2>/dev/null || true)
 
         case "$socket_status" in

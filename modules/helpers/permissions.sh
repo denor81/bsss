@@ -55,6 +55,7 @@ permissions::log::bsss_configs() {
 
         log_info_simple_tab "$grep_result"
 
+    # || true: grep возвращает код 1 если ничего не найдено - это нормальная ситуация
     done < <(grep -EiHs '^\s*(PubkeyAuthentication|PasswordAuthentication|PermitRootLogin)\b' "${SSH_CONFIGD_DIR}/"$BSSS_PERMISSIONS_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
@@ -81,6 +82,7 @@ permissions::log::other_configs() {
 
         log_info_simple_tab "$grep_result"
 
+    # || true: grep возвращает код 1 если ничего не найдено - это нормальная ситуация
     done < <(grep -EiHs --exclude="${SSH_CONFIGD_DIR}/"$BSSS_PERMISSIONS_CONFIG_FILE_MASK '^\s*(PubkeyAuthentication|PasswordAuthentication|PermitRootLogin)\b' "${SSH_CONFIGD_DIR}/"$SSH_CONFIG_FILE_MASK "$SSH_CONFIG_FILE" || true)
 
     if (( found == 0 )); then
@@ -142,5 +144,6 @@ EOF
 # @stdout:      нет
 # @exit_code:   0 - успешно
 permissions::rules::restore() {
+    # || true: Ошибка допустима если файлов для удаления нет
     sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" | sys::file::delete || true
 }

@@ -65,6 +65,7 @@ log::to_journal() {
 
     if (( LOG_JOURNAL_ENABLED )); then
         priority="${JOURNAL_MAP[$log_type]:-info}"
+        # || true: Logger может не справиться с логированием в критических ситуациях (например, при закрытых дескрипторах)
         logger --id -t "$UTIL_NAME" -p "user.$priority" "[$CURRENT_MODULE_NAME] $msg" || true
     fi
 }
@@ -76,6 +77,7 @@ log::to_journal() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_success() {
+    # || true: stderr может быть закрыт или перенаправлен (например, при прерывании установки)
     echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2 || true
     log::to_journal "$1" "SUCCESS"
 }
@@ -87,6 +89,7 @@ log_success() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_error() {
+    # || true: stderr может быть закрыт или перенаправлен (например, при прерывании установки)
     echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2 || true
     log::to_journal "$1" "ERROR"
 }
@@ -98,6 +101,7 @@ log_error() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info() {
+    # || true: stderr может быть закрыт или перенаправлен (например, при прерывании установки)
     echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2 || true
     log::to_journal "$1" "INFO"
 }

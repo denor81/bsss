@@ -42,6 +42,7 @@ log::to_journal() {
 
     if (( LOG_JOURNAL_ENABLED )); then
         priority="${JOURNAL_MAP[$log_type]:-info}"
+        # || true: Logger может не справиться с логированием в критических ситуациях (например, при закрытых дескрипторах)
         logger --id -t "$UTIL_NAME" -p "user.$priority" "[$CURRENT_MODULE_NAME] $msg" || true
     fi
 }
@@ -56,6 +57,7 @@ new_line() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo >&2 || true
     fi
 }
@@ -67,7 +69,9 @@ new_line() {
 # @stdout:      нет
 # @exit_code:   0 - всегда (ошибки подавлены)
 log_formatted_msg() {
+    # || true: Запись в лог-файл может не сработать (нет прав, диск переполнен, дескриптор закрыт)
     { echo "$(date '+%H:%M:%S') $1" >> "$CURRENT_LOG_SYMLINK"; } 2>/dev/null || true
+}
 }
 
 # @type:        Sink
@@ -83,7 +87,9 @@ log_success() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -98,11 +104,13 @@ log_success() {
 log_error() {
     local msg="$1"
     local type="ERROR"
-    
+
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -117,11 +125,13 @@ log_error() {
 log_info() {
     local msg="$1"
     local type="INFO"
-    
+
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -140,7 +150,9 @@ log_info_no_log() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     fi
 }
 
@@ -183,11 +195,13 @@ log_answer() {
 log_debug() {
     local msg="$1"
     local type="DEBUG"
-    
+
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -208,7 +222,9 @@ log_bold_info() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -223,11 +239,13 @@ log_bold_info() {
 log_warn() {
     local msg="$1"
     local type="WARN"
-    
+
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -248,7 +266,9 @@ log_attention() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -269,7 +289,9 @@ log_actual_info() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -284,11 +306,13 @@ log_actual_info() {
 log_info_simple_tab() {
     local msg="$1"
     local type="INFO_TAB"
-    
+
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -308,7 +332,9 @@ log_start() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$module_name] PID: $pid"
     log::to_journal "PID: $pid" "$type"
@@ -328,7 +354,9 @@ log_stop() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2 || true
+    fi
     fi
     log_formatted_msg "[$type] [$module_name] PID: $pid"
     log::to_journal "PID: $pid" "$type"
@@ -344,6 +372,8 @@ log::draw_border() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
         printf '%.0s#' {1..80} >&2; echo >&2
     else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         printf '%.0s#' {1..80} >&2 || true; echo >&2 || true
+    fi
     fi
 }
