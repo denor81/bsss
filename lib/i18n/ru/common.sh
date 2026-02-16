@@ -79,6 +79,7 @@ I18N_MESSAGES["module.permissions.check.name"]="Проверка прав дос
 I18N_MESSAGES["module.permissions.modify.name"]="Настройка прав доступа SSH"
 I18N_MESSAGES["module.ssh.name"]="Настройка SSH порта"
 I18N_MESSAGES["module.ufw.name"]="Настройка брандмауэра UFW"
+I18N_MESSAGES["module.full_rollback.name"]="Полный откат всех настроек"
 
 # IO ask_value
 I18N_MESSAGES["io.ask_value.select_module"]="Выберите модуль"

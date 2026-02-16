@@ -79,6 +79,7 @@ I18N_MESSAGES["module.permissions.check.name"]="Check SSH access rights"
 I18N_MESSAGES["module.permissions.modify.name"]="Configure SSH access rights"
 I18N_MESSAGES["module.ssh.name"]="SSH port configuration"
 I18N_MESSAGES["module.ufw.name"]="UFW firewall configuration"
+I18N_MESSAGES["module.full_rollback.name"]="Full rollback of all settings"
 
 # IO ask_value
 I18N_MESSAGES["io.ask_value.select_module"]="Select module"
