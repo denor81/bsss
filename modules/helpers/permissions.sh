@@ -147,3 +147,35 @@ permissions::rules::restore() {
     # || true: Ошибка допустима если файлов для удаления нет
     sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" | sys::file::delete || true
 }
+
+# @type:        Orchestrator
+# @description: Проверяет текущего пользователя
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - пользователь авторизован не как root
+#               1 - пользователь авторизован как root
+permissions::check::current_user() {
+    local root_id auth_id
+    root_id=$(id -u root)
+    auth_id=$(id -u "$(logname)")
+
+    permissions::orchestrator::log_statuses
+
+    if (( root_id == auth_id )); then
+        log_warn "$(_ "permissions.warn.auth_by_ssh_key_user")"
+        log_warn "$(_ "permissions.warn.connect_ssh_key_not_root")"
+        return 1
+    fi
+}
+
+# @type:        Orchestrator
+# @description: Отображает статусы permissions: BSSS правила, сторонние правила
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - Всегда успешно
+permissions::orchestrator::log_statuses() {
+    permissions::log::bsss_configs
+    permissions::log::other_configs
+}
