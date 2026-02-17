@@ -121,14 +121,21 @@ rollback::orchestrator::ssh() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::ufw() {
+    local errors=()
     log_warn "$(_ "rollback.ufw_executing")"
 
-    ufw::status::force_disable
-    ufw::ping::restore
+    ufw::status::force_disable  || errors+=("ufw::status::force_disable")
+    ufw::ping::restore          || errors+=("ufw::ping::restore")
+    
     log_actual_info
     ufw::orchestrator::log_statuses
 
-    log_success "$(_ "rollback.ufw_disabled")"
+    if (( ${#errors[@]} == 0 )); then
+        log_success "$(_ "rollback.ufw_disabled")"
+    else
+        log_warn "Ошибки при откате: ${errors[*]}"
+        return 1
+    fi
 }
 
 # @type:        Orchestrator
@@ -138,15 +145,22 @@ rollback::orchestrator::ufw() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::permissions() {
+    local errors=()
     log_warn "$(_ "rollback.permissions_executing")"
 
-    permissions::rules::restore
-    sys::service::restart
+    permissions::rules::restore  || errors+=("permissions::rules::restore")
+    sys::service::restart       || errors+=("sys::service::restart")
+    
     log_actual_info
     permissions::log::bsss_configs
     permissions::log::other_configs
 
-    log_success "$(_ "rollback.permissions_restored")"
+    if (( ${#errors[@]} == 0 )); then
+        log_success "$(_ "rollback.permissions_restored")"
+    else
+        log_warn "Ошибки при откате: ${errors[*]}"
+        return 1
+    fi
 }
 
 # @type:        Orchestrator
