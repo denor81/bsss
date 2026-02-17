@@ -24,14 +24,27 @@ trap common::exit::actions EXIT
 # @stdout:      нет
 # @exit_code:   0 - все откаты выполнены (даже если с ошибками)
 full_rollback::orchestrator::execute_all() {
-    permissions::rules::restore || true
-    ssh::rule::delete_all_bsss || true
-    ufw::rule::delete_all_bsss || true
-    ufw::status::force_disable || true
-    ufw::ping::restore || true
-    sys::service::restart || true
-    log_success "$(_ "rollback.system_restored")"
+    local errors=()
+
+    # Выполняем команды. Если команда возвращает не 0, добавляем имя в массив.
+    permissions::rules::restore || errors+=("permissions::rules::restore")
+    ssh::rule::delete_all_bsss  || errors+=("ssh::rule::delete_all_bsss")
+    ufw::rule::delete_all_bsss  || errors+=("ufw::rule::delete_all_bsss")
+    ufw::status::force_disable  || errors+=("ufw::status::force_disable")
+    ufw::ping::restore          || errors+=("ufw::ping::restore")
+    sys::service::restart       || errors+=("sys::service::restart")
+
+    # Проверка результатов
+    if (( ${#errors[@]} == 0 )); then
+        log_success "$(_ "rollback.system_restored")"
+        return 3
+    else
+        # Формируем сообщение об ошибках (через запятую)
+        log_warn "Ошибки при откате: ${errors[*]}"
+        return 1
+    fi
 }
+
 
 full_rollback::orchestrator::run_module() {
     full_rollback::orchestrator::execute_all

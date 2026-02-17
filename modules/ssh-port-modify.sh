@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Изменяет SSH порт
 
+#
+# return 3 exit 3 возвращается при получении сигнала USR1 (common::rollback::stop_script_by_rollback_timer())
+#
+
 set -Eeuo pipefail
 
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
@@ -89,11 +93,10 @@ ssh::install::port() {
 
     sys::service::restart
     log_actual_info
-    ssh::orchestrator::log_statuses
-
     if ! ssh::port::wait_for_up "$port"; then
         ssh::orchestrator::trigger_immediate_rollback
     fi
+    ssh::orchestrator::log_statuses
 
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"

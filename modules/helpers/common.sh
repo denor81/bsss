@@ -360,10 +360,9 @@ ufw::status::is_active() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ufw::status::force_disable() {
-    if ufw::status::is_active && ufw --force disable >/dev/null 2>&1; then
+    if ufw::status::is_active; then
+        ufw --force disable >/dev/null 2>&1
         log_info "$(_ "common.helpers.ufw.disabled")"
-    else
-        log_info "$(_ "common.helpers.ufw.already_disabled")"
     fi
 }
 

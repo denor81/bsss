@@ -93,19 +93,25 @@ rollback::orchestrator::immediate_usr2() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::ssh() {
+    local errors=()
     log_warn "$(_ "rollback.full_dismantle")"
 
-    ssh::rule::delete_all_bsss
-    ufw::rule::delete_all_bsss
-    ufw::status::force_disable
-    ufw::ping::restore
-
-    sys::service::restart
+    ssh::rule::delete_all_bsss  || errors+=("ssh::rule::delete_all_bsss")
+    ufw::rule::delete_all_bsss  || errors+=("ufw::rule::delete_all_bsss")
+    ufw::status::force_disable  || errors+=("ufw::status::force_disable")
+    ufw::ping::restore          || errors+=("ufw::ping::restore")
+    sys::service::restart       || errors+=("sys::service::restart")
+    
     log_actual_info
     ssh::orchestrator::log_statuses
     ufw::orchestrator::log_statuses
 
-    log_success "$(_ "rollback.system_restored")"
+    if (( ${#errors[@]} == 0 )); then
+        log_success "$(_ "rollback.system_restored")"
+    else
+        log_warn "Ошибки при откате: ${errors[*]}"
+        return 1
+    fi
 }
 
 # @type:        Orchestrator
