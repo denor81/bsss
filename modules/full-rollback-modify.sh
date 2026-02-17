@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 # Полный откат всех настроек BSSS
-# MODULE_ORDER: 200
-# MODULE_TYPE: modify
-# MODULE_NAME: module.full_rollback.name
 
 set -Eeuo pipefail
 

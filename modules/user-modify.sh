@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 # Создает пользователя BSSS если существует только root
-# MODULE_ORDER: 110
-# MODULE_TYPE: modify
-# MODULE_NAME: module.user.create.name
 
 set -Eeuo pipefail
 

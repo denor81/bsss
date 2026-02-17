@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 # Изменяет состояние UFW
-# MODULE_ORDER: 100
-# MODULE_TYPE: modify
-# MODULE_NAME: module.ufw.name
 
 set -Eeuo pipefail
 

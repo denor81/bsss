@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 # Установлен ufw или нет
-# MODULE_ORDER: 90
-# MODULE_TYPE: check
 
 set -Eeuo pipefail
 

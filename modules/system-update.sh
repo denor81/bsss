@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 # Обновляет системные пакеты
-# MODULE_ORDER: 40
-# MODULE_TYPE: modify
-# MODULE_NAME: module.system.update.name
 
 set -Eeuo pipefail
 

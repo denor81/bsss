@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 # Создает файл конфигурации SSH для отключения логина по паролю и root
-# MODULE_ORDER: 120
-# MODULE_TYPE: modify
-# MODULE_NAME: module.permissions.modify.name
 
 set -Eeuo pipefail
 

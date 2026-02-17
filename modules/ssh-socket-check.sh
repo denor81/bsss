@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 # Проверяет режим запуска SSH (socket vs service)
-# MODULE_ORDER: 50
-# MODULE_TYPE: check
 
 set -Eeuo pipefail
 

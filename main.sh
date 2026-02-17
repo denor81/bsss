@@ -99,135 +99,46 @@ log_dir_init() {
 }
 
 # @type:        Orchestrator
-# @description: Поиск и запуск модулей с типом 'check'
-#               Используется дескриптор 3 что бы не забивать стандартные 1 и 2
+# @description: Запуск модулей проверки в фиксированном порядке
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - модули найдены и все успешно выполнены
-#               1 - в случае отсутствия модулей
-#               2 - в случае ошибки одного из модулей
-#               5 - отсутствуют обязательные метатеги MODULE_ORDER
+# @exit_code:   0 - все модули успешно выполнены
+#               $? - код ошибки от модуля
 runner::module::run_check() {
     local err=0
-    local founded_modules=0
 
     log::draw_border
-    while read -r -d '' m_path <&3; do
-        founded_modules=$((founded_modules + 1))
-        bash "$m_path" || {
-            main::process::exit_code $? "$(basename $m_path)"
-            err=1
-        }
-    done 3< <(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
-    | sys::module::get_paths_w_type \
-    | sys::module::get_by_type "$MODULE_TYPE_CHECK" \
-    | sys::module::sort_by_order)
-
-    (( founded_modules == 0 )) && { log_error "$(_ "common.error_no_modules_found")"; log::draw_border; return 1; }
+    bash "${PROJECT_ROOT}/${MODULES_DIR}/os-check.sh" || {
+        main::process::exit_code $? "os-check.sh"
+        err=1
+    }
+    bash "${PROJECT_ROOT}/${MODULES_DIR}/user-check.sh" || {
+        main::process::exit_code $? "user-check.sh"
+        err=1
+    }
+    bash "${PROJECT_ROOT}/${MODULES_DIR}/permissions-check.sh" || {
+        main::process::exit_code $? "permissions-check.sh"
+        err=1
+    }
+    bash "${PROJECT_ROOT}/${MODULES_DIR}/ssh-socket-check.sh" || {
+        main::process::exit_code $? "ssh-socket-check.sh"
+        err=1
+    }
+    bash "${PROJECT_ROOT}/${MODULES_DIR}/system-reload-check.sh" || {
+        main::process::exit_code $? "system-reload-check.sh"
+        err=1
+    }
+    bash "${PROJECT_ROOT}/${MODULES_DIR}/ssh-port-check.sh" || {
+        main::process::exit_code $? "ssh-port-check.sh"
+        err=1
+    }
+    bash "${PROJECT_ROOT}/${MODULES_DIR}/ufw-check.sh" || {
+        main::process::exit_code $? "ufw-check.sh"
+        err=1
+    }
     (( err == 1 )) && { log_error "$(_ "common.error_module_error")"; log::draw_border; return 1; }
     log::draw_border
-}
-
-# Примечание: Используем массив для хранения путей между отображением и выбором.
-# В чистом pipe-first стиле это невозможно без временных файлов или глобальных переменных.
-# Для интерактивных меню это технически оправданное исключение.
-# @type:        Filter
-# @description: Отображает нумерованное меню модулей для выбора
-# @params:      нет
-# @stdin:       path\0 (0..N) - пути к модулям modify
-# @stdout:      path\0 (0..1) - выбранный путь к модулю
-#               CHECK\0 - если выбрана проверка системы (00)
-#               EXIT\0 - если выбран выход (0)
-# @exit_code:   0 - успешно
-#               1 - нет доступных модулей
-runner::module::select_modify() {
-    local -a module_paths=()
-    local module_name
-
-    # Читаем все пути в массив через NUL-разделитель
-    mapfile -d '' -t module_paths
-
-    # Проверяем, есть ли модули
-    if (( ${#module_paths[@]} == 0 )); then
-        log_error "$(_ "common.error_no_modules_available")"
-        return 1
-    fi
-
-    # Отображаем меню
-    log_info "$(_ "common.menu_header")"
-    local i
-    for ((i = 0; i < ${#module_paths[@]}; i++)); do
-        module_name=$(gawk '
-            BEGIN { name="" }
-            /^# MODULE_NAME:/ {
-                sub(/^# MODULE_NAME:[[:space:]]*/, "")
-                name=$0
-                exit
-            }
-            /^[^#]/ { exit }
-            END {
-                if (name=="") name=FILENAME
-                sub(/.*\//, "", name)
-                print name
-            }
-        ' "${module_paths[$i]}")
-        log_info_simple_tab "$(_ "common.info_menu_item_format" "$((i + 1))" "$(_ "$module_name")")"
-    done
-
-    local max_id="${#module_paths[@]}"
-    local menu_exit="0"
-    local menu_check="00"
-    local menu_lang="01"
-    
-    log_info_simple_tab "0. $(_ "common.exit")"
-    log_info_simple_tab "00. $(_ "common.menu_check")"
-    log_info_simple_tab "01. $(_ "common.menu_language")"
-
-    # Запрашиваем выбор пользователя
-    local selection
-    selection=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^($menu_check|$menu_lang|[$menu_exit-$max_id])$" "$menu_exit-$max_id" "$menu_exit" | tr -d '\0') || return
-    case "$selection" in
-        "$menu_check")  printf '%s\0' "CHECK" ;; # Возвращаем маркер CHECK
-        "$menu_lang")   printf '%s\0' "LANG_CHANGE" ;; # Возвращаем маркер смены языка
-        *)              printf '%s\0' "${module_paths[$((selection - 1))]}" ;; # Возвращаем выбранный путь
-    esac
-}
-
-# @type:        Orchestrator
-# @description: Запускает выбранный модуль или действие
-# @params:      нет
-# @stdin:       path\0 или CHECK\0 или LANG_CHANGE\0 - выбор из select_modify
-# @stdout:      RELOAD_I18N - если требуется перезагрузка локализации
-# @exit_code:   0 - успешно
-#               $? - код ошибки модуля или действия
-runner::module::execute_modify() {
-    local exit_code=0
-    local selected_module
-
-    # При прерывании предыдущего пайпа - сюда ничего не придет и read упадет с ошибкой и переменная selected_module будет пустая
-    # что приведет к срабатыванию последнего элемента лога в блоке case - по этому гасим этот случай return 0
-    read -r -d '' selected_module || { [[ -z "$selected_module" ]] && return 0; }
-
-    if [[ "$selected_module" == "CHECK" ]]; then
-
-        runner::module::run_check || exit_code=$?
-
-    elif [[ "$selected_module" == "LANG_CHANGE" ]]; then
-
-        # Бросаем маркер из текущего пайпа наверх, что бы загрузить язык в главном процессе
-        i18n::installer::lang_setup && echo "RELOAD_I18N" || exit_code=$?
-
-    elif [[ -f "$selected_module" ]]; then
-
-        bash "$selected_module" || exit_code=$?
-
-    else
-
-        exit_code=1
-
-    fi
-    main::process::exit_code "$exit_code" "$(basename $selected_module)"
 }
 
 # @type:        Sink
@@ -253,24 +164,39 @@ main::process::exit_code() {
 }
 
 # @type:        Orchestrator
-# @description: Поиск и запуск модулей с типом 'modify' в циклическом меню
+# @description: Стандартное меню модулей изменения в циклическом режиме
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - модули найдены и все успешно выполнены
+# @exit_code:   0 - модули выполнены успешно
 #               $? - проброс кода ошибки от модуля
 runner::module::run_modify() {
     while true; do
-        local res=""
-        res=$(sys::file::get_paths_by_mask "${PROJECT_ROOT}/$MODULES_DIR" "$MODULES_MASK" \
-            | sys::module::get_paths_w_type \
-            | sys::module::get_by_type "$MODULE_TYPE_MODIFY" \
-            | sys::module::sort_by_order \
-            | runner::module::select_modify \
-            | runner::module::execute_modify) \
-            || { common::pipefail::fallback "${PIPESTATUS[@]}"; }
-            
-        [[ "$res" == "RELOAD_I18N" ]] && i18n::load # Загружаем язык в главном процессе
+        log_info "$(_ "common.menu_header")"
+        log_info_simple_tab "1. $(_ "module.system.update.name")"
+        log_info_simple_tab "2. $(_ "module.ssh.name")"
+        log_info_simple_tab "3. $(_ "module.ufw.name")"
+        log_info_simple_tab "4. $(_ "module.user.create.name")"
+        log_info_simple_tab "5. $(_ "module.permissions.modify.name")"
+        log_info_simple_tab "6. $(_ "module.full_rollback.name")"
+        log_info_simple_tab "0. $(_ "common.exit")"
+        log_info_simple_tab "00. $(_ "common.menu_check")"
+        log_info_simple_tab "01. $(_ "common.menu_language")"
+
+        local menu_id
+        menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^([0-6]|00|01)$" "0-6, 00, 01" "0" | tr -d '\0')
+
+        case "$menu_id" in
+            0) return 0 ;;
+            00) runner::module::run_check ;;
+            01) i18n::installer::lang_setup && i18n::load ;;
+            1) bash "${PROJECT_ROOT}/${MODULES_DIR}/system-update.sh" || main::process::exit_code $? "system-update.sh" ;;
+            2) bash "${PROJECT_ROOT}/${MODULES_DIR}/ssh-port-modify.sh" || main::process::exit_code $? "ssh-port-modify.sh" ;;
+            3) bash "${PROJECT_ROOT}/${MODULES_DIR}/ufw-modify.sh" || main::process::exit_code $? "ufw-modify.sh" ;;
+            4) bash "${PROJECT_ROOT}/${MODULES_DIR}/user-modify.sh" || main::process::exit_code $? "user-modify.sh" ;;
+            5) bash "${PROJECT_ROOT}/${MODULES_DIR}/permissions-modify.sh" || main::process::exit_code $? "permissions-modify.sh" ;;
+            6) bash "${PROJECT_ROOT}/${MODULES_DIR}/full-rollback-modify.sh" || main::process::exit_code $? "full-rollback-modify.sh" ;;
+        esac
     done
 }
 
@@ -284,8 +210,6 @@ runner::module::run_modify() {
 #               $? - код ошибки от модуля
 run() {
     sys::gawk::check_dependency
-    sys::module::validate_order
-    sys::module::check_duplicate_order
     sys::log::rotate_old_files
 
     runner::module::run_check

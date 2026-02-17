@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 # Проверяет операционную систему
-# MODULE_ORDER: 10
-# MODULE_TYPE: check
 
 set -Eeuo pipefail
 

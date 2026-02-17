@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 # Проверяет SSH порт
-# MODULE_ORDER: 70
-# MODULE_TYPE: check
 
 set -Eeuo pipefail
 
