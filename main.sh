@@ -173,29 +173,31 @@ main::process::exit_code() {
 runner::module::run_modify() {
     while true; do
         log_info "$(_ "common.menu_header")"
-        log_info_simple_tab "1. $(_ "module.system.update.name")"
-        log_info_simple_tab "2. $(_ "module.ssh.name")"
-        log_info_simple_tab "3. $(_ "module.ufw.name")"
-        log_info_simple_tab "4. $(_ "module.user.create.name")"
-        log_info_simple_tab "5. $(_ "module.permissions.modify.name")"
-        log_info_simple_tab "6. $(_ "module.full_rollback.name")"
+        log_info_simple_tab "1. $(_ "module.auto.setup.name")"
+        log_info_simple_tab "2. $(_ "module.system.update.name")"
+        log_info_simple_tab "3. $(_ "module.ssh.name")"
+        log_info_simple_tab "4. $(_ "module.ufw.name")"
+        log_info_simple_tab "5. $(_ "module.user.create.name")"
+        log_info_simple_tab "6. $(_ "module.permissions.modify.name")"
+        log_info_simple_tab "7. $(_ "module.full_rollback.name")"
         log_info_simple_tab "0. $(_ "common.exit")"
         log_info_simple_tab "00. $(_ "common.menu_check")"
         log_info_simple_tab "01. $(_ "common.menu_language")"
 
         local menu_id
-        menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "([0-6]|0[0-1])" "0-6" "0" | tr -d '\0')
+        menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "([0-7]|0[0-1])" "0-7" "0" | tr -d '\0')
 
         case "$menu_id" in
             0) return 0 ;;
             00) runner::module::run_check ;;
             01) i18n::installer::lang_setup && i18n::load ;;
-            1) bash "${PROJECT_ROOT}/${MODULES_DIR}/system-update.sh" || main::process::exit_code $? "system-update.sh" ;;
-            2) bash "${PROJECT_ROOT}/${MODULES_DIR}/ssh-port-modify.sh" || main::process::exit_code $? "ssh-port-modify.sh" ;;
-            3) bash "${PROJECT_ROOT}/${MODULES_DIR}/ufw-modify.sh" || main::process::exit_code $? "ufw-modify.sh" ;;
-            4) bash "${PROJECT_ROOT}/${MODULES_DIR}/user-modify.sh" || main::process::exit_code $? "user-modify.sh" ;;
-            5) bash "${PROJECT_ROOT}/${MODULES_DIR}/permissions-modify.sh" || main::process::exit_code $? "permissions-modify.sh" ;;
-            6) bash "${PROJECT_ROOT}/${MODULES_DIR}/full-rollback-modify.sh" || main::process::exit_code $? "full-rollback-modify.sh" ;;
+            1) bash "${PROJECT_ROOT}/${MODULES_DIR}/auto-setup.sh" || main::process::exit_code $? "auto-setup.sh" ;;
+            2) bash "${PROJECT_ROOT}/${MODULES_DIR}/system-update.sh" || main::process::exit_code $? "system-update.sh" ;;
+            3) bash "${PROJECT_ROOT}/${MODULES_DIR}/ssh-port-modify.sh" || main::process::exit_code $? "ssh-port-modify.sh" ;;
+            4) bash "${PROJECT_ROOT}/${MODULES_DIR}/ufw-modify.sh" || main::process::exit_code $? "ufw-modify.sh" ;;
+            5) bash "${PROJECT_ROOT}/${MODULES_DIR}/user-modify.sh" || main::process::exit_code $? "user-modify.sh" ;;
+            6) bash "${PROJECT_ROOT}/${MODULES_DIR}/permissions-modify.sh" || main::process::exit_code $? "permissions-modify.sh" ;;
+            7) bash "${PROJECT_ROOT}/${MODULES_DIR}/full-rollback-modify.sh" || main::process::exit_code $? "full-rollback-modify.sh" ;;
         esac
     done
 }
