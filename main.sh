@@ -184,7 +184,7 @@ runner::module::run_modify() {
         log_info_simple_tab "01. $(_ "common.menu_language")"
 
         local menu_id
-        menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^([0-6]|00|01)$" "0-6, 00, 01" "0" | tr -d '\0')
+        menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "([0-6]|0[0-1])" "0-6" "0" | tr -d '\0')
 
         case "$menu_id" in
             0) return 0 ;;

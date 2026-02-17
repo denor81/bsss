@@ -106,8 +106,6 @@ ssh::install::port() {
     fi
 }
 
-# === MENU FUNCTIONS ===
-
 # @type:        Orchestrator
 # @description: Отображает меню и диспетчеризирует выбор пользователя
 #               Три шага: отображение → выбор → диспетчеризация
@@ -146,10 +144,6 @@ ssh::main::menu::dispatcher() {
 #               $? - код ошибки дочернего процесса
 ssh::reset::port() {
     ssh::rule::reset_and_pass | ufw::rule::reset_and_pass
-
-    # Считаем этот откат полным и сбрасываем все установленные правила
-    # и даже настройки ping, хотя это не совсем верно
-    # TODO
     ufw::status::force_disable # Для гарантированного доступа
     ufw::ping::is_configured && ufw::ping::restore
 
