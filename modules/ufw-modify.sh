@@ -51,7 +51,17 @@ ufw::toggle::status() {
     if ufw::status::is_active; then
         ufw::status::force_disable
     else
-        ufw::status::force_enable
+        ufw::safe::force_enable
+    fi
+}
+
+ufw::status::force_enable() {
+    if ! ufw --force enable >/dev/null 2>&1; then
+        log_info "UFW успешно активирован [ufw --force enable]"
+    else
+        rollback::orchestrator::immediate_usr2
+        log_error "$(_ "ufw.error.enable_failed")"
+        return 1
     fi
 }
 
@@ -63,22 +73,18 @@ ufw::toggle::status() {
 # @exit_code:   0 - успешно
 #               2 - отменено пользователем (подтверждение не получено)
 #               1 - ошибка активации UFW
-ufw::status::force_enable() {
+ufw::safe::force_enable() {
     make_fifo_and_start_reader
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "ufw")
     ufw::log::rollback::instructions
 
-    if ! ufw --force enable >/dev/null 2>&1; then
-        rollback::orchestrator::immediate_usr2
-        log_error "$(_ "ufw.error.enable_failed")"
-        return 1
-    fi
+    ufw::force::enable
 
-    log_info "$(_ "common.success_changes_committed")"
     log_actual_info
     ufw::orchestrator::log_statuses
 
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
+        log_info "$(_ "common.success_changes_committed")"
         rollback::orchestrator::watchdog_stop
     else
         rollback::orchestrator::immediate_usr2

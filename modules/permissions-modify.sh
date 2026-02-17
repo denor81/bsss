@@ -130,7 +130,7 @@ permissions::toggle::rules() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               1 - пользователь авторизован как root
-permissions::orchestrator::check_current_user() {
+permissions::check::current_user() {
     local root_id auth_id auth_type
     root_id=$(id -u root)
     auth_id=$(id -u "$(logname)")
@@ -142,8 +142,6 @@ permissions::orchestrator::check_current_user() {
         log_warn "$(_ "permissions.warn.connect_ssh_key_not_root")"
         return 1
     fi
-
-    permissions::orchestrator::run_module
 }
 
 # @type:        Orchestrator
@@ -160,12 +158,12 @@ permissions::orchestrator::dispatch_logic() {
     log_info "$(_ "no_translate" "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]")"
 
     case "$current_conn_type" in
-        key) permissions::orchestrator::check_current_user ;;
+        key) permissions::check::current_user && permissions::orchestrator::run_module || return ;;
         pass)
             log_attention "$(_ "permissions.attention.password_connection")"
             log_warn "$(_ "permissions.warn.sudo_password_required")"
             log_warn "$(_ "permissions.warn.sudoers_file_instruction" "$SUDOERS_D_DIR/$(logname)" "$(logname)")"
-            permissions::orchestrator::check_current_user
+            permissions::check::current_user && permissions::orchestrator::run_module || return
         ;;
         timeout)
             log_warn "$(_ "permissions.warn.session_timeout_limitations")"
