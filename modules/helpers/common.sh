@@ -458,3 +458,31 @@ ufw::orchestrator::log_statuses() {
     ufw::log::rules
     ufw::log::ping_status
 }
+
+# @type:        Orchestrator
+# @description: Выполняет полный откат всех настроек BSSS
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - все откаты выполнены (даже если с ошибками)
+full_rollback::orchestrator::execute_all() {
+    local errors=()
+
+    # Выполняем команды. Если команда возвращает не 0, добавляем имя в массив.
+    permissions::rules::restore || errors+=("permissions::rules::restore")
+    ssh::rule::delete_all_bsss  || errors+=("ssh::rule::delete_all_bsss")
+    ufw::rule::delete_all_bsss  || errors+=("ufw::rule::delete_all_bsss")
+    ufw::status::force_disable  || errors+=("ufw::status::force_disable")
+    ufw::ping::restore          || errors+=("ufw::ping::restore")
+    sys::service::restart       || errors+=("sys::service::restart")
+
+    # Проверка результатов
+    if (( ${#errors[@]} == 0 )); then
+        log_success "$(_ "rollback.system_restored")"
+        return 3
+    else
+        # Формируем сообщение об ошибках (через запятую)
+        log_warn "Ошибки при откате: ${errors[*]}"
+        return 1
+    fi
+}

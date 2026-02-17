@@ -94,7 +94,7 @@ rollback::orchestrator::immediate_usr2() {
 # @exit_code:   0 - всегда
 rollback::orchestrator::ssh() {
     local errors=()
-    log_warn "$(_ "rollback.full_dismantle")"
+    log_warn "$(_ "rollback.ssh_dismantle")"
 
     ssh::rule::delete_all_bsss  || errors+=("ssh::rule::delete_all_bsss")
     ufw::rule::delete_all_bsss  || errors+=("ufw::rule::delete_all_bsss")
@@ -122,7 +122,7 @@ rollback::orchestrator::ssh() {
 # @exit_code:   0 - всегда
 rollback::orchestrator::ufw() {
     local errors=()
-    log_warn "$(_ "rollback.ufw_executing")"
+    log_warn "$(_ "rollback.ufw_dismantle")"
 
     ufw::status::force_disable  || errors+=("ufw::status::force_disable")
     ufw::ping::restore          || errors+=("ufw::ping::restore")
@@ -146,11 +146,11 @@ rollback::orchestrator::ufw() {
 # @exit_code:   0 - всегда
 rollback::orchestrator::permissions() {
     local errors=()
-    log_warn "$(_ "rollback.permissions_executing")"
+    log_warn "$(_ "rollback.permissions_dismantle")"
 
     permissions::rules::restore  || errors+=("permissions::rules::restore")
     sys::service::restart       || errors+=("sys::service::restart")
-    
+
     log_actual_info
     permissions::log::bsss_configs
     permissions::log::other_configs
@@ -161,6 +161,19 @@ rollback::orchestrator::permissions() {
         log_warn "Ошибки при откате: ${errors[*]}"
         return 1
     fi
+}
+
+# @type:        Orchestrator
+# @description: Полный откат всех настроек BSSS
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+rollback::orchestrator::full() {
+    local errors=()
+    log_warn "$(_ "rollback.full_dismantle")"
+
+    full_rollback::orchestrator::execute_all
 }
 
 # @type:        Orchestrator
@@ -175,6 +188,7 @@ rollback::dispatcher() {
         "ssh") rollback::orchestrator::ssh ;;
         "ufw") rollback::orchestrator::ufw ;;
         "permissions") rollback::orchestrator::permissions ;;
+        "full") rollback::orchestrator::full ;;
         *) log_error "$(_ "rollback.unknown_type" "$ROLLBACK_TYPE")"; return 1 ;;
     esac
 }
@@ -202,6 +216,7 @@ rollback::orchestrator::watchdog_timer() {
         "ssh") log_bold_info "$(_ "rollback.timeout_ssh")" ;;
         "ufw") log_bold_info "$(_ "rollback.timeout_ufw")" ;;
         "permissions") log_bold_info "$(_ "rollback.timeout_permissions")" ;;
+        "full") log_bold_info "$(_ "rollback.timeout_generic")" ;;
         *) log_bold_info "$(_ "rollback.timeout_generic")" ;;
     esac
 
