@@ -153,9 +153,10 @@ main::process::exit_code() {
     local exit_code="${1:0}"
     local module_tag="${2:-}"
 
-    (( exit_code == 0 )) && { log_info "$(_ "common.info_module_successful" "$exit_code" "$module_tag")"; return 0; }
+    # (( exit_code == 0 )) && { log_info "$(_ "common.info_module_successful" "$exit_code" "$module_tag")"; return 0; }
 
     case "$exit_code" in
+        0) log_info "$(_ "common.info_module_successful" "$exit_code" "$module_tag")" ;;
         2|130) log_info "$(_ "common.info_module_user_cancelled" "$exit_code" "$module_tag")" ;;
         3) log_warn "$(_ "common.info_module_rollback" "$exit_code" "$module_tag")" ;;
         4) log_warn "$(_ "common.info_module_requires" "$exit_code" "$module_tag")" ;;
@@ -187,18 +188,22 @@ runner::module::run_modify() {
         local menu_id
         menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "([0-7]|0[0-1])" "0-7" "0" | tr -d '\0')
 
+        local rc=0
+        local tag
+        local dir="${PROJECT_ROOT}/${MODULES_DIR}"
         case "$menu_id" in
             0) return 0 ;;
             00) runner::module::run_check ;;
             01) i18n::installer::lang_setup && i18n::load ;;
-            1) bash "${PROJECT_ROOT}/${MODULES_DIR}/auto-setup.sh" || main::process::exit_code $? "auto-setup.sh" ;;
-            2) bash "${PROJECT_ROOT}/${MODULES_DIR}/system-update.sh" || main::process::exit_code $? "system-update.sh" ;;
-            3) bash "${PROJECT_ROOT}/${MODULES_DIR}/ssh-port-modify.sh" || main::process::exit_code $? "ssh-port-modify.sh" ;;
-            4) bash "${PROJECT_ROOT}/${MODULES_DIR}/ufw-modify.sh" || main::process::exit_code $? "ufw-modify.sh" ;;
-            5) bash "${PROJECT_ROOT}/${MODULES_DIR}/user-modify.sh" || main::process::exit_code $? "user-modify.sh" ;;
-            6) bash "${PROJECT_ROOT}/${MODULES_DIR}/permissions-modify.sh" || main::process::exit_code $? "permissions-modify.sh" ;;
-            7) bash "${PROJECT_ROOT}/${MODULES_DIR}/full-rollback-modify.sh" || main::process::exit_code $? "full-rollback-modify.sh" ;;
+            1) tag="auto-setup.sh"; bash "${dir}/${tag}" || rc=$? ;;
+            2) tag="system-update.sh"; bash "${dir}/${tag}" || rc=$? ;;
+            3) tag="ssh-port-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
+            4) tag="ufw-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
+            5) tag="user-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
+            6) tag="permissions-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
+            7) tag="full-rollback-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
         esac
+        main::process::exit_code "$rc" "$tag"
     done
 }
 

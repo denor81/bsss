@@ -149,7 +149,7 @@ rollback::orchestrator::permissions() {
     log_warn "$(_ "rollback.permissions_dismantle")"
 
     permissions::rules::restore  || errors+=("permissions::rules::restore")
-    sys::service::restart       || errors+=("sys::service::restart")
+    sys::service::restart        || errors+=("sys::service::restart")
 
     log_actual_info
     permissions::log::bsss_configs
@@ -173,7 +173,9 @@ rollback::orchestrator::full() {
     local errors=()
     log_warn "$(_ "rollback.full_dismantle")"
 
-    full_rollback::orchestrator::execute_all
+    # гасим код 3 потому что он нужен при использованиии функции full_rollback::orchestrator::execute_all при явном выборе полного отката через меню, а в этом файле код 3 будет отправлен автоматически
+    # гасим код 1 для живучести отката - лог с ошибками будет отображен
+    full_rollback::orchestrator::execute_all || true
 }
 
 # @type:        Orchestrator

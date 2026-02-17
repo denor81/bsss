@@ -130,7 +130,6 @@ PubkeyAuthentication yes
 EOF
     then
         log_info "$(_ "common.file.created" "$path")"
-        printf '%s\n' "$path"
     else
         log_error "$(_ "common.error.create_file" "$path")"
         return 1

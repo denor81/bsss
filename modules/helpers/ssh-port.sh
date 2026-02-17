@@ -138,7 +138,6 @@ ssh::rule::delete_all_bsss() {
 ssh::orchestrator::log_statuses() {
     ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
-    ufw::log::rules
 }
 
 # @type:        Sink
@@ -203,7 +202,6 @@ ssh::log::other_configs() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 ssh::log::guard_instructions() {
-    local port="$1"
     log_attention "$(_ "common.warning.dont_close_terminal")"
-    log_attention "$(_ "ssh.guard.test_new" "$port")"
+    log_attention "$(_ "ssh.guard.test_new" "$1")"
 }

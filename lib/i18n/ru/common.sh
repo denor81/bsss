@@ -81,6 +81,7 @@ I18N_MESSAGES["module.permissions.modify.name"]="Настройка прав д�
 I18N_MESSAGES["module.ssh.name"]="Настройка SSH порта"
 I18N_MESSAGES["module.ufw.name"]="Настройка брандмауэра UFW"
 I18N_MESSAGES["module.full_rollback.name"]="Полный откат всех настроек"
+I18N_MESSAGES["module.auto.setup.name"]="Автоматическая настройка"
 
 # IO ask_value
 I18N_MESSAGES["io.ask_value.select_module"]="Выберите модуль"
@@ -174,6 +175,7 @@ I18N_MESSAGES["ufw.success.backup_created"]="Создан бэкап: [%s]"
 I18N_MESSAGES["ufw.error.backup_failed"]="Не удалось создать бэкап %s [%s]"
 I18N_MESSAGES["ufw.success.before_rules_edited"]="Отредактирован: [%s]"
 I18N_MESSAGES["ufw.success.reloaded"]="UFW перезагружен [ufw reload]"
+I18N_MESSAGES["ufw.success.enabled"]="UFW включен"
 I18N_MESSAGES["ufw.warning.continue_without_rules"]="Невозможно продолжить: нет правил BSSS в UFW"
 I18N_MESSAGES["ufw.warning.add_ssh_first"]="Сначала добавьте SSH-порт через модуль SSH"
 I18N_MESSAGES["ufw.rollback.test_access"]="Проверьте доступ к серверу после включения UFW в новом окне терминала"

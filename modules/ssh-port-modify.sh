@@ -97,6 +97,7 @@ ssh::install::port() {
         ssh::orchestrator::trigger_immediate_rollback
     fi
     ssh::orchestrator::log_statuses
+    ufw::log::rules
 
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
@@ -150,6 +151,7 @@ ssh::reset::port() {
     sys::service::restart
     log_actual_info
     ssh::orchestrator::log_statuses
+    ufw::log::rules
 }
 
 # @type:        Orchestrator
