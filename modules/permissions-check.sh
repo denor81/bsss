@@ -18,9 +18,7 @@ source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 # @stdout:      нет
 # @exit_code:   0
 permissions::check::info() {
-    permissions::log::current_config
-    permissions::log::bsss_configs
-    permissions::log::other_configs
+    permissions::orchestrator::log_statuses
 }
 
 # @type:        Orchestrator

@@ -527,6 +527,7 @@ permissions::check::current_user() {
 # @stdout:      нет
 # @exit_code:   0 - Всегда успешно
 permissions::orchestrator::log_statuses() {
+    permissions::log::current_config
     permissions::log::bsss_configs
     permissions::log::other_configs
 }
