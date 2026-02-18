@@ -281,11 +281,8 @@ I18N_MESSAGES["permissions.guard.test_access"]="Test server access in new termin
 I18N_MESSAGES["permissions.check.info.check_params"]="Check: PubkeyAuthentication|PasswordAuthentication|PermitRootLogin"
 
 # Permissions warnings
-I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Authenticate via SSH key as a regular user"
-I18N_MESSAGES["permissions.warn.connect_ssh_key_not_root"]="Connect via SSH key as a user other than root"
-I18N_MESSAGES["permissions.attention.password_connection"]="Password connection detected"
-I18N_MESSAGES["permissions.warn.sudo_password_required"]="You will need to enter password every time for sudo"
-I18N_MESSAGES["permissions.warn.sudoers_file_instruction"]="To stop password prompts, create a rule file [%s] with line [%s ALL=(ALL) NOPASSWD:ALL] and set file permissions [chmod 0440] after which password will not be required in session, or create user via menu item - everything is configured automatically there"
+I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Connection detected as root-user. Authenticate via SSH key as a sudo-user (non root). Automatic configuration creates, among other things, rules that restrict authorization under root. The current session owner is %s."
+I18N_MESSAGES["permissions.attention.password_connection"]="Password connection detected. In automatic mode, rules are created that prohibit password authorization. Connect as a sudo user (not root) using an SSH key."
 I18N_MESSAGES["permissions.warn.session_timeout_limitations"]="Session longer than 72 hours [cannot determine connection type - log limitations]"
 I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Reconnect in new terminal window [%s]"
 I18N_MESSAGES["permissions.warn.cannot_determine_connection"]="Failed to determine connection type"

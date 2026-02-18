@@ -486,3 +486,47 @@ full_rollback::orchestrator::execute_all() {
         return 1
     fi
 }
+
+# @type:        Orchestrator
+# @description: Проверяет текущего пользователя
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - пользователь авторизован не как root
+#               1 - пользователь авторизован как root
+permissions::check::current_user() {
+    local root_id auth_id auth_name current_conn_type err=0
+    root_id=$(id -u root)
+    auth_id=$(id -u "$(logname)")
+    auth_name="$(logname)"
+    current_conn_type=$(sys::user::get_auth_method | tr -d '\0')
+    
+
+    log_info "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]"
+    permissions::orchestrator::log_statuses
+
+    if [[ "$current_conn_type" == "pass" ]]; then
+        log_attention "$(_ "permissions.attention.password_connection")"
+        err=1
+    fi
+
+    if (( root_id == auth_id )); then
+        log_attention "$(_ "permissions.warn.auth_by_ssh_key_user" "[$auth_name|id:$auth_id]")"
+        err=1
+    fi
+
+    if (( err == 1 )); then
+        return 4
+    fi
+}
+
+# @type:        Orchestrator
+# @description: Отображает статусы permissions: BSSS правила, сторонние правила
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - Всегда успешно
+permissions::orchestrator::log_statuses() {
+    permissions::log::bsss_configs
+    permissions::log::other_configs
+}

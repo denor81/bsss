@@ -58,6 +58,7 @@ new_line() {
         echo >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         echo >&2 || true
     fi
 }
@@ -87,6 +88,7 @@ log_success() {
         echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
@@ -107,6 +109,7 @@ log_error() {
         echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
@@ -127,6 +130,7 @@ log_info() {
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
@@ -147,6 +151,7 @@ log_info_no_log() {
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
 }
@@ -195,6 +200,7 @@ log_debug() {
         echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
@@ -217,6 +223,7 @@ log_bold_info() {
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
@@ -237,6 +244,7 @@ log_warn() {
         echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2 || true
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
@@ -259,6 +267,7 @@ log_attention() {
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
@@ -281,6 +290,7 @@ log_actual_info() {
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
@@ -301,6 +311,7 @@ log_info_simple_tab() {
         printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2 || true
     fi
     log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
@@ -322,6 +333,7 @@ log_start() {
         echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2 || true
     fi
     log_formatted_msg "[$type] [$module_name] PID: $pid"
@@ -343,6 +355,7 @@ log_stop() {
         echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2 || true
     fi
     log_formatted_msg "[$type] [$module_name] PID: $pid"
@@ -360,6 +373,7 @@ log::draw_border() {
         printf '%.0s#' {1..80} >&2; echo >&2
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
         printf '%.0s#' {1..80} >&2 || true; echo >&2 || true
     fi
 }

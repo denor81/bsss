@@ -18,6 +18,8 @@ trap common::int::actions INT
 trap common::exit::actions EXIT
 
 full_rollback::orchestrator::run_module() {
+    log_info "Будет выполнен полный откат всех настроек ${UTIL_NAME^^}"
+    io::confirm_action
     full_rollback::orchestrator::execute_all
 }
 

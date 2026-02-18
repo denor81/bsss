@@ -30,17 +30,6 @@ permissions::orchestrator::trigger_immediate_rollback() {
 }
 
 # @type:        Orchestrator
-# @description: Отображает статусы permissions: BSSS правила, сторонние правила
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - Всегда успешно
-permissions::orchestrator::log_statuses() {
-    permissions::log::bsss_configs
-    permissions::log::other_configs
-}
-
-# @type:        Orchestrator
 # @description: Выполняет откат правил permissions и рестарт сервиса
 # @params:      нет
 # @stdin:       нет
@@ -124,47 +113,23 @@ permissions::toggle::rules() {
 }
 
 # @type:        Orchestrator
-# @description: Проверяет текущего пользователя и запускает модуль
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               1 - пользователь авторизован как root
-permissions::check::current_user() {
-    local root_id auth_id auth_type
-    root_id=$(id -u root)
-    auth_id=$(id -u "$(logname)")
-
-    permissions::orchestrator::log_statuses
-
-    if (( root_id == auth_id )); then
-        log_warn "$(_ "permissions.warn.auth_by_ssh_key_user")"
-        log_warn "$(_ "permissions.warn.connect_ssh_key_not_root")"
-        return 1
-    fi
-}
-
-# @type:        Orchestrator
 # @description: Проверяет условия и запускает модуль при выполнении
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               2 - отмена пользователем или несоответствие условий
+#               4 - требуется авторизация по SSH ключу
 permissions::orchestrator::dispatch_logic() {
     local current_conn_type
 
     current_conn_type=$(sys::user::get_auth_method | tr -d '\0')
 
-    log_info "$(_ "no_translate" "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]")"
+    log_info "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]"
+    permissions::check::current_user # возможно прерывание кодом 4
 
     case "$current_conn_type" in
-        key) permissions::check::current_user && permissions::orchestrator::run_module || return ;;
-        pass)
-            log_attention "$(_ "permissions.attention.password_connection")"
-            log_warn "$(_ "permissions.warn.sudo_password_required")"
-            log_warn "$(_ "permissions.warn.sudoers_file_instruction" "$SUDOERS_D_DIR/$(logname)" "$(logname)")"
-            permissions::check::current_user && permissions::orchestrator::run_module || return
-        ;;
+        key) permissions::orchestrator::run_module ;;
+        pass) log_attention "$(_ "permissions.attention.password_connection")"; return 4 ;;
         timeout)
             log_warn "$(_ "permissions.warn.session_timeout_limitations")"
             log_warn "$(_ "permissions.warn.reconnect_new_window" "$current_conn_type")"

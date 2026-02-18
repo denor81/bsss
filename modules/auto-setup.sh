@@ -12,6 +12,7 @@ source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
+source "${PROJECT_ROOT}/modules/helpers/user.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 
 trap common::int::actions INT
@@ -29,6 +30,11 @@ auto::orchestrator::trigger_immediate_rollback() {
     while true; do sleep 1; done
 }
 
+auto::install::check() {
+    user::info::block
+    permissions::check::current_user # возможно прерывание кодом 4
+}
+
 # @type:        Orchestrator
 # @description: Выполняет автоматическую настройку с механизмом rollback
 # @params:      нет
@@ -36,9 +42,10 @@ auto::orchestrator::trigger_immediate_rollback() {
 # @stdout:      нет
 # @exit_code:   0 - успешно
 #               2 - выход по запросу пользователя
+#               4 - при необходимости авторизации по SSH ключу
 #               $? - код ошибки дочернего процесса
 auto::install::run() {
-    permissions::check::current_user || return
+    auto::install::check # возможно прерывание кодом 4
 
     make_fifo_and_start_reader
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "full")

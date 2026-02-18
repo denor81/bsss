@@ -281,11 +281,8 @@ I18N_MESSAGES["permissions.guard.test_access"]="Проверьте доступ 
 I18N_MESSAGES["permissions.check.info.check_params"]="Проверка: PubkeyAuthentication|PasswordAuthentication|PermitRootLogin"
 
 # Permissions warnings
-I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Авторизуйтесь по SSH ключу обычным пользователем"
-I18N_MESSAGES["permissions.warn.connect_ssh_key_not_root"]="Подключитесь по SSH ключу пользователем отличным от root"
-I18N_MESSAGES["permissions.attention.password_connection"]="Обнаружено подключение по паролю"
-I18N_MESSAGES["permissions.warn.sudo_password_required"]="Вам придется вводить пароль каждый раз при sudo"
-I18N_MESSAGES["permissions.warn.sudoers_file_instruction"]="Для того, чтобы пароль не запрашивался нужно создать файл-правило [%s] со строкой [%s ALL=(ALL) NOPASSWD:ALL] и установить права на файл [chmod 0440] после этого пароль в сессии запрашиваться не будет, либо создать пользователя через пункт меню - там все настраивается автоматически"
+I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Обнаружено подлючение под root-пользователем. Авторизуйтесь по SSH ключу sudo-пользователем (не root). Автоматическая настройка создает в том числе правила ограничивающие авторизацию под root. Сейчас владелец сессии %s."
+I18N_MESSAGES["permissions.attention.password_connection"]="Обнаружено подключение по паролю. В автоматическом режиме создаются правила запрещающие авторизацию по паролю. Подключитесь под sudo-пользователем (не root) по SSH ключу."
 I18N_MESSAGES["permissions.warn.session_timeout_limitations"]="Сессия длиннее 72 часов [невозможно определить тип подключения - ограничения журнала]"
 I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Подключитесь заново в новом окне терминала [%s]"
 I18N_MESSAGES["permissions.warn.cannot_determine_connection"]="Не удалось определить тип подключения"
