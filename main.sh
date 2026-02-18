@@ -107,36 +107,16 @@ log_dir_init() {
 #               $? - код ошибки от модуля
 runner::module::run_check() {
     local err=0
+    local dir="${PROJECT_ROOT}/${MODULES_DIR}"
 
     log::draw_border
-    bash "${PROJECT_ROOT}/${MODULES_DIR}/os-check.sh" || {
-        main::process::exit_code $? "os-check.sh"
-        err=1
-    }
-    bash "${PROJECT_ROOT}/${MODULES_DIR}/user-check.sh" || {
-        main::process::exit_code $? "user-check.sh"
-        err=1
-    }
-    bash "${PROJECT_ROOT}/${MODULES_DIR}/permissions-check.sh" || {
-        main::process::exit_code $? "permissions-check.sh"
-        err=1
-    }
-    bash "${PROJECT_ROOT}/${MODULES_DIR}/ssh-socket-check.sh" || {
-        main::process::exit_code $? "ssh-socket-check.sh"
-        err=1
-    }
-    bash "${PROJECT_ROOT}/${MODULES_DIR}/system-reload-check.sh" || {
-        main::process::exit_code $? "system-reload-check.sh"
-        err=1
-    }
-    bash "${PROJECT_ROOT}/${MODULES_DIR}/ssh-port-check.sh" || {
-        main::process::exit_code $? "ssh-port-check.sh"
-        err=1
-    }
-    bash "${PROJECT_ROOT}/${MODULES_DIR}/ufw-check.sh" || {
-        main::process::exit_code $? "ufw-check.sh"
-        err=1
-    }
+    bash "${dir}/os-check.sh" || err=1
+    bash "${dir}/ssh-socket-check.sh" || err=1
+    bash "${dir}/system-reload-check.sh" || err=1
+    bash "${dir}/user-check.sh" || err=1
+    bash "${dir}/ssh-port-check.sh" || err=1
+    bash "${dir}/permissions-check.sh" || err=1
+    bash "${dir}/ufw-check.sh" || err=1
     (( err == 1 )) && { log_error "$(_ "common.error_module_error")"; log::draw_border; return 1; }
     log::draw_border
 }
@@ -193,8 +173,8 @@ runner::module::run_modify() {
         local dir="${PROJECT_ROOT}/${MODULES_DIR}"
         case "$menu_id" in
             0) return 0 ;;
-            00) runner::module::run_check ;;
-            01) i18n::installer::lang_setup && i18n::load ;;
+            00) tag="check"; runner::module::run_check ;;
+            01) tag="lang_change"; i18n::installer::lang_setup && i18n::load ;;
             1) tag="auto-setup.sh"; bash "${dir}/${tag}" || rc=$? ;;
             2) tag="system-update.sh"; bash "${dir}/${tag}" || rc=$? ;;
             3) tag="ssh-port-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;

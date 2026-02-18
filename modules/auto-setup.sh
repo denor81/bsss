@@ -57,6 +57,9 @@ auto::install::run() {
 
     printf '%s\0' "$port" | ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ssh::port::install_new
 
+    if ufw::ping::is_configured; then
+        ufw::ping::restore
+    fi
     ufw::orchestrator::disable_ping
     ufw::status::force_enable
     permissions::rules::make_bsss_rules
@@ -67,6 +70,7 @@ auto::install::run() {
     ufw::orchestrator::log_statuses
     permissions::orchestrator::log_statuses
 
+    log_actual_info "Откройте новый терминал и выполните подключение по SSH ключу через порт $port. Если не удается подключиться - введите 0 для отмены и отката созанных изменений или подтвердите успешное подключение для фиксации изменений и отключения таймера отката."
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
         log_info "$(_ "common.success_changes_committed")"
@@ -84,6 +88,16 @@ auto::install::run() {
 main() {
     i18n::load
     log_start
+    log_info "Будет выполнена автоматическая установка базовых правил:"
+    log_info_simple_tab "SSHD Установлен случайный SSH порт [10000-65535]"
+    log_info_simple_tab "SSHD Запрет авторизации пользователя root"
+    log_info_simple_tab "SSHD Запрет авторизации по паролю"
+    log_info_simple_tab "UFW Отключен ping сервера [/etc/ufw/before.rules]"
+    log_info_simple_tab "UFW Создано правило для вновь установленного SSH порта"
+    log_info_simple_tab "UFW Активация"
+    log_info "Будет активирован фоновый процесс rollback.sh для отката по истечению $ROLLBACK_TIMER_SECONDS секунд. В случае невозможности подключиться к серверу откатите изменения в текущем сеансе или дождитесь истечения таймера и подключайтесь к серверу по старым данным."
+    log_info "Для просмотра логов используйте системный журнал [journalctl -t bsss --since \"10 minutes ago\"] или логи в каталоге установки $(readlink -f "${PROJECT_ROOT}/logs")"
+    io::confirm_action
     auto::install::run
 }
 

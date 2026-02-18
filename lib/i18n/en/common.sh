@@ -52,7 +52,7 @@ I18N_MESSAGES["init.gawk.nul_explanation"]="gawk required for NUL delimiter (\0)
 
 # Rollback messages
 I18N_MESSAGES["rollback.exit_received"]="Received EXIT signal"
-I18N_MESSAGES["rollback.close_redirection"]="Closing redirection 2>FIFO>parent_script"
+I18N_MESSAGES["rollback.close_redirection"]="Closed log redirection"
 I18N_MESSAGES["rollback.stop_usr1_received"]="Received USR1 signal - stopping rollback timer"
 I18N_MESSAGES["rollback.immediate_usr2_received"]="Received USR2 signal - stopping rollback timer and performing immediate rollback"
 I18N_MESSAGES["rollback.send_signal_to_parent"]="Sending rollback signal to main script USR1 [PID: %s]"
@@ -64,7 +64,7 @@ I18N_MESSAGES["rollback.ufw_disabled"]="UFW disabled. Check server access."
 I18N_MESSAGES["rollback.permissions_dismantle"]="Performing permissions rules rollback..."
 I18N_MESSAGES["rollback.permissions_restored"]="Permissions rules removed. Check server access."
 I18N_MESSAGES["rollback.unknown_type"]="Unknown rollback type: %s"
-I18N_MESSAGES["rollback.redirection_opened"]="Opened redirection 2>FIFO>parent_script"
+I18N_MESSAGES["rollback.redirection_opened"]="Opened log redirection PID:%s>%s"
 I18N_MESSAGES["rollback.timer_started"]="Background timer started for %s seconds..."
 I18N_MESSAGES["rollback.timeout_ssh"]="On timeout, ${UTIL_NAME^^} SSH port settings will be reset and UFW disabled"
 I18N_MESSAGES["rollback.timeout_ufw"]="On timeout, UFW will be disabled"
@@ -278,6 +278,7 @@ I18N_MESSAGES["permissions.info.create_rules"]="File with rules will be created 
 I18N_MESSAGES["permissions.guard.test_access"]="Test server access in new terminal window"
 
 # Permissions check
+I18N_MESSAGES["permissions.check.current_ssh_config"]="Current SSH configuration [sshd -T]:"
 I18N_MESSAGES["permissions.check.info.check_params"]="Check: PubkeyAuthentication|PasswordAuthentication|PermitRootLogin"
 
 # Permissions warnings
@@ -294,11 +295,12 @@ I18N_MESSAGES["permissions.confirm.reset_rules"]="Execute reset of %s access rul
 I18N_MESSAGES["permissions.info.only_reset_available"]="In this mode only reset is possible"
 
 # Common unified messages (reusable across modules)
-I18N_MESSAGES["common.info.rules_found"]="%s access rules found:"
-I18N_MESSAGES["common.info.no_rules"]="No %s access rules"
+I18N_MESSAGES["common.info.rules_found"]="${UTIL_NAME^^} access rules found:"
+I18N_MESSAGES["common.info.no_rules"]="No ${UTIL_NAME^^} access rules [/etc/ssh/sshd_config]"
 I18N_MESSAGES["common.info.external_rules_found"]="External access rules found"
-I18N_MESSAGES["common.info.no_external_rules"]="No external access rules"
+I18N_MESSAGES["common.info.no_external_rules"]="No external access rules [/etc/ssh/sshd_config]"
 I18N_MESSAGES["common.file.created"]="File created: %s"
 I18N_MESSAGES["common.error.create_file"]="Error creating file: %s"
 I18N_MESSAGES["common.info.users_in_system"]="Users in system:"
 I18N_MESSAGES["common.error.check_users"]="Error checking user composition"
+I18N_MESSAGES["common.session.owner"]="Session owner"

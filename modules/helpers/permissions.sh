@@ -49,7 +49,7 @@ permissions::log::bsss_configs() {
     while IFS= read -r grep_result || break; do
 
         if (( found == 0 )); then
-            log_info "$(_ "common.info.rules_found" "${UTIL_NAME^^}")"
+            log_info "$(_ "common.info.rules_found")"
             found=$((found + 1))
         fi
 
@@ -59,7 +59,7 @@ permissions::log::bsss_configs() {
     done < <(grep -EiHs '^\s*(PubkeyAuthentication|PasswordAuthentication|PermitRootLogin)\b' "${SSH_CONFIGD_DIR}/"$BSSS_PERMISSIONS_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
-        log_info "$(_ "common.info.no_rules" "${UTIL_NAME^^}")"
+        log_info "$(_ "common.info.no_rules")"
     fi
 }
 
@@ -88,6 +88,22 @@ permissions::log::other_configs() {
     if (( found == 0 )); then
         log_info "$(_ "common.info.no_external_rules")"
     fi
+}
+
+# @type:        Sink
+# @description: Логирует текущую конфигурацию SSH (sshd -T)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+permissions::log::current_config() {
+    local line
+
+    log_info "$(_ "permissions.check.current_ssh_config")"
+
+    while IFS= read -r line; do
+        log_info_simple_tab "$(_ "no_translate" "$line")"
+    # || true: sshd -T или grep могут не сработать в некоторых случаях
+    done < <(sshd -T 2>/dev/null | grep -Ei '^pubkeyauthentication|^passwordauthentication|^permitrootlogin' | sort || true)
 }
 
 # @type:        Sink

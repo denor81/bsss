@@ -52,7 +52,7 @@ I18N_MESSAGES["init.gawk.nul_explanation"]="Требуется gawk для по�
 
 # Rollback messages
 I18N_MESSAGES["rollback.exit_received"]="Получен сигнал EXIT"
-I18N_MESSAGES["rollback.close_redirection"]="Закрываем перенаправление 2>FIFO>parent_script"
+I18N_MESSAGES["rollback.close_redirection"]="Закрыто перенаправление логов"
 I18N_MESSAGES["rollback.stop_usr1_received"]="Получен сигнал USR1 - остановка таймера отката"
 I18N_MESSAGES["rollback.immediate_usr2_received"]="Получен сигнал USR2 - остановка таймера отката и немедленный откат изменений"
 I18N_MESSAGES["rollback.send_signal_to_parent"]="Посылаем сигнал отката основному скрипту USR1 [PID: %s]"
@@ -64,7 +64,7 @@ I18N_MESSAGES["rollback.ufw_disabled"]="UFW отключен. Проверьте
 I18N_MESSAGES["rollback.permissions_dismantle"]="Выполняется откат правил permissions..."
 I18N_MESSAGES["rollback.permissions_restored"]="Правила permissions удалены. Проверьте доступ к серверу."
 I18N_MESSAGES["rollback.unknown_type"]="Неизвестный тип отката: %s"
-I18N_MESSAGES["rollback.redirection_opened"]="Открыто перенаправление 2>FIFO>parent_script"
+I18N_MESSAGES["rollback.redirection_opened"]="Открыто перенаправление логов PID:%s>%s"
 I18N_MESSAGES["rollback.timer_started"]="Фоновый таймер запущен на %s сек..."
 I18N_MESSAGES["rollback.timeout_ssh"]="По истечению таймера будут сброшены настройки ${UTIL_NAME^^} для SSH порта и отключен UFW"
 I18N_MESSAGES["rollback.timeout_ufw"]="По истечению таймера будет отключен UFW"
@@ -278,6 +278,7 @@ I18N_MESSAGES["permissions.info.create_rules"]="Будет создан файл
 I18N_MESSAGES["permissions.guard.test_access"]="Проверьте доступ к серверу в новом окне терминала"
 
 # Permissions check
+I18N_MESSAGES["permissions.check.current_ssh_config"]="Текущая конфигурация SSH [sshd -T]:"
 I18N_MESSAGES["permissions.check.info.check_params"]="Проверка: PubkeyAuthentication|PasswordAuthentication|PermitRootLogin"
 
 # Permissions warnings
@@ -294,11 +295,12 @@ I18N_MESSAGES["permissions.confirm.reset_rules"]="Выполнить сброс 
 I18N_MESSAGES["permissions.info.only_reset_available"]="В таком режиме возможен только сброс настроек"
 
 # Common unified messages (reusable across modules)
-I18N_MESSAGES["common.info.rules_found"]="Есть правила %s для доступа:"
-I18N_MESSAGES["common.info.no_rules"]="Нет правил %s для доступа"
+I18N_MESSAGES["common.info.rules_found"]="Есть правила ${UTIL_NAME^^} для доступа:"
+I18N_MESSAGES["common.info.no_rules"]="Нет правил ${UTIL_NAME^^} для доступа [/etc/ssh/sshd_config]"
 I18N_MESSAGES["common.info.external_rules_found"]="Найдены сторонние правила для доступа"
-I18N_MESSAGES["common.info.no_external_rules"]="Нет сторонних правил для доступа"
+I18N_MESSAGES["common.info.no_external_rules"]="Нет сторонних правил для доступа [/etc/ssh/sshd_config]"
 I18N_MESSAGES["common.file.created"]="Файл создан: %s"
 I18N_MESSAGES["common.error.create_file"]="Ошибка при создании файла: %s"
 I18N_MESSAGES["common.info.users_in_system"]="Пользователи в системе:"
 I18N_MESSAGES["common.error.check_users"]="Ошибка проверки состава пользователей"
+I18N_MESSAGES["common.session.owner"]="Владелец сессии"

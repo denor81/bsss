@@ -211,7 +211,7 @@ rollback::orchestrator::watchdog_timer() {
 
     exec 2> "$watchdog_fifo"
     log_start
-    log_info "$(_ "rollback.redirection_opened")"
+    log_info "$(_ "rollback.redirection_opened" $$ "$(basename "$watchdog_fifo")")"
     log_info "$(_ "rollback.timer_started" "$ROLLBACK_TIMER_SECONDS")"
 
     case "$ROLLBACK_TYPE" in

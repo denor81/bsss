@@ -93,7 +93,7 @@ user::info::block() {
         i=$(( i + 1 ))
 
         local active_mark=""
-        [[ "$username" == "$login_user" ]] && active_mark+="<<<session owner|auth:${auth_method}"
+        [[ "$username" == "$login_user" ]] && active_mark+="<<<$(_ "common.session.owner")|auth:${auth_method}"
         active_mark+="|"
 
         if [[ "$uid" -eq 0 ]]; then

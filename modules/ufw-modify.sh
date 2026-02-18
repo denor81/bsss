@@ -118,34 +118,6 @@ ufw::toggle::ping() {
     ufw::status::reload
 }
 
-# @type:        Orchestrator
-# @description: Отключает пинг через UFW (бэкап + трансформация + reload)
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки операции
-ufw::orchestrator::disable_ping() {
-    ufw::ping::backup_file
-    ufw::ping::disable_in_rules
-}
-
-# @type:        Orchestrator
-# @description: Заменяет ACCEPT на DROP в ICMP правилах файла before.rules
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки команды sed
-ufw::ping::disable_in_rules() {
-    if sed -i '/-p icmp/s/ACCEPT/DROP/g' "$UFW_BEFORE_RULES"; then
-        log_info "$(_ "ufw.success.before_rules_edited" "$UFW_BEFORE_RULES")"
-    else
-        log_error "$(_ "ufw.error.edit_failed" "$UFW_BEFORE_RULES")"
-        return 1
-    fi
-}
-
 ufw::main::menu::dispatcher() {
     log_info "$(_ "common.menu_header")"
     ufw::status::is_active && log_info_simple_tab "1. $(_ "ufw.menu.item_disable")" || log_info_simple_tab "1. $(_ "ufw.menu.item_enable")"
