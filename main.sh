@@ -196,6 +196,7 @@ runner::module::run_modify() {
 #               1 - ошибка проверки
 #               $? - код ошибки от модуля
 run() {
+    log_info "$(_ "init.bsss.full_name")"
     sys::gawk::check_dependency
     sys::log::rotate_old_files
 

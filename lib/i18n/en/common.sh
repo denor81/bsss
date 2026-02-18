@@ -44,6 +44,7 @@ I18N_MESSAGES["common.error_uninstall_file_not_found"]="Uninstall paths file not
 I18N_MESSAGES["common.error_uninstall_delete_failed"]="Failed to delete: %s"
 
 # Init messages
+I18N_MESSAGES["init.bsss.full_name"]="Basic Server Security Setup"
 I18N_MESSAGES["init.gawk.version"]="Critical dependencies:"
 I18N_MESSAGES["init.gawk.installed"]="gawk installed [%s]"
 I18N_MESSAGES["init.gawk.nul_explanation"]="gawk required for NUL delimiter (\0) support in data streams"

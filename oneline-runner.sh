@@ -216,7 +216,7 @@ installer::ask_value() {
             printf '%s\n' "$choice"
             break
         fi
-        log_error "$(_ "common.error_invalid_input" "[$hint]")"
+        log_error "$(_ "error_invalid_input" "[$hint]")"
     done
 }
 
