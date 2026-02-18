@@ -18,6 +18,8 @@ readonly UTIL_NAME="bsss"
 readonly REPO_URL="https://github.com"
 readonly ARCHIVE_FILE_NAME="bsss-framework-latest.tar.gz"
 readonly ARCHIVE_URL="${REPO_URL}/denor81/${UTIL_NAME}/releases/latest/download/${ARCHIVE_FILE_NAME}"
+readonly SIGNATURE_FILE_NAME="bsss-framework-latest.tar.gz.asc"
+readonly SIGNATURE_URL="${REPO_URL}/denor81/${UTIL_NAME}/releases/latest/download/${SIGNATURE_FILE_NAME}"
 
 readonly SYMBOL_LINK_PATH="/usr/local/bin/$UTIL_NAME"
 readonly INSTALL_DIR="/opt/$UTIL_NAME"
@@ -26,8 +28,39 @@ readonly MAIN_SCRIPT_FILE_NAME="main.sh"
 readonly CURRENT_MODULE_NAME="$(basename "$0")"
 readonly LANG_FILE="${INSTALL_DIR}/.lang"
 
+readonly GPG_PUBLIC_KEY_ASCII='-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQINBGmV2ksBEACzS8iCRQwuvl4xtNPl0fVJ0far5DISc/24vHBADsEC8eNVV+4Q
+FKvn79qbfSamlEuJE0gYdZgVK3RAxjvLUEnLdHbDxEC8GWhQKIbPwIDywORVRCRi
+oFJqZjwzbeVqvq1CUAutYAWOyEtuLsT5KPkjsAl4kmUEV5TruiBz1wPvxnXUfRii
+D0g7W2HeManGkqnfAMfOvZMZcqVZ5WksuDiFKXwPQ/vIY0Dti/6EYbrJqdA3JmDx
+75cvgG7x7Vjz8E9BgAXNS4X1mMA2/p4gOQwgCMgEubwWlJQ4R+s6eCwi7nCBfH9O
+bzuX6jX9pHDaWMC8ep5Ji5HRW7ZcRG7Q2o/sTYTon/LnesFhC8Q95PRjrjIMi+BF
+Xfsx915uHzp3Q9YaRZBg5To19oGvMYu5kxiXt3cRN+tZY2XvvcGpuz6K1wd/rBIS
+UJ1QMeAsvJHX9T1gcKp87kJE88/BmZ/mMSdhPBAH4TzC3tsa2EtG49RYbZaCZcZR
+i8WcAkJREhrETiAUk0uSTqfKxgElLZ5ZXU1rQHO+d08PI5f6s7GYYC6S+Xs3n3zM
+jtBP6n2ehRFWW/SncHQfs7HGTVUNCGwZQ2zhC7N7jru3thdhRbdURwISW/5e5oSK
+MYnQp1lRTU0TPnb/EI+Ng/FVFsSibrOYdv5ap3iooWw/yyWjLlNK/h5XKwARAQAB
+tClCU1NTIFJlbGVhc2UgQm90IDxiYXNzZXJzZWNzZXRAcHJvdG9uLm1lPokCUgQT
+AQoAPBYhBLOkwnJfRzcgZ0z4HgtJBInFly3BBQJpldpLAxsvBAULCQgHAgIiAgYV
+CgkICwIEFgIDAQIeBwIXgAAKCRALSQSJxZctwXCsEACRIv/KJZITAvGvg+tI6Xg9
+52qp/FLQIFYK89/098ap2SmTEPceGot5JqGCueXPuP/nFSddbuzkd36ENOD01K5r
+dz/4arvyviRJeLoDsQ5eac0tjVkfQbDKa1m8Zgzkafu3yROi6CH06pnjI5/jV+f9
+gTKVR1uttf/YtCq9bJmJqReYzDhZ5e9n9BTeANvnq8YpEMeookbZoySG3JVzDrc/
+xyUjg71gF+cynstFAZ7WTohSS7Dyv6aFIazxLJtEVoPw7vH1+FApSc1W8WlpgG9k
+iiHrkI3bDh+KPIoftxYtExHOtGHXxUnpcBGbw24j10wVxDyPvsEOKS9FMumESPhy
+kHSewvnbmATeYd1bzFsyObeQXF8mq7ve7TMCfQ4jrKXi1PPkD11lNKzQbRhxDygO
+QJHeRvbHS333HTqNRu2QwE7E/4GfYMs8vQG4C6VH75DeWAQ1T5pl8Fzb5/nrdYaq
+d5a1HX2kswhqCtIO+YLOqEWLglV6K4rncVSWloxfMbItZWRQStppKc6zIqyZjPc8
+hMxRBDfDoEuGLywRkhe+wHGTNwL/jlsnAeLUCXeLfX7AcFich2/DesYMa4uP+5Gz
+PtG5Ptrs0OEAdvgH8PJh6EECgqEo5euMCsAIJ9dJ+JqPybklgfh8pYr6fmWYh5Fy
+zP7PA7/9JmMKo4cf6OdqAw==
+=GehJ
+-----END PGP PUBLIC KEY BLOCK-----'
+
 declare -a CLEANUP_COMMANDS=()
 TMPARCHIVE=""
+TMPSIGNATURE=""
 ONETIME_RUN_FLAG=0
 SYS_INSTALL_FLAG=0
 CLEANUP_DONE_FLAG=0
@@ -405,6 +438,82 @@ install::archive::check() {
     log_info "$(_ "check.found" "$main_script_file_name")"
 }
 
+# @type:        Validator
+# @description: Check if gpg command is available
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - gpg available
+#               1 - gpg not available
+install::gpg::check_available() {
+    command -v gpg >/dev/null 2>&1
+}
+
+# @type:        Source/Sink
+# @description: Import embedded public GPG key into keyring
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - success
+#               1 - import failed (non-critical)
+install::gpg::import_public_key() {
+    local import_output
+    import_output=$(printf '%s' "$GPG_PUBLIC_KEY_ASCII" | gpg --import 2>&1) || {
+        log_error "$(_ "gpg.import_failed" "$import_output")"
+        return 1
+    }
+    log_info "$(_ "gpg.imported")"
+}
+
+# @type:        Source
+# @description: Download .asc signature file from GitHub
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - success
+#               1 - download failed (non-critical)
+install::download::signature() {
+    local tmpsignature
+    tmpsignature=$(mktemp --tmpdir "$UTIL_NAME"-signature-XXXXXX.asc)
+
+    log_info "$(_ "gpg.download_start" "$SIGNATURE_URL")"
+
+    if ! curl -fL --progress-meter "$SIGNATURE_URL" -o "$tmpsignature"; then
+        log_error "$(_ "gpg.download_failed" "$SIGNATURE_URL")"
+        rm -f "$tmpsignature"
+        return 1
+    fi
+
+    local fsize=""
+    fsize=$(stat -c "%s" "$tmpsignature" | gawk '{printf "%.2f KB\n", $1/1024}')
+    log_info "$(_ "gpg.downloaded" "$tmpsignature" "$fsize" "$(file -ib "$tmpsignature")")"
+
+    TMPSIGNATURE="$tmpsignature"
+    CLEANUP_COMMANDS+=("$tmpsignature")
+}
+
+# @type:        Filter
+# @description: Verify archive signature
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - valid signature
+#               1 - invalid signature (non-critical)
+install::gpg::verify() {
+    local verify_output
+
+    log_info "$(_ "gpg.verify_start")"
+
+    verify_output=$(gpg --verify "$TMPSIGNATURE" "$TMPARCHIVE" 2>&1) || {
+        log_error "$(_ "gpg.verify_failed")"
+        log_info "$(_ "no_translate" "GPG verification output: $verify_output")"
+        log_error "$(_ "gpg.continuing_unverified")"
+        return 1
+    }
+
+    log_info "$(_ "gpg.verify_success")"
+}
+
 # @type:        Sink
 # @description: Добавляет путь в файл лога установки для последующего удаления
 # @params:
@@ -570,6 +679,17 @@ install::to_system() {
 sys::run_or_install::prepare() {
     install::tmp::create
     install::download::archive
+
+    if install::gpg::check_available; then
+        install::gpg::import_public_key || true
+        install::download::signature || true
+        if [[ -n "$TMPSIGNATURE" && -f "$TMPSIGNATURE" ]]; then
+            install::gpg::verify || true
+        fi
+    else
+        log_info "$(_ "gpg.not_available")"
+    fi
+
     install::archive::unpack "$TMPARCHIVE" "$TEMP_PROJECT_DIR"
     install::archive::check "$TEMP_PROJECT_DIR" "$MAIN_SCRIPT_FILE_NAME"
 }
@@ -647,6 +767,16 @@ declare -gA I18N_MESSAGES_RU=(
     [install.info.download_archive]="Будет скачан архив последней версии релиза %s [%s]"
     [install.info.install_dir]="Будет произведена установка %s в директорию [%s]"
     [install.info.usage_run]="Запускать sudo %s"
+    [gpg.not_available]="GPG не установлен, проверка подписи пропущена"
+    [gpg.import_failed]="Ошибка импорта GPG ключа: %s"
+    [gpg.imported]="GPG ключ импортирован"
+    [gpg.download_start]="Загрузка подписи GPG: %s"
+    [gpg.download_failed]="Ошибка загрузки подписи: %s"
+    [gpg.downloaded]="Подпись скачана: %s (%s, %s)"
+    [gpg.verify_start]="Проверка GPG подписи..."
+    [gpg.verify_failed]="GPG подпись НЕВЕРНА! Подробности в журнале."
+    [gpg.verify_success]="GPG подпись верна"
+    [gpg.continuing_unverified]="Установка продолжается без верификации. Риск подмены архива."
 )
 
 # English translations
@@ -693,6 +823,16 @@ declare -gA I18N_MESSAGES_EN=(
     [install.info.download_archive]="Will download the latest release archive of %s [%s]"
     [install.info.install_dir]="Will install %s to directory [%s]"
     [install.info.usage_run]="Run with sudo %s"
+    [gpg.not_available]="GPG not installed, signature verification skipped"
+    [gpg.import_failed]="Failed to import GPG key: %s"
+    [gpg.imported]="GPG key imported"
+    [gpg.download_start]="Downloading GPG signature: %s"
+    [gpg.download_failed]="Failed to download signature: %s"
+    [gpg.downloaded]="Signature downloaded: %s (%s, %s)"
+    [gpg.verify_start]="Verifying GPG signature..."
+    [gpg.verify_failed]="GPG signature INVALID! Details in journal."
+    [gpg.verify_success]="GPG signature is valid"
+    [gpg.continuing_unverified]="Installation continues without verification. Risk of tampered archive."
 )
 
 install::runner::main

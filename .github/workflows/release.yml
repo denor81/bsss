@@ -48,15 +48,40 @@ jobs:
           mv "/tmp/$FILE_NAME" .
 
           sha256sum "$FILE_NAME" > "$CHECKSUM_NAME"
-          
+
           echo "archive=$FILE_NAME" >> $GITHUB_OUTPUT
           echo "checksum=$CHECKSUM_NAME" >> $GITHUB_OUTPUT
+          echo "signature=${FILE_NAME}.asc" >> $GITHUB_OUTPUT
+
+      - name: Import GPG Key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          # Импортируем ключ с передачей пароля
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE"
+          
+          # Указываем GPG, что мы доверяем этому ключу (чтобы не было warning-ов)
+          echo -e "5\ny\n" | gpg --batch --command-fd 0 --expert --edit-key 0B490489C5972DC1 trust
+
+      - name: Sign Archive with GPG
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          FILE_NAME="bsss-framework-latest.tar.gz"
+          # Подписываем, используя loopback для ввода пароля из переменной
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$GPG_PASSPHRASE" \
+            --local-user 0B490489C5972DC1 \
+            --detach-sign --armor --output "${FILE_NAME}.asc" "$FILE_NAME"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             ${{ steps.archive_step.outputs.archive }}
             ${{ steps.archive_step.outputs.checksum }}
+            ${{ steps.archive_step.outputs.signature }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
