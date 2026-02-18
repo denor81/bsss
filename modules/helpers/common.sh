@@ -482,7 +482,7 @@ full_rollback::orchestrator::execute_all() {
         return 3
     else
         # Формируем сообщение об ошибках (через запятую)
-        log_warn "Ошибки при откате: ${errors[*]}"
+        log_warn "$(_ "rollback.error.rollback_errors" "${errors[*]}")"
         return 1
     fi
 }
@@ -502,7 +502,7 @@ permissions::check::current_user() {
     current_conn_type=$(sys::user::get_auth_method | tr -d '\0')
     
 
-    log_info "Владелец сессии [$(logname)]|Тип подключения [$current_conn_type]"
+    log_info "$(_ "permissions.info.session_owner_conn_type" "$(logname)" "$current_conn_type")"
     permissions::orchestrator::log_statuses
 
     if [[ "$current_conn_type" == "pass" ]]; then

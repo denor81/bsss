@@ -22,7 +22,6 @@ I18N_MESSAGES["common.menu_check"]="System check"
 I18N_MESSAGES["common.menu_language"]="Язык • Language • 语言 • हिन्दी"
 
 # Error messages - module runner
-I18N_MESSAGES["common.error_no_modules_found"]="Cannot run, modules not found"
 I18N_MESSAGES["common.error_module_error"]="Cannot run, one of the modules shows an error"
 I18N_MESSAGES["common.error_no_modules_available"]="No modules available for setup"
 I18N_MESSAGES["common.unexpected_error_module_failed_code"]="Unexpected error [RC: %s] [%s]"
@@ -32,7 +31,6 @@ I18N_MESSAGES["common.info_module_successful"]="Completed successfully [RC: %s] 
 I18N_MESSAGES["common.info_module_user_cancelled"]="Cancelled by user [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_rollback"]="Completed via rollback [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_requires"]="Pre-configuration required [RC: %s] [%s]"
-I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
 
 # Info messages - uninstall
 I18N_MESSAGES["common.info_uninstall_confirm"]="Uninstall ${UTIL_NAME^^}?"
@@ -76,7 +74,6 @@ I18N_MESSAGES["rollback.time_expired"]="Time expired - performing ROLLBACK"
 # Module names
 I18N_MESSAGES["module.system.update.name"]="System update"
 I18N_MESSAGES["module.user.create.name"]="Create user"
-I18N_MESSAGES["module.permissions.check.name"]="Check SSH access rights"
 I18N_MESSAGES["module.permissions.modify.name"]="Configure SSH access rights"
 I18N_MESSAGES["module.ssh.name"]="SSH port configuration"
 I18N_MESSAGES["module.ufw.name"]="UFW firewall configuration"
@@ -216,9 +213,6 @@ I18N_MESSAGES["system.reload.reboot_required"]="System requires reboot %s"
 I18N_MESSAGES["system.reload.pkgs_header"]="Packages requiring reboot:"
 
 # Common helpers
-I18N_MESSAGES["common.helpers.validate_order.error_missing_tag"]="Missing required MODULE_ORDER tag: %s"
-I18N_MESSAGES["common.helpers.validate_order.error_duplicate"]="Duplicate MODULE_ORDER (%s): %s"
-
 I18N_MESSAGES["common.helpers.ssh.no_active_ports"]="No active SSH ports [ss -ltnp]"
 I18N_MESSAGES["common.helpers.ssh.active_ports"]="Active SSH ports found [ss -ltnp]: %s"
 I18N_MESSAGES["common.helpers.ufw.rules_found"]="UFW rules found [ufw show added]"
@@ -230,7 +224,6 @@ I18N_MESSAGES["common.helpers.ufw.rule.delete_error"]="Error deleting UFW rule: 
 I18N_MESSAGES["common.helpers.ufw.rule.added"]="Created UFW rule: [ufw allow %s/tcp comment '$BSSS_MARKER_COMMENT']"
 I18N_MESSAGES["common.helpers.ufw.rule.add_error"]="Error adding UFW rule: [ufw allow %s/tcp comment ${UTIL_NAME^^}]"
 I18N_MESSAGES["common.helpers.ufw.disabled"]="UFW: Fully deactivated [ufw --force disable]"
-I18N_MESSAGES["common.helpers.ufw.already_disabled"]="UFW: deactivated"
 I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Sending rollback disable signal USR1 [PID: %s]"
 I18N_MESSAGES["common.helpers.rollback.stop_received"]="Received USR1 signal - stopping script due to rollback"
 I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Created FIFO: %s"
@@ -279,7 +272,6 @@ I18N_MESSAGES["permissions.guard.test_access"]="Test server access in new termin
 
 # Permissions check
 I18N_MESSAGES["permissions.check.current_ssh_config"]="Current SSH configuration [sshd -T]:"
-I18N_MESSAGES["permissions.check.info.check_params"]="Check: PubkeyAuthentication|PasswordAuthentication|PermitRootLogin"
 
 # Permissions warnings
 I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Connection detected as root-user. Authenticate via SSH key as a sudo-user (non root). Automatic configuration creates, among other things, rules that restrict authorization under root. The current session owner is %s."
@@ -304,3 +296,26 @@ I18N_MESSAGES["common.error.create_file"]="Error creating file: %s"
 I18N_MESSAGES["common.info.users_in_system"]="Users in system:"
 I18N_MESSAGES["common.error.check_users"]="Error checking user composition"
 I18N_MESSAGES["common.session.owner"]="Session owner"
+
+# Rollback error messages
+I18N_MESSAGES["rollback.error.rollback_errors"]="Errors during rollback: %s"
+
+# Full rollback info
+I18N_MESSAGES["full_rollback.info.full_rollback_warning"]="Full rollback of all %s settings will be performed"
+
+# Permissions session info
+I18N_MESSAGES["permissions.info.session_owner_conn_type"]="Session owner [%s]|Connection type [%s]"
+
+# Auto setup info
+I18N_MESSAGES["auto.info.auto_setup_rules"]="Automatic installation of basic rules will be performed:"
+I18N_MESSAGES["auto.info.sshd_random_port"]="SSHD Random SSH port installed [10000-65535]"
+I18N_MESSAGES["auto.info.sshd_deny_root"]="SSHD Deny root user authentication"
+I18N_MESSAGES["auto.info.sshd_deny_password"]="SSHD Deny password authentication"
+I18N_MESSAGES["auto.info.ufw_disable_ping"]="UFW Server ping disabled [/etc/ufw/before.rules]"
+I18N_MESSAGES["auto.info.ufw_ssh_port_rule"]="UFW Rule created for newly installed SSH port"
+I18N_MESSAGES["auto.info.ufw_activation"]="UFW Activation"
+I18N_MESSAGES["auto.info.rollback_timer_activation"]="Background process rollback.sh will be activated for rollback after %s seconds. If it is impossible to connect to the server, rollback the changes in the current session or wait for the timer to expire and connect to the server using the old data."
+I18N_MESSAGES["auto.info.logs_location"]="To view logs, use the system log [journalctl -t bsss --since \"10 minutes ago\"] or logs in the installation directory %s"
+
+# UFW activation
+I18N_MESSAGES["ufw.success.enabled"]="UFW successfully enabled [ufw --force enable]"

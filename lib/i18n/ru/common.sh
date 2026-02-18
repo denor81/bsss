@@ -22,7 +22,6 @@ I18N_MESSAGES["common.menu_check"]="Проверка системы"
 I18N_MESSAGES["common.menu_language"]="Язык • Language • 语言 • हिन्दी"
 
 # Error messages - module runner
-I18N_MESSAGES["common.error_no_modules_found"]="Запуск не возможен, Модули не найдены"
 I18N_MESSAGES["common.error_module_error"]="Запуск не возможен, один из модулей показывает ошибку"
 I18N_MESSAGES["common.error_no_modules_available"]="Нет доступных модулей для настройки"
 I18N_MESSAGES["common.unexpected_error_module_failed_code"]="Непредвиденная ошибка [RC: %s] [%s]"
@@ -32,7 +31,6 @@ I18N_MESSAGES["common.info_module_successful"]="Успешно завершен 
 I18N_MESSAGES["common.info_module_user_cancelled"]="Завершено пользователем [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_rollback"]="Завершен откатом [RC: %s] [%s]"
 I18N_MESSAGES["common.info_module_requires"]="Требуется предварительная настройка [RC: %s] [%s]"
-I18N_MESSAGES["common.info_menu_item_format"]="%s. %s"
 
 # Info messages - uninstall
 I18N_MESSAGES["common.info_uninstall_confirm"]="Удалить ${UTIL_NAME^^}?"
@@ -76,7 +74,6 @@ I18N_MESSAGES["rollback.time_expired"]="Время истекло - выполн
 # Module names
 I18N_MESSAGES["module.system.update.name"]="Обновление системы"
 I18N_MESSAGES["module.user.create.name"]="Создание пользователя"
-I18N_MESSAGES["module.permissions.check.name"]="Проверка прав доступа SSH"
 I18N_MESSAGES["module.permissions.modify.name"]="Настройка прав доступа SSH"
 I18N_MESSAGES["module.ssh.name"]="Настройка SSH порта"
 I18N_MESSAGES["module.ufw.name"]="Настройка брандмауэра UFW"
@@ -216,9 +213,6 @@ I18N_MESSAGES["system.reload.reboot_required"]="Система нуждаетс�
 I18N_MESSAGES["system.reload.pkgs_header"]="Пакеты требующие перезагрузки:"
 
 # Common helpers
-I18N_MESSAGES["common.helpers.validate_order.error_missing_tag"]="Отсутствует обязательный тег MODULE_ORDER: %s"
-I18N_MESSAGES["common.helpers.validate_order.error_duplicate"]="Дублирующийся MODULE_ORDER (%s): %s"
-
 I18N_MESSAGES["common.helpers.ssh.no_active_ports"]="Нет активных SSH портов [ss -ltnp]"
 I18N_MESSAGES["common.helpers.ssh.active_ports"]="Есть активные SSH порты [ss -ltnp]: %s"
 I18N_MESSAGES["common.helpers.ufw.rules_found"]="Есть правила UFW [ufw show added]"
@@ -230,7 +224,6 @@ I18N_MESSAGES["common.helpers.ufw.rule.delete_error"]="Ошибка при уд�
 I18N_MESSAGES["common.helpers.ufw.rule.added"]="Создано правило UFW: [ufw allow %s/tcp comment '$BSSS_MARKER_COMMENT']"
 I18N_MESSAGES["common.helpers.ufw.rule.add_error"]="Ошибка при добавлении правила UFW: [ufw allow %s/tcp comment ${UTIL_NAME^^}]"
 I18N_MESSAGES["common.helpers.ufw.disabled"]="UFW: Полностью деактивирован [ufw --force disable]"
-I18N_MESSAGES["common.helpers.ufw.already_disabled"]="UFW: деактивирован"
 I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Посылаем сигнал отключения rollback USR1 [PID: %s]"
 I18N_MESSAGES["common.helpers.rollback.stop_received"]="Получен сигнал USR1 - остановка скрипта из-за отката"
 I18N_MESSAGES["common.exit_received"]="Получен сигнал EXIT [RC: %s]"
@@ -279,7 +272,6 @@ I18N_MESSAGES["permissions.guard.test_access"]="Проверьте доступ 
 
 # Permissions check
 I18N_MESSAGES["permissions.check.current_ssh_config"]="Текущая конфигурация SSH [sshd -T]:"
-I18N_MESSAGES["permissions.check.info.check_params"]="Проверка: PubkeyAuthentication|PasswordAuthentication|PermitRootLogin"
 
 # Permissions warnings
 I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Обнаружено подлючение под root-пользователем. Авторизуйтесь по SSH ключу sudo-пользователем (не root). Автоматическая настройка создает в том числе правила ограничивающие авторизацию под root. Сейчас владелец сессии %s."
@@ -304,3 +296,26 @@ I18N_MESSAGES["common.error.create_file"]="Ошибка при создании 
 I18N_MESSAGES["common.info.users_in_system"]="Пользователи в системе:"
 I18N_MESSAGES["common.error.check_users"]="Ошибка проверки состава пользователей"
 I18N_MESSAGES["common.session.owner"]="Владелец сессии"
+
+# Rollback error messages
+I18N_MESSAGES["rollback.error.rollback_errors"]="Ошибки при откате: %s"
+
+# Full rollback info
+I18N_MESSAGES["full_rollback.info.full_rollback_warning"]="Будет выполнен полный откат всех настроек %s"
+
+# Permissions session info
+I18N_MESSAGES["permissions.info.session_owner_conn_type"]="Владелец сессии [%s]|Тип подключения [%s]"
+
+# Auto setup info
+I18N_MESSAGES["auto.info.auto_setup_rules"]="Будет выполнена автоматическая установка базовых правил:"
+I18N_MESSAGES["auto.info.sshd_random_port"]="SSHD Установлен случайный SSH порт [10000-65535]"
+I18N_MESSAGES["auto.info.sshd_deny_root"]="SSHD Запрет авторизации пользователя root"
+I18N_MESSAGES["auto.info.sshd_deny_password"]="SSHD Запрет авторизации по паролю"
+I18N_MESSAGES["auto.info.ufw_disable_ping"]="UFW Отключен ping сервера [/etc/ufw/before.rules]"
+I18N_MESSAGES["auto.info.ufw_ssh_port_rule"]="UFW Создано правило для вновь установленного SSH порта"
+I18N_MESSAGES["auto.info.ufw_activation"]="UFW Активация"
+I18N_MESSAGES["auto.info.rollback_timer_activation"]="Будет активирован фоновый процесс rollback.sh для отката по истечению %s секунд. В случае невозможности подключиться к серверу откатите изменения в текущем сеансе или дождитесь истечения таймера и подключайтесь к серверу по старым данным."
+I18N_MESSAGES["auto.info.logs_location"]="Для просмотра логов используйте системный журнал [journalctl -t bsss --since \"10 minutes ago\"] или логи в каталоге установки %s"
+
+# UFW activation
+I18N_MESSAGES["ufw.success.enabled"]="UFW успешно активирован [ufw --force enable]"

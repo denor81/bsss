@@ -109,7 +109,7 @@ rollback::orchestrator::ssh() {
     if (( ${#errors[@]} == 0 )); then
         log_success "$(_ "rollback.system_restored")"
     else
-        log_warn "Ошибки при откате: ${errors[*]}"
+        log_warn "$(_ "rollback.error.rollback_errors" "${errors[*]}")"
         return 1
     fi
 }
@@ -133,7 +133,7 @@ rollback::orchestrator::ufw() {
     if (( ${#errors[@]} == 0 )); then
         log_success "$(_ "rollback.ufw_disabled")"
     else
-        log_warn "Ошибки при откате: ${errors[*]}"
+        log_warn "$(_ "rollback.error.rollback_errors" "${errors[*]}")"
         return 1
     fi
 }
@@ -158,7 +158,7 @@ rollback::orchestrator::permissions() {
     if (( ${#errors[@]} == 0 )); then
         log_success "$(_ "rollback.permissions_restored")"
     else
-        log_warn "Ошибки при откате: ${errors[*]}"
+        log_warn "$(_ "rollback.error.rollback_errors" "${errors[*]}")"
         return 1
     fi
 }

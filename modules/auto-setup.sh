@@ -88,15 +88,15 @@ auto::install::run() {
 main() {
     i18n::load
     log_start
-    log_info "Будет выполнена автоматическая установка базовых правил:"
-    log_info_simple_tab "SSHD Установлен случайный SSH порт [10000-65535]"
-    log_info_simple_tab "SSHD Запрет авторизации пользователя root"
-    log_info_simple_tab "SSHD Запрет авторизации по паролю"
-    log_info_simple_tab "UFW Отключен ping сервера [/etc/ufw/before.rules]"
-    log_info_simple_tab "UFW Создано правило для вновь установленного SSH порта"
-    log_info_simple_tab "UFW Активация"
-    log_info "Будет активирован фоновый процесс rollback.sh для отката по истечению $ROLLBACK_TIMER_SECONDS секунд. В случае невозможности подключиться к серверу откатите изменения в текущем сеансе или дождитесь истечения таймера и подключайтесь к серверу по старым данным."
-    log_info "Для просмотра логов используйте системный журнал [journalctl -t bsss --since \"10 minutes ago\"] или логи в каталоге установки $(readlink -f "${PROJECT_ROOT}/logs")"
+    log_info "$(_ "auto.info.auto_setup_rules")"
+    log_info_simple_tab "$(_ "auto.info.sshd_random_port")"
+    log_info_simple_tab "$(_ "auto.info.sshd_deny_root")"
+    log_info_simple_tab "$(_ "auto.info.sshd_deny_password")"
+    log_info_simple_tab "$(_ "auto.info.ufw_disable_ping")"
+    log_info_simple_tab "$(_ "auto.info.ufw_ssh_port_rule")"
+    log_info_simple_tab "$(_ "auto.info.ufw_activation")"
+    log_info "$(_ "auto.info.rollback_timer_activation" "$ROLLBACK_TIMER_SECONDS")"
+    log_info "$(_ "auto.info.logs_location" "$(readlink -f "${PROJECT_ROOT}/logs")")"
     io::confirm_action
     auto::install::run
 }

@@ -57,11 +57,11 @@ ufw::toggle::status() {
 
 ufw::status::force_enable() {
     if ! ufw --force enable >/dev/null 2>&1; then
-        log_info "UFW успешно активирован [ufw --force enable]"
-    else
         rollback::orchestrator::immediate_usr2
         log_error "$(_ "ufw.error.enable_failed")"
         return 1
+    else
+        log_info "$(_ "ufw.success.enabled")"
     fi
 }
 
