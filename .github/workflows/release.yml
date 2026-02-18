@@ -74,14 +74,25 @@ jobs:
             --passphrase "$GPG_PASSPHRASE" \
             --local-user 0B490489C5972DC1 \
             --detach-sign --armor --output "${FILE_NAME}.asc" "$FILE_NAME"
+      
+      - name: Get Tag Message
+        id: tag_data
+        run: |
+          # Извлекаем описание из аннотированного тега
+          echo "tag_desc=$(git tag -l --format='%(contents:subject)' ${{ github.ref_name }})" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          # Сначала ваше описание, затем пустая строка
+          body: |
+            ${{ steps.tag_data.outputs.tag_desc }}
+            
+          # Включаем авто-генерацию списка коммитов ПОД вашим текстом
+          generate_release_notes: true
           files: |
             ${{ steps.archive_step.outputs.archive }}
             ${{ steps.archive_step.outputs.checksum }}
             ${{ steps.archive_step.outputs.signature }}
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
