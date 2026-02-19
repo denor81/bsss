@@ -70,6 +70,7 @@ readonly SYMBOL_SUCCESS="[v]"
 readonly SYMBOL_QUESTION="[?]"
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_ERROR="[x]"
+readonly LOG_FALLBACK_FILE="/var/log/bsss-oneline.log"
 
 # Journal mapping: BSSS log type -> systemd journal priority
 readonly -A JOURNAL_MAP=(
@@ -77,6 +78,50 @@ readonly -A JOURNAL_MAP=(
     [INFO]="info"
     [ERROR]="err"
 )
+
+# @type:        Sink
+# @description: Записывает сообщение в файл логов при недоступности stderr или journal
+# @params:      log_type - тип сообщения
+#               msg - текст сообщения
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log::fallback::write() {
+    local log_type="$1"
+    local msg="$2"
+    local timestamp
+    local log_dir
+
+    timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    log_dir="$(dirname "$LOG_FALLBACK_FILE")"
+
+    mkdir -p "$log_dir" >/dev/null 2>&1 || true
+    touch "$LOG_FALLBACK_FILE" >/dev/null 2>&1 || true
+    printf '%s [%s] [%s] %s\n' "$timestamp" "$log_type" "$CURRENT_MODULE_NAME" "$msg" >>"$LOG_FALLBACK_FILE" 2>/dev/null || true
+}
+
+# @type:        Sink
+# @description: Унифицированная точка логирования, печатает в stderr и journal с откатом в файл
+# @params:      symbol - символ статуса
+#               log_type - тип сообщения
+#               msg - текст сообщения
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log::_emit() {
+    local symbol="$1"
+    local log_type="$2"
+    local msg="$3"
+    local line
+
+    line="$symbol [$CURRENT_MODULE_NAME] $msg"
+
+    if ! printf '%s\n' "$line" >&2; then
+        log::fallback::write "$log_type" "$msg"
+    fi
+
+    log::to_journal "$msg" "$log_type"
+}
 
 trap 'install::cleanup::int_handler' INT
 trap 'install::cleanup::handler' EXIT
@@ -98,8 +143,11 @@ log::to_journal() {
 
     if (( LOG_JOURNAL_ENABLED )); then
         priority="${JOURNAL_MAP[$log_type]:-info}"
-        # || true: Logger может не справиться с логированием в критических ситуациях (например, при закрытых дескрипторах)
-        logger --id -t "$UTIL_NAME" -p "user.$priority" "[$CURRENT_MODULE_NAME] $msg" || true
+        if ! logger --id -t "$UTIL_NAME" -p "user.$priority" "[$CURRENT_MODULE_NAME] $msg"; then
+            log::fallback::write "$log_type" "$msg"
+        fi
+    else
+        log::fallback::write "$log_type" "$msg"
     fi
 }
 
@@ -110,9 +158,7 @@ log::to_journal() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_success() {
-    # || true: stderr может быть закрыт или перенаправлен (например, при прерывании установки)
-    echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $1" >&2 || true
-    log::to_journal "$1" "SUCCESS"
+    log::_emit "$SYMBOL_SUCCESS" "SUCCESS" "$1"
 }
 
 # @type:        Sink
@@ -122,9 +168,7 @@ log_success() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_error() {
-    # || true: stderr может быть закрыт или перенаправлен (например, при прерывании установки)
-    echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $1" >&2 || true
-    log::to_journal "$1" "ERROR"
+    log::_emit "$SYMBOL_ERROR" "ERROR" "$1"
 }
 
 # @type:        Sink
@@ -134,9 +178,7 @@ log_error() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info() {
-    # || true: stderr может быть закрыт или перенаправлен (например, при прерывании установки)
-    echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $1" >&2 || true
-    log::to_journal "$1" "INFO"
+    log::_emit "$SYMBOL_INFO" "INFO" "$1"
 }
 
 # @type:        Sink
@@ -149,7 +191,7 @@ log_info() {
 log_question() {
     local msg="$1"
     local type="QUESTION"
-    log::to_journal "$msg" "$type"
+    log::_emit "$SYMBOL_INFO" "$type" "$msg"
 }
 
 # @type:        Sink
@@ -162,7 +204,7 @@ log_question() {
 log_answer() {
     local msg="$1"
     local type="ANSWER"
-    log::to_journal "$msg" "$type"
+    log::_emit "$SYMBOL_INFO" "$type" "$msg"
 }
 
 # @type:        Source
