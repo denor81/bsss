@@ -540,7 +540,7 @@ install::download::signature() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - valid signature
-#               1 - invalid signature (non-critical)
+#               1 - invalid signature
 install::gpg::verify() {
     local verify_output
 
@@ -554,6 +554,19 @@ install::gpg::verify() {
     }
 
     log_info "$(_ "gpg.verify_success")"
+}
+
+# @type:        Orchestrator
+# @description: Требует успешную GPG-подпись перед продолжением
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успех
+#               1 - ошибка на любом шаге проверки
+install::gpg::require_valid_signature() {
+    install::gpg::import_public_key || return 1
+    install::download::signature || return 1
+    install::gpg::verify || return 1
 }
 
 # @type:        Sink
@@ -723,11 +736,7 @@ sys::run_or_install::prepare() {
     install::download::archive
 
     if install::gpg::check_available; then
-        install::gpg::import_public_key || true
-        install::download::signature || true
-        if [[ -n "$TMPSIGNATURE" && -f "$TMPSIGNATURE" ]]; then
-            install::gpg::verify || true
-        fi
+        install::gpg::require_valid_signature
     else
         log_info "$(_ "gpg.not_available")"
     fi
@@ -818,7 +827,7 @@ declare -gA I18N_MESSAGES_RU=(
     [gpg.verify_start]="Проверка GPG подписи..."
     [gpg.verify_failed]="GPG подпись НЕВЕРНА! Подробности в журнале."
     [gpg.verify_success]="GPG подпись верна"
-    [gpg.continuing_unverified]="Установка продолжается без верификации. Риск подмены архива."
+    [gpg.continuing_unverified]="Проверка подписи не удалась. Установка остановлена."
 )
 
 # English translations
@@ -874,7 +883,7 @@ declare -gA I18N_MESSAGES_EN=(
     [gpg.verify_start]="Verifying GPG signature..."
     [gpg.verify_failed]="GPG signature INVALID! Details in journal."
     [gpg.verify_success]="GPG signature is valid"
-    [gpg.continuing_unverified]="Installation continues without verification. Risk of tampered archive."
+    [gpg.continuing_unverified]="Signature verification failed. Installation aborted."
 )
 
 install::runner::main
