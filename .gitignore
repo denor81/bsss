@@ -10,6 +10,7 @@ logs/
 docs/
 oneline-runner_copy.sh*
 RELEASE_NOTES_v1*
+sudo_bashdb.sh
 
 # Git worktrees
 .worktrees/
