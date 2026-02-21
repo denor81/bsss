@@ -452,6 +452,54 @@ declare -gA I18N_MESSAGES_RU=(
     [gpg.install_failed]="Ошибка установки GPG через apt"
 )
 
+# English translations
+declare -gA I18N_MESSAGES_EN=(
+    [no_translate]="%s"
+    [continue]="Continue?"
+    [canceled]="Cancelled"
+    [hello]="Basic Server Security Setup (${UTIL_NAME^^}) - one-liner runner..."
+    [ask_language.selected]="Language selected [%s]"
+    [error_invalid_input]="Invalid input [%s]"
+    [cleanup.start]="Starting cleanup procedure: [RC: %s]"
+    [cleanup.nothing_to_cleanup]="Nothing to cleanup - nothing was installed/unpacked"
+    [cleanup.removing]="Removing: %s"
+    [cleanup.complete]="Cleanup completed"
+    [error_root_required]="Root privileges or running via 'sudo' required. Running as regular user."
+    [run_mode.dispatcher.prompt]="One-time run [Y] | Install [i] | Cancel [c]"
+    [error_already_installed]="Script already installed in system or another script with same directory name installed."
+    [info_installed_usage]="To run Basic Server Security Setup (${UTIL_NAME^^}) use: sudo ${UTIL_NAME}. If not working, check what is installed in ${INSTALL_DIR} or where ${UTIL_NAME} link points to [find /bin /usr/bin /usr/local/bin -type l -ls | grep ${UTIL_NAME}]"
+    [info_installed_uninstall]="To uninstall previously installed ${UTIL_NAME^^} script run: sudo ${UTIL_NAME} -u"
+    [tmpdir.created]="Created temporary directory %s"
+    [download.failed]="Failed to download (check internet or URL) [%s]"
+    [downloaded]="Downloaded to %s (size: %s, type: %s)"
+    [unpack.failed]="Archive unpacking error - %s"
+    [unpacked]="Archive unpacked to %s (size: %s)"
+    [check.not_found]="Error checking for executable file - file %s not found - something went wrong... either archive unpacking error or path error."
+    [check.found]="Executable file %s found"
+    [log.path_added]="Path %s added to uninstall log %s"
+    [dir.creating]="Creating directory %s"
+    [dir.create_failed]="Failed to create directory %s"
+    [files.copying]="Copying files from %s to %s"
+    [symlink.created]="Created symbolic link $UTIL_NAME to run %s. (Link location: %s)"
+    [permissions.setting]="Setting execute permissions (+x) in %s for .sh files"
+    [install.complete]="System installation completed"
+    [install.usage]="To run: sudo $UTIL_NAME, to uninstall: sudo $UTIL_NAME -u"
+    [install.info.download_archive]="Will download latest release archive ${UTIL_NAME^^} [%s]"
+    [install.info.download_signature]="Will download signature to verify ${UTIL_NAME^^} archive [%s]"
+    [install.info.install_dir]="Will install ${UTIL_NAME^^} to directory [%s]"
+    [install.info.usage_run]="Run sudo $UTIL_NAME"
+    [gpg.import_failed]="GPG key import error: [%s]"
+    [gpg.imported]="Public GPG key imported [gpg --import] [%s]"
+    [gpg.verify_start]="Verifying GPG signature..."
+    [gpg.verify_failed]="GPG signature INVALID! Details in journal."
+    [gpg.verify_success]="GPG signature valid"
+    [gpg.ask_install]="GPG not installed. Install GPG for signature verification?"
+    [gpg.installing]="Installing GPG via apt..."
+    [gpg.installed]="GPG installed successfully"
+    [apt_update_failed]="apt index update error"
+    [gpg.install_failed]="GPG installation via apt error"
+)
+
 #########################################
 #                                       #
 #                                       #
@@ -915,4 +963,6 @@ install::main() {
 #                                       #
 #########################################
 
-install::main
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    install::main
+fi
