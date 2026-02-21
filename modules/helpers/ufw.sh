@@ -30,23 +30,6 @@ ufw::ping::backup_file() {
 }
 
 # @type:        Sink
-# @description: Выполняет ufw reload для применения изменений
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки ufw reload
-ufw::status::reload() {
-    if ufw reload >/dev/null; then
-        log_info "$(_ "ufw.success.reloaded")"
-    else
-        local rc=$?
-        log_error "$(_ "ufw.error.reload_failed" "$rc")"
-        return "$rc"
-    fi
-}
-
-# @type:        Sink
 # @description: Заменяет ACCEPT на DROP в ICMP правилах файла before.rules
 # @params:      нет
 # @stdin:       нет
@@ -87,6 +70,23 @@ ufw::status::force_enable() {
     else
         local rc=$?
         log_error "$(_ "ufw.error.enable_failed")"
+        return "$rc"
+    fi
+}
+
+# @type:        Sink
+# @description: Выполняет ufw reload для применения изменений
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - код ошибки ufw reload
+ufw::status::reload() {
+    if ufw reload >/dev/null; then
+        log_info "$(_ "ufw.success.reloaded")"
+    else
+        local rc=$?
+        log_error "$(_ "ufw.error.reload_failed" "$rc")"
         return "$rc"
     fi
 }

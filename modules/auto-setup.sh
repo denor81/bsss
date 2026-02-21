@@ -65,7 +65,12 @@ auto::install::run() {
     permissions::rules::make_bsss_rules
     sys::service::restart
 
+    if ! ssh::port::wait_for_up "$port"; then
+        ssh::orchestrator::trigger_immediate_rollback
+    fi
+
     log_actual_info
+    common::log::current_config "^port"
     ssh::orchestrator::log_statuses
     ufw::orchestrator::log_statuses
     permissions::orchestrator::log_statuses

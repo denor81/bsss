@@ -91,22 +91,6 @@ permissions::log::other_configs() {
 }
 
 # @type:        Sink
-# @description: Логирует текущую конфигурацию SSH (sshd -T)
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
-permissions::log::current_config() {
-    local line
-
-    log_info "$(_ "permissions.check.current_ssh_config")"
-
-    while IFS= read -r line; do
-        log_info_simple_tab "$(_ "no_translate" "$line")"
-    # || true: sshd -T или grep могут не сработать в некоторых случаях
-    done < <(sshd -T 2>/dev/null | grep -Ei '^pubkeyauthentication|^passwordauthentication|^permitrootlogin' | sort || true)
-}
-
-# @type:        Sink
 # @description: Отображает инструкции guard для пользователя
 # @params:      нет
 # @stdin:       нет

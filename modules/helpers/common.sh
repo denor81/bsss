@@ -183,8 +183,8 @@ common::int::actions() {
     local rc=$?
     if [[ $rc -eq 0 ]]; then
         rc=130
+        new_line
     fi
-    new_line
     log_info "$(_ "common.int_received" "$rc")"
     exit $rc
 }
@@ -285,7 +285,7 @@ ufw::rule::delete_all_bsss() {
         if printf '%s' "$rule_args" | xargs ufw --force delete >/dev/null 2>&1; then
             log_info "$(_ "common.helpers.ufw.rule.deleted" "$rule_args")"
         else
-            log_error "$(_ "common.helpers.ufw.rule.delete_error" "$rule_args")"
+            log_warn "$(_ "common.helpers.ufw.rule.delete_error" "$rule_args")"
         fi
     done < <(ufw::rule::get_all_bsss)
 }
@@ -344,13 +344,23 @@ ufw::rule::add_bsss() {
 
 # @type:        Filter
 # @description: Проверяет, активен ли UFW
+#               может случиться ситуация, когда ufw будет падать в ошибку и после перезагрузки ошибка пропадает
+#               например при экстренном прирывании скрипта - перезагрузка помогает решить проблему
+#               своего рода fallback action на случай если возвращается код 1 - пробуем сделать reload
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - UFW активен
 #               1 - UFW неактивен
 ufw::status::is_active() {
-    ufw status | grep -wq active
+    local res
+    if res=$(ufw status 2>&1); then
+        printf '%s' "$res" | grep -wq "active"
+    else
+        log_warn "Ошибка UFW - возможно из за экстренного прерывания скрипта [${res//$'\n'/ }]"
+        ufw::status::force_disable
+        return 1
+    fi
 }
 
 # @type:        Filter
@@ -527,7 +537,74 @@ permissions::check::current_user() {
 # @stdout:      нет
 # @exit_code:   0 - Всегда успешно
 permissions::orchestrator::log_statuses() {
-    permissions::log::current_config
+    common::log::current_config "^pubkeyauthentication|^passwordauthentication|^permitrootlogin"
     permissions::log::bsss_configs
     permissions::log::other_configs
+}
+
+# @type:        Sink
+# @description: Логирует текущую конфигурацию SSH (sshd -T)
+# @params:      pattern    Регулярное выражение для фильтрации
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+common::log::current_config() {
+    local pattern="$1"
+    local line
+
+    log_info "$(_ "permissions.check.current_ssh_config")"
+
+    while IFS= read -r line; do
+        log_info_simple_tab "$(_ "no_translate" "$line")"
+    # || true: sshd -T или grep могут не сработать в некоторых случаях
+    done < <(sshd -T 2>/dev/null | grep -Ei "$pattern" | sort || true)
+}
+
+# @type:        Orchestrator
+# @description: Инициирует немедленный откат через SIGUSR2 и ожидает завершения watchdog
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - откат выполнен, процесс заблокирован
+ssh::orchestrator::trigger_immediate_rollback() {
+    # || true: WATCHDOG_PID может уже не существовать или завершиться во время kill/wait
+    kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
+    # || true: Процесс может уже завершиться к моменту вызова wait
+    wait "$WATCHDOG_PID" 2>/dev/null || true
+    while true; do sleep 1; done
+}
+
+# @type:        Orchestrator
+# @description: Блокирующая проверка поднятия SSH порта после изменения
+#               Проверяет порт в цикле с интервалом 0.5 секунды
+#               При успешном обнаружении возвращает 0
+#               При истечении таймаута возвращает 1
+# @params:
+#   port        Номер порта для проверки
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - порт успешно поднят
+#               1 - порт не поднялся в течение таймаута
+ssh::port::wait_for_up() {
+    local port="$1"
+    local timeout="${SSH_PORT_CHECK_TIMEOUT:-5}"
+    local elapsed=0
+    local interval=0.5
+    local attempts=1
+
+    log_info "$(_ "ssh.socket.wait_for_ssh_up.info" "$port" "$timeout")"
+
+    while (( elapsed < timeout )); do
+        # Проверяем, есть ли порт в списке активных
+        if ssh::port::get_from_ss | grep -qzxF "$port"; then
+            log_info "$(_ "ssh.success_port_up" "$port" "$attempts" "$elapsed")"
+            return
+        fi
+
+        sleep "$interval"
+        elapsed=$((elapsed + 1))
+        attempts=$((attempts + 1))
+    done
+
+    log_error "$(_ "ssh.error_port_not_up" "$port" "$attempts" "$timeout")"
+    return 1
 }

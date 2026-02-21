@@ -23,55 +23,6 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 # === ORCHESTRATORS ===
 
 # @type:        Orchestrator
-# @description: Блокирующая проверка поднятия SSH порта после изменения
-#               Проверяет порт в цикле с интервалом 0.5 секунды
-#               При успешном обнаружении возвращает 0
-#               При истечении таймаута возвращает 1
-# @params:
-#   port        Номер порта для проверки
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - порт успешно поднят
-#               1 - порт не поднялся в течение таймаута
-ssh::port::wait_for_up() {
-    local port="$1"
-    local timeout="${SSH_PORT_CHECK_TIMEOUT:-5}"
-    local elapsed=0
-    local interval=0.5
-    local attempts=1
-
-    log_info "$(_ "ssh.socket.wait_for_ssh_up.info" "$port" "$timeout")"
-
-    while (( elapsed < timeout )); do
-        # Проверяем, есть ли порт в списке активных
-        if ssh::port::get_from_ss | grep -qzxF "$port"; then
-            log_info "$(_ "ssh.success_port_up" "$port" "$attempts" "$elapsed")"
-            return
-        fi
-
-        sleep "$interval"
-        elapsed=$((elapsed + 1))
-        attempts=$((attempts + 1))
-    done
-
-    log_error "$(_ "ssh.error_port_not_up" "$port" "$attempts" "$timeout")"
-    return 1
-}
-
-# @type:        Orchestrator
-# @description: Инициирует немедленный откат через SIGUSR2 и ожидает завершения watchdog
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - откат выполнен, процесс заблокирован
-ssh::orchestrator::trigger_immediate_rollback() {
-    # || true: WATCHDOG_PID может уже не существовать или завершиться во время kill/wait
-    kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
-    # || true: Процесс может уже завершиться к моменту вызова wait
-    wait "$WATCHDOG_PID" 2>/dev/null || true
-    while true; do sleep 1; done
-}
-
-# @type:        Orchestrator
 # @description: Устанавливает новый SSH порт с механизмом rollback
 # @params:      нет
 # @stdin:       нет
@@ -92,10 +43,12 @@ ssh::install::port() {
     printf '%s\0' "$port" | ssh::rule::reset_and_pass | ufw::rule::reset_and_pass | ssh::port::install_new
 
     sys::service::restart
-    log_actual_info
     if ! ssh::port::wait_for_up "$port"; then
         ssh::orchestrator::trigger_immediate_rollback
     fi
+    
+    log_actual_info
+    common::log::current_config "^port"
     ssh::orchestrator::log_statuses
     ufw::log::rules
 

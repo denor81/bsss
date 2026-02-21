@@ -26,7 +26,6 @@ source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 LOG_STRICT_MODE=false
 MAIN_SCRIPT_PID=""
 SLEEP_PID=""
-MAIN_SCRIPT=""
 ROLLBACK_TYPE=""
 
 # На случай прерывания родительского скрипт защищаемся от SIGPIPE для максимальной устойчивости rollback
@@ -173,7 +172,8 @@ rollback::orchestrator::full() {
     local errors=()
     log_warn "$(_ "rollback.full_dismantle")"
 
-    # гасим код 3 потому что он нужен при использованиии функции full_rollback::orchestrator::execute_all при явном выборе полного отката через меню, а в этом файле код 3 будет отправлен автоматически
+    # гасим код 3 потому что он нужен при использованиии функции full_rollback::orchestrator::execute_all
+    # при явном выборе полного отката через меню, а в этом файле код 3 будет отправлен автоматически при успешном завершении отката
     # гасим код 1 для живучести отката - лог с ошибками будет отображен
     full_rollback::orchestrator::execute_all || true
 }
