@@ -124,7 +124,6 @@ permissions::orchestrator::dispatch_logic() {
 
     current_conn_type=$(sys::user::get_auth_method | tr -d '\0')
 
-    log_info "$(_ "permissions.info.session_owner_conn_type" "$(logname)" "$current_conn_type")"
     permissions::check::current_user # возможно прерывание кодом 4
 
     case "$current_conn_type" in
