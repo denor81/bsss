@@ -86,7 +86,15 @@ trap 'install::cleanup' EXIT
 # Check if logger command is available for journal logging
 command -v logger >/dev/null 2>&1 && readonly LOG_JOURNAL_ENABLED=1 || readonly LOG_JOURNAL_ENABLED=0
 
-##################INIT##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                 INIT                  #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 # @type:        Filter
 # @description: Проверяет права root
 # @params:      нет
@@ -117,6 +125,13 @@ init::allready_installed() {
     fi
 }
 
+# @type:        Orchestrator
+# @description: Проверяет и устанавливает зависимости (GPG)
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - зависимости в порядке
+#               $? - ошибка установки зависимостей
 init::check_dependencies() {
     if ! command -v gpg &>/dev/null; then
         ui::ask_value "$(_ "gpg.ask_install")" "y" "[yn]" "Y/n" "[n0]" >/dev/null
@@ -153,6 +168,14 @@ init::gpg::install() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - язык выбран
+# @type:        Sink
+# @description: Запрашивает у пользователя язык установки
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - язык выбран
+#               1 - ошибка выбора языка
+#               2 - отмена пользователем
 init::ask_language() {
     local lang
     local hint="r/e"
@@ -166,9 +189,25 @@ init::ask_language() {
 
     log_info "$(_ "ask_language.selected" "$INSTALLER_LANG")"
 }
-##################/INIT#################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                 /INIT                 #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 
-#################HELPERS################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#               HELPERS                 #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 # @type:        Source
 # @description: Получает размер файла в KB
 # @params:      file_path\n
@@ -183,11 +222,9 @@ get_file_size_kb() {
 # @description: Добавляет путь в файл лога установки для последующего удаления
 # @params:
 #   uninstall_path Путь для добавления в лог удаления
-#   install_log_path [optional] Путь к файлу лога (default: $INSTALL_DIR/$INSTALL_LOG_FILE_NAME)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
-#               1 - путь не указан
 add_path_for_uninstall() {
     local uninstall_path="$1"
     local install_log_path="${INSTALL_DIR}/${INSTALL_LOG_FILE_NAME}"
@@ -210,9 +247,25 @@ install::dir::create() {
     mkdir -p "$INSTALL_DIR" || { log_error "$(_ "dir.create_failed" "$INSTALL_DIR")"; return 1; }
     add_path_for_uninstall "$INSTALL_DIR"
 }
-#################/HELPERS###############
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#               /HELPERS                #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 
-###################LOG##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                  LOG                  #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 # @type:        Sink
 # @description: Выводит сообщение с символом
 # @params:      message - Сообщение для вывода
@@ -307,8 +360,25 @@ log_question() {
 log_answer() {
     log::to_journal "$1" "ANSWER"
 }
-##################/LOG##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                 /LOG                  #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                 I18N                  #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 # @type:        Source
 # @description: Переводчик сообщений по ключу для oneline-runner
 # @params:      message_key - Ключ сообщения
@@ -334,7 +404,63 @@ _() {
     fi
 }
 
-##################UI##################
+# Russian translations
+declare -gA I18N_MESSAGES_RU=(
+    [no_translate]="%s"
+    [continue]="Продолжить?"
+    [canceled]="Отменено"
+    [hello]="Базовая настройка безопасности сервера/Basic Server Security Setup (${UTIL_NAME^^}) - однострочный запуск..."
+    [ask_language.selected]="Выбран язык [%s]"
+    [error_invalid_input]="Неверный выбор [%s]"
+    [cleanup.start]="Запуск процедуры очистки: [RC: %s]"
+    [cleanup.nothing_to_cleanup]="Очистка не требуется - ничего не было установлено/распаковано"
+    [cleanup.removing]="Удаляю: %s"
+    [cleanup.complete]="Очистка завершена"
+    [error_root_required]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
+    [run_mode.dispatcher.prompt]="Разовый запуск [Y] | Установка [i] | Отмена [c]"
+    [error_already_installed]="Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога."
+    [info_installed_usage]="Для запуска Basic Server Security Setup (${UTIL_NAME^^}) используйте команду: sudo ${UTIL_NAME}, если не сработает - проверьте, что установлено в каталоге ${INSTALL_DIR} или куда ссылается ссылка ${UTIL_NAME} [find /bin /usr/bin /usr/local/bin -type l -ls | grep ${UTIL_NAME}]"
+    [info_installed_uninstall]="Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo ${UTIL_NAME} -u"
+    [tmpdir.created]="Создана временная директория %s"
+    [download.failed]="Не удалось скачать (проверьте интернет или URL) [%s]"
+    [downloaded]="Скачан в %s (размер: %s, тип: %s)"
+    [unpack.failed]="Ошибка распаковки архива - %s"
+    [unpacked]="Архив распакован в %s (размер: %s)"
+    [check.not_found]="При проверке наличия исполняемого файла произошла ошибка - файл %s не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
+    [check.found]="Исполняемый файл %s найден"
+    [log.path_added]="Путь %s добавлен в лог удаления %s"
+    [dir.creating]="Создаю директорию %s"
+    [dir.create_failed]="Не удалось создать директорию %s"
+    [files.copying]="Копирую файлы из %s в %s"
+    [symlink.created]="Создана символическая ссылка $UTIL_NAME для запуска %s. (Расположение ссылки: %s)"
+    [permissions.setting]="Устанавливаю права запуска (+x) в %s для .sh файлов"
+    [install.complete]="Установка в систему завершена"
+    [install.usage]="Используйте для запуска: sudo $UTIL_NAME, для удаления: sudo $UTIL_NAME -u"
+    [install.info.download_archive]="Будет скачан архив последней версии релиза ${UTIL_NAME^^} [%s]"
+    [install.info.download_signature]="Будет скачана подпись для верификации архива ${UTIL_NAME^^} [%s]"
+    [install.info.install_dir]="Будет произведена установка ${UTIL_NAME^^} в директорию [%s]"
+    [install.info.usage_run]="Запускать sudo $UTIL_NAME"
+    [gpg.import_failed]="Ошибка импорта GPG ключа: [%s]"
+    [gpg.imported]="Публичный GPG ключ импортирован [gpg --import] [%s]"
+    [gpg.verify_start]="Проверка GPG подписи..."
+    [gpg.verify_failed]="GPG подпись НЕВЕРНА! Подробности в журнале."
+    [gpg.verify_success]="GPG подпись верна"
+    [gpg.ask_install]="GPG не установлен. Установить GPG для проверки подписи?"
+    [gpg.installing]="Установка GPG через apt..."
+    [gpg.installed]="GPG успешно установлен"
+    [apt_update_failed]="Ошибка обновления индексов apt"
+    [gpg.install_failed]="Ошибка установки GPG через apt"
+)
+
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                  UI                   #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 # @type:        Interactive
 # @description: Запрашивает у пользователя значение
 # @params:      question - Вопрос
@@ -344,6 +470,7 @@ _() {
 # @stdin:       Ожидает ввод пользователя (TTY)
 # @stdout:      string\n
 # @exit_code:   0 - успешно
+#               2 - отмена пользователем
 ui::ask_value() {
     local question="$1" default="$2" pattern="$3" hint="$4" cancel_keyword="${5:-}"
     local choice
@@ -364,9 +491,32 @@ ui::ask_value() {
         log_error "$(_ "error_invalid_input" "$hint")"
     done
 }
-##################/UI##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                  /UI                  #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 
-##################LOGIC##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                 LOGIC                 #
+#                                       #
+#                                       #
+#                                       #
+#########################################
+# @type:        Orchestrator
+# @description: Оркестратор установки: подтверждение, подготовка и установка в систему
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка установки
 install::orchestrator() {
     log_info "$(_ "install.info.install_dir" "$INSTALL_DIR")"
     log_info "$(_ "install.info.usage_run")"
@@ -376,6 +526,13 @@ install::orchestrator() {
     install::to_system
 }
 
+# @type:        Orchestrator
+# @description: Оркестратор разового запуска: подготовка и запуск main.sh
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               $? - ошибка выполнения
 onetime_runner::orchestrator() {
     install::prepare
     bash "$TMP_MAIN_SCRIPT_PATH" -l "$INSTALLER_LANG"
@@ -386,8 +543,9 @@ onetime_runner::orchestrator() {
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - режим выбран
-#               1 - оибка выбора
+# @exit_code:   0 - режим выбран и выполнен
+#               1 - ошибка выбора или выполнения
+#               2 - отмена пользователем
 install::dispatcher() {
     local choice
     local hint="Y/i/c"
@@ -403,9 +561,25 @@ install::dispatcher() {
         *) log_error "$(_ "error_invalid_input" "$hint")"; return 1 ;;
     esac
 }
-##################/LOGIC##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                 /LOGIC                #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 
-##################PREPARE##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                PREPARE                #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 # @type:        Orchestrator
 # @description: Подготавливает окружение для запуска или установки: временную директорию, архив, распаковку и проверку
 # @params:      нет
@@ -425,18 +599,26 @@ install::prepare() {
     install::archive::check
 }
 
-# @type:        Source
-# @description: Создаёт временную директорию
+# @type:        Sink
+# @description: Создаёт временную директорию и сохраняет путь в глобальную переменную
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
+#               1 - ошибка создания директории
 install::tmp::create() {
     TEMP_PROJECT_DIR=$(mktemp -d --tmpdir "${UTIL_NAME}"-XXXXXX) || return 1
     CLEANUP_COMMANDS+=("$TEMP_PROJECT_DIR")
     log_info "$(_ "tmpdir.created" "$TEMP_PROJECT_DIR")"
 }
 
+# @type:        Sink
+# @description: Скачивает архив и сохраняет путь в глобальную переменную TMPARCHIVE
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка скачивания
 install::download::archive() {
     TMPARCHIVE=$(mktemp --tmpdir "${UTIL_NAME}"-XXXXXX-archive.tar.gz) || return 1
     CLEANUP_COMMANDS+=("$TMPARCHIVE")
@@ -451,6 +633,13 @@ install::download::archive() {
 }
 
 
+# @type:        Sink
+# @description: Скачивает подпись и сохраняет путь в глобальную переменную TMPSIGNATURE
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка скачивания
 install::download::signature() {
     TMPSIGNATURE=$(mktemp --tmpdir "${UTIL_NAME}"-XXXXXX-signature.asc) || return 1
     CLEANUP_COMMANDS+=("$TMPSIGNATURE")
@@ -493,9 +682,25 @@ install::archive::check() {
     fi
     log_info "$(_ "check.found" "$MAIN_SCRIPT_FILE_NAME")"
 }
-##################/PREPARE##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#               /PREPARE                #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 
-##################SIGNATURE##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#               SIGNATURE               #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 # @type:        Orchestrator
 # @description: Выполняет цикл GPG-верификации: импорт ключа, верификация
 # @params:      нет
@@ -548,10 +753,25 @@ sig::gpg::verify_signature() {
 
     log_info "$(_ "gpg.verify_success")"
 }
-##################/SIGNATURE##################
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#              /SIGNATURE               #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 
-
-
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#                INSTALL                #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 # @type:        Orchestrator
 # @description: Функция установки в систему
 # @params:      нет
@@ -640,9 +860,8 @@ install::cleanup::int_handler() {
 }
 
 # @type:        Orchestrator
-# @description: Очистка временных файлов
-# @params:
-#   reason      Причина очистки
+# @description: Очистка временных файлов при exit
+# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
@@ -686,53 +905,14 @@ install::main() {
     init::check_dependencies
     install::dispatcher
 }
-
-# Russian translations
-declare -gA I18N_MESSAGES_RU=(
-    [no_translate]="%s"
-    [continue]="Продолжить?"
-    [canceled]="Отменено"
-    [hello]="Базовая настройка безопасности сервера/Basic Server Security Setup (${UTIL_NAME^^}) - однострочный запуск..."
-    [ask_language.selected]="Выбран язык [%s]"
-    [error_invalid_input]="Неверный выбор [%s]"
-    [cleanup.start]="Запуск процедуры очистки: [RC: %s]"
-    [cleanup.nothing_to_cleanup]="Очистка не требуется - ничего не было установлено/распаковано"
-    [cleanup.removing]="Удаляю: %s"
-    [cleanup.complete]="Очистка завершена"
-    [error_root_required]="Требуются права root или запуск через 'sudo'. Запущен как обычный пользователь."
-    [run_mode.dispatcher.prompt]="Разовый запуск [Y] | Установка [i] | Отмена [c]"
-    [error_already_installed]="Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога."
-    [info_installed_usage]="Для запуска Basic Server Security Setup (${UTIL_NAME^^}) используйте команду: sudo ${UTIL_NAME}, если не сработает - проверьте, что установлено в каталоге ${INSTALL_DIR} или куда ссылается ссылка ${UTIL_NAME} [find /bin /usr/bin /usr/local/bin -type l -ls | grep ${UTIL_NAME}]"
-    [info_installed_uninstall]="Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo ${UTIL_NAME} -u"
-    [tmpdir.created]="Создана временная директория %s"
-    [download.failed]="Не удалось скачать (проверьте интернет или URL) [%s]"
-    [downloaded]="Скачан в %s (размер: %s, тип: %s)"
-    [unpack.failed]="Ошибка распаковки архива - %s"
-    [unpacked]="Архив распакован в %s (размер: %s)"
-    [check.not_found]="При проверке наличия исполняемого файла произошла ошибка - файл %s не найден - что то не так... либо ошибка при рапаковке архива, либо ошибка в путях."
-    [check.found]="Исполняемый файл %s найден"
-    [log.path_added]="Путь %s добавлен в лог удаления %s"
-    [dir.creating]="Создаю директорию %s"
-    [dir.create_failed]="Не удалось создать директорию %s"
-    [files.copying]="Копирую файлы из %s в %s"
-    [symlink.created]="Создана символическая ссылка $UTIL_NAME для запуска %s. (Расположение ссылки: %s)"
-    [permissions.setting]="Устанавливаю права запуска (+x) в %s для .sh файлов"
-    [install.complete]="Установка в систему завершена"
-    [install.usage]="Используйте для запуска: sudo $UTIL_NAME, для удаления: sudo $UTIL_NAME -u"
-    [install.info.download_archive]="Будет скачан архив последней версии релиза ${UTIL_NAME^^} [%s]"
-    [install.info.download_signature]="Будет скачана подпись для верификации архива ${UTIL_NAME^^} [%s]"
-    [install.info.install_dir]="Будет произведена установка ${UTIL_NAME^^} в директорию [%s]"
-    [install.info.usage_run]="Запускать sudo $UTIL_NAME"
-    [gpg.import_failed]="Ошибка импорта GPG ключа: [%s]"
-    [gpg.imported]="Публичный GPG ключ импортирован [gpg --import] [%s]"
-    [gpg.verify_start]="Проверка GPG подписи..."
-    [gpg.verify_failed]="GPG подпись НЕВЕРНА! Подробности в журнале."
-    [gpg.verify_success]="GPG подпись верна"
-    [gpg.ask_install]="GPG не установлен. Установить GPG для проверки подписи?"
-    [gpg.installing]="Установка GPG через apt..."
-    [gpg.installed]="GPG успешно установлен"
-    [apt_update_failed]="Ошибка обновления индексов apt"
-    [gpg.install_failed]="Ошибка установки GPG через apt"
-)
+#########################################
+#                                       #
+#                                       #
+#                                       #
+#               /INSTALL                #
+#                                       #
+#                                       #
+#                                       #
+#########################################
 
 install::main
