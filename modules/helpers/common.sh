@@ -101,7 +101,7 @@ rollback::orchestrator::watchdog_stop() {
     # Посылаем сигнал успешного завершения (USR1)
     log_info "$(_ "common.helpers.rollback.stop_signal" "$WATCHDOG_PID")"
     # || true: WATCHDOG_PID может уже не существовать
-    log_info "Отправлен сигнал USR1"
+    log_info "$(_ "rollback.signal_usr1_sent")"
     kill -USR1 "$WATCHDOG_PID" 2>/dev/null || true
     # || true: Процесс может уже завершиться к моменту вызова wait
     wait "$WATCHDOG_PID" 2>/dev/null || true
@@ -126,7 +126,7 @@ make_fifo_and_start_reader() {
 # @exit_code:   0 успех
 start_sync_rollback() {
     mkfifo "$SYNC_FIFO"
-    log_info "Создан FIFO: $SYNC_FIFO"
+    log_info "$(_ "rollback.fifo_created" "$SYNC_FIFO")"
 }
 
 # @type:        Orchestrator
@@ -135,9 +135,9 @@ start_sync_rollback() {
 # @stdout:      нет
 # @exit_code:   0 успех
 stop_sync_rollback() {
-    log_info "Ожидание готовности rollback.sh..."
+    log_info "$(_ "rollback.waiting_ready")"
     read _ < "$SYNC_FIFO"
-    log_info "Получен READY из $SYNC_FIFO"
+    log_info "$(_ "rollback.ready_received" "$SYNC_FIFO")"
     [[ -n "$SYNC_FIFO" ]] && printf '%s\0' "$SYNC_FIFO" | sys::file::delete
 }
 
@@ -338,7 +338,7 @@ ufw::status::is_active() {
     if res=$(ufw status 2>&1); then
         printf '%s' "$res" | grep -wq "active"
     else
-        log_warn "Ошибка UFW - возможно из за экстренного прерывания скрипта [${res//$'\n'/ }]"
+        log_warn "$(_ "common.helpers.ufw.error_interrupt" "${res//$'\n'/ }")"
         ufw::status::force_disable
         return 1
     fi
@@ -468,7 +468,7 @@ common::log::current_config() {
 # @exit_code:   0 - откат выполнен, процесс заблокирован
 ssh::orchestrator::trigger_immediate_rollback() {
     # || true: WATCHDOG_PID может уже не существовать или завершиться во время kill/wait
-    log_info "Отправлен сигнал USR2"
+    log_info "$(_ "rollback.signal_usr2_sent")"
     kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
     # || true: Процесс может уже завершиться к моменту вызова wait
     wait "$WATCHDOG_PID" 2>/dev/null || true

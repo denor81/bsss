@@ -72,7 +72,7 @@ rollback::orchestrator::immediate_usr2() {
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
         # || true: MAIN_SCRIPT_PID может завершиться до отправки сигнала
-        log_info "Отправлен сигнал USR1"
+        log_info "$(_ "rollback.signal_usr1_sent")"
         kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
         # || true: Процесс может уже завершиться к моменту вызова wait
         wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
@@ -258,7 +258,7 @@ rollback::orchestrator::watchdog_timer() {
 
         if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
             # || true: MAIN_SCRIPT_PID может завершиться до отправки сигнала
-            log_info "Отправлен сигнал USR1"
+            log_info "$(_ "rollback.signal_usr1_sent")"
             kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
             # || true: Процесс может уже завершиться к моменту вызова wait
             wait "$MAIN_SCRIPT_PID" 2>/dev/null || true

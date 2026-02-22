@@ -224,6 +224,7 @@ I18N_MESSAGES["common.helpers.ufw.rule.delete_error"]="Error deleting UFW rule: 
 I18N_MESSAGES["common.helpers.ufw.rule.added"]="Created UFW rule: [ufw allow %s/tcp comment '$BSSS_MARKER_COMMENT']"
 I18N_MESSAGES["common.helpers.ufw.rule.add_error"]="Error adding UFW rule: [ufw allow %s/tcp comment ${UTIL_NAME^^}]"
 I18N_MESSAGES["common.helpers.ufw.disabled"]="UFW: Fully deactivated [ufw --force disable]"
+I18N_MESSAGES["common.helpers.ufw.error_interrupt"]="UFW error - possibly due to script emergency interruption [%s]"
 I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Sending rollback disable signal USR1 [PID: %s]"
 I18N_MESSAGES["common.helpers.rollback.stop_received"]="Received USR1 signal - stopping script due to rollback"
 I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Created FIFO: %s"
@@ -274,7 +275,6 @@ I18N_MESSAGES["permissions.guard.test_access"]="Test server access in new termin
 I18N_MESSAGES["permissions.check.current_ssh_config"]="Current SSH configuration [sshd -T]:"
 
 # Permissions warnings
-I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Connection detected as root-user. Authenticate via SSH key as a sudo-user (non root). Automatic configuration creates, among other things, rules that restrict authorization under root. The current session owner is %s."
 I18N_MESSAGES["permissions.attention.password_connection"]="Password connection detected. In automatic mode, rules are created that prohibit password authorization. Connect as a sudo user (not root) using an SSH key."
 I18N_MESSAGES["permissions.warn.session_timeout_limitations"]="Session longer than 72 hours [cannot determine connection type - log limitations]"
 I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Reconnect in new terminal window [%s]"
@@ -304,7 +304,6 @@ I18N_MESSAGES["rollback.error.rollback_errors"]="Errors during rollback: %s"
 I18N_MESSAGES["full_rollback.info.full_rollback_warning"]="Full rollback of all ${UTIL_NAME^^} settings will be performed"
 
 # Permissions session info
-I18N_MESSAGES["permissions.info.session_owner_conn_type"]="Session owner [%s]|Connection type [%s]"
 
 # Auto setup info
 I18N_MESSAGES["auto.info.auto_setup_rules"]="Automatic installation of basic rules will be performed:"
@@ -319,3 +318,10 @@ I18N_MESSAGES["auto.info.logs_location"]="To view logs, use the system log [jour
 
 # UFW activation
 I18N_MESSAGES["ufw.success.enabled"]="UFW successfully enabled [ufw --force enable]"
+
+# Rollback signal messages
+I18N_MESSAGES["rollback.signal_usr1_sent"]="Sent USR1 signal"
+I18N_MESSAGES["rollback.signal_usr2_sent"]="Sent USR2 signal"
+I18N_MESSAGES["rollback.fifo_created"]="Created FIFO:%s"
+I18N_MESSAGES["rollback.waiting_ready"]="Waiting for rollback.sh to be ready..."
+I18N_MESSAGES["rollback.ready_received"]="Received READY from %s"

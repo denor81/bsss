@@ -224,6 +224,7 @@ I18N_MESSAGES["common.helpers.ufw.rule.delete_error"]="Ошибка при уд�
 I18N_MESSAGES["common.helpers.ufw.rule.added"]="Создано правило UFW: [ufw allow %s/tcp comment '$BSSS_MARKER_COMMENT']"
 I18N_MESSAGES["common.helpers.ufw.rule.add_error"]="Ошибка при добавлении правила UFW: [ufw allow %s/tcp comment ${UTIL_NAME^^}]"
 I18N_MESSAGES["common.helpers.ufw.disabled"]="UFW: Полностью деактивирован [ufw --force disable]"
+I18N_MESSAGES["common.helpers.ufw.error_interrupt"]="Ошибка UFW - возможно из за экстренного прерывания скрипта [%s]"
 I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Посылаем сигнал отключения rollback USR1 [PID: %s]"
 I18N_MESSAGES["common.helpers.rollback.stop_received"]="Получен сигнал USR1 - остановка скрипта из-за отката"
 I18N_MESSAGES["common.exit_received"]="Получен сигнал EXIT [RC: %s]"
@@ -274,7 +275,6 @@ I18N_MESSAGES["permissions.guard.test_access"]="Проверьте доступ 
 I18N_MESSAGES["permissions.check.current_ssh_config"]="Текущая конфигурация SSH [sshd -T]:"
 
 # Permissions warnings
-I18N_MESSAGES["permissions.warn.auth_by_ssh_key_user"]="Обнаружено подлючение под root-пользователем. Авторизуйтесь по SSH ключу sudo-пользователем (не root). Автоматическая настройка создает в том числе правила ограничивающие авторизацию под root. Сейчас владелец сессии %s."
 I18N_MESSAGES["permissions.attention.password_connection"]="Обнаружено подключение по паролю. В автоматическом режиме создаются правила запрещающие авторизацию по паролю. Подключитесь под sudo-пользователем (не root) по SSH ключу."
 I18N_MESSAGES["permissions.warn.session_timeout_limitations"]="Сессия длиннее 72 часов [невозможно определить тип подключения - ограничения журнала]"
 I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Подключитесь заново в новом окне терминала [%s]"
@@ -304,7 +304,6 @@ I18N_MESSAGES["rollback.error.rollback_errors"]="Ошибки при откат�
 I18N_MESSAGES["full_rollback.info.full_rollback_warning"]="Будет выполнен полный откат всех настроек ${UTIL_NAME^^}"
 
 # Permissions session info
-I18N_MESSAGES["permissions.info.session_owner_conn_type"]="Владелец сессии [%s]|Тип подключения [%s]"
 
 # Auto setup info
 I18N_MESSAGES["auto.info.auto_setup_rules"]="Будет выполнена автоматическая установка базовых правил:"
@@ -319,3 +318,10 @@ I18N_MESSAGES["auto.info.logs_location"]="Для просмотра логов �
 
 # UFW activation
 I18N_MESSAGES["ufw.success.enabled"]="UFW успешно активирован [ufw --force enable]"
+
+# Rollback signal messages
+I18N_MESSAGES["rollback.signal_usr1_sent"]="Отправлен сигнал USR1"
+I18N_MESSAGES["rollback.signal_usr2_sent"]="Отправлен сигнал USR2"
+I18N_MESSAGES["rollback.fifo_created"]="Создан FIFO:%s"
+I18N_MESSAGES["rollback.waiting_ready"]="Ожидание готовности rollback.sh..."
+I18N_MESSAGES["rollback.ready_received"]="Получен READY из %s"

@@ -25,7 +25,7 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 # @stdout:      нет
 # @exit_code:   0 откат выполнен, процесс заблокирован
 auto::orchestrator::trigger_immediate_rollback() {
-    log_info "Отправлен сигнал USR2 в rollback.sh"
+    log_info "$(_ "rollback.signal_usr2_sent")"
     kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
     wait "$WATCHDOG_PID" 2>/dev/null || true
     while true; do sleep 1; done
