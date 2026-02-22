@@ -74,7 +74,7 @@ ssh::main::menu::dispatcher() {
     ssh::log::bsss_configs
 
     log_info "$(_ "common.menu_header")"
-    log_info_simple_tab "1. $(_ "ssh.menu.item_reset" "${UTIL_NAME^^}")"
+    log_info_simple_tab "1. $(_ "ssh.menu.item_reset")"
     log_info_simple_tab "2. $(_ "ssh.menu.item_reinstall")"
     log_info_simple_tab "0. $(_ "common.exit")"
 

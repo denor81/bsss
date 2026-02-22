@@ -131,7 +131,7 @@ I18N_MESSAGES["ssh.warning_no_external_rules"]="No external SSH rules [%s]"
 I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Waiting for SSH port %s to come up (timeout: %s sec)..."
 
 # Menu items
-I18N_MESSAGES["ssh.menu.item_reset"]="Reset (delete %s rule)"
+I18N_MESSAGES["ssh.menu.item_reset"]="Reset (delete ${UTIL_NAME^^} rule)"
 I18N_MESSAGES["ssh.menu.item_reinstall"]="Reinstall (replace with new port)"
 
 # Input messages
@@ -281,7 +281,7 @@ I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Reconnect in new termina
 I18N_MESSAGES["permissions.warn.cannot_determine_connection"]="Failed to determine connection type"
 
 # Permissions confirm
-I18N_MESSAGES["permissions.confirm.reset_rules"]="Execute reset of %s access rules?"
+I18N_MESSAGES["permissions.confirm.reset_rules"]="Execute reset of ${UTIL_NAME^^} access rules?"
 
 # Permissions info
 I18N_MESSAGES["permissions.info.only_reset_available"]="In this mode only reset is possible"
@@ -301,7 +301,7 @@ I18N_MESSAGES["common.session.owner"]="Session owner"
 I18N_MESSAGES["rollback.error.rollback_errors"]="Errors during rollback: %s"
 
 # Full rollback info
-I18N_MESSAGES["full_rollback.info.full_rollback_warning"]="Full rollback of all %s settings will be performed"
+I18N_MESSAGES["full_rollback.info.full_rollback_warning"]="Full rollback of all ${UTIL_NAME^^} settings will be performed"
 
 # Permissions session info
 I18N_MESSAGES["permissions.info.session_owner_conn_type"]="Session owner [%s]|Connection type [%s]"

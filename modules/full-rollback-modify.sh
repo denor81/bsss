@@ -26,7 +26,7 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 #               1 критическая ошибка
 #               2 отмена пользователем
 full_rollback::orchestrator::run_module() {
-    log_info "$(_ "full_rollback.info.full_rollback_warning" "${UTIL_NAME^^}")"
+    log_info "$(_ "full_rollback.info.full_rollback_warning")"
 
     io::confirm_action
 

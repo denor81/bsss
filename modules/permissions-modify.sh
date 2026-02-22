@@ -134,7 +134,7 @@ permissions::orchestrator::dispatch_logic() {
             log_warn "$(_ "permissions.warn.session_timeout_limitations")"
             log_warn "$(_ "permissions.warn.reconnect_new_window" "$current_conn_type")"
             log_warn "$(_ "permissions.info.only_reset_available")"
-            io::confirm_action "$(_ "permissions.confirm.reset_rules" "${UTIL_NAME^^}")"
+            io::confirm_action "$(_ "permissions.confirm.reset_rules")"
             permissions::orchestrator::restore::rules
         ;;
         n/a) log_warn "$(_ "permissions.warn.cannot_determine_connection")"; return 1 ;;

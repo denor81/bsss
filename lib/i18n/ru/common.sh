@@ -131,7 +131,7 @@ I18N_MESSAGES["ssh.warning_no_external_rules"]="Нет сторонних пра
 I18N_MESSAGES["ssh.socket.wait_for_ssh_up.info"]="Ожидание поднятия SSH порта %s (таймаут: %s сек)..."
 
 # Menu items
-I18N_MESSAGES["ssh.menu.item_reset"]="Сброс (удаление правила %s)"
+I18N_MESSAGES["ssh.menu.item_reset"]="Сброс (удаление правила ${UTIL_NAME^^})"
 I18N_MESSAGES["ssh.menu.item_reinstall"]="Переустановка (замена на новый порт)"
 
 # Input messages
@@ -281,7 +281,7 @@ I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Подключитесь
 I18N_MESSAGES["permissions.warn.cannot_determine_connection"]="Не удалось определить тип подключения"
 
 # Permissions confirm
-I18N_MESSAGES["permissions.confirm.reset_rules"]="Выполнить сброс правил %s для доступа?"
+I18N_MESSAGES["permissions.confirm.reset_rules"]="Выполнить сброс правил ${UTIL_NAME^^} для доступа?"
 
 # Permissions info
 I18N_MESSAGES["permissions.info.only_reset_available"]="В таком режиме возможен только сброс настроек"
@@ -301,7 +301,7 @@ I18N_MESSAGES["common.session.owner"]="Владелец сессии"
 I18N_MESSAGES["rollback.error.rollback_errors"]="Ошибки при откате: %s"
 
 # Full rollback info
-I18N_MESSAGES["full_rollback.info.full_rollback_warning"]="Будет выполнен полный откат всех настроек %s"
+I18N_MESSAGES["full_rollback.info.full_rollback_warning"]="Будет выполнен полный откат всех настроек ${UTIL_NAME^^}"
 
 # Permissions session info
 I18N_MESSAGES["permissions.info.session_owner_conn_type"]="Владелец сессии [%s]|Тип подключения [%s]"
