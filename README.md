@@ -1,87 +1,108 @@
 # 🛡️ BSSS — Basic Server Security Setup
 
-> **Secure your Ubuntu server in seconds.** Safe, simple, no complex configuration needed.
+> **Secure your Ubuntu server in one command.** Copy. Paste. Done.
 
 ---
 
-## ✨ Why BSSS?
-
-- **🚀 One command to run** — No installation required
-- **🔒 SSH port changer** — Move away from default port 22 effortlessly
-- **🌐 Firewall control** — Enable/disable UFW with confidence
-- **🛡️ Auto-rollback** — Revert changes if connection is lost (4-second watchdog)
-- **📝 Triple logging** — Terminal + files + systemd journal
-- **🌍 Multi-language** — English and Russian support
-- **♻️ Idempotent** — Run again anytime, safely
-
----
-
-## ⚡ Quick Start
-
-### Try Now (One-Time Run)
+## 🚀 One Command
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh | sudo bash
 ```
 
-Choose **Y** for one-time run or **n** to install system-wide.
+That's it. Everything else is automatic.
 
-### Install Permanently
+**What happens:**
+1. Downloads verified package (GPG signature checked)
+2. Installs to your system
+3. Opens interactive menu
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh | sudo bash
-# Choose 'i' when prompted
-```
-
-After installation:
-```bash
-sudo bsss      # Run anytime
-sudo bsss -u   # Uninstall
-```
+Choose **Y** for one-time use or **i** for permanent installation.
 
 ---
 
 ## 🎯 What It Does
 
-BSSS is a modular framework that automates Linux server security:
+### Auto-Setup
+**One click to secure everything:**
+- Change SSH port (random secure port generated)
+- Enable UFW firewall
+- Configure system permissions
+- Update packages
+- **300-second rollback** if anything goes wrong
 
-- **Change SSH port** — Generates a random secure port or choose your own
-- **Configure UFW firewall** — Simple rules, automatic validation
-- **Safety mechanisms** — Watchdog protects against lockouts
-- **Check system health** — Automatic pre-flight diagnostics
-
-**Designed for simplicity.** No manual config editing, no complex commands.
+### Manual Control
+Use simple menu to configure:
+- SSH port settings
+- Firewall rules (UFW)
+- User permissions
+- System updates
+- Full rollback if needed
 
 ---
 
-## 🏗️ Under the Hood
+## 🔒 Why It's Safe
 
-Built with **pipeline-first architecture** and **Bash engineering best practices**:
+**Zero lockout risk:**
+- Auto-rollback on connection loss (300-second watchdog)
+- Manual rollback anytime from menu
+- **See everything happening** — full logging in terminal
 
-- **Streaming data flow** — NUL-separated pipes (gawk, xargs, sort)
-- **Function contracts** — Clear stdin/stdout/exit codes
-- **Namespaced functions** — `ssh::`, `ufw::`, `sys::`, `io::`
-- **No eval** — Strict validation prevents injection
-- **Modular system** — Auto-discovery with metadata tags
+**Verified installation:**
+- GPG signature verification before run
+- No hidden code execution
+- Systemd journal: `journalctl -t bsss --since '10 minutes ago'`
 
-> For developers: See [AGENTS.md](AGENTS.md) for architecture details.
+**Run anytime:**
+- Idempotent — safe to repeat
+- Detects existing configurations
+- Smart pre-flight checks
 
 ---
 
 ## 📋 Requirements
 
+**Minimal:**
 - Ubuntu Linux
 - Root access (sudo)
-- Bash 4+
-- gawk (GNU Awk)
-- curl
+- Internet connection
+
+**That's it.** No manual config files, no complex commands.
+
+---
+
+## 💡 After Installation
+
+```bash
+sudo bsss      # Open menu
+sudo bsss -u   # Uninstall
+```
+
+---
+
+## 🔍 What's Under the Hood
+
+Built with safety-first engineering:
+- **Pipeline architecture** — NUL-separated streams, no temp files
+- **No eval** — Strict validation prevents code injection
+- **Function contracts** — Every function has clear inputs/outputs
+- **Namespaced code** — `ssh::`, `ufw::`, `sys::`, `io::`
+- **Triple logging** — Terminal + files + systemd journal
+
+> For developers: See [AGENTS.md](AGENTS.md) for architecture details.
+
+---
+
+## 🌍 Multi-Language
+
+English and Russian. Auto-detected.
 
 ---
 
 ## 📄 License
 
-MIT License — Free to use, modify, and distribute.
+MIT — Free to use, modify, distribute.
 
 ---
 
-**⭐ Star this repo if it helps you!**
+**⭐ Star if it helps you!**

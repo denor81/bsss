@@ -23,15 +23,12 @@ source "${PROJECT_ROOT}/modules/helpers/common.sh"
 trap common::int::actions INT
 trap common::exit::actions EXIT
 
-# @type:        Filter
-# @description: Парсинг параметров запуска с использованием getopts
-# @params:
-#               allowed_params [optional] Разрешенные параметры (default: $ALLOWED_PARAMS)
-#               @  Остальные параметры для парсинга
+# @type:        Orchestrator
+# @description: Парсит параметры CLI и устанавливает глобальные переменные PARAMS_ACTION/PARAMS_LANG
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               1 - некорректный параметр
+# @exit_code:   0 успех
+#               1 критическая ошибка
 parse_params() {
     OPTIND=1
 
@@ -47,12 +44,11 @@ parse_params() {
 }
 
 # @type:        Validator
-# @description: Проверяет права доступа для запуска скрипта
-# @params:      нет
+# @description: Проверяет права root для запуска скрипта
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - права root есть
-#               1 - недостаточно прав
+# @exit_code:   0 успех
+#               1 критическая ошибка
 check_permissions() {
     if [[ $EUID -ne 0 ]]; then
         log_error "$(_ "common.error_root_privileges")"
@@ -61,21 +57,19 @@ check_permissions() {
 }
 
 # @type:        Sink
-# @description: Выводит справочную информацию
-# @params:      нет
+# @description: Выводит справочную информацию по параметрам
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 успех
 show_help() {
     log_info "$(_ "common.info_short_params" "$ALLOWED_PARAMS" "$ALLOWED_PARAMS_HELP")"
 }
 
 # @type:        Orchestrator
-# @description: Инициализирует систему логирования: создает директорию логов, создает файл и симлинк, настраивает права
-# @params:      нет
+# @description: Инициализирует систему логирования: создает директорию логов, файл, симлинк и настраивает права
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 успех
 log_dir_init() {
     local real_log="${PROJECT_ROOT}/${LOGS_DIR}/$(date +%Y-%m-%d_%H-%M-%S).log"
     
@@ -115,12 +109,11 @@ log_dir_init() {
 }
 
 # @type:        Orchestrator
-# @description: Запуск модулей проверки в фиксированном порядке
-# @params:      нет
+# @description: Запускает модули проверки в фиксированном порядке
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - все модули успешно выполнены
-#               $? - код ошибки от модуля
+# @exit_code:   0 успех
+#               1 критическая ошибка
 runner::module::run_check() {
     local err=0
     local dir="${PROJECT_ROOT}/${MODULES_DIR}"
@@ -138,13 +131,10 @@ runner::module::run_check() {
 }
 
 # @type:        Sink
-# @description: Логирует статус завершения модуля
-# @params:
-#   exit_code   Код завершения модуля
-#   module_tag  Имя модуля для логирования
+# @description: Логирует статус завершения модуля по коду возврата
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 успех
 main::process::exit_code() {
     local exit_code="${1:0}"
     local module_tag="${2:-}"
@@ -161,12 +151,11 @@ main::process::exit_code() {
 }
 
 # @type:        Orchestrator
-# @description: Стандартное меню модулей изменения в циклическом режиме
-# @params:      нет
+# @description: Запускает интерактивное меню модулей изменения в циклическом режиме
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - модули выполнены успешно
-#               $? - проброс кода ошибки от модуля
+# @exit_code:   0 успех
+#               $? код ошибки от модуля
 runner::module::run_modify() {
     while true; do
         log_info "$(_ "common.menu_header")"
@@ -205,12 +194,11 @@ runner::module::run_modify() {
 
 # @type:        Orchestrator
 # @description: Основная функция запуска: проверяет зависимости, запускает проверку и меню модификации
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               1 - ошибка проверки
-#               $? - код ошибки от модуля
+# @exit_code:   0 успех
+#               1 критическая ошибка
+#               $? код ошибки от модуля
 run() {
     log_info "$(_ "init.bsss.full_name")"
     sys::gawk::check_dependency
@@ -221,14 +209,12 @@ run() {
 }
 
 # @type:        Orchestrator
-# @description: Основная точка входа
-# @params:
-#   @           Параметры командной строки для передачи в parse_params
+# @description: Основная точка входа: инициализация, проверка прав, парсинг параметров и диспетчеризация
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               1 - ошибка проверки прав или параметров
-#               $? - ошибка выполнения действия
+# @exit_code:   0 успех
+#               1 критическая ошибка
+#               $? код ошибки выполнения
 main() {
     log_dir_init
     log_start
