@@ -185,6 +185,7 @@ ssh::log::other_configs() {
 
 # @type:        Sink
 # @description: Отображать инструкции guard для пользователя
+# @params:      port Порт SSH (string)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успешно

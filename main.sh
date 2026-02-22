@@ -25,6 +25,7 @@ trap common::exit::actions EXIT
 
 # @type:        Orchestrator
 # @description: Парсит параметры CLI и устанавливает глобальные переменные PARAMS_ACTION/PARAMS_LANG
+# @params:      args Аргументы командной строки (array\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успех
@@ -132,6 +133,8 @@ runner::module::run_check() {
 
 # @type:        Sink
 # @description: Логирует статус завершения модуля по коду возврата
+# @params:      exit_code Код завершения модуля (num\0)
+#               module_tag Тег модуля для логирования (string\0)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успех
@@ -210,6 +213,7 @@ run() {
 
 # @type:        Orchestrator
 # @description: Основная точка входа: инициализация, проверка прав, парсинг параметров и диспетчеризация
+# @params:      args Аргументы командной строки (array\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успех

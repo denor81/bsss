@@ -28,6 +28,7 @@ ssh::socket::is_already_configured() {
 
 # @type:        Validator
 # @description: Проверяет, существует ли systemd юнит
+# @params:      unit_name Название юнита (string)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - существует

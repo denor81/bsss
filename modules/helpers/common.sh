@@ -1,5 +1,7 @@
 # @type:        Source
 # @description: Получает список путей через нулевой разделитель
+# @params:      dir Директория для поиска (string\n)
+#               mask Маска файлов nullglob (string\n)
 # @stdin:       нет
 # @stdout:      path\0 (0..N)
 # @exit_code:   0 успех
@@ -54,6 +56,7 @@ ssh::port::get_from_ss() {
 
 # @type:        Orchestrator
 # @description: Проверяет возможность определения активных портов
+# @params:      strict_mode Режим строгой проверки (num\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 порты определены
@@ -75,6 +78,8 @@ ssh::log::active_ports_from_ss() {
 
 # @type:        Orchestrator
 # @description: Запускает фоновый процесс rollback (watchdog)
+# @params:      rollback_type Тип отката (string\n)
+#               quiet Флаг тихого режима (string)
 # @stdin:       нет
 # @stdout:      PID процесса watchdog
 # @exit_code:   0 успех
@@ -178,6 +183,7 @@ common::int::actions() {
 
 # @type:        Sink
 # @description: Обрабатывает ошибки pipe и возвращает код завершения
+# @params:      rc_pipe Массив кодов возврата из pipe (array)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   2 отмена пользователем
@@ -439,6 +445,7 @@ ufw::orchestrator::log_statuses() {
 
 # @type:        Orchestrator
 # @description: Выводит активные правила UFW
+# @params:      pattern Шаблон для фильтрации конфигурации (string\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 всегда успешно
@@ -470,6 +477,7 @@ ssh::orchestrator::trigger_immediate_rollback() {
 
 # @type:        Orchestrator
 # @description: Блокирующая проверка поднятия SSH порта после изменения
+# @params:      port Порт для проверки (string\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 порт успешно поднят

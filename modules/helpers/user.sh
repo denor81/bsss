@@ -14,6 +14,7 @@ user::list::get() {
 
 # @type:        Source
 # @description: Генерирует случайный пароль указанной длины
+# @params:      length Длина пароля (num\n)
 # @stdin:       нет
 # @stdout:      password\n
 # @exit_code:   0 успешно

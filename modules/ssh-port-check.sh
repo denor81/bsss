@@ -13,7 +13,6 @@ source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 
 # @type:        Orchestrator
 # @description: Проверяет состояние SSH портов и правил
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно
@@ -27,7 +26,6 @@ check() {
 
 # @type:        Orchestrator
 # @description: Точка входа модуля проверки SSH порта
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - проверка прошла успешно

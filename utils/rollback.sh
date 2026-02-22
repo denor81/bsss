@@ -212,6 +212,11 @@ rollback::dispatcher() {
 
 # @type:        Orchestrator
 # @description: Запускает таймер для автоматического отката
+# @params:      rollback_type Тип отката (string\n)
+#               main_script_pid PID основного скрипта (num\0)
+#               watchdog_fifo FIFO для коммуникации (path)
+#               sync_fifo FIFO для синхронизации (path)
+#               quiet Режим без вывода (string\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 всегда
@@ -263,6 +268,7 @@ rollback::orchestrator::watchdog_timer() {
 
 # @type:        Orchestrator
 # @description: Загружает переводы и запускает таймер
+# @params:      args Аргументы для watchdog_timer (array\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 всегда
