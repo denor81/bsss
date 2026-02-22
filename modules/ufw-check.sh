@@ -27,7 +27,7 @@ check() {
     else
         log_error "$(_ "common.install.not_installed" "UFW")"
         if io::confirm_action "$(_ "common.install.confirm" "UFW")" || return; then
-            if ! (apt update && apt install ufw -y); then
+            if ! (apt-get update && apt-get install -y ufw); then
                 log_error "$(_ "common.install.error" "UFW")"
                 return 1
             else
