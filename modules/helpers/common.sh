@@ -506,3 +506,35 @@ ssh::port::wait_for_up() {
     log_error "$(_ "ssh.error_port_not_up" "$port" "$attempts" "$timeout")"
     return 1
 }
+
+permissions::check::current_user() {
+    local root_id auth_id auth_name current_conn_type err=0
+    root_id=$(id -u root)
+    auth_id=$(id -u "$(logname)")
+    auth_name="$(logname)"
+    current_conn_type=$(sys::user::get_auth_method | tr -d '\0')
+    
+
+    log_info "$(_ "permissions.info.session_owner_conn_type" "$(logname)" "$current_conn_type")"
+    permissions::orchestrator::log_statuses
+
+    if [[ "$current_conn_type" == "pass" ]]; then
+        log_attention "$(_ "permissions.attention.password_connection")"
+        err=1
+    fi
+
+    if (( root_id == auth_id )); then
+        log_attention "$(_ "permissions.warn.auth_by_ssh_key_user" "[$auth_name|id:$auth_id]")"
+        err=1
+    fi
+
+    if (( err == 1 )); then
+        return 4
+    fi
+}
+
+permissions::orchestrator::log_statuses() {
+    common::log::current_config "^pubkeyauthentication|^passwordauthentication|^permitrootlogin"
+    permissions::log::bsss_configs
+    permissions::log::other_configs
+}

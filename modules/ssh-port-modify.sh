@@ -7,7 +7,7 @@
 
 set -Eeuo pipefail
 
-readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && realpath ..)"
 
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"

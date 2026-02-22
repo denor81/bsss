@@ -12,7 +12,7 @@
 
 set -Eeuo pipefail
 
-readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/.."
+readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && realpath ..)"
 
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
@@ -248,7 +248,6 @@ rollback::orchestrator::watchdog_timer() {
     SLEEP_PID=$!
 
     # Rollback готов приимать сигналы - уведомляю главный скрипт
-    log_info "$(_ "no_translate" "READY")"
     printf '%s\n' "READY" > "$sync_fifo"
 
     if wait "$SLEEP_PID" 2>/dev/null; then
