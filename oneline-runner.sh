@@ -525,7 +525,7 @@ ui::ask_value() {
 
     while true; do
         log_question "$question [$hint]"
-        read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] $question [$hint]: " -r choice
+        read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] $question [$hint]: " -r choice < /dev/tty
         choice=${choice:-$default}
         log_answer "$choice"
 
@@ -963,4 +963,6 @@ install::main() {
 #                                       #
 #########################################
 
-install::main
+if [[ "${BASH_SOURCE[0]:-}" == "${0}" ]]; then
+    install::main
+fi
