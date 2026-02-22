@@ -26,8 +26,8 @@ trap common::exit::actions EXIT
 # @type:        Filter
 # @description: Парсинг параметров запуска с использованием getopts
 # @params:
-#   allowed_params [optional] Разрешенные параметры (default: $ALLOWED_PARAMS)
-#   @            Остальные параметры для парсинга
+#               allowed_params [optional] Разрешенные параметры (default: $ALLOWED_PARAMS)
+#               @  Остальные параметры для парсинга
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - успешно

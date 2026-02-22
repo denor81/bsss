@@ -231,28 +231,30 @@ rollback::orchestrator::watchdog_timer() {
     MAIN_SCRIPT_PID="$2"
     local watchdog_fifo="$3"
     local sync_fifo="$4"
+    local quiet="$5"
     
     exec 2> "$watchdog_fifo"
 
     log_start
     log_info "$(_ "rollback.redirection_opened" $$ "$(basename "$watchdog_fifo")")"
+
+    if [[ $quiet != "quiet" ]]; then
     log_info "$(_ "rollback.timer_started" "$ROLLBACK_TIMER_SECONDS")"
-
-    case "$ROLLBACK_TYPE" in
-        "ssh") log_bold_info "$(_ "rollback.timeout_ssh")" ;;
-        "ufw") log_bold_info "$(_ "rollback.timeout_ufw")" ;;
-        "permissions") log_bold_info "$(_ "rollback.timeout_permissions")" ;;
-        "full") log_bold_info "$(_ "rollback.timeout_generic")" ;;
-        *) log_bold_info "$(_ "rollback.timeout_generic")" ;;
-    esac
-
-    log_bold_info "$(_ "rollback.timeout_reconnect")"
+        case "$ROLLBACK_TYPE" in
+            "ssh") log_bold_info "$(_ "rollback.timeout_ssh")" ;;
+            "ufw") log_bold_info "$(_ "rollback.timeout_ufw")" ;;
+            "permissions") log_bold_info "$(_ "rollback.timeout_permissions")" ;;
+            "full") log_bold_info "$(_ "rollback.timeout_generic")" ;;
+            *) log_bold_info "$(_ "rollback.timeout_generic")" ;;
+        esac
+        log_bold_info "$(_ "rollback.timeout_reconnect")"
+    fi
 
     sleep "$ROLLBACK_TIMER_SECONDS" &
     SLEEP_PID=$!
 
     # Rollback готов приимать сигналы - уведомляю главный скрипт
-    log_info "Rollback готов - отправка READY в $sync_fifo"
+    log_info "$(_ "no_translate" "READY")"
     printf '%s\n' "READY" > "$sync_fifo"
 
     if wait "$SLEEP_PID" 2>/dev/null; then

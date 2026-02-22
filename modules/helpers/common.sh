@@ -104,18 +104,20 @@ ssh::log::active_ports_from_ss() {
 
 # @type:        Orchestrator
 # @description: Запускает фоновый процесс rollback (watchdog)
+#               Тихий режим гасит сообщения о запуске rollback таймера
 # @params:
-#   watchdog_fifo путь к FIFO для коммуникации
+#               rollback_type [ssh|ufw|full...]
+#               quiet [quiet]
 # @stdin:       нет
 # @stdout:      PID процесса watchdog
 # @exit_code:   0 - успешно
 rollback::orchestrator::watchdog_start() {
     local rollback_type="$1"
+    local quiet="${2:-}"
     local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
 
-    # Сторож в фоне
-    nohup bash "$rollback_module" "$rollback_type" "$$" "$WATCHDOG_FIFO" "$SYNC_FIFO" >/dev/null 2>&1 &
-    printf '%s' $! # Возвращаем PID для оркестратора
+    nohup bash "$rollback_module" "$rollback_type" "$$" "$WATCHDOG_FIFO" "$SYNC_FIFO" "$quiet" >/dev/null 2>&1 &
+    printf '%s' $!
 }
 
 # @type:        Orchestrator

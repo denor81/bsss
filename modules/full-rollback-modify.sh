@@ -26,7 +26,7 @@ full_rollback::orchestrator::run_module() {
     make_fifo_and_start_reader
 
     start_sync_rollback
-    WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "full")
+    WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "full" "quiet")
     stop_sync_rollback
 
     ssh::orchestrator::trigger_immediate_rollback
