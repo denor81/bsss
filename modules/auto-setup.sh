@@ -25,6 +25,7 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 # @stdout:      нет
 # @exit_code:   0 - откат выполнен, процесс заблокирован
 auto::orchestrator::trigger_immediate_rollback() {
+    log_info "Отправлен сигнал USR2"
     kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
     wait "$WATCHDOG_PID" 2>/dev/null || true
     while true; do sleep 1; done
@@ -48,7 +49,10 @@ auto::install::run() {
     auto::install::check # возможно прерывание кодом 4
 
     make_fifo_and_start_reader
+    
+    start_sync_rollback
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "full")
+    stop_sync_rollback
 
     local port
     port=$(ssh::port::generate_free_random_port | tr -d '\0')
@@ -77,7 +81,7 @@ auto::install::run() {
 
     log_actual_info "Откройте новый терминал и выполните подключение по SSH ключу через порт $port. Если не удается подключиться - введите 0 для отмены и отката созанных изменений или подтвердите успешное подключение для фиксации изменений и отключения таймера отката."
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
-        rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
+        rollback::orchestrator::watchdog_stop
         log_info "$(_ "common.success_changes_committed")"
     else
         auto::orchestrator::trigger_immediate_rollback

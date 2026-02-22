@@ -114,7 +114,7 @@ rollback::orchestrator::watchdog_start() {
     local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
 
     # Сторож в фоне
-    nohup bash "$rollback_module" "$rollback_type" "$$" "$WATCHDOG_FIFO" >/dev/null 2>&1 &
+    nohup bash "$rollback_module" "$rollback_type" "$$" "$WATCHDOG_FIFO" "$SYNC_FIFO" >/dev/null 2>&1 &
     printf '%s' $! # Возвращаем PID для оркестратора
 }
 
@@ -129,6 +129,7 @@ rollback::orchestrator::watchdog_stop() {
     # Посылаем сигнал успешного завершения (USR1)
     log_info "$(_ "common.helpers.rollback.stop_signal" "$WATCHDOG_PID")"
     # || true: WATCHDOG_PID может уже не существовать
+    log_info "Отправлен сигнал USR1"
     kill -USR1 "$WATCHDOG_PID" 2>/dev/null || true
     # || true: Процесс может уже завершиться к моменту вызова wait
     wait "$WATCHDOG_PID" 2>/dev/null || true
@@ -145,6 +146,30 @@ make_fifo_and_start_reader() {
     mkfifo "$WATCHDOG_FIFO"
     log_info "$(_ "common.helpers.rollback.fifo_created" "$WATCHDOG_FIFO")"
     cat "$WATCHDOG_FIFO" >&2 &
+}
+
+# @type:        Orchestrator
+# @description: Создает FIFO и запускает блокирующий слушатель для подтверждения готовности rollback
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+start_sync_rollback() {
+    mkfifo "$SYNC_FIFO"
+    log_info "Создан FIFO: $SYNC_FIFO"
+}
+
+# @type:        Orchestrator
+# @description: Создает FIFO и запускает блокирующий слушатель для подтверждения готовности rollback
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+stop_sync_rollback() {
+    log_info "Ожидание готовности rollback.sh..."
+    read _ < "$SYNC_FIFO"
+    log_info "Получен READY из $SYNC_FIFO"
+    [[ -n "$SYNC_FIFO" ]] && printf '%s\0' "$SYNC_FIFO" | sys::file::delete
 }
 
 # @type:        Orchestrator
@@ -470,34 +495,6 @@ ufw::orchestrator::log_statuses() {
 }
 
 # @type:        Orchestrator
-# @description: Выполняет полный откат всех настроек BSSS
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - все откаты выполнены (даже если с ошибками)
-full_rollback::orchestrator::execute_all() {
-    local errors=()
-
-    # Выполняем команды. Если команда возвращает не 0, добавляем имя в массив.
-    permissions::rules::restore || errors+=("permissions::rules::restore")
-    ssh::rule::delete_all_bsss  || errors+=("ssh::rule::delete_all_bsss")
-    ufw::rule::delete_all_bsss  || errors+=("ufw::rule::delete_all_bsss")
-    ufw::status::force_disable  || errors+=("ufw::status::force_disable")
-    ufw::ping::restore          || errors+=("ufw::ping::restore")
-    sys::service::restart       || errors+=("sys::service::restart")
-
-    # Проверка результатов
-    if (( ${#errors[@]} == 0 )); then
-        log_success "$(_ "rollback.system_restored")"
-        return 3
-    else
-        # Формируем сообщение об ошибках (через запятую)
-        log_warn "$(_ "rollback.error.rollback_errors" "${errors[*]}")"
-        return 1
-    fi
-}
-
-# @type:        Orchestrator
 # @description: Проверяет текущего пользователя
 # @params:      нет
 # @stdin:       нет
@@ -567,6 +564,7 @@ common::log::current_config() {
 # @exit_code:   0 - откат выполнен, процесс заблокирован
 ssh::orchestrator::trigger_immediate_rollback() {
     # || true: WATCHDOG_PID может уже не существовать или завершиться во время kill/wait
+    log_info "Отправлен сигнал USR2"
     kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
     # || true: Процесс может уже завершиться к моменту вызова wait
     wait "$WATCHDOG_PID" 2>/dev/null || true

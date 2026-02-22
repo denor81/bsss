@@ -75,7 +75,11 @@ ufw::status::force_enable() {
 #               1 - ошибка активации UFW
 ufw::safe::force_enable() {
     make_fifo_and_start_reader
+    
+    start_sync_rollback
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "ufw")
+    stop_sync_rollback
+
     ufw::log::rollback::instructions
 
     ufw::force::enable

@@ -75,8 +75,8 @@ rollback::orchestrator::immediate_usr2() {
     rollback::dispatcher
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
-        log_info "$(_ "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID")"
         # || true: MAIN_SCRIPT_PID может завершиться до отправки сигнала
+        log_info "Отправлен сигнал USR1"
         kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
         # || true: Процесс может уже завершиться к моменту вызова wait
         wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
@@ -163,19 +163,41 @@ rollback::orchestrator::permissions() {
 }
 
 # @type:        Orchestrator
+# @description: Выполняет полный откат всех настроек BSSS
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - все откаты выполнены (даже если с ошибками)
+full_rollback::orchestrator::execute_all() {
+    local errors=()
+
+    # Выполняем команды. Если команда возвращает не 0, добавляем имя в массив.
+    permissions::rules::restore || errors+=("permissions::rules::restore")
+    ssh::rule::delete_all_bsss  || errors+=("ssh::rule::delete_all_bsss")
+    ufw::rule::delete_all_bsss  || errors+=("ufw::rule::delete_all_bsss")
+    ufw::status::force_disable  || errors+=("ufw::status::force_disable")
+    ufw::ping::restore          || errors+=("ufw::ping::restore")
+    sys::service::restart       || errors+=("sys::service::restart")
+
+    # Проверка результатов
+    if (( ${#errors[@]} == 0 )); then
+        log_success "$(_ "rollback.system_restored")"
+    else
+        # Формируем сообщение об ошибках (через запятую)
+        log_warn "$(_ "rollback.error.rollback_errors" "${errors[*]}")"
+    fi
+}
+
+# @type:        Orchestrator
 # @description: Полный откат всех настроек BSSS
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 rollback::orchestrator::full() {
-    local errors=()
     log_warn "$(_ "rollback.full_dismantle")"
 
-    # гасим код 3 потому что он нужен при использованиии функции full_rollback::orchestrator::execute_all
-    # при явном выборе полного отката через меню, а в этом файле код 3 будет отправлен автоматически при успешном завершении отката
-    # гасим код 1 для живучести отката - лог с ошибками будет отображен
-    full_rollback::orchestrator::execute_all || true
+    full_rollback::orchestrator::execute_all
 }
 
 # @type:        Orchestrator
@@ -208,8 +230,10 @@ rollback::orchestrator::watchdog_timer() {
     ROLLBACK_TYPE="$1"
     MAIN_SCRIPT_PID="$2"
     local watchdog_fifo="$3"
-
+    local sync_fifo="$4"
+    
     exec 2> "$watchdog_fifo"
+
     log_start
     log_info "$(_ "rollback.redirection_opened" $$ "$(basename "$watchdog_fifo")")"
     log_info "$(_ "rollback.timer_started" "$ROLLBACK_TIMER_SECONDS")"
@@ -227,14 +251,18 @@ rollback::orchestrator::watchdog_timer() {
     sleep "$ROLLBACK_TIMER_SECONDS" &
     SLEEP_PID=$!
 
+    # Rollback готов приимать сигналы - уведомляю главный скрипт
+    log_info "Rollback готов - отправка READY в $sync_fifo"
+    printf '%s\n' "READY" > "$sync_fifo"
+
     if wait "$SLEEP_PID" 2>/dev/null; then
         new_line
         log_info "$(_ "rollback.time_expired")"
         rollback::dispatcher
 
         if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
-            log_info "$(_ "rollback.send_signal_to_parent" "$MAIN_SCRIPT_PID")"
             # || true: MAIN_SCRIPT_PID может завершиться до отправки сигнала
+            log_info "Отправлен сигнал USR1"
             kill -USR1 "$MAIN_SCRIPT_PID" 2>/dev/null || true
             # || true: Процесс может уже завершиться к моменту вызова wait
             wait "$MAIN_SCRIPT_PID" 2>/dev/null || true

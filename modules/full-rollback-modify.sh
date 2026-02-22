@@ -16,11 +16,21 @@ source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 
 trap common::int::actions INT
 trap common::exit::actions EXIT
+trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 full_rollback::orchestrator::run_module() {
     log_info "$(_ "full_rollback.info.full_rollback_warning" "${UTIL_NAME^^}")"
+
     io::confirm_action
-    full_rollback::orchestrator::execute_all
+
+    make_fifo_and_start_reader
+
+    start_sync_rollback
+    WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "full")
+    stop_sync_rollback
+
+    ssh::orchestrator::trigger_immediate_rollback
+
 }
 
 # @type:        Orchestrator

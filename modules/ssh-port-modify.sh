@@ -36,7 +36,10 @@ ssh::install::port() {
     port=$(ssh::ui::get_new_port | tr -d '\0') || return
 
     make_fifo_and_start_reader
+    
+    start_sync_rollback
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "ssh")
+    stop_sync_rollback
 
     ssh::log::guard_instructions "$port"
 
@@ -53,7 +56,7 @@ ssh::install::port() {
     ufw::log::rules
 
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
-        rollback::orchestrator::watchdog_stop "$WATCHDOG_PID"
+        rollback::orchestrator::watchdog_stop
         log_info "$(_ "common.success_changes_committed")"
     else
         ssh::orchestrator::trigger_immediate_rollback

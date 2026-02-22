@@ -23,6 +23,7 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 # @exit_code:   0 - откат выполнен, процесс заблокирован
 permissions::orchestrator::trigger_immediate_rollback() {
     # || true: WATCHDOG_PID может уже не существовать или завершиться во время kill/wait
+    log_info "Отправлен сигнал USR2"
     kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
     # || true: Процесс может уже завершиться к моменту вызова wait
     wait "$WATCHDOG_PID" 2>/dev/null || true
@@ -53,7 +54,10 @@ permissions::orchestrator::restore::rules() {
 permissions::orchestrator::install::rules() {
 
     make_fifo_and_start_reader
+    
+    start_sync_rollback
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "permissions")
+    stop_sync_rollback
 
     permissions::log::guard_instructions
 
