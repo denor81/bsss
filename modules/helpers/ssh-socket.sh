@@ -48,7 +48,7 @@ sys::ssh::is_service_active() {
 }
 
 # @type:        Orchestrator
-# @description: Принудительно переключает SSH в service mode
+# @description: Переключает SSH в service mode
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - SSH успешно переведен в service mode

@@ -16,13 +16,12 @@ trap common::int::actions INT
 trap common::exit::actions EXIT
 trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
-# @type:        Orchestrator
-# @description: Проверяет требования для запуска UFW модуля
-# @params:      нет
+# @type:        Validator
+# @description: Проверить требования для запуска UFW модуля
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - требования выполнены
-#               4 - требования не выполнены
+# @exit_code:   0 требования выполнены
+#               4 требования не выполнены
 ufw::rule::check_requirements() {
     if ufw::rule::has_any_bsss; then
         return
@@ -41,12 +40,11 @@ ufw::rule::check_requirements() {
 }
 
 # @type:        Orchestrator
-# @description: Переключает состояние UFW
-# @params:      нет
+# @description: Переключить состояние UFW
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки от ufw
+# @exit_code:   0 успешно
+#               $? ошибка от ufw
 ufw::toggle::status() {
     if ufw::status::is_active; then
         ufw::status::force_disable
@@ -55,6 +53,12 @@ ufw::toggle::status() {
     fi
 }
 
+# @type:        Orchestrator
+# @description: Принудительно включить UFW с обработкой ошибок
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успешно
+#               1 ошибка активации UFW
 ufw::status::force_enable() {
     if ! ufw --force enable >/dev/null 2>&1; then
         rollback::orchestrator::immediate_usr2
@@ -66,13 +70,12 @@ ufw::status::force_enable() {
 }
 
 # @type:        Orchestrator
-# @description: Активирует UFW с watchdog и подтверждением подключения
-# @params:      нет
+# @description: Активировать UFW с watchdog и подтверждением подключения
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - отменено пользователем (подтверждение не получено)
-#               1 - ошибка активации UFW
+# @exit_code:   0 успешно
+#               2 отменено пользователем
+#               1 ошибка активации UFW
 ufw::safe::force_enable() {
     make_fifo_and_start_reader
     
@@ -96,23 +99,21 @@ ufw::safe::force_enable() {
 }
 
 # @type:        Sink
-# @description: Отображает инструкции пользователю для проверки подключения
-# @params:      нет
+# @description: Отобразить инструкции пользователю для проверки подключения
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 ufw::log::rollback::instructions() {
     log_attention "$(_ "common.warning.dont_close_terminal")"
     log_attention "$(_ "ufw.rollback.test_access")"
 }
 
 # @type:        Orchestrator
-# @description: Переключает состояние PING
-# @params:      нет
+# @description: Переключить состояние PING
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки от ufw
+# @exit_code:   0 успешно
+#               $? ошибка от ufw
 ufw::toggle::ping() {
     if ufw::ping::is_configured; then
         ufw::ping::restore
@@ -122,6 +123,12 @@ ufw::toggle::ping() {
     ufw::status::reload
 }
 
+# @type:        Orchestrator
+# @description: Отобразить меню и диспетчеризовать выбор пользователя
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успешно
+#               2 отмена пользователем
 ufw::main::menu::dispatcher() {
     log_info "$(_ "common.menu_header")"
     ufw::status::is_active && log_info_simple_tab "1. $(_ "ufw.menu.item_disable")" || log_info_simple_tab "1. $(_ "ufw.menu.item_enable")"
@@ -138,16 +145,21 @@ ufw::main::menu::dispatcher() {
     esac
 }
 
+# @type:        Orchestrator
+# @description: Запустить основной модуль изменения состояния UFW
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успешно
+#               2 отмена пользователем
 ufw::orchestrator::run_module() {
     ufw::main::menu::dispatcher
 }
 
 # @type:        Orchestrator
-# @description: Основная точка входа для модуля изменения состояния UFW
-# @params:      нет
+# @description: Запустить основную точку входа для модуля изменения состояния UFW
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 main() {
     i18n::load
     log_start

@@ -15,12 +15,12 @@ source "${PROJECT_ROOT}/modules/helpers/user.sh"
 trap log_stop EXIT
 
 # @type:        Orchestrator
-# @description: Создает пользователя BSSS и логирует результат
-# @params:      нет
+# @description: Создает пользователя BSSS, устанавливает пароль и права sudo
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - ошибка при создании пользователя
+# @exit_code:   0 успешно создан пользователь
+#               1 ошибка создания пользователя или sudoers файла
+#               $? другие ошибки
 user::create::execute_with_logging() {
     local password
     password="$(user::pass::generate)"
@@ -45,6 +45,11 @@ user::create::execute_with_logging() {
     user::log::del_reminder
 }
 
+# @type:        Orchestrator
+# @description: Логирует напоминания об удалении пользователя
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успешно
 user::log::del_reminder() {
     log_info "$(_ "user.create.menu.reminder")"
     log_info_simple_tab "$(_ "user.create.menu.reminder_deluser")"
@@ -56,11 +61,10 @@ user::log::del_reminder() {
 
 # @type:        Orchestrator
 # @description: Отображает информацию и меню для создания пользователя
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по выбору пользователя
+# @exit_code:   0 успешно
+#               2 отмена пользователем
 user::main::menu::dispatcher() {
     log_info "$(_ "user.create.menu.header")"
     log_info_simple_tab "$(_ "user.create.menu.create_user" "$BSSS_USER_NAME" "$BSSS_USER_NAME")"
@@ -83,11 +87,11 @@ user::main::menu::dispatcher() {
 }
 
 # @type:        Orchestrator
-# @description: Обработчик сценария когда в системе только root
-# @params:      нет
+# @description: Обрабатывает сценарий когда в системе только root
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
+#               2 отмена пользователем
 user::orchestrator::need_add_bsssuser() {
     log_info "$(_ "user.check.only_root")"
     log_info "$(_ "user.create.menu.after_create")"
@@ -97,11 +101,11 @@ user::orchestrator::need_add_bsssuser() {
 }
 
 # @type:        Orchestrator
-# @description: Обработчик сценария когда есть другие пользователи, но нет bsssuser
-# @params:      нет
+# @description: Обрабатывает сценарий когда есть другие пользователи, но нет bsssuser
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
+#               2 отмена пользователем
 user::orchestrator::can_add_bsssuser() {
     log_info "$(_ "user.check.user_count")"
     log_info "$(_ "user.create.other_users_exist")"
@@ -113,10 +117,9 @@ user::orchestrator::can_add_bsssuser() {
 
 # @type:        Orchestrator
 # @description: Логирует сообщение что пользователь уже существует
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 user::log::no_new_user_needed() {
     log_info "$(_ "user.check.user_exists" "$BSSS_USER_NAME")"
     log_info "$(_ "user.create.other_users_exist")"
@@ -125,12 +128,11 @@ user::log::no_new_user_needed() {
 }
 
 # @type:        Orchestrator
-# @description: Диспетчер логики проверки состояния пользователей
-# @params:      нет
+# @description: Диспетчеризирует логику проверки состояния пользователей
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               3 - ошибка проверки состава пользователей
+# @exit_code:   0 успешно
+#               3 ошибка проверки состава пользователей
 user::dispatch::logic() {
     local rc
     user::system::is_only_root || rc=$?
@@ -143,11 +145,12 @@ user::dispatch::logic() {
 }
 
 # @type:        Orchestrator
-# @description: Основная точка входа для модуля создания пользователя
-# @params:      нет
+# @description: Запускает модуль создания пользователя
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
+#               2 отмена пользователем
+#               3 ошибка проверки состава пользователей
 main() {
     i18n::load
     log_start

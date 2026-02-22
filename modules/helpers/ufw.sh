@@ -1,10 +1,9 @@
 # @type:        Validator
-# @description: Проверяет, есть ли правила UFW BSSS
-# @params:      нет
+# @description: Проверяет наличие правил UFW BSSS
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - есть хотя бы одно правило BSSS
-#               1 - нет правил BSSS
+# @exit_code:   0 успех
+#               1 нет правил BSSS
 ufw::rule::has_any_bsss() {
     ufw::rule::get_all_bsss | read -r -d '' _
 }
@@ -13,11 +12,10 @@ ufw::rule::has_any_bsss() {
 
 # @type:        Sink
 # @description: Создает бэкап файла before.rules
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - бэкап успешно создан
-#               $? - код ошибки команды cp
+# @exit_code:   0 успех
+#               $? код ошибки команды cp
 ufw::ping::backup_file() {
     local res
     if res=$(cp -pv "$UFW_BEFORE_RULES" "$UFW_BEFORE_RULES_BACKUP" 2>&1); then
@@ -31,11 +29,10 @@ ufw::ping::backup_file() {
 
 # @type:        Sink
 # @description: Заменяет ACCEPT на DROP в ICMP правилах файла before.rules
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки команды sed
+# @exit_code:   0 успех
+#               1 ошибка редактирования файла
 ufw::ping::disable_in_rules() {
     if sed -i '/-p icmp/s/ACCEPT/DROP/g' "$UFW_BEFORE_RULES"; then
         log_info "$(_ "ufw.success.before_rules_edited" "$UFW_BEFORE_RULES")"
@@ -47,11 +44,10 @@ ufw::ping::disable_in_rules() {
 
 # @type:        Orchestrator
 # @description: Отключает ping в UFW через бэкап и изменение правил
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки операции
+# @exit_code:   0 успех
+#               $? код ошибки операции
 ufw::orchestrator::disable_ping() {
     ufw::ping::backup_file
     ufw::ping::disable_in_rules
@@ -59,11 +55,10 @@ ufw::orchestrator::disable_ping() {
 
 # @type:        Orchestrator
 # @description: Принудительно включает UFW
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки команды ufw
+# @exit_code:   0 успех
+#               $? код ошибки команды ufw
 ufw::status::force_enable() {
     if ufw --force enable >/dev/null 2>&1; then
         log_info "$(_ "ufw.success.enabled")"
@@ -76,11 +71,10 @@ ufw::status::force_enable() {
 
 # @type:        Sink
 # @description: Выполняет ufw reload для применения изменений
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки ufw reload
+# @exit_code:   0 успех
+#               $? код ошибки ufw reload
 ufw::status::reload() {
     if ufw reload >/dev/null; then
         log_info "$(_ "ufw.success.reloaded")"

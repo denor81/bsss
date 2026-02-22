@@ -23,7 +23,7 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 # @description: Инициирует немедленный откат через SIGUSR2 и ожидает завершения watchdog
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - откат выполнен, процесс заблокирован
+# @exit_code:   0 откат выполнен, процесс заблокирован
 auto::orchestrator::trigger_immediate_rollback() {
     log_info "Отправлен сигнал USR2 в rollback.sh"
     kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
@@ -31,6 +31,13 @@ auto::orchestrator::trigger_immediate_rollback() {
     while true; do sleep 1; done
 }
 
+# @type:        Orchestrator
+# @description: Проверяет предварительные условия перед установкой
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 проверки пройдены успешно
+#               4 требуется предварительная настройка (SSH ключ)
+#               $? код ошибки дочернего процесса
 auto::install::check() {
     user::info::block
     permissions::check::current_user # возможно прерывание кодом 4
@@ -38,13 +45,12 @@ auto::install::check() {
 
 # @type:        Orchestrator
 # @description: Выполняет автоматическую настройку с механизмом rollback
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               4 - при необходимости авторизации по SSH ключу
-#               $? - код ошибки дочернего процесса
+# @exit_code:   0 успешно завершена настройка
+#               2 выход по запросу пользователя
+#               4 требуется предварительная настройка (SSH ключ)
+#               $? код ошибки дочернего процесса
 auto::install::run() {
     auto::install::check # возможно прерывание кодом 4
 
@@ -89,11 +95,12 @@ auto::install::run() {
 }
 
 # @type:        Orchestrator
-# @description: Основная точка входа для модуля автоматической настройки
-# @params:      нет
+# @description: Запускает модуль автоматической настройки
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешное завершение
+#               2 выход по запросу пользователя
+#               $? код ошибки дочернего процесса
 main() {
     i18n::load
     log_start

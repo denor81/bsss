@@ -13,12 +13,12 @@ source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 
 # @type:        Orchestrator
-# @description: Проверяет наличие UFW и устанавливает при необходимости
-# @params:      нет
+# @description: Проверять наличие UFW и устанавливать при необходимости
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - UFW установлен или уже был установлен
-#               1 - ошибка установки или отказ от установки
+# @exit_code:   0 UFW установлен или уже был установлен
+#               1 ошибка установки UFW
+#               2 отказ пользователя от установки
 check() {
     if command -v ufw > /dev/null 2>&1; then
         ufw::log::status
@@ -45,14 +45,13 @@ check() {
 }
 
 # @type:        Orchestrator
-# @description: Точка входа модуля проверки UFW
-# @params:      нет
+# @description: Запускать модуль проверки UFW
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - проверка прошла успешно
-#               1 - ошибка установки
-#               2 - отказ пользователя от установки UFW
-#               $? - иная ошибка
+# @exit_code:   0 проверка прошла успешно
+#               1 ошибка установки UFW
+#               2 отказ пользователя от установки
+#               $? другие коды
 main() {
     i18n::load
     check

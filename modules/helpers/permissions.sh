@@ -1,9 +1,9 @@
 # @type:        Source
-# @description: Находит последний префикс файла конфигурации permissions
+# @description: Находить последний префикс файла конфигурации permissions
 #               Не учитывает bsss файлы по маске BSSS_PERMISSIONS_CONFIG_FILE_MASK
 # @stdin:       нет
-# @stdout:      prefix (число) или пустая строка если файлов нет
-# @exit_code:   0
+# @stdout:      prefix\0 (число) или пустая строка если файлов нет
+# @exit_code:   0 префикс найден или файлов нет
 permissions::config::find_last_prefix() {
     local file prefix="10"
 
@@ -24,12 +24,11 @@ permissions::config::find_last_prefix() {
 # === VALIDATOR ===
 
 # @type:        Validator
-# @description: Проверяет наличие BSSS конфигурации permissions
-# @params:      нет
+# @description: Проверять наличие BSSS конфигурации permissions
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - конфигурация существует
-#               1 - конфигурация отсутствует
+# @exit_code:   0 конфигурация существует
+#               1 конфигурация отсутствует
 permissions::rules::is_configured() {
     compgen -G "${SSH_CONFIGD_DIR}/*${BSSS_PERMISSIONS_CONFIG_FILE_MASK}" >/dev/null
 }
@@ -37,11 +36,10 @@ permissions::rules::is_configured() {
 # === SINK ===
 
 # @type:        Sink
-# @description: Логирует все BSSS конфигурации permissions
-# @params:      нет
+# @description: Логировать все BSSS конфигурации permissions
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 permissions::log::bsss_configs() {
     local grep_result
     local found=0
@@ -64,11 +62,10 @@ permissions::log::bsss_configs() {
 }
 
 # @type:        Sink
-# @description: Логирует все сторонние конфигурации permissions
-# @params:      нет
+# @description: Логировать все сторонние конфигурации permissions
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 permissions::log::other_configs() {
     local grep_result
     local found=0
@@ -91,23 +88,22 @@ permissions::log::other_configs() {
 }
 
 # @type:        Sink
-# @description: Отображает инструкции guard для пользователя
-# @params:      нет
+# @description: Отображать инструкции guard для пользователя
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 permissions::log::guard_instructions() {
     log_attention "$(_ "common.warning.dont_close_terminal")"
     log_attention "$(_ "permissions.guard.test_access")"
 }
 
 # @type:        Orchestrator
-# @description: Создает файл конфигурации SSH с настройками доступа
+# @description: Создавать файл конфигурации SSH с настройками доступа
 #               Отключает логин root и по паролю, включает вход по ключам
 # @stdin:       нет
-# @stdout:      path к созданному файлу
-# @exit_code:   0 - успешно
-#               1 - ошибка создания файла
+# @stdout:      path\0 к созданному файлу
+# @exit_code:   0 файл создан успешно
+#               1 ошибка создания файла
 permissions::rules::make_bsss_rules() {
     local last_prefix new_prefix path
 
@@ -137,11 +133,10 @@ EOF
 }
 
 # @type:        Sink
-# @description: Удаляет все BSSS конфигурации permissions
-# @params:      нет
+# @description: Удалять все BSSS конфигурации permissions
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 конфигурации успешно удалены или отсутствуют
 permissions::rules::restore() {
     # || true: Ошибка допустима если файлов для удаления нет
     sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" | sys::file::delete || true

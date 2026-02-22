@@ -12,21 +12,21 @@ source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 
-# @type:        Sink
-# @description: Выводит информацию о текущем состоянии прав доступа SSH
+# @type:        Orchestrator
+# @description: Отображает информацию о текущем состоянии прав доступа SSH
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0
+# @exit_code:   0 успешно
 permissions::check::info() {
     permissions::orchestrator::log_statuses
 }
 
 # @type:        Orchestrator
-# @description: Основная точка входа для модуля проверки прав доступа
-# @params:      нет
+# @description: Запускает модуль проверки прав доступа
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
+#               1 критическая ошибка загрузки переводов
 main() {
     i18n::load
     permissions::check::info

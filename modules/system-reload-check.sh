@@ -9,13 +9,12 @@ source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 
-# @type:        Orchestrator
-# @description: Проверяет необходимость перезагрузки системы
-# @params:      нет
+# @type:        Validator
+# @description: Проверять необходимость перезагрузки системы
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - перезагрузка не требуется
-#               1 - необходима перезагрузка
+# @exit_code:   0 перезагрузка не требуется
+#               4 необходима перезагрузка
 check() {
     if [[ -f "$REBOOT_REQUIRED_FILE_PATH" ]]; then
         log_error "$(_ "system.reload.reboot_required" "$REBOOT_REQUIRED_FILE_PATH")"
@@ -34,12 +33,11 @@ check() {
 }
 
 # @type:        Orchestrator
-# @description: Точка входа модуля проверки перезагрузки системы
-# @params:      нет
+# @description: Запускать проверку необходимости перезагрузки системы
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - перезагрузка не требуется
-#               1 - требуется перезагрузка
+# @exit_code:   0 перезагрузка не требуется
+#               4 необходима перезагрузка
 main() {
     i18n::load
     check

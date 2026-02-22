@@ -1,13 +1,12 @@
 # === SOURCE ===
 
 # @type:        Source
-# @description: Запрашивает у пользователя новый SSH порт
-# @params:      нет
+# @description: Запрашивать у пользователя новый SSH порт
 # @stdin:       нет
 # @stdout:      port\0
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               $? - ошибка
+# @exit_code:   0 успешно получен порт
+#               2 выход по запросу пользователя
+#               $? ошибка
 ssh::ui::get_new_port() {
     local port_pattern="^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
 
@@ -25,12 +24,11 @@ ssh::ui::get_new_port() {
 }
 
 # @type:        Source
-# @description: Генерирует случайный свободный порт в диапазоне 10000-65535
-# @params:      нет
+# @description: Генерировать случайный свободный порт в диапазоне 10000-65535
 # @stdin:       нет
 # @stdout:      port\0
-# @exit_code:   0 - порт успешно сгенерирован
-#               $? - ошибка
+# @exit_code:   0 порт успешно сгенерирован
+#               $? ошибка
 ssh::port::generate_free_random_port() {
     while IFS= read -r port || break; do
         if ssh::port::is_port_free "$port"; then
@@ -43,11 +41,10 @@ ssh::port::generate_free_random_port() {
 # === FILTER ===
 
 # @type:        Filter
-# @description: Удаляет все правила BSSS и передает порт дальше
-# @params:      нет
+# @description: Удалять все правила BSSS и передавать порт дальше
 # @stdin:       port\0 (опционально)
 # @stdout:      port\0 (опционально)
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 ssh::rule::reset_and_pass() {
     local port=""
 
@@ -61,12 +58,11 @@ ssh::rule::reset_and_pass() {
 }
 
 # @type:        Filter
-# @description: Создает новый конфигурационный файл SSH с указанным портом
-# @params:      нет
+# @description: Создавать новый конфигурационный файл SSH с указанным портом
 # @stdin:       port\0
 # @stdout:      нет
-# @exit_code:   0 - файл успешно создан
-#               1 - ошибка создания
+# @exit_code:   0 файл успешно создан
+#               1 ошибка создания
 ssh::config::create_bsss_file() {
     local path="${SSH_CONFIGD_DIR}/$BSSS_SSH_CONFIG_FILE_NAME"
     local port
@@ -89,13 +85,11 @@ EOF
 # === VALIDATOR ===
 
 # @type:        Validator
-# @description: Проверяет, что указанный порт свободен
-# @params:
-#   port        Номер порта для проверки
+# @description: Проверять, что указанный порт свободен
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - порт свободен
-#               1 - порт занят
+# @exit_code:   0 порт свободен
+#               1 порт занят
 ssh::port::is_port_free() {
     ! ss -ltn | grep -qE ":$1([[:space:]]|$)"
 }
@@ -103,12 +97,11 @@ ssh::port::is_port_free() {
 # === SINK ===
 
 # @type:        Sink
-# @description: Основной функционал установки/изменения SSH порта
-# @params:      нет
+# @description: Устанавливать новый SSH порт
 # @stdin:       port\0
 # @stdout:      нет
-# @exit_code:   0 - порт успешно установлен
-#               $? - ошибка в процессе
+# @exit_code:   0 порт успешно установлен
+#               $? ошибка в процессе
 ssh::port::install_new() {
     local port
     read -r -d '' port
@@ -118,34 +111,31 @@ ssh::port::install_new() {
 }
 
 # @type:        Sink
-# @description: Удаляет все правила BSSS SSH
-# @params:      нет
+# @description: Удалять все правила BSSS SSH
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 ssh::rule::delete_all_bsss() {
     # || true: Ошибка допустима если конфигурационных файлов нет
     sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" | sys::file::delete || true
 }
 
 # @type:        Sink
-# @description: Выполняет действия после установки порта: перезапуск сервисов и валидация
-# @params:      нет
+# @description: Логировать статусы SSH (активные порты и BSSS конфигурации)
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - действия успешно выполнены
-#               $? - ошибка в процессе
+# @exit_code:   0 успешно
+#               $? ошибка в процессе
 ssh::orchestrator::log_statuses() {
     ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
 }
 
 # @type:        Sink
-# @description: Логирует все BSSS конфигурации SSH с портами
-# @params:      нет
+# @description: Логировать все BSSS конфигурации SSH с портами
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 ssh::log::bsss_configs() {
     local grep_result
     local found=0
@@ -168,11 +158,10 @@ ssh::log::bsss_configs() {
 }
 
 # @type:        Sink
-# @description: Логирует все сторонние конфигурации SSH с портами
-# @params:      нет
+# @description: Логировать все сторонние конфигурации SSH с портами
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 ssh::log::other_configs() {
     local grep_result
     local found=0
@@ -195,12 +184,10 @@ ssh::log::other_configs() {
 }
 
 # @type:        Sink
-# @description: Отображает инструкции guard для пользователя
-# @params:
-#   port        Номер порта
+# @description: Отображать инструкции guard для пользователя
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 ssh::log::guard_instructions() {
     log_attention "$(_ "common.warning.dont_close_terminal")"
     log_attention "$(_ "ssh.guard.test_new" "$1")"

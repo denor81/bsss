@@ -15,8 +15,8 @@ source "${PROJECT_ROOT}/modules/helpers/ssh-socket.sh"
 # @description: Проверяет существование ssh.service юнита
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - юнит существует
-#               1 - юнит не установлен
+# @exit_code:   0 юнит существует
+#               1 юнит не установлен
 check_unit() {
     if ! sys::ssh::unit_exists "ssh.service"; then
         log_error "$(_ "ssh.socket.unit_not_found")"
@@ -46,12 +46,11 @@ check_unit() {
 
 # @type:        Orchestrator
 # @description: Настраивает SSH в service режим, если это необходимо
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - режим корректен или успешно переключен
-#               1 - ошибка в ssh::socket::force_service_mode
-#               2 - отказ пользователя от переключения в service mode
+# @exit_code:   0 режим корректен или успешно переключен
+#               1 ошибка в ssh::socket::force_service_mode
+#               2 отказ пользователя от переключения в service mode
 check() {
     if ssh::socket::is_already_configured; then
         log_info "$(_ "ssh.socket.configured")"
@@ -65,13 +64,13 @@ check() {
 }
 
 # @type:        Orchestrator
-# @description: Точка входа модуля проверки SSH socket
-# @params:      нет
+# @description: Запускает проверку модуля SSH socket
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - проверка прошла успешно
-#               2 - отказ пользователя от переключения в service mode
-#               $? - ошибка проверки
+# @exit_code:   0 проверка прошла успешно
+#               1 ошибка проверки (отсутствует ssh.service)
+#               2 отказ пользователя от переключения в service mode
+#               $? ошибка переключения в service mode
 main() {
     i18n::load
     check_unit

@@ -1,12 +1,9 @@
 # @type:        Source
 # @description: Получает список путей через нулевой разделитель
-# @params:
-#   dir         [optional] Directory to search in (default: current directory)
-#   mask        [optional] Glob pattern (default: "*")
 # @stdin:       нет
 # @stdout:      path\0 (0..N)
-# @exit_code:   0
-#               1 - при отсутствии файлов по маске
+# @exit_code:   0 успех
+#               1 при отсутствии файлов по маске
 sys::file::get_paths_by_mask() {
     local dir="$1"
     local mask=$2 # nullglob mask
@@ -20,11 +17,10 @@ sys::file::get_paths_by_mask() {
 
 # @type:        Filter
 # @description: Удаляет указанные файлы и директории
-# @params:      нет
 # @stdin:       path\0 (0..N)
 # @stdout:      нет
-# @exit_code:   0
-#               1 - ошибка при удалении
+# @exit_code:   0 успех
+#               1 ошибка при удалении
 sys::file::delete() {
     local path
     local resp
@@ -42,10 +38,9 @@ sys::file::delete() {
 
 # @type:        Source
 # @description: Получает активные SSH порты из ss
-# @params:      нет
 # @stdin:       нет
 # @stdout:      port\0 (0..N)
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда успешно
 ssh::port::get_from_ss() {
     ss -Hltnp | gawk '
         BEGIN { ORS="\0" }
@@ -59,12 +54,10 @@ ssh::port::get_from_ss() {
 
 # @type:        Orchestrator
 # @description: Проверяет возможность определения активных портов
-# @params:
-#   strict_mode [optional] Строгий режим вызывающий ошибку 1 при недоступности портов
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - порты определены
-#               1 - порты не определены
+# @exit_code:   0 порты определены
+#               1 порты не определены
 ssh::log::active_ports_from_ss() {
     local strict_mode=${1:-0}
 
@@ -82,13 +75,9 @@ ssh::log::active_ports_from_ss() {
 
 # @type:        Orchestrator
 # @description: Запускает фоновый процесс rollback (watchdog)
-#               Тихий режим гасит сообщения о запуске rollback таймера
-# @params:
-#               rollback_type [ssh|ufw|full...]
-#               quiet [quiet]
 # @stdin:       нет
 # @stdout:      PID процесса watchdog
-# @exit_code:   0 - успешно
+# @exit_code:   0 успех
 rollback::orchestrator::watchdog_start() {
     local rollback_type="$1"
     local quiet="${2:-}"
@@ -100,11 +89,9 @@ rollback::orchestrator::watchdog_start() {
 
 # @type:        Orchestrator
 # @description: Останавливает процесс rollback (watchdog) по PID
-# @params:
-#   watchdog_pid PID процесса watchdog для остановки
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успех
 rollback::orchestrator::watchdog_stop() {
     # Посылаем сигнал успешного завершения (USR1)
     log_info "$(_ "common.helpers.rollback.stop_signal" "$WATCHDOG_PID")"
@@ -118,10 +105,9 @@ rollback::orchestrator::watchdog_stop() {
 
 # @type:        Orchestrator
 # @description: Создает FIFO и запускает слушатель для коммуникации с rollback
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успех
 make_fifo_and_start_reader() {
     mkfifo "$WATCHDOG_FIFO"
     log_info "$(_ "common.helpers.rollback.fifo_created" "$WATCHDOG_FIFO")"
@@ -129,22 +115,20 @@ make_fifo_and_start_reader() {
 }
 
 # @type:        Orchestrator
-# @description: Создает FIFO и запускает блокирующий слушатель для подтверждения готовности rollback
-# @params:      нет
+# @description: Создает FIFO для подтверждения готовности rollback
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успех
 start_sync_rollback() {
     mkfifo "$SYNC_FIFO"
     log_info "Создан FIFO: $SYNC_FIFO"
 }
 
 # @type:        Orchestrator
-# @description: Создает FIFO и запускает блокирующий слушатель для подтверждения готовности rollback
-# @params:      нет
+# @description: Ожидает подтверждения готовности rollback и удаляет FIFO
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успех
 stop_sync_rollback() {
     log_info "Ожидание готовности rollback.sh..."
     read _ < "$SYNC_FIFO"
@@ -153,11 +137,10 @@ stop_sync_rollback() {
 }
 
 # @type:        Orchestrator
-# @description: Обработчик сигнала SIGUSR1 - останавливает модуль при откате и удаляем fifo
-# @params:      нет
+# @description: Обрабатывает сигнал SIGUSR1 и останавливает модуль при откате
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   3 - код завершения при откате
+# @exit_code:   3 завершение через откат
 common::rollback::stop_script_by_rollback_timer() {
     log_info "$(_ "common.helpers.rollback.stop_received")"
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
@@ -165,11 +148,10 @@ common::rollback::stop_script_by_rollback_timer() {
 }
 
 # @type:        Orchestrator
-# @description: Обработчик сигнала EXIT - останавливает модуль и удаляем fifo
-# @params:      нет
+# @description: Обрабатывает сигнал EXIT и выполняет финализацию
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   $?
+# @exit_code:   $? сохраняет код возврата предыдущей команды
 common::exit::actions() {
     local rc=$?
     log_info "$(_ "common.exit_received" "$rc")"
@@ -179,11 +161,11 @@ common::exit::actions() {
 }
 
 # @type:        Orchestrator
-# @description: Обработчик сигнала INT
-# @params:      нет
+# @description: Обрабатывает сигнал SIGINT прерывания пользователем
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   $?
+# @exit_code:   130 прерывание пользователем (SIGINT)
+#               $? другие коды
 common::int::actions() {
     local rc=$?
     if [[ $rc -eq 0 ]]; then
@@ -195,13 +177,12 @@ common::int::actions() {
 }
 
 # @type:        Sink
-# @description: Обработчик ошибки pipe
-# @params:      error_code
+# @description: Обрабатывает ошибки pipe и возвращает код завершения
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   2
-#               130
-#               $?
+# @exit_code:   2 отмена пользователем
+#               130 прерывание пользователем (SIGINT)
+#               1 критическая ошибка
 common::pipefail::fallback() {
     local rc_pipe=("$@")
     local final_rc=1
@@ -221,11 +202,10 @@ common::pipefail::fallback() {
 }
 
 # @type:        Source
-# @description: Возвращает метод подключения пользователя [logname]
-# @params:      нет
+# @description: Получает метод аутентификации текущего пользователя
 # @stdin:       нет
-# @stdout:      connection_type\0 (PUBLICKEY/PASSWORD/UNKNOWN)
-# @exit_code:   0
+# @stdout:      connection_type\0 (key/pass/timeout/n/a)
+# @exit_code:   0 всегда успешно
 sys::user::get_auth_method() {
     local auth_info
 
@@ -244,11 +224,10 @@ sys::user::get_auth_method() {
 
 # @type:        Orchestrator
 # @description: Перезапускает SSH сервис после проверки конфигурации
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - сервис успешно перезапущен
-#               1 - ошибка конфигурации
+# @exit_code:   0 сервис успешно перезапущен
+#               1 ошибка конфигурации sshd
 sys::service::restart() {
     if sshd -t; then
         systemctl daemon-reload && log_info "$(_ "ssh.service.daemon_reloaded")"
@@ -261,10 +240,9 @@ sys::service::restart() {
 
 # @type:        Filter
 # @description: Удаляет все правила UFW BSSS и передает порт дальше
-# @params:      нет
 # @stdin:       port\0 (опционально)
 # @stdout:      port\0 (опционально)
-# @exit_code:   0 - успешно
+# @exit_code:   0 всегда успешно
 ufw::rule::reset_and_pass() {
     local port=""
 
@@ -279,10 +257,9 @@ ufw::rule::reset_and_pass() {
 
 # @type:        Sink
 # @description: Удаляет все правила UFW BSSS
-# @params:      нет
-# @stdin:       нет
+# @stdin:       rule\0 (0..N)
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 всегда успешно
 ufw::rule::delete_all_bsss() {
     local rule_args
     while IFS= read -r -d '' rule_args || break; do
@@ -297,10 +274,9 @@ ufw::rule::delete_all_bsss() {
 
 # @type:        Source
 # @description: Получает все правила UFW BSSS
-# @params:      нет
 # @stdin:       нет
 # @stdout:      rule\0 (0..N)
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда успешно
 ufw::rule::get_all_bsss() {
     ufw show added \
     | gawk -v marker="^ufw.*comment[[:space:]]+\x27$BSSS_MARKER_COMMENT\x27" '
@@ -314,10 +290,9 @@ ufw::rule::get_all_bsss() {
 
 # @type:        Source
 # @description: Получает все правила UFW
-# @params:      нет
 # @stdin:       нет
 # @stdout:      rule\0 (0..N)
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда успешно
 ufw::rule::get_all() {
     if command -v ufw > /dev/null 2>&1; then
         ufw show added \
@@ -332,10 +307,9 @@ ufw::rule::get_all() {
 
 # @type:        Filter
 # @description: Добавляет правило UFW для BSSS
-# @params:      нет
 # @stdin:       port\0 (0..N)
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 всегда успешно
 ufw::rule::add_bsss() {
     local port
     while read -r -d '' port; do
@@ -347,16 +321,12 @@ ufw::rule::add_bsss() {
     done
 }
 
-# @type:        Filter
+# @type:        Validator
 # @description: Проверяет, активен ли UFW
-#               может случиться ситуация, когда ufw будет падать в ошибку и после перезагрузки ошибка пропадает
-#               например при экстренном прирывании скрипта - перезагрузка помогает решить проблему
-#               своего рода fallback action на случай если возвращается код 1 - пробуем сделать reload
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - UFW активен
-#               1 - UFW неактивен
+# @exit_code:   0 UFW активен
+#               1 UFW неактивен или ошибка
 ufw::status::is_active() {
     local res
     if res=$(ufw status 2>&1); then
@@ -368,12 +338,11 @@ ufw::status::is_active() {
     fi
 }
 
-# @type:        Filter
-# @description: Деактивирует UFW (пропускает если уже деактивирован)
-# @params:      нет
+# @type:        Orchestrator
+# @description: Деактивирует UFW если он активен
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 всегда успешно
 ufw::status::force_disable() {
     if ufw::status::is_active; then
         ufw --force disable >/dev/null 2>&1
@@ -382,23 +351,21 @@ ufw::status::force_disable() {
 }
 
 # @type:        Validator
-# @description: Проверяет, существует ли бэкап файл настроек PING
-# @params:      нет
+# @description: Проверяет, существует ли бэкап файла настроек PING
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - бэкап существует (PING отключен)
-#               1 - бэкап не существует (PING не отключен)
+# @exit_code:   0 бэкап существует (PING отключен)
+#               1 бэкап не существует (PING не отключен)
 ufw::ping::is_configured() {
     [[ -f "$UFW_BEFORE_RULES_BACKUP" ]]
 }
 
 # @type:        Orchestrator
 # @description: Восстанавливает файл before.rules из бэкапа и удаляет бэкап
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно восстановлено
-#               $? - код ошибки cp или rm
+# @exit_code:   0 успешно восстановлено
+#               $? код ошибки cp или rm
 ufw::ping::restore() {
     if res=$(cp -pv "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES" 2>&1); then
         log_info "$(_ "ufw.success.backup_restored" "$res")"
@@ -412,11 +379,10 @@ ufw::ping::restore() {
 }
 
 # @type:        Orchestrator
-# @description: Выводит активные правила UFW
-# @params:      нет
+# @description: Создает FIFO для подтверждения готовности rollback
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успех
 ufw::log::rules() {
     local rule
     local found=0
@@ -440,10 +406,9 @@ ufw::log::rules() {
 
 # @type:        Sink
 # @description: Логирует состояние UFW
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 всегда успешно
 ufw::log::status() {
     ufw::status::is_active && \
     log_info "$(_ "ufw.status.enabled")" || \
@@ -452,10 +417,9 @@ ufw::log::status() {
 
 # @type:        Sink
 # @description: Логирует состояние PING
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 всегда успешно
 ufw::log::ping_status() {
     ufw::ping::is_configured && \
     log_info "$(_ "ufw.status.ping_blocked")" || \
@@ -463,11 +427,10 @@ ufw::log::ping_status() {
 }
 
 # @type:        Orchestrator
-# @description: Отображает статусы ufw: BSSS правила, сторонние правила
-# @params:      нет
+# @description: Отображает статусы UFW
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - Всегда успешно
+# @exit_code:   0 всегда успешно
 ufw::orchestrator::log_statuses() {
     ufw::log::status
     ufw::log::rules
@@ -475,56 +438,10 @@ ufw::orchestrator::log_statuses() {
 }
 
 # @type:        Orchestrator
-# @description: Проверяет текущего пользователя
-# @params:      нет
+# @description: Выводит активные правила UFW
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - пользователь авторизован не как root
-#               1 - пользователь авторизован как root
-permissions::check::current_user() {
-    local root_id auth_id auth_name current_conn_type err=0
-    root_id=$(id -u root)
-    auth_id=$(id -u "$(logname)")
-    auth_name="$(logname)"
-    current_conn_type=$(sys::user::get_auth_method | tr -d '\0')
-    
-
-    log_info "$(_ "permissions.info.session_owner_conn_type" "$(logname)" "$current_conn_type")"
-    permissions::orchestrator::log_statuses
-
-    if [[ "$current_conn_type" == "pass" ]]; then
-        log_attention "$(_ "permissions.attention.password_connection")"
-        err=1
-    fi
-
-    if (( root_id == auth_id )); then
-        log_attention "$(_ "permissions.warn.auth_by_ssh_key_user" "[$auth_name|id:$auth_id]")"
-        err=1
-    fi
-
-    if (( err == 1 )); then
-        return 4
-    fi
-}
-
-# @type:        Orchestrator
-# @description: Отображает статусы permissions: BSSS правила, сторонние правила
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - Всегда успешно
-permissions::orchestrator::log_statuses() {
-    common::log::current_config "^pubkeyauthentication|^passwordauthentication|^permitrootlogin"
-    permissions::log::bsss_configs
-    permissions::log::other_configs
-}
-
-# @type:        Sink
-# @description: Логирует текущую конфигурацию SSH (sshd -T)
-# @params:      pattern    Регулярное выражение для фильтрации
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 всегда успешно
 common::log::current_config() {
     local pattern="$1"
     local line
@@ -553,15 +470,10 @@ ssh::orchestrator::trigger_immediate_rollback() {
 
 # @type:        Orchestrator
 # @description: Блокирующая проверка поднятия SSH порта после изменения
-#               Проверяет порт в цикле с интервалом 0.5 секунды
-#               При успешном обнаружении возвращает 0
-#               При истечении таймаута возвращает 1
-# @params:
-#   port        Номер порта для проверки
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - порт успешно поднят
-#               1 - порт не поднялся в течение таймаута
+# @exit_code:   0 порт успешно поднят
+#               1 порт не поднялся в течение таймаута
 ssh::port::wait_for_up() {
     local port="$1"
     local timeout="${SSH_PORT_CHECK_TIMEOUT:-5}"

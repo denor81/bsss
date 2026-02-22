@@ -1,11 +1,10 @@
 # === SOURCE ===
 
 # @type:        Source
-# @description: Получает список пользователей через NUL-разделитель
-# @params:      нет
+# @description: Получает список пользователей системы
 # @stdin:       нет
-# @stdout:      line\0 | nothing
-# @exit_code:   0 - успешно
+# @stdout:      username:password:uid:gid:gecos:home:shell\0
+# @exit_code:   0 успешно
 user::list::get() {
     gawk -F: '
         BEGIN { ORS="\0" }
@@ -15,12 +14,10 @@ user::list::get() {
 
 # @type:        Source
 # @description: Генерирует случайный пароль указанной длины
-# @params:
-#   length      Длина пароля (по умолчанию $BSSS_USER_PASS_LEN)
 # @stdin:       нет
-# @stdout:      password
-# @exit_code:   0 - успешно
-#               1 - openssl не найден
+# @stdout:      password\n
+# @exit_code:   0 успешно
+#               1 openssl не найден
 user::pass::generate() {
     local length="${1:-$BSSS_USER_PASS_LEN}"
 
@@ -33,15 +30,14 @@ user::pass::generate() {
 
 # === FILTER ===
 
-# @type:        Filter
-# @description: Существует только root или нет (uid: 0)
-# @params:      нет
+# @type:        Validator
+# @description: Проверяет, существует ли только root пользователь в системе
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 существует только root (uid: 0)
 #               1 существует несколько пользователей (bsssuser не создан)
 #               2 существует несколько пользователей (bsssuser создан)
-#               3 существует только 1 пользователь, но uid не равен 0 (это не root) 
+#               3 существует только 1 пользователь, но uid не равен 0
 user::system::is_only_root() {
     local usernames=()
     local uids=()
@@ -79,10 +75,9 @@ user::system::is_only_root() {
 
 # @type:        Sink
 # @description: Отображает информацию о пользователях в системе
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
 user::info::block() {
     local login_user=$(logname 2>/dev/null || echo "N/A")
     local auth_method=$(sys::user::get_auth_method | tr -d '\0')
@@ -114,19 +109,19 @@ user::info::block() {
 # @description: Создает пользователя $BSSS_USER_NAME
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - ошибка useradd
+# @exit_code:   0 успешно
+#               $? ошибка useradd
 user::create::execute() {
     useradd -m -d "/home/$BSSS_USER_NAME" -s /bin/bash -G sudo "$BSSS_USER_NAME" 2>&1
 }
 
 # @type:        Sink
 # @description: Устанавливает пароль для пользователя
-#               Принимает поток "username:password"
 # @stdin:       username:password\0
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - ошибка chpasswd
+# @exit_code:   0 успешно
+#               1 отсутствует входные данные
+#               $? ошибка chpasswd
 user::pass::set() {
     local cred=""
 
@@ -137,11 +132,10 @@ user::pass::set() {
 
 # @type:        Sink
 # @description: Создает файл в /etc/sudoers.d/ для парольного доступа к sudo
-#               Файл создается с правами 0440
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               1 - ошибка создания файла или установки прав
+# @exit_code:   0 успешно
+#               1 ошибка создания файла или установки прав
 user::sudoers::create_file() {
     local sudoers_file="${SUDOERS_D_DIR}/${BSSS_USER_NAME}"
 

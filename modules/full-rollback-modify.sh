@@ -18,6 +18,13 @@ trap common::int::actions INT
 trap common::exit::actions EXIT
 trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
+# @type:        Orchestrator
+# @description: Запускает полный откат всех настроек BSSS с подтверждением
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успешно завершен
+#               1 критическая ошибка
+#               2 отмена пользователем
 full_rollback::orchestrator::run_module() {
     log_info "$(_ "full_rollback.info.full_rollback_warning" "${UTIL_NAME^^}")"
 
@@ -35,10 +42,11 @@ full_rollback::orchestrator::run_module() {
 
 # @type:        Orchestrator
 # @description: Основная точка входа для модуля полного отката
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно завершен
+#               1 критическая ошибка
+#               2 отмена пользователем
 main() {
     i18n::load
     log_start

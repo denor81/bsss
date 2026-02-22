@@ -1,12 +1,10 @@
-# @type:        Source
+# @type:        Validator
 # @description: Проверяет наличие gawk и предлагает установку
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - gawk найден
-#               1 - gawk не найден
-#               2 - выход пользователя (io::confirm_action)
-#               $? - иные ошибки
+# @exit_code:   0 gawk найден или установлен
+#               1 gawk не найден и не установлен
+#               2 выход пользователя
 sys::gawk::check_dependency() {
     if command -v gawk >/dev/null 2>&1; then
         local gawk_v=$(gawk -V | head -n 1)
@@ -30,16 +28,11 @@ sys::gawk::check_dependency() {
     fi
 }
 
-# @type:        Sink
-# @description: Вращает лог-файлы - удаляет старые файлы если их больше MAX_LOG_FILES
-#               Если каталога не существует - ничего не делает
-#               Если каталог существует, но нет логов - ничего не делает
-#               Если файлов <= MAX_LOG_FILES - ничего не делает
-#               Если файлов > MAX_LOG_FILES - удаляет самые ранние файлы по дате модификации
-# @params:      нет
+# @type:        Orchestrator
+# @description: Вращает лог-файлы удаляя старые файлы
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда
 sys::log::rotate_old_files() {
     local logs_dir="${PROJECT_ROOT}/${LOGS_DIR}"
     [[ ! -d "$logs_dir" ]] && return 0

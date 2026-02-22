@@ -12,11 +12,13 @@ source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/user.sh"
 
 # @type:        Orchestrator
-# @description: Точка входа модуля проверки пользователей
-# @params:      нет
+# @description: Запускает проверку пользователей системы
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - проверка прошла успешно
+# @exit_code:   0 проверка прошла успешно
+#               1 критическая ошибка
+#               2 отмена пользователем
+#               $? другие не определенные ошибки
 main() {
     i18n::load
     user::info::block

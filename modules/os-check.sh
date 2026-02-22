@@ -10,11 +10,10 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 
 # @type:        Filter
-# @description: Получает строку ID текущей системы
-# @params:      нет
-# @stdin:       content of a file (stream)
-# @stdout:      string ID
-# @exit_code:   0 - всегда
+# @description: Извлекает ID операционной системы из потока
+# @stdin:       content of /etc/os-release (text\n)
+# @stdout:      os_id\n
+# @exit_code:   0 успех
 get_os_id() {
     gawk -F= '
         $1=="ID" {
@@ -25,13 +24,12 @@ get_os_id() {
     '
 }
 
-# @type:        Orchestrator
+# @type:        Validator
 # @description: Проверяет совместимость текущей ОС с разрешенной
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - система поддерживается
-#               1 - ошибка валидации или файл не найден
+# @exit_code:   0 система поддерживается
+#               1 файл не найден или система не поддерживается
 check() {
     [[ -f "$OS_RELEASE_FILE_PATH" ]] || {
         log_error "$(_ "os.check.file_not_found" "$OS_RELEASE_FILE_PATH")"
@@ -50,12 +48,11 @@ check() {
 }
 
 # @type:        Orchestrator
-# @description: Точка входа модуля проверки ОС
-# @params:      нет
+# @description: Запускает модуль проверки ОС
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - проверка прошла успешно
-#               1 - ошибка проверки
+# @exit_code:   0 проверка прошла успешно
+#               1 ошибка проверки
 main() {
     i18n::load
     check

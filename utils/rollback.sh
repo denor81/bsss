@@ -37,11 +37,10 @@ trap 'rollback::orchestrator::stop_usr1' SIGUSR1
 trap 'rollback::orchestrator::immediate_usr2' SIGUSR2
 
 # @type:        Orchestrator
-# @description: Действия при завершении скрипта
-# @params:      нет
+# @description: Выполняет действия при завершении скрипта
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда
 rollback::orchestrator::exit() {
     log_info "$(_ "rollback.exit_received")"
     log_info "$(_ "rollback.close_redirection")"
@@ -52,10 +51,9 @@ rollback::orchestrator::exit() {
 
 # @type:        Orchestrator
 # @description: Останавливает процесс таймера отката и завершает скрипт
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда
 rollback::orchestrator::stop_usr1() {
     log_info "$(_ "rollback.stop_usr1_received")"
     kill "$SLEEP_PID" 2>/dev/null
@@ -63,12 +61,10 @@ rollback::orchestrator::stop_usr1() {
 }
 
 # @type:        Orchestrator
-# @description: Немедленно выполняет тотальный откат при получении SIGUSR2
-#               Вызывается, когда порт не поднялся после изменения
-# @params:      нет
+# @description: Выполняет немедленный откат при получении SIGUSR2
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда
 rollback::orchestrator::immediate_usr2() {
     log_info "$(_ "rollback.immediate_usr2_received")"
     kill "$SLEEP_PID" 2>/dev/null
@@ -86,11 +82,11 @@ rollback::orchestrator::immediate_usr2() {
 }
 
 # @type:        Orchestrator
-# @description: Полный откат для SSH модуля - сброс правил SSH и отключение UFW
-# @params:      нет
+# @description: Выполняет полный откат для SSH модуля
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 все команды выполнены успешно
+#               1 одна или несколько команд завершились с ошибкой
 rollback::orchestrator::ssh() {
     local errors=()
     log_warn "$(_ "rollback.ssh_dismantle")"
@@ -114,11 +110,11 @@ rollback::orchestrator::ssh() {
 }
 
 # @type:        Orchestrator
-# @description: Простой откат для UFW модуля - только отключение UFW
-# @params:      нет
+# @description: Выполняет откат для UFW модуля
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 все команды выполнены успешно
+#               1 одна или несколько команд завершились с ошибкой
 rollback::orchestrator::ufw() {
     local errors=()
     log_warn "$(_ "rollback.ufw_dismantle")"
@@ -138,11 +134,11 @@ rollback::orchestrator::ufw() {
 }
 
 # @type:        Orchestrator
-# @description: Откат для permissions модуля - удаление правил и перезапуск сервиса
-# @params:      нет
+# @description: Выполняет откат для permissions модуля
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 все команды выполнены успешно
+#               1 одна или несколько команд завершились с ошибкой
 rollback::orchestrator::permissions() {
     local errors=()
     log_warn "$(_ "rollback.permissions_dismantle")"
@@ -164,10 +160,9 @@ rollback::orchestrator::permissions() {
 
 # @type:        Orchestrator
 # @description: Выполняет полный откат всех настроек BSSS
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - все откаты выполнены (даже если с ошибками)
+# @exit_code:   0 всегда
 full_rollback::orchestrator::execute_all() {
     local errors=()
 
@@ -189,11 +184,10 @@ full_rollback::orchestrator::execute_all() {
 }
 
 # @type:        Orchestrator
-# @description: Полный откат всех настроек BSSS
-# @params:      нет
+# @description: Выполняет полный откат всех настроек BSSS
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда
 rollback::orchestrator::full() {
     log_warn "$(_ "rollback.full_dismantle")"
 
@@ -201,12 +195,11 @@ rollback::orchestrator::full() {
 }
 
 # @type:        Orchestrator
-# @description: Диспетчеризация в зависимости от переданного параметра
-#               Вызывается при критическом сбое или таймауте.
-# @params:      нет
+# @description: Выполняет диспетчеризацию отката в зависимости от типа
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 откат выполнен успешно
+#               1 неизвестный тип отката
 rollback::dispatcher() {
     case "$ROLLBACK_TYPE" in
         "ssh") rollback::orchestrator::ssh ;;
@@ -218,14 +211,10 @@ rollback::dispatcher() {
 }
 
 # @type:        Orchestrator
-# @description: Таймер для автоматического отката
-# @params:
-#   rollback_type Тип отката (ssh/ufw)
-#   main_script_pid PID основного скрипта
-#   watchdog_fifo FIFO для коммуникации
+# @description: Запускает таймер для автоматического отката
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда
 rollback::orchestrator::watchdog_timer() {
     ROLLBACK_TYPE="$1"
     MAIN_SCRIPT_PID="$2"
@@ -273,11 +262,10 @@ rollback::orchestrator::watchdog_timer() {
 }
 
 # @type:        Orchestrator
-# @description: Основная точка входа
-# @params:      @ - параметры для watchdog_timer
+# @description: Загружает переводы и запускает таймер
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - всегда
+# @exit_code:   0 всегда
 main() {
     i18n::load
     rollback::orchestrator::watchdog_timer "$@"

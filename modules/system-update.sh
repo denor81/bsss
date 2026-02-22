@@ -15,22 +15,21 @@ source "${PROJECT_ROOT}/modules/helpers/system-update.sh"
 trap log_stop EXIT
 
 # @type:        Orchestrator
-# @description: Оркестратор процесса обновления системы
-# @params:      нет
+# @description: Оркестрирует процесс обновления системы
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               1 - ошибка обновления
+# @exit_code:   0 успешно
+#               1 ошибка обновления
 sys::update::orchestrator() {
     sys::update::get_command | sys::update::execute
 }
 
 # @type:        Orchestrator
-# @description: Основная точка входа модуля обновления системы
-# @params:      нет
+# @description: Запускает основную точку входа модуля обновления системы
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно
+#               2 отмена пользователем
 main() {
     i18n::load
     log_start

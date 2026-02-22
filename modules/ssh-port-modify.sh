@@ -24,12 +24,11 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
 # @description: Устанавливает новый SSH порт с механизмом rollback
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               $? - код ошибки дочернего процесса
+# @exit_code:   0 успешная установка порта
+#               2 отмена пользователем
+#               $? другие не определенные ошибки
 ssh::install::port() {
     local port
 
@@ -65,13 +64,11 @@ ssh::install::port() {
 
 # @type:        Orchestrator
 # @description: Отображает меню и диспетчеризирует выбор пользователя
-#               Три шага: отображение → выбор → диспетчеризация
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно выполнено действие
-#               2 - выход по выбору пользователя
-#               $? - ошибка при выполнении действия
+# @exit_code:   0 успешное выполнение действия
+#               2 выход по выбору пользователя
+#               $? другие не определенные ошибки
 ssh::main::menu::dispatcher() {
     ssh::log::active_ports_from_ss
     ssh::log::bsss_configs
@@ -93,12 +90,11 @@ ssh::main::menu::dispatcher() {
 # === SSH ORCHESTRATORS ===
 
 # @type:        Orchestrator
-# @description: Сбрасывает SSH порт (удаляет все BSSS правила)
-# @params:      нет
+# @description: Сбрасывает SSH порт и удаляет все BSSS правила
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - код ошибки дочернего процесса
+# @exit_code:   0 успешный сброс
+#               $? другие не определенные ошибки
 ssh::reset::port() {
     ssh::rule::reset_and_pass | ufw::rule::reset_and_pass
     ufw::status::force_disable # Для гарантированного доступа
@@ -111,37 +107,34 @@ ssh::reset::port() {
 }
 
 # @type:        Orchestrator
-# @description: Обработчик сценария с существующими конфигами
-# @params:      нет
+# @description: Обрабатывает сценарий с существующими конфигами
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               $? - код ошибки дочернего процесса
+# @exit_code:   0 успешная обработка
+#               2 отмена пользователем
+#               $? другие не определенные ошибки
 ssh::orchestrator::config_exists_handler() {
     ssh::main::menu::dispatcher
 }
 
 # @type:        Orchestrator
-# @description: Обработчик сценария отсутствия конфигов
-# @params:      нет
+# @description: Обрабатывает сценарий отсутствия конфигов
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               $? - код ошибки дочернего процесса
+# @exit_code:   0 успешная обработка
+#               2 отмена пользователем
+#               $? другие не определенные ошибки
 ssh::orchestrator::config_not_exists_handler() {
     ssh::install::port
 }
 
 # @type:        Orchestrator
-# @description: Определяет состояние конфигурации SSH и переключает логику модуля на соответствующий сценарий
-# @params:      нет
+# @description: Определяет состояние конфигурации SSH и переключает логику модуля
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               $? - код ошибки дочернего процесса
+# @exit_code:   0 успешное определение и запуск сценария
+#               2 отмена пользователем
+#               $? другие не определенные ошибки
 ssh::orchestrator::dispatch_logic() {
     if sys::file::get_paths_by_mask "$SSH_CONFIGD_DIR" "$BSSS_SSH_CONFIG_FILE_MASK" >/dev/null; then
         ssh::orchestrator::config_exists_handler
@@ -150,16 +143,23 @@ ssh::orchestrator::dispatch_logic() {
     fi
 }
 
+# @type:        Orchestrator
+# @description: Запускает модуль изменения SSH порта
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успешный запуск модуля
+#               2 отмена пользователем
+#               $? другие не определенные ошибки
 ssh::orchestrator::run_module() {
     ssh::orchestrator::dispatch_logic
 }
 
 # @type:        Orchestrator
 # @description: Основная точка входа для модуля изменения SSH порта
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешное выполнение
+#               $? другие не определенные ошибки
 main() {
     i18n::load
     log_start

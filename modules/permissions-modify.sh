@@ -20,7 +20,7 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 # @description: Инициирует немедленный откат через SIGUSR2 и ожидает завершения watchdog
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - откат выполнен, процесс заблокирован
+# @exit_code:   0 откат выполнен, процесс заблокирован
 permissions::orchestrator::trigger_immediate_rollback() {
     # || true: WATCHDOG_PID может уже не существовать или завершиться во время kill/wait
     log_info "Отправлен сигнал USR2"
@@ -32,10 +32,9 @@ permissions::orchestrator::trigger_immediate_rollback() {
 
 # @type:        Orchestrator
 # @description: Выполняет откат правил permissions и рестарт сервиса
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно выполнен откат правил
 permissions::orchestrator::restore::rules() {
     permissions::rules::restore
     sys::service::restart
@@ -45,12 +44,11 @@ permissions::orchestrator::restore::rules() {
 
 # @type:        Orchestrator
 # @description: Создает правила permissions с механизмом rollback
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - выход по запросу пользователя
-#               $? - код ошибки дочернего процесса
+# @exit_code:   0 успешно созданы правила permissions
+#               2 отмена пользователем
+#               $? ошибка при выполнении действий
 permissions::orchestrator::install::rules() {
 
     make_fifo_and_start_reader
@@ -76,12 +74,11 @@ permissions::orchestrator::install::rules() {
 
 # @type:        Orchestrator
 # @description: Запускает модуль с интерактивным меню
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно выполнено действие
-#               2 - выход по выбору пользователя
-#               $? - ошибка при выполнении действия
+# @exit_code:   0 успешно выполнено действие
+#               2 отмена пользователем
+#               $? ошибка при выполнении действия
 permissions::orchestrator::run_module() {
     log_info "$(_ "common.menu_header")"
     permissions::rules::is_configured && log_info_simple_tab "1. $(_ "permissions.menu.item_remove")" || log_info_simple_tab "1. $(_ "permissions.menu.item_create")"
@@ -98,11 +95,10 @@ permissions::orchestrator::run_module() {
 
 # @type:        Orchestrator
 # @description: Выполняет переключение правил в зависимости от состояния
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               $? - ошибка при выполнении действия
+# @exit_code:   0 успешно выполнено переключение правил
+#               $? ошибка при выполнении действия
 permissions::toggle::rules() {
     if permissions::rules::is_configured; then
         permissions::orchestrator::restore::rules
@@ -120,9 +116,10 @@ permissions::toggle::rules() {
 # @description: Проверяет условия и запускает модуль при выполнении
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
-#               2 - отмена пользователем или несоответствие условий
-#               4 - требуется авторизация по SSH ключу
+# @exit_code:   0 успешно запущен модуль
+#               2 отмена пользователем или несоответствие условий
+#               4 требуется авторизация по SSH ключу
+#               $? ошибка при определении типа подключения
 permissions::orchestrator::dispatch_logic() {
     local current_conn_type
 
@@ -146,10 +143,10 @@ permissions::orchestrator::dispatch_logic() {
 
 # @type:        Orchestrator
 # @description: Основная точка входа для модуля создания прав доступа
-# @params:      нет
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 - успешно
+# @exit_code:   0 успешно завершена работа модуля
+#               $? ошибка при выполнении действий
 main() {
     i18n::load
     log_start
