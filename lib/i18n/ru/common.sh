@@ -19,7 +19,7 @@ I18N_MESSAGES["common.default_actual_info"]="Информация"
 # Menu messages
 I18N_MESSAGES["common.menu_header"]="Доступные действия:"
 I18N_MESSAGES["common.menu_check"]="Проверка системы"
-I18N_MESSAGES["common.menu_language"]="Язык • Language • 语言 • हिन्दी"
+I18N_MESSAGES["common.menu_language"]="Язык • Language • 语言 • भाषा"
 
 # Error messages - module runner
 I18N_MESSAGES["common.error_module_error"]="Запуск не возможен, один из модулей показывает ошибку"
