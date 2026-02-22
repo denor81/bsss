@@ -86,6 +86,22 @@ log_dir_init() {
     # 2. Создаем симлинк
     ln -sf "$real_log" "$CURRENT_LOG_SYMLINK"
 
+    local log_header="\
+# ==============================================================================
+# WARNING: This log file may contain incomplete data.
+# In the event of an abnormal termination (e.g., Ctrl+C or script crash),
+# logs from the '/utils/rollback.sh' process may be lost due to the closure of 
+# the FIFO pipe used for terminal streaming.
+#
+# Under normal conditions, logs are consistent across all channels.
+#
+# If the script was interrupted and you need full rollback logs, please 
+# refer to the system journal using the following command:
+# journalctl -t bsss --since \"10 minutes ago\"
+# =============================================================================="
+
+    { echo "$log_header" >> "$CURRENT_LOG_SYMLINK"; } 2>/dev/null || true
+
     # 3. Определяем, кому отдавать права
     # Если запущен через sudo, берем реального юзера, иначе текущего
     local target_user="${SUDO_USER:-$USER}"
