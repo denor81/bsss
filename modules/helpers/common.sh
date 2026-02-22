@@ -1,25 +1,3 @@
-# @type:        Sink
-# @description: Вращает лог-файлы - удаляет старые файлы если их больше MAX_LOG_FILES
-#               Если каталога не существует - ничего не делает
-#               Если каталог существует, но нет логов - ничего не делает
-#               Если файлов <= MAX_LOG_FILES - ничего не делает
-#               Если файлов > MAX_LOG_FILES - удаляет самые ранние файлы по дате модификации
-# @params:      нет
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда
-sys::log::rotate_old_files() {
-    local logs_dir="${PROJECT_ROOT}/${LOGS_DIR}"
-    [[ ! -d "$logs_dir" ]] && return 0
-    
-    find "$logs_dir" -maxdepth 1 -type f -name "[0-9][0-9][0-9][0-9]-*.log" -printf '%T@ %p\0' \
-        | sort -z -n \
-        | sed -z 's/^[0-9.]* //' \
-        | head -z -n -"$MAX_LOG_FILES" \
-        | xargs -r0 rm -f
-}
-
-
 # @type:        Source
 # @description: Получает список путей через нулевой разделитель
 # @params:
@@ -30,8 +8,8 @@ sys::log::rotate_old_files() {
 # @exit_code:   0
 #               1 - при отсутствии файлов по маске
 sys::file::get_paths_by_mask() {
-    local dir=${1:-.}
-    local mask=${2:-*}
+    local dir="$1"
+    local mask=$2 # nullglob mask
 
     (
         shopt -s nullglob

@@ -29,3 +29,24 @@ sys::gawk::check_dependency() {
         fi
     fi
 }
+
+# @type:        Sink
+# @description: Вращает лог-файлы - удаляет старые файлы если их больше MAX_LOG_FILES
+#               Если каталога не существует - ничего не делает
+#               Если каталог существует, но нет логов - ничего не делает
+#               Если файлов <= MAX_LOG_FILES - ничего не делает
+#               Если файлов > MAX_LOG_FILES - удаляет самые ранние файлы по дате модификации
+# @params:      нет
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+sys::log::rotate_old_files() {
+    local logs_dir="${PROJECT_ROOT}/${LOGS_DIR}"
+    [[ ! -d "$logs_dir" ]] && return 0
+    
+    find "$logs_dir" -maxdepth 1 -type f -name "[0-9][0-9][0-9][0-9]-*.log" -printf '%T@ %p\0' \
+        | sort -z -n \
+        | sed -z 's/^[0-9.]* //' \
+        | head -z -n -"$MAX_LOG_FILES" \
+        | xargs -r0 rm -f
+}

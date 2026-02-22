@@ -170,7 +170,7 @@ I18N_MESSAGES["ufw.error.enable_failed"]="Ошибка при активации
 # Success messages
 I18N_MESSAGES["ufw.success.backup_created"]="Создан бэкап: [%s]"
 I18N_MESSAGES["ufw.error.backup_failed"]="Не удалось создать бэкап %s [%s]"
-I18N_MESSAGES["ufw.success.before_rules_edited"]="Отредактирован: [%s]"
+I18N_MESSAGES["ufw.success.before_rules_edited"]="Отредактированы правила ping: [%s]"
 I18N_MESSAGES["ufw.success.reloaded"]="UFW перезагружен [ufw reload]"
 I18N_MESSAGES["ufw.success.enabled"]="UFW включен"
 I18N_MESSAGES["ufw.warning.continue_without_rules"]="Невозможно продолжить: нет правил BSSS в UFW"

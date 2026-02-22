@@ -170,7 +170,7 @@ I18N_MESSAGES["ufw.error.enable_failed"]="Error during activation [ufw --force e
 # Success messages
 I18N_MESSAGES["ufw.success.backup_created"]="Backup created: [%s]"
 I18N_MESSAGES["ufw.error.backup_failed"]="Failed to create backup %s [%s]"
-I18N_MESSAGES["ufw.success.before_rules_edited"]="Edited: [%s]"
+I18N_MESSAGES["ufw.success.before_rules_edited"]="Ping rules edited: [%s]"
 I18N_MESSAGES["ufw.success.reloaded"]="UFW reloaded [ufw reload]"
 I18N_MESSAGES["ufw.success.enabled"]="UFW enabled"
 I18N_MESSAGES["ufw.warning.continue_without_rules"]="Cannot continue: no BSSS rules in UFW"
