@@ -963,6 +963,4 @@ install::main() {
 #                                       #
 #########################################
 
-if [[ "${BASH_SOURCE[0]:-}" == "${0}" ]]; then
-    install::main
-fi
+install::main
