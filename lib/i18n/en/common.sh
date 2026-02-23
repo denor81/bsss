@@ -276,6 +276,8 @@ I18N_MESSAGES["permissions.check.current_ssh_config"]="Current SSH configuration
 
 # Permissions warnings
 I18N_MESSAGES["permissions.attention.password_connection"]="Password connection detected. In automatic mode, rules are created that prohibit password authorization. Connect as a sudo user (not root) using an SSH key."
+I18N_MESSAGES["permissions.info.session_owner_conn_type"]="Session owner: %s [connection type: %s]"
+I18N_MESSAGES["permissions.warn.root_auth"]="Log in as a sudo-user by ssh-key (not root, not pass). Current authorization: %s"
 I18N_MESSAGES["permissions.warn.session_timeout_limitations"]="Session longer than 72 hours [cannot determine connection type - log limitations]"
 I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Reconnect in new terminal window [%s]"
 I18N_MESSAGES["permissions.warn.cannot_determine_connection"]="Failed to determine connection type"

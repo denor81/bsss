@@ -276,6 +276,8 @@ I18N_MESSAGES["permissions.check.current_ssh_config"]="Текущая конфи
 
 # Permissions warnings
 I18N_MESSAGES["permissions.attention.password_connection"]="Обнаружено подключение по паролю. В автоматическом режиме создаются правила запрещающие авторизацию по паролю. Подключитесь под sudo-пользователем (не root) по SSH ключу."
+I18N_MESSAGES["permissions.info.session_owner_conn_type"]="Владелец сессии: %s [тип подключения: %s]"
+I18N_MESSAGES["permissions.warn.root_auth"]="Авторизируйтесь под sudo-пользователем через ssh-ключ (не root, не пароль). Текущая авторизация: %s"
 I18N_MESSAGES["permissions.warn.session_timeout_limitations"]="Сессия длиннее 72 часов [невозможно определить тип подключения - ограничения журнала]"
 I18N_MESSAGES["permissions.warn.reconnect_new_window"]="Подключитесь заново в новом окне терминала [%s]"
 I18N_MESSAGES["permissions.warn.cannot_determine_connection"]="Не удалось определить тип подключения"
