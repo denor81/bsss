@@ -45,7 +45,7 @@ rollback::orchestrator::exit() {
     log_info "$(_ "rollback.exit_received")"
     log_info "$(_ "rollback.close_redirection")"
     log_stop
-    exec 2>&-
+    exec 3>&-
     exit 0
 }
 
@@ -227,7 +227,7 @@ rollback::orchestrator::watchdog_timer() {
     local sync_fifo="$4"
     local quiet="$5"
     
-    exec 2> "$watchdog_fifo"
+    exec 3> "$watchdog_fifo"
 
     log_start
     log_info "$(_ "rollback.redirection_opened" $$ "$(basename "$watchdog_fifo")")"

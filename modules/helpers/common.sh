@@ -116,7 +116,7 @@ rollback::orchestrator::watchdog_stop() {
 make_fifo_and_start_reader() {
     mkfifo "$WATCHDOG_FIFO"
     log_info "$(_ "common.helpers.rollback.fifo_created" "$WATCHDOG_FIFO")"
-    cat "$WATCHDOG_FIFO" >&2 &
+    cat "$WATCHDOG_FIFO" >&3 &
 }
 
 # @type:        Orchestrator

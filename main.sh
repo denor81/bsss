@@ -20,6 +20,19 @@ source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
 source "${PROJECT_ROOT}/modules/helpers/init.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 
+# Что бы не путать наши логи и ошибки bash
+# Наши логи пишутся в 3-й дескриптор
+# Ошибки bash во 2-й дескриптор
+# Привязали 3-й дескриптор к терминалу
+exec 3>&2
+
+# ПЕРЕХВАТЧИК ОШИБОК BASH
+# Отвязали 2-й дескриптор от терминала
+# Это позволяет ловить исключительно ошибки bash
+exec 2> >(while read -r line; do 
+    log::bash::error "$line"
+done)
+
 trap common::int::actions INT
 trap common::exit::actions EXIT
 

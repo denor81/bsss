@@ -1,18 +1,20 @@
+# Что бы не путать наши логи и ошибки bash
+# Наши логи пишутся в 3-й дескриптор
+# Ошибки bash во 2-й дескриптор
+# в main.sh перенаправляем 2 и 3 дескрипторы
+
 readonly SYMBOL_SUCCESS="[v]"
 readonly SYMBOL_QUESTION="[?]"
 readonly SYMBOL_INFO="[ ]"
 readonly SYMBOL_DEBUG="[D]"
 readonly SYMBOL_WARN="[!]"
 readonly SYMBOL_ATTENTION="[A]"
+readonly SYMBOL_BASH_ERROR="[BASH_ERROR]"
 readonly SYMBOL_ACTUAL_INFO="[i]"
 readonly SYMBOL_ERROR="[x]"
 
 #
 # LOG_STRICT_MODE нужен для маскировки ошибок логирования при экстренном прерывании родительского скрипта
-#
-
-#
-#
 #
 
 # Journal mapping: BSSS log type -> systemd journal priority
@@ -21,7 +23,7 @@ readonly -A JOURNAL_MAP=(
     [INFO]="info" [QUESTION]="info" [ANSWER]="info" [BOLD_INFO]="info" [INFO_TAB]="info" [ACTUAL_INFO]="info" [START]="info" [STOP]="info"
     [WARN]="warning"
     [ERROR]="err"
-    [ATTENTION]="crit"
+    [ATTENTION]="crit" [CRITICAL]="crit"
     [SUCCESS]="notice"
 )
 
@@ -48,6 +50,17 @@ log::to_journal() {
 }
 
 # @type:        Sink
+# @description: Записывает сообщение в лог-файл с timestamp
+# @params:      message - Текст сообщения для записи
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда (ошибки подавлены)
+log::to_file() {
+    # || true: Запись в лог-файл может не сработать (нет прав, диск переполнен, дескриптор закрыт)
+    { echo "$(date '+%H:%M:%S') $1" >> "$CURRENT_LOG_SYMLINK"; } 2>/dev/null || true
+}
+
+# @type:        Sink
 # @description: Выводит пустую строку в stderr
 # @params:      нет
 # @stdin:       нет
@@ -55,23 +68,12 @@ log::to_journal() {
 # @exit_code:   0 - всегда
 new_line() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo >&2
+        echo >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo >&2 || true
+        echo >&3 || true
     fi
-}
-
-# @type:        Sink
-# @description: Записывает сообщение в лог-файл с timestamp
-# @params:      message - Текст сообщения для записи
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - всегда (ошибки подавлены)
-log_formatted_msg() {
-    # || true: Запись в лог-файл может не сработать (нет прав, диск переполнен, дескриптор закрыт)
-    { echo "$(date '+%H:%M:%S') $1" >> "$CURRENT_LOG_SYMLINK"; } 2>/dev/null || true
 }
 
 # @type:        Sink
@@ -85,13 +87,13 @@ log_success() {
     local type="SUCCESS"
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2
+        echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&2 || true
+        echo -e "$SYMBOL_SUCCESS [$CURRENT_MODULE_NAME] $msg" >&3 || true
     fi
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -106,13 +108,13 @@ log_error() {
     local type="ERROR"
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2
+        echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&2 || true
+        echo -e "$SYMBOL_ERROR [$CURRENT_MODULE_NAME] $msg" >&3 || true
     fi
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -127,13 +129,13 @@ log_info() {
     local type="INFO"
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
+        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
+        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&3 || true
     fi
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -148,11 +150,11 @@ log_info_no_log() {
     local msg="$1"
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2
+        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&2 || true
+        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&3 || true
     fi
 }
 
@@ -167,7 +169,7 @@ log_question() {
     local msg="$1"
     local type="QUESTION"
 
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -182,7 +184,7 @@ log_answer() {
     local msg="$1"
     local type="ANSWER"
     
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -197,13 +199,13 @@ log_debug() {
     local type="DEBUG"
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2
+        echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&2 || true
+        echo -e "$SYMBOL_DEBUG [$CURRENT_MODULE_NAME] $msg" >&3 || true
     fi
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -216,17 +218,17 @@ log_debug() {
 log_bold_info() {
     local msg="$1"
     local type="BOLD_INFO"
-        local color='\e[1m'
+    local color='\e[1m'
     local color_reset='\e[0m'
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&3 || true
     fi
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -241,13 +243,13 @@ log_warn() {
     local type="WARN"
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2
+        echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&2 || true
+        echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&3 || true
     fi
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -264,13 +266,34 @@ log_attention() {
     local color_reset='\e[0m'
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ATTENTION" "$CURRENT_MODULE_NAME" "$msg" >&3 || true
     fi
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_journal "$msg" "$type"
+}
+
+# @type:        Sink
+# @description: КРИТИЧЕСКАЯ функци для отлова ошибок bash
+# @params:      message - Уже переведенное сообщение
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - всегда
+log::bash::error() {
+    local msg="$1"
+    local type="CRITICAL"
+
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        printf "%s [%s] %s\n" "$SYMBOL_BASH_ERROR" "$msg" >&3
+    else
+        # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
+        # используется только для rollback.sh
+        printf "%s [%s] %s\n" "$SYMBOL_BASH_ERROR" "$msg" >&3 || true
+    fi
+    log::to_file "[$type] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -287,13 +310,13 @@ log_actual_info() {
     local color_reset='\e[0m'
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&2 || true
+        printf "${color}%s [%s] %s${color_reset}\n" "$SYMBOL_ACTUAL_INFO" "$CURRENT_MODULE_NAME" "$msg" >&3 || true
     fi
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -308,13 +331,13 @@ log_info_simple_tab() {
     local type="INFO_TAB"
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2
+        printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&2 || true
+        printf '%s\t%s\n' "$SYMBOL_INFO" "$msg" >&3 || true
     fi
-    log_formatted_msg "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
 }
 
@@ -330,13 +353,13 @@ log_start() {
     local pid="${2:-$$}"
     local type="START"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2
+        echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&2 || true
+        echo -e "$SYMBOL_INFO [$module_name]>>start>>[PID: $pid]" >&3 || true
     fi
-    log_formatted_msg "[$type] [$module_name] PID: $pid"
+    log::to_file "[$type] [$module_name] PID: $pid"
     log::to_journal "PID: $pid" "$type"
 }
 
@@ -352,13 +375,13 @@ log_stop() {
     local pid="${2:-$$}"
     local type="STOP"
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2
+        echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&2 || true
+        echo -e "$SYMBOL_INFO [$module_name]>>stop>>[PID: $pid]" >&3 || true
     fi
-    log_formatted_msg "[$type] [$module_name] PID: $pid"
+    log::to_file "[$type] [$module_name] PID: $pid"
     log::to_journal "PID: $pid" "$type"
 }
 
@@ -370,10 +393,10 @@ log_stop() {
 # @exit_code:   0 - успешно
 log::draw_border() {
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        printf '%.0s#' {1..80} >&2; echo >&2
+        printf '%.0s#' {1..80} >&3; echo >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        printf '%.0s#' {1..80} >&2 || true; echo >&2 || true
+        printf '%.0s#' {1..80} >&3 || true; echo >&3 || true
     fi
 }

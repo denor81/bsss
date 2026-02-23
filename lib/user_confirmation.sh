@@ -17,7 +17,7 @@ io::ask_value() {
 
     while true; do
         log_question "$question [$hint]"
-        read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] $question [$hint]: " -r choice </dev/tty
+        read -p "$SYMBOL_QUESTION [$CURRENT_MODULE_NAME] $question [$hint]: " -r choice 2>&3 </dev/tty
         choice=${choice:-$default}
         log_answer "$choice"
 

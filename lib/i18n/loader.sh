@@ -19,8 +19,7 @@ i18n::detect_language() {
 
 # @type:        Orchestrator
 # @description: Загружает все файлы переводов для выбранного языка
-# @params:      lang_code - код языка (ru|en|cn|...)
-# @stdin:       нет
+# @stdin:       en\n
 # @stdout:      нет
 # @exit_code:   0 - успех
 #               1 - файл переводов не найден
