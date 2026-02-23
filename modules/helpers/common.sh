@@ -524,7 +524,7 @@ permissions::check::current_user() {
     fi
 
     if (( root_id == auth_id )); then
-        log_attention "$(_ "permissions.warn.auth_by_ssh_key_user" "[$auth_name|id:$auth_id]")"
+        log_attention "$(_ "permissions.warn.root_auth" "$auth_name|id:$auth_id|auth:$current_conn_type")"
         err=1
     fi
 
