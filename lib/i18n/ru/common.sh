@@ -106,6 +106,8 @@ I18N_MESSAGES["common.error.invalid_menu_id"]="Неверный ID действ�
 I18N_MESSAGES["common.delete.error"]="Ошибка при удалении: %s"
 I18N_MESSAGES["common.delete.success"]="Удалено: %s"
 
+# SSH messages
+
 # Info messages
 I18N_MESSAGES["ssh.info_rules_found"]="Есть правила ${UTIL_NAME^^} для SSH:"
 I18N_MESSAGES["ssh.info_no_rules"]="Нет правил ${UTIL_NAME^^} для SSH [%s]"
@@ -159,6 +161,8 @@ I18N_MESSAGES["ssh.socket.force_mode"]="Переключение SSH в трад
 I18N_MESSAGES["ssh.socket.service_not_active"]="SSH сервис не активен, запускаем..."
 I18N_MESSAGES["ssh.socket.start_error"]="Ошибка запуска SSH сервиса"
 I18N_MESSAGES["ssh.socket.active"]="SSH сервис активен в service mode"
+
+# UFW messages
 
 # Error messages
 I18N_MESSAGES["ufw.error.enable_failed"]="Ошибка при активации [ufw --force enable]"
@@ -313,6 +317,7 @@ I18N_MESSAGES["auto.info.ufw_ssh_port_rule"]="UFW Создано правило 
 I18N_MESSAGES["auto.info.ufw_activation"]="UFW Активация"
 I18N_MESSAGES["auto.info.rollback_timer_activation"]="Будет активирован фоновый процесс rollback.sh для отката по истечению %s секунд. В случае невозможности подключиться к серверу откатите изменения в текущем сеансе или дождитесь истечения таймера и подключайтесь к серверу по старым данным."
 I18N_MESSAGES["auto.info.logs_location"]="Для просмотра логов используйте системный журнал [journalctl -t ${UTIL_NAME} --since \"10 minutes ago\"] или логи в каталоге установки %s"
+I18N_MESSAGES["auto.info.connect_instruction"]="Откройте новый терминал и выполните подключение по SSH ключу через порт %s. Если не удается подключиться - введите 0 для отката изменений или подтвердите успешное подключение для фиксации настроек"
 
 # UFW activation
 I18N_MESSAGES["ufw.success.enabled"]="UFW успешно активирован [ufw --force enable]"

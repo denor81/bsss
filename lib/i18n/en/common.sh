@@ -317,6 +317,7 @@ I18N_MESSAGES["auto.info.ufw_ssh_port_rule"]="UFW Rule created for newly install
 I18N_MESSAGES["auto.info.ufw_activation"]="UFW Activation"
 I18N_MESSAGES["auto.info.rollback_timer_activation"]="Background process rollback.sh will be activated for rollback after %s seconds. If it is impossible to connect to the server, rollback the changes in the current session or wait for the timer to expire and connect to the server using the old data."
 I18N_MESSAGES["auto.info.logs_location"]="To view logs, use the system log [journalctl -t ${UTIL_NAME} --since \"10 minutes ago\"] or logs in the installation directory %s"
+I18N_MESSAGES["auto.info.connect_instruction"]="Open a new terminal and connect via SSH key on port %s. If you cannot connect, enter 0 to rollback changes or confirm successful connection to commit settings"
 
 # UFW activation
 I18N_MESSAGES["ufw.success.enabled"]="UFW successfully enabled [ufw --force enable]"
