@@ -50,7 +50,7 @@ I18N_MESSAGES["init.gawk.installed"]="gawk установлен [%s]"
 I18N_MESSAGES["init.gawk.nul_explanation"]="Требуется gawk для поддержки NUL-разделителей (\0) в потоках данных"
 
 # Rollback messages
-I18N_MESSAGES["rollback.close_redirection"]="Закрыто перенаправление логов"
+I18N_MESSAGES["rollback.close_redirection"]="Rollback успешно отработал - закрываю перенаправление логов..."
 I18N_MESSAGES["rollback.stop_usr1_received"]="Получен сигнал USR1 - остановка таймера отката"
 I18N_MESSAGES["rollback.immediate_usr2_received"]="Получен сигнал USR2 - остановка таймера отката и немедленный откат изменений"
 I18N_MESSAGES["rollback.ssh_dismantle"]="Инициирован откат настроек ${UTIL_NAME^^} для SSH..."

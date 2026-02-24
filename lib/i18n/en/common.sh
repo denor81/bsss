@@ -50,7 +50,7 @@ I18N_MESSAGES["init.gawk.installed"]="gawk installed [%s]"
 I18N_MESSAGES["init.gawk.nul_explanation"]="gawk required for NUL delimiter (\0) support in data streams"
 
 # Rollback messages
-I18N_MESSAGES["rollback.close_redirection"]="Closed log redirection"
+I18N_MESSAGES["rollback.close_redirection"]="Rollback completed successfully - closing log redirection..."
 I18N_MESSAGES["rollback.stop_usr1_received"]="Received USR1 signal - stopping rollback timer"
 I18N_MESSAGES["rollback.immediate_usr2_received"]="Received USR2 signal - stopping rollback timer and performing immediate rollback"
 I18N_MESSAGES["rollback.ssh_dismantle"]="Full dismantling of ${UTIL_NAME^^} settings initiated..."
