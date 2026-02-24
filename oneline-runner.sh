@@ -134,7 +134,7 @@ init::allready_installed() {
 #               $? - ошибка установки зависимостей
 init::check_dependencies() {
     if ! command -v gpg &>/dev/null; then
-        ui::ask_value "$(_ "gpg.ask_install")" "y" "[yn]" "Y/n" "[n0]" >/dev/null
+        ui::ask_value "$(_ "gpg.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
         init::gpg::install
     fi
 }
@@ -179,7 +179,7 @@ init::gpg::install() {
 init::ask_language() {
     local lang
     local hint="r/e"
-    lang=$(ui::ask_value "$(_ "no_translate" "Русский [r] | English [e]")" "r" "[re]" "$hint" "[c0]") || return
+    lang=$(ui::ask_value "$(_ "no_translate" "Русский [r] | English [e]")" "r" "^[re]$" "$hint" "^[c0]$") || return
 
     case "${lang,,}" in
         e) INSTALLER_LANG="en" ;;
@@ -510,17 +510,19 @@ declare -gA I18N_MESSAGES_EN=(
 #                                       #
 #########################################
 # @type:        Interactive
-# @description: Запрашивает у пользователя значение
-# @params:      question - Вопрос
-#               default - Значение по умолчанию
-#               pattern - Regex паттерн ожидаемого ввода
-#               hint - Подсказка какие значения ожидаются
-# @stdin:       Ожидает ввод пользователя (TTY)
-# @stdout:      string\n
-# @exit_code:   0 - успешно
-#               2 - отмена пользователем
+# @description: Циклический опрос пользователя до получения валидного значения.
+# @params:
+#   question        str     Вопрос на который нужно получить ответ
+#   default         str     [optional] Значения по умолчанию - y n 0
+#   allowed_pattern regex   паттерн ожидаемого ввода - ^[yn]$ ^(yes|no)$ ^connected$
+#   hint            str     Подсказка какие значения ожидаются - Y/n connected/cancel y/i/0
+#   cancel_pattern  regex   [optional] Ключевое слово для отмены ввода - ^cancel$ ^[nc0]$ ^(no|cancel|0)$
+# @stdin:       Ожидает ввод пользователя (TTY).
+# @stdout:      string\0 Возвращает значение
+# @exit_code:   0 — успешно получено значение
+#               2 — отменено пользователем.
 ui::ask_value() {
-    local question="$1" default="$2" pattern="$3" hint="$4" cancel_keyword="${5:-}"
+    local question="$1" default="$2" allowed_pattern="$3" hint="$4" cancel_pattern="${5:-}"
     local choice
 
     while true; do
@@ -530,10 +532,10 @@ ui::ask_value() {
         log_answer "$choice"
 
         # Возвращаем код 2 при отмене
-        [[ -n "$cancel_keyword" && "$choice" =~ ^$cancel_keyword$ ]] && { log_warn "$(_ "canceled")"; return 2; }
+        [[ -n "$cancel_pattern" && "$choice" =~ $cancel_pattern ]] && { log_warn "$(_ "canceled")"; return 2; }
 
-        if [[ "$choice" =~ ^$pattern$ ]]; then
-            printf '%s\n' "$choice"
+        if [[ "$choice" =~ $allowed_pattern ]]; then
+            printf '%s\0' "$choice"
             break
         fi
         log_error "$(_ "error_invalid_input" "$hint")"
@@ -569,7 +571,7 @@ install::orchestrator() {
     log_info "$(_ "install.info.install_dir" "$INSTALL_DIR")"
     log_info "$(_ "install.info.usage_run")"
 
-    ui::ask_value "$(_ "continue")" "y" "[yn]" "Y/n" "[c0n]" >/dev/null
+    ui::ask_value "$(_ "continue")" "y" "^[yn]$" "Y/n" "^[c0n]$" >/dev/null
     install::prepare
     install::to_system
 }
@@ -601,7 +603,7 @@ install::dispatcher() {
     log_info "$(_ "install.info.download_archive" "$ARCHIVE_URL")"
     log_info "$(_ "install.info.download_signature" "$SIGNATURE_URL")"
 
-    choice=$(ui::ask_value "$(_ "run_mode.dispatcher.prompt")" "y" "[yic]" "$hint" "[c0]") || return
+    choice=$(ui::ask_value "$(_ "run_mode.dispatcher.prompt")" "y" "^[yic]$" "$hint" "^[c0]$") || return
 
     case "${choice,,}" in
         y) onetime_runner::orchestrator ;;
