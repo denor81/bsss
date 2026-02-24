@@ -1,6 +1,8 @@
 # 🛡️ BSSS — Basic Server Security Setup
 
-> **Secure your Ubuntu server in one command.** Copy. Paste. Done.
+> **You're a lazy admin or an inexperienced user? Then you're in the right place! One click and the server is set up!** Copy. Paste. Done!
+
+> *Secure your Ubuntu server in one command*
 
 ## Purpose
 
@@ -27,8 +29,8 @@ You can also configure each parameter separately from the menu.
 
 ## Key Features
 
-**Rollback System**
-The script launches a background process waiting for a signal confirming successful user connection with the new settings. If the signal is not received within 300 seconds, a complete rollback of all changes made by the script is initiated. This functionality lets you confidently make changes without fear of losing server access.
+**Rollback System** "Simple Simon isn’t stupid!"
+- The script launches a background process waiting for a signal confirming successful user connection with the new settings. If the signal is not received within 300 seconds, a complete rollback of all changes made by the script is initiated. This functionality lets you confidently make changes without fear of losing server access.
 
 **Localization**
 The script can be easily localized to any language — all functionality is implemented (currently English and Russian supported).
@@ -64,13 +66,6 @@ curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh
 ```
 
 That's it. Everything else is automatic.
-
-**What happens:**
-1. Downloads verified package (GPG signature checked)
-2. Installs to your system
-3. Opens interactive menu
-
-Choose **Y** for one-time use or **i** for permanent installation.
 
 ---
 
@@ -135,14 +130,10 @@ sudo bsss -u   # Uninstall
 
 ## 🔍 What's Under the Hood
 
-Built with safety-first engineering:
-- **Pipeline architecture** — NUL-separated streams, no temp files
+Created with safety-first priority from Simple Simon:
 - **No eval** — Strict validation prevents code injection
-- **Function contracts** — Every function has clear inputs/outputs
-- **Namespaced code** — `ssh::`, `ufw::`, `sys::`, `io::`
 - **Triple logging** — Terminal + files + systemd journal
-
-> For developers: See [AGENTS.md](AGENTS.md) for architecture details.
+- **Independent rollback process** — Even if connection is lost - rollback will occur in 300 seconds
 
 ---
 
@@ -158,4 +149,4 @@ MIT — Free to use, modify, distribute.
 
 ---
 
-**⭐ Star if it helps you!**
+**⭐ Give Simple Simon a star!**
