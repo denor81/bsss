@@ -762,8 +762,7 @@ install::archive::check() {
 # @exit_code:   0 - успешно
 #               $? - ошибка
 install::verify_archive() {
-    sig::gpg::import_public_key
-    sig::gpg::verify_signature
+    sig::gpg::import_public_key | sig::gpg::verify_signature
 }
 
 # @type:        Source/Sink
@@ -784,6 +783,7 @@ sig::gpg::import_public_key() {
         return 1
     }
     log_info "$(_ "gpg.imported" "$gpg_signature_dir")"
+    printf '%s\0' "$gpg_signature_dir"
 }
 
 # @type:        Filter
@@ -794,11 +794,13 @@ sig::gpg::import_public_key() {
 # @exit_code:   0 - valid signature
 #               1 - invalid signature
 sig::gpg::verify_signature() {
-    local verify_output
+    local gpg_signature_dir
+    read -r -d '' gpg_signature_dir
 
     log_info "$(_ "gpg.verify_start")"
 
-    verify_output=$(gpg --verify "$TMPSIGNATURE" "$TMPARCHIVE" 2>&1) || {
+    local verify_output
+    verify_output=$(gpg --homedir "$gpg_signature_dir" --verify "$TMPSIGNATURE" "$TMPARCHIVE" 2>&1) || {
         log_error "$(_ "gpg.verify_failed")"
         log_info "$(_ "no_translate" "GPG verification output: $verify_output")"
         return 1
