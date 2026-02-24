@@ -1,18 +1,17 @@
 # @type:        Interactive
 # @description: Циклический опрос пользователя до получения валидного значения.
 # @params:
-#   question        Вопрос на который нужно получить ответ
-#   default         Значения по умолчанию - например "y" - "int"/"str"
-#   pattern         regex паттерн ожидаемого ввода - например "[yn]" - "str"
-#   hint            Подсказка какие значения ожидаются - например "Y/n" -"str"
-#   cancel_keyword  [optional] Ключевое слово для отмены ввода - например "cancel" - "str"
+#   question        str     Вопрос на который нужно получить ответ
+#   default         str     [optional] Значения по умолчанию - y n 0
+#   allowed_pattern regex   паттерн ожидаемого ввода - ^[yn]$ ^(yes|no)$ ^connected$
+#   hint            str     Подсказка какие значения ожидаются - Y/n connected/cancel y/i/0
+#   cancel_pattern  regex   [optional] Ключевое слово для отмены ввода - ^cancel$ ^[nc0]$ ^(no|cancel|0)$
 # @stdin:       Ожидает ввод пользователя (TTY).
-# @stdout:      string/0
-# @stderr:      Текст вопроса (через read -p) и сообщения об ошибках.
+# @stdout:      string/0 Возвращает значение
 # @exit_code:   0 — успешно получено значение
 #               2 — отменено пользователем.
 io::ask_value() {
-    local question="$1" default="$2" pattern="$3" hint="$4" cancel_keyword="${5:-}"
+    local question="$1" default="$2" allowed_pattern="$3" hint="$4" cancel_pattern="${5:-}"
     local choice
 
     while true; do
@@ -22,9 +21,9 @@ io::ask_value() {
         log_answer "$choice"
 
         # Возвращаем код 2 при отмене
-        [[ -n "$cancel_keyword" && "$choice" =~ ^$cancel_keyword$ ]] && return 2
+        [[ -n "$cancel_pattern" && "$choice" =~ $cancel_pattern ]] && return 2
 
-        if [[ "$choice" =~ ^$pattern$ ]]; then
+        if [[ "$choice" =~ $allowed_pattern ]]; then
             printf '%s\0' "$choice"
             break
         fi
@@ -45,5 +44,5 @@ io::confirm_action() {
     local question=${1:-"$(_ "io.confirm_action.default_question")"}
     
     # при выборе n io::ask_value вернет код 2
-    io::ask_value "$question" "y" "[yn0]" "Y/n" "[n0]" >/dev/null
+    io::ask_value "$question" "y" "^[yn0]$" "Y/n" "^[n0]$" >/dev/null
 }
