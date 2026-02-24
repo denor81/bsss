@@ -122,7 +122,7 @@ Use simple menu to configure:
 ## 💡 After Installation
 
 ```bash
-sudo bsss      # Open menu
+sudo bsss      # Run
 sudo bsss -u   # Uninstall
 ```
 
