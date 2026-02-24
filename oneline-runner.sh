@@ -893,11 +893,13 @@ install::symlink::create() {
 # @stdout:      нет
 # @exit_code:   0 - всегда
 install::set_permissions() {
-    log_info "$(_ "permissions.setting" "$INSTALL_DIR")"
-    # chmod +x "$install_dir"/*.sh 2>/dev/null
-    chmod a+rwx,o+t "$INSTALL_DIR" 2>/dev/null
-
+    chown -R root:root "$INSTALL_DIR"
+    chmod -R 755 "$INSTALL_DIR"
+    mkdir -p "$INSTALL_DIR/logs"
+    chmod 1777 "$INSTALL_DIR/logs"
+    find "$INSTALL_DIR" -type f -name "*.sh" -exec chmod +x {} +
 }
+
 
 # @type:        Sink
 # @description: Обработчик прерывания INT
