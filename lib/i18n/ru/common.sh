@@ -51,7 +51,7 @@ I18N_MESSAGES["common.error_uninstall_delete_failed"]="Не удалось уд�
 I18N_MESSAGES["init.bsss.full_name"]="Basic Server Security Setup"
 I18N_MESSAGES["init.gawk.version"]="Ключевые зависимости:"
 I18N_MESSAGES["init.gawk.installed"]="gawk установлен [%s]"
-I18N_MESSAGES["init.gawk.nul_explanation"]="Требуется gawk для поддержки NUL-разделителей (\0) в потоках данных"
+I18N_MESSAGES["init.gawk.nul_explanation"]="Требуется gawk для поддержки NUL-разделителей (\\0) в потоках данных"
 
 # Rollback messages
 I18N_MESSAGES["rollback.close_redirection"]="Rollback успешно отработал - закрываю перенаправление логов..."
