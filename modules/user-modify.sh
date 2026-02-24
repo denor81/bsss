@@ -79,7 +79,7 @@ user::main::menu::dispatcher() {
     log_info_simple_tab "0. $(_ "common.exit")"
 
     local menu_id
-    menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-1]$" "0-1" "0" | tr -d '\0') || return
+    menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-1]$" "0-1" "^0$" | tr -d '\0') || return
 
     case "$menu_id" in
         1) user::create::execute_with_logging ;;

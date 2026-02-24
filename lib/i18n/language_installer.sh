@@ -32,12 +32,11 @@ i18n::installer::select_language() {
     for ((i = 0; i < ${#lang_codes[@]}; i++)); do
         log_info_simple_tab "$(_ "no_translate" "$((i + 1)).") ${lang_codes[$i]}"
     done
-    local menu_exit="0"
     log_info_simple_tab "0. $(_ "common.exit")"
 
     local max_id=${#lang_codes[@]}
     local selection
-    selection=$(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[0-$max_id]$" "0-$max_id" "$menu_exit" | tr -d '\0') || return
+    selection=$(io::ask_value "$(_ "no_translate" "Enter number / Введите номер")" "" "^[0-$max_id]$" "0-$max_id" "^0$" | tr -d '\0') || return
 
     printf '%s\0' "${lang_codes[$((selection - 1))]}"
 }

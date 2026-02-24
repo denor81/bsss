@@ -86,7 +86,7 @@ auto::install::run() {
     permissions::orchestrator::log_statuses
 
     log_actual_info "$(_ "auto.info.connect_instruction" "$port")"
-    if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
+    if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "^0$" >/dev/null; then
         rollback::orchestrator::watchdog_stop
         log_info "$(_ "common.success_changes_committed")"
     else

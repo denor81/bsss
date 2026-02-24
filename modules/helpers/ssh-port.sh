@@ -15,7 +15,7 @@ ssh::ui::get_new_port() {
 
     local new_port
     while true; do
-        new_port=$(io::ask_value "$(_ "ssh.ui.get_new_port.prompt")" "$suggested_port" "$port_pattern" "$(_ "ssh.ui.get_new_port.hint_range" "$suggested_port")" "0" | tr -d '\0') || return
+        new_port=$(io::ask_value "$(_ "ssh.ui.get_new_port.prompt")" "$suggested_port" "$port_pattern" "$(_ "ssh.ui.get_new_port.hint_range" "$suggested_port")" "^0$" | tr -d '\0') || return
 
          # Проверка на занятость порта
         ssh::port::is_port_free "$new_port" && { printf '%s\0' "$new_port"; break; }

@@ -54,7 +54,7 @@ ssh::install::port() {
     ssh::orchestrator::log_statuses
     ufw::log::rules
 
-    if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
+    if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "^0$" >/dev/null; then
         rollback::orchestrator::watchdog_stop
         log_info "$(_ "common.success_changes_committed")"
     else
@@ -79,7 +79,7 @@ ssh::main::menu::dispatcher() {
     log_info_simple_tab "0. $(_ "common.exit")"
 
     local menu_id
-    menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-2]$" "0-2" "0" | tr -d '\0') || return
+    menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-2]$" "0-2" "^0$" | tr -d '\0') || return
 
     case "$menu_id" in
         1) ssh::reset::port ;;
