@@ -52,8 +52,6 @@ auto::install::check() {
 #               4 требуется предварительная настройка (SSH ключ)
 #               $? код ошибки дочернего процесса
 auto::install::run() {
-    auto::install::check # возможно прерывание кодом 4
-
     make_fifo_and_start_reader
     
     start_sync_rollback
@@ -104,6 +102,7 @@ auto::install::run() {
 main() {
     i18n::load
     log_start
+    auto::install::check # возможно прерывание кодом 4
     log_info "$(_ "auto.info.auto_setup_rules")"
     log_info_simple_tab "$(_ "auto.info.sshd_random_port")"
     log_info_simple_tab "$(_ "auto.info.sshd_deny_root")"
