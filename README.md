@@ -147,4 +147,4 @@ MIT — Free to use, modify, distribute.
 
 ---
 
-**⭐ Give Simple Simon a star!**
+**Give me feedback!**
