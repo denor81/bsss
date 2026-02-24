@@ -1,8 +1,6 @@
 # 🛡️ BSSS — Basic Server Security Setup
 
-> **You're a lazy admin or an inexperienced user? Then you're in the right place! One click and the server is set up!** Copy. Paste. Done!
-
-> *Secure your Ubuntu server in one command*
+**I got tired of repeating the same SSH hardening steps on every new Ubuntu VPS, so I wrote a script that does it in one command (with auto-rollback if it locks you out)**
 
 ## Purpose
 
