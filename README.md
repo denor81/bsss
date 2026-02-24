@@ -2,6 +2,59 @@
 
 > **Secure your Ubuntu server in one command.** Copy. Paste. Done.
 
+## Purpose
+
+You've just installed a new server and need to configure basic security rules:
+- Disable password authentication
+- Disable root user login
+- Change default SSH port from 22 to a custom port
+- Synchronize UFW rules with the new SSH port
+- Enable UFW firewall
+- ... and avoid accidentally locking yourself out of the server (as often happens...)
+
+This script does everything automatically with foolproof protection.
+
+The motivation behind this script was simply: **laziness**. The laziness of configuring the same parameters repeatedly.
+
+The script allows you to perform all settings with a single click.
+
+**For automatic configuration:**
+- You must be connected to the server via SSH key
+- Using a user other than root (since during setup, rules prohibiting password and root access will be applied)
+- The script will not allow configuration if any requirements are not met
+
+You can also configure each parameter separately from the menu.
+
+## Key Features
+
+**Rollback System**
+The script launches a background process waiting for a signal confirming successful user connection with the new settings. If the signal is not received within 300 seconds, a complete rollback of all changes made by the script is initiated. This functionality lets you confidently make changes without fear of losing server access.
+
+**Localization**
+The script can be easily localized to any language — all functionality is implemented (currently English and Russian supported).
+
+**Modular Architecture**
+The script has a modular architecture and allows easy addition of new modules.
+
+**Comprehensive Logging**
+Full logging and bash error capture. Logging to 2 channels — `script_dir/logs` and `journalctl`. Use `journalctl -t bsss --since "5 minutes ago"` to view logs.
+
+**GPG Verification**
+Automatic verification of downloaded archive via GPG signature.
+
+**One-line Installation**
+Convenient one-line launch without system installation! If desired, you can install it in the system for configuration duration and easily remove it via `bsss -u`.
+
+---
+
+## ⚠️ Important Notes
+
+Currently, limited feedback has been collected, so it is **STRICTLY recommended to use the script ONLY on fresh systems with no critical data!**
+
+**Compatibility:**
+- Works ONLY with Ubuntu, not adapted for other systems
+- Tested on Ubuntu 20.04 and 24.04
+
 ---
 
 ## 🚀 One Command
