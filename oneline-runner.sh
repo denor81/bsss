@@ -769,7 +769,7 @@ install::verify_archive() {
 # @description: Import embedded public GPG key into keyring
 # @params:      нет
 # @stdin:       нет
-# @stdout:      нет
+# @stdout:      gpg_homedir_path\0
 # @exit_code:   0 - success
 #               1 - import failed
 sig::gpg::import_public_key() {
@@ -789,7 +789,7 @@ sig::gpg::import_public_key() {
 # @type:        Filter
 # @description: Verify archive signature
 # @params:      нет
-# @stdin:       нет
+# @stdin:       gpg_homedir_path\0
 # @stdout:      нет
 # @exit_code:   0 - valid signature
 #               1 - invalid signature
