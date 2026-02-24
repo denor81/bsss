@@ -56,7 +56,7 @@ I18N_MESSAGES["rollback.stop_usr1_received"]="Received USR1 signal - stopping ro
 I18N_MESSAGES["rollback.immediate_usr2_received"]="Received USR2 signal - stopping rollback timer and performing immediate rollback"
 I18N_MESSAGES["rollback.ssh_dismantle"]="Full dismantling of ${UTIL_NAME^^} settings initiated..."
 I18N_MESSAGES["rollback.system_restored"]="System restored to original state. Check system via 00"
-I18N_MESSAGES["rollback.full_dismantle"]="Performing full rollback of all BSSS settings..."
+I18N_MESSAGES["rollback.full_dismantle"]="Performing full rollback of all ${UTIL_NAME^^} settings..."
 I18N_MESSAGES["rollback.ufw_dismantle"]="Performing UFW rollback..."
 I18N_MESSAGES["rollback.ufw_disabled"]="UFW disabled. Check server access."
 I18N_MESSAGES["rollback.permissions_dismantle"]="Performing permissions rules rollback..."
@@ -65,7 +65,7 @@ I18N_MESSAGES["rollback.unknown_type"]="Unknown rollback type: %s"
 I18N_MESSAGES["rollback.redirection_opened"]="Opened log redirection PID:%s>%s"
 I18N_MESSAGES["rollback.timer_started"]="Background timer started for %s seconds..."
 I18N_MESSAGES["rollback.timeout_ssh"]="On timeout, ${UTIL_NAME^^} SSH port settings will be reset and UFW disabled"
-I18N_MESSAGES["rollback.timeout_ufw"]="On timeout, UFW will be disabled and all UFW serrings will be reset"
+I18N_MESSAGES["rollback.timeout_ufw"]="On timeout, UFW will be disabled and all UFW settings will be reset"
 I18N_MESSAGES["rollback.timeout_generic"]="On timeout, all ${UTIL_NAME^^} settings will be reset"
 I18N_MESSAGES["rollback.timeout_permissions"]="On timeout, ${UTIL_NAME^^} access rules will be removed"
 I18N_MESSAGES["rollback.timeout_reconnect"]="In case of current session loss, connect to server via old parameters after timeout"
@@ -173,7 +173,7 @@ I18N_MESSAGES["ufw.error.backup_failed"]="Failed to create backup %s [%s]"
 I18N_MESSAGES["ufw.success.before_rules_edited"]="Ping rules edited: [%s]"
 I18N_MESSAGES["ufw.success.reloaded"]="UFW reloaded [ufw reload]"
 I18N_MESSAGES["ufw.success.enabled"]="UFW enabled"
-I18N_MESSAGES["ufw.warning.continue_without_rules"]="Cannot continue: no BSSS rules in UFW"
+I18N_MESSAGES["ufw.warning.continue_without_rules"]="Cannot continue: no ${UTIL_NAME^^} rules in UFW"
 I18N_MESSAGES["ufw.warning.add_ssh_first"]="Add SSH port via SSH module first"
 I18N_MESSAGES["ufw.rollback.test_access"]="Test server access after enabling UFW in new terminal window"
 
@@ -190,7 +190,7 @@ I18N_MESSAGES["ufw.status.ping_blocked"]="UFW ping blocked [DROP] [State: modifi
 I18N_MESSAGES["ufw.status.ping_allowed"]="UFW ping allowed [ACCEPT] [State: default]"
 
 # Info messages
-I18N_MESSAGES["ufw.info.no_rules_but_active"]="No BSSS rules, but UFW is active - can be disabled"
+I18N_MESSAGES["ufw.info.no_rules_but_active"]="No ${UTIL_NAME^^} rules, but UFW is active - can be disabled"
 
 # Success messages
 I18N_MESSAGES["ufw.success.backup_restored"]="before.rules file restored: [%s]"
@@ -316,7 +316,7 @@ I18N_MESSAGES["auto.info.ufw_disable_ping"]="UFW Server ping disabled [/etc/ufw/
 I18N_MESSAGES["auto.info.ufw_ssh_port_rule"]="UFW Rule created for newly installed SSH port"
 I18N_MESSAGES["auto.info.ufw_activation"]="UFW Activation"
 I18N_MESSAGES["auto.info.rollback_timer_activation"]="Background process rollback.sh will be activated for rollback after %s seconds. If it is impossible to connect to the server, rollback the changes in the current session or wait for the timer to expire and connect to the server using the old data."
-I18N_MESSAGES["auto.info.logs_location"]="To view logs, use the system log [journalctl -t bsss --since \"10 minutes ago\"] or logs in the installation directory %s"
+I18N_MESSAGES["auto.info.logs_location"]="To view logs, use the system log [journalctl -t ${UTIL_NAME} --since \"10 minutes ago\"] or logs in the installation directory %s"
 
 # UFW activation
 I18N_MESSAGES["ufw.success.enabled"]="UFW successfully enabled [ufw --force enable]"
