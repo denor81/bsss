@@ -85,7 +85,7 @@ auto::install::run() {
     ufw::orchestrator::log_statuses
     permissions::orchestrator::log_statuses
 
-    log_actual_info "Откройте новый терминал и выполните подключение по SSH ключу через порт $port. Если не удается подключиться - введите 0 для отмены и отката созанных изменений или подтвердите успешное подключение для фиксации изменений и отключения таймера отката."
+    log_actual_info "Откройте новый терминал и выполните подключение по SSH ключу через порт $port. Если не удается подключиться - введите 0 для отката изменений или подтвердите успешное подключение для фиксации настроек"
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "0" >/dev/null; then
         rollback::orchestrator::watchdog_stop
         log_info "$(_ "common.success_changes_committed")"
