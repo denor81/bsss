@@ -12,6 +12,7 @@ oneline-runner_copy.sh*
 RELEASE_NOTES_v1*
 sudo_bashdb.sh
 utils/generate_function_map.sh
+.vscode/
 
 # Git worktrees
 .worktrees/
