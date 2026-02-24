@@ -50,7 +50,6 @@ I18N_MESSAGES["init.gawk.installed"]="gawk установлен [%s]"
 I18N_MESSAGES["init.gawk.nul_explanation"]="Требуется gawk для поддержки NUL-разделителей (\0) в потоках данных"
 
 # Rollback messages
-I18N_MESSAGES["rollback.exit_received"]="Сигнал EXIT"
 I18N_MESSAGES["rollback.close_redirection"]="Закрыто перенаправление логов"
 I18N_MESSAGES["rollback.stop_usr1_received"]="Получен сигнал USR1 - остановка таймера отката"
 I18N_MESSAGES["rollback.immediate_usr2_received"]="Получен сигнал USR2 - остановка таймера отката и немедленный откат изменений"
@@ -227,8 +226,8 @@ I18N_MESSAGES["common.helpers.ufw.disabled"]="UFW: Полностью деакт
 I18N_MESSAGES["common.helpers.ufw.error_interrupt"]="Ошибка UFW - возможно из за экстренного прерывания скрипта [%s]"
 I18N_MESSAGES["common.helpers.rollback.stop_signal"]="Посылаем сигнал отключения rollback USR1 [PID: %s]"
 I18N_MESSAGES["common.helpers.rollback.stop_received"]="Получен сигнал USR1 - остановка скрипта из-за отката"
-I18N_MESSAGES["common.exit_received"]="Получен сигнал EXIT [RC: %s]"
-I18N_MESSAGES["common.int_received"]="Получен сигнал INT [RC: %s]"
+I18N_MESSAGES["common.exit_received"]="Сигнал EXIT [RC: %s]"
+I18N_MESSAGES["common.int_received"]="Сигнал INT [RC: %s]"
 I18N_MESSAGES["common.helpers.rollback.fifo_created"]="Создан FIFO: %s"
 
 # UFW check
@@ -327,4 +326,4 @@ I18N_MESSAGES["rollback.signal_usr1_sent"]="Отправлен сигнал USR1
 I18N_MESSAGES["rollback.signal_usr2_sent"]="Отправлен сигнал USR2"
 I18N_MESSAGES["rollback.fifo_created"]="Создан FIFO:%s"
 I18N_MESSAGES["rollback.waiting_ready"]="Ожидание готовности rollback.sh..."
-I18N_MESSAGES["rollback.ready_received"]="Получен READY из %s"
+I18N_MESSAGES["rollback.ready_received"]="rollback.sh готов, закрываю FIFO... %s"
