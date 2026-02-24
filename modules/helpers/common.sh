@@ -147,9 +147,10 @@ stop_sync_rollback() {
 # @stdout:      нет
 # @exit_code:   3 завершение через откат
 common::rollback::stop_script_by_rollback_timer() {
-    log_info "$(_ "common.helpers.rollback.stop_received")"
+    local rc=3
+    log_info "$(_ "common.helpers.rollback.stop_received" "$rc")"
     printf '%s\0' "$WATCHDOG_FIFO" | sys::file::delete
-    exit 3
+    exit "$rc"
 }
 
 # @type:        Orchestrator
