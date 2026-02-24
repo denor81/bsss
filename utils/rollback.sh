@@ -42,11 +42,11 @@ trap 'rollback::orchestrator::immediate_usr2' SIGUSR2
 # @stdout:      нет
 # @exit_code:   0 всегда
 rollback::orchestrator::exit() {
-    log_info "$(_ "common.exit_received")"
+    local rc=$?
+    log_info "$(_ "common.exit_received" "$rc")"
     log_info "$(_ "rollback.close_redirection")"
-    log_stop
-    exec 3>&-
-    exit 0
+    log_stop && exec 3>&-
+    exit $rc
 }
 
 # @type:        Orchestrator
