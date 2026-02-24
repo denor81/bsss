@@ -182,7 +182,7 @@ init::gpg::install() {
 init::ask_language() {
     local lang
     local hint="r/e"
-    lang=$(ui::ask_value "$(_ "no_translate" "Русский [r] | English [e]")" "r" "^[re]$" "$hint" "^[c0]$") || return
+    lang=$(ui::ask_value "$(_ "no_translate" "Русский [r] | English [e]")" "r" "^[re]$" "$hint" "^[c0]$" | tr -d '\0') || return
 
     case "${lang,,}" in
         e) INSTALLER_LANG="en" ;;
@@ -606,7 +606,7 @@ install::dispatcher() {
     log_info "$(_ "install.info.download_archive" "$ARCHIVE_URL")"
     log_info "$(_ "install.info.download_signature" "$SIGNATURE_URL")"
 
-    choice=$(ui::ask_value "$(_ "run_mode.dispatcher.prompt")" "y" "^[yic]$" "$hint" "^[c0]$") || return
+    choice=$(ui::ask_value "$(_ "run_mode.dispatcher.prompt")" "y" "^[yic]$" "$hint" "^[c0]$" | tr -d '\0') || return
 
     case "${choice,,}" in
         y) onetime_runner::orchestrator ;;
