@@ -61,13 +61,16 @@ parse_params() {
 
 # @type:        Validator
 # @description: Проверяет права root для запуска скрипта
+#               Проверка выполняется до инициализации системы логирования
+#               по этому пишем напрямую в 3-й дескриптор, котрый связан с терминалом
+#               (никаких логов по этой ошибке не будет - только лог в терминал)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успех
 #               1 критическая ошибка
 check_permissions() {
     if [[ $EUID -ne 0 ]]; then
-        log_error "$(_ "common.error_root_privileges")"
+        echo "$(_ "common.error_root_privileges")" >&3
         return 1
     fi
 }
@@ -235,9 +238,9 @@ run() {
 #               1 критическая ошибка
 #               $? код ошибки выполнения
 main() {
+    check_permissions
     log_dir_init
     log_start
-    check_permissions
     parse_params "$@"
 
     i18n::installer::dispatcher "$PARAMS_LANG"
