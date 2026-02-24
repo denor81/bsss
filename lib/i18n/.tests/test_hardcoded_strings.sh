@@ -5,7 +5,7 @@ set -Eeuo pipefail
 
 readonly PROJECT_ROOT=$(readlink -f "$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)/../../..")
 
-FUNC_NAMES="log_info_simple_tab|log_attention|log_warn|log_bold_info|log_info|log_error|log_success"
+FUNC_NAMES="log_success|log_error|log_info|log_info_no_log|log_question|log_answer|log_debug|log_bold_info|log_warn|log_attention|log_actual_info|log_info_simple_tab|log_start|log_stop"
 
 echo "These strings might need localization using the _() function."
 echo "Review the output below and decide if each case requires translation."
