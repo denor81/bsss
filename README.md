@@ -33,19 +33,19 @@ You can also configure each parameter separately from the menu.
 - The script launches a background process waiting for a signal confirming successful user connection with the new settings. If the signal is not received within 300 seconds, a complete rollback of all changes made by the script is initiated. This functionality lets you confidently make changes without fear of losing server access.
 
 **Localization**
-The script can be easily localized to any language — all functionality is implemented (currently English and Russian supported).
+- The script can be easily localized to any language — all functionality is implemented (currently English and Russian supported).
 
 **Modular Architecture**
-The script has a modular architecture and allows easy addition of new modules.
+- The script has a modular architecture and allows easy addition of new modules.
 
 **Comprehensive Logging**
-Full logging and bash error capture. Logging to 2 channels — `script_dir/logs` and `journalctl`. Use `journalctl -t bsss --since "5 minutes ago"` to view logs.
+- Full logging and bash error capture. Logging to 2 channels — `script_dir/logs` and `journalctl`. Use `journalctl -t bsss --since "5 minutes ago"` to view logs.
 
 **GPG Verification**
-Automatic verification of downloaded archive via GPG signature.
+- Automatic verification of downloaded archive via GPG signature.
 
 **One-line Installation**
-Convenient one-line launch without system installation! If desired, you can install it in the system for configuration duration and easily remove it via `bsss -u`.
+- Convenient one-line launch without system installation! If desired, you can install it in the system for configuration duration and easily remove it via `bsss -u`.
 
 ---
 
