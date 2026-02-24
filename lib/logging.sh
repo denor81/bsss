@@ -1,7 +1,17 @@
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
+
+#
+#
+#
 # Что бы не путать наши логи и ошибки bash
 # Наши логи пишутся в 3-й дескриптор
 # Ошибки bash во 2-й дескриптор
 # в main.sh перенаправляем 2 и 3 дескрипторы
+#
+#
+#
 
 readonly SYMBOL_SUCCESS="[v]"
 readonly SYMBOL_QUESTION="[?]"

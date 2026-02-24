@@ -162,3 +162,9 @@ log_info_simple_tab "$(_ "no_translate" "/path")"  # Без перевода
 ```
 
 **Логирование команд**: `log_info "$(_ "common.log_command" "systemctl restart ssh")"`
+
+```bash
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
+```

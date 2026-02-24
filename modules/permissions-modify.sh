@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
 # Создает файл конфигурации SSH для отключения логина по паролю и root
 
 set -Eeuo pipefail

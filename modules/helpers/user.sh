@@ -1,4 +1,6 @@
-# === SOURCE ===
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
 
 # @type:        Source
 # @description: Получает список пользователей системы
@@ -28,8 +30,6 @@ user::pass::generate() {
 
     openssl rand -base64 "$length" | tr -d "=+/" | cut -c1-"$length"
 }
-
-# === FILTER ===
 
 # @type:        Validator
 # @description: Проверяет, существует ли только root пользователь в системе
@@ -69,10 +69,6 @@ user::system::is_only_root() {
         fi
     fi
 }
-
-# === VALIDATOR ===
-
-# === SINK ===
 
 # @type:        Sink
 # @description: Отображает информацию о пользователях в системе

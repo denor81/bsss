@@ -1,6 +1,6 @@
-# Хелперы для модуля обновления системы
-
-# === SOURCE ===
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
 
 # @type:        Source
 # @description: Генерирует команду обновления системы для apt
@@ -16,8 +16,6 @@ sys::update::get_command() {
 
     printf '%s\0' "apt-get update && apt-get upgrade -y"
 }
-
-# === SINK ===
 
 # @type:        Sink
 # @description: Выполняет обновление системы используя переданную команду

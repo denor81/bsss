@@ -1,3 +1,7 @@
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
+
 # @type:        Source
 # @description: Получает список путей через нулевой разделитель
 # @params:      dir Директория для поиска (string\n)

@@ -1,3 +1,7 @@
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
+
 # @type:        Validator
 # @description: Проверяет наличие правил UFW BSSS
 # @stdin:       нет
@@ -7,8 +11,6 @@
 ufw::rule::has_any_bsss() {
     ufw::rule::get_all_bsss | read -r -d '' _
 }
-
-# === SINK ===
 
 # @type:        Sink
 # @description: Создает бэкап файла before.rules

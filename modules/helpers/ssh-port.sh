@@ -1,4 +1,6 @@
-# === SOURCE ===
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
 
 # @type:        Source
 # @description: Запрашивать у пользователя новый SSH порт
@@ -37,8 +39,6 @@ ssh::port::generate_free_random_port() {
         fi
     done < <(shuf -i 10000-65535)
 }
-
-# === FILTER ===
 
 # @type:        Filter
 # @description: Удалять все правила BSSS и передавать порт дальше
@@ -81,8 +81,6 @@ EOF
         return 1
     fi
 }
-
-# === VALIDATOR ===
 
 # @type:        Validator
 # @description: Проверять, что указанный порт свободен

@@ -1,3 +1,7 @@
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
+
 # Common messages
 
 I18N_MESSAGES["no_translate"]="%s"

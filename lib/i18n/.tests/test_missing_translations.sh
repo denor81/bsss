@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
 # Проверяет несуществующие переводы в коде проекта
 
 set -Eeuo pipefail

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Основной скрипт для последовательного запуска модулей системы
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
 # Usage: run with ./main.sh [options] [-h|-u]
 
 set -Eeuo pipefail

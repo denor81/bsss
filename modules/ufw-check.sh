@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
 # Установлен ufw или нет
 
 set -Eeuo pipefail

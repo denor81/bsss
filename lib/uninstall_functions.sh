@@ -1,5 +1,8 @@
-source "${PROJECT_ROOT}/lib/user_confirmation.sh"
-UNINSTALL_FILE_PATH=$PROJECT_ROOT/$UNINSTALL_PATHS
+# BSSS: Basic Server Security Setup
+# Part of the BSSS project (https://github.com/denor81/bsss)
+# Licensed under MIT
+
+readonly UNINSTALL_FILE_PATH=$PROJECT_ROOT/$UNINSTALL_PATHS
 
 # @type:        Filter
 # @description: Проверяет наличие файла с путями для удаления
