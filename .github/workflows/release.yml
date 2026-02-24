@@ -41,6 +41,7 @@ jobs:
             --exclude=".git" \
             --exclude="oneline-runner.sh" \
             --exclude="lib/i18n/README.md" \
+            --exclude="lib/i18n/README_RU.md" \
             --exclude="lib/i18n/.tests" \
             --exclude=".gitignore" \
             --exclude="README.md" \
