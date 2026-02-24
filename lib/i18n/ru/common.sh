@@ -1,4 +1,4 @@
-# Common messages (Russian)
+# Common messages
 
 I18N_MESSAGES["no_translate"]="%s"
 I18N_MESSAGES["common.pipefail.interrupted"]="Прервано [RC: %d]"
@@ -50,13 +50,13 @@ I18N_MESSAGES["init.gawk.installed"]="gawk установлен [%s]"
 I18N_MESSAGES["init.gawk.nul_explanation"]="Требуется gawk для поддержки NUL-разделителей (\0) в потоках данных"
 
 # Rollback messages
-I18N_MESSAGES["rollback.exit_received"]="Получен сигнал EXIT"
+I18N_MESSAGES["rollback.exit_received"]="Сигнал EXIT"
 I18N_MESSAGES["rollback.close_redirection"]="Закрыто перенаправление логов"
 I18N_MESSAGES["rollback.stop_usr1_received"]="Получен сигнал USR1 - остановка таймера отката"
 I18N_MESSAGES["rollback.immediate_usr2_received"]="Получен сигнал USR2 - остановка таймера отката и немедленный откат изменений"
-I18N_MESSAGES["rollback.ssh_dismantle"]="Инициирован полный демонтаж настроек ${UTIL_NAME^^}..."
-I18N_MESSAGES["rollback.system_restored"]="Система возвращена к исходному состоянию. Выполните проверку системы 00"
-I18N_MESSAGES["rollback.full_dismantle"]="Выполняется полный откат всех настроек BSSS..."
+I18N_MESSAGES["rollback.ssh_dismantle"]="Инициирован откат настроек ${UTIL_NAME^^} для SSH..."
+I18N_MESSAGES["rollback.system_restored"]="Система возвращена к исходному состоянию"
+I18N_MESSAGES["rollback.full_dismantle"]="Выполняется полный откат всех настроек ${UTIL_NAME^^}..."
 I18N_MESSAGES["rollback.ufw_dismantle"]="Выполняется откат UFW..."
 I18N_MESSAGES["rollback.ufw_disabled"]="UFW отключен. Проверьте доступ к серверу."
 I18N_MESSAGES["rollback.permissions_dismantle"]="Выполняется откат правил permissions..."
@@ -106,8 +106,6 @@ I18N_MESSAGES["common.error.invalid_menu_id"]="Неверный ID действ�
 I18N_MESSAGES["common.delete.error"]="Ошибка при удалении: %s"
 I18N_MESSAGES["common.delete.success"]="Удалено: %s"
 
-# SSH messages
-
 # Info messages
 I18N_MESSAGES["ssh.info_rules_found"]="Есть правила ${UTIL_NAME^^} для SSH:"
 I18N_MESSAGES["ssh.info_no_rules"]="Нет правил ${UTIL_NAME^^} для SSH [%s]"
@@ -150,7 +148,7 @@ I18N_MESSAGES["ssh.error_port_not_up"]="ПОРТ %s НЕ ПОДНЯЛСЯ [%s п
 
 # Socket check messages
 I18N_MESSAGES["ssh.socket.configured"]="SSH корректно работает в режиме ssh.service"
-I18N_MESSAGES["ssh.socket.mode_warning"]="SSH работает в socket-based activation mode, что может конфликтовать с изменением порта через sshd_config"
+I18N_MESSAGES["ssh.socket.mode_warning"]="SSH работает в socket-based режиме, что может конфликтовать с изменением порта через sshd_config"
 I18N_MESSAGES["ssh.socket.mode_required"]="Требуется переключение SSH в традиционный service mode"
 I18N_MESSAGES["ssh.socket.switch_confirm"]="Переключить SSH в традиционный service mode?"
 I18N_MESSAGES["ssh.socket.socket_enabled"]="ssh.socket активен - SSH работает в socket-based activation mode"
@@ -162,8 +160,6 @@ I18N_MESSAGES["ssh.socket.service_not_active"]="SSH сервис не актив
 I18N_MESSAGES["ssh.socket.start_error"]="Ошибка запуска SSH сервиса"
 I18N_MESSAGES["ssh.socket.active"]="SSH сервис активен в service mode"
 
-# UFW messages
-
 # Error messages
 I18N_MESSAGES["ufw.error.enable_failed"]="Ошибка при активации [ufw --force enable]"
 
@@ -173,7 +169,7 @@ I18N_MESSAGES["ufw.error.backup_failed"]="Не удалось создать б�
 I18N_MESSAGES["ufw.success.before_rules_edited"]="Отредактированы правила ping: [%s]"
 I18N_MESSAGES["ufw.success.reloaded"]="UFW перезагружен [ufw reload]"
 I18N_MESSAGES["ufw.success.enabled"]="UFW включен"
-I18N_MESSAGES["ufw.warning.continue_without_rules"]="Невозможно продолжить: нет правил BSSS в UFW"
+I18N_MESSAGES["ufw.warning.continue_without_rules"]="Невозможно продолжить: нет правил ${UTIL_NAME^^} в UFW"
 I18N_MESSAGES["ufw.warning.add_ssh_first"]="Сначала добавьте SSH-порт через модуль SSH"
 I18N_MESSAGES["ufw.rollback.test_access"]="Проверьте доступ к серверу после включения UFW в новом окне терминала"
 
@@ -190,7 +186,7 @@ I18N_MESSAGES["ufw.status.ping_blocked"]="UFW ping запрещен [DROP] [Со
 I18N_MESSAGES["ufw.status.ping_allowed"]="UFW ping разрешен [ACCEPT] [Состояние: по умолчанию]"
 
 # Info messages
-I18N_MESSAGES["ufw.info.no_rules_but_active"]="Нет правил BSSS, но UFW активен - можно отключить"
+I18N_MESSAGES["ufw.info.no_rules_but_active"]="Нет правил ${UTIL_NAME^^}, но UFW активен - можно отключить"
 
 # Success messages
 I18N_MESSAGES["ufw.success.backup_restored"]="Восстановлен файл before.rules: [%s]"
@@ -316,7 +312,7 @@ I18N_MESSAGES["auto.info.ufw_disable_ping"]="UFW Отключен ping серв�
 I18N_MESSAGES["auto.info.ufw_ssh_port_rule"]="UFW Создано правило для вновь установленного SSH порта"
 I18N_MESSAGES["auto.info.ufw_activation"]="UFW Активация"
 I18N_MESSAGES["auto.info.rollback_timer_activation"]="Будет активирован фоновый процесс rollback.sh для отката по истечению %s секунд. В случае невозможности подключиться к серверу откатите изменения в текущем сеансе или дождитесь истечения таймера и подключайтесь к серверу по старым данным."
-I18N_MESSAGES["auto.info.logs_location"]="Для просмотра логов используйте системный журнал [journalctl -t bsss --since \"10 minutes ago\"] или логи в каталоге установки %s"
+I18N_MESSAGES["auto.info.logs_location"]="Для просмотра логов используйте системный журнал [journalctl -t ${UTIL_NAME} --since \"10 minutes ago\"] или логи в каталоге установки %s"
 
 # UFW activation
 I18N_MESSAGES["ufw.success.enabled"]="UFW успешно активирован [ufw --force enable]"

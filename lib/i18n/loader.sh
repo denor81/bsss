@@ -2,20 +2,18 @@
 # @description: Определяет текущий язык из файла .lang
 # @params:      нет
 # @stdin:       нет
-# @stdout:      lang_code (без разделителей)
+# @stdout:      lang_code\n
 # @exit_code:   0 - успех
 #               1 - файл переводов не найден
 i18n::detect_language() {
     if [[ -f "$LANG_FILE" ]]; then
-        cat "$LANG_FILE" | tr -d '[:space:]'
+        printf '%s\n' $(cat "$LANG_FILE" | tr -d '[:space:]')
         return
     fi
 
     log_error "$(_ "no_translate" "File [.lang] does not exists")"
     return 1
 }
-
-
 
 # @type:        Orchestrator
 # @description: Загружает все файлы переводов для выбранного языка
@@ -41,9 +39,8 @@ i18n::load_translations() {
 # @exit_code:   0 - успех
 #               $? - pipefail
 i18n::load() {
-    local lang_code
-    lang_code=$(i18n::detect_language)
-    i18n::load_translations <<< "$lang_code"
+    # Загружаем в текущем процессе
+    i18n::load_translations <<< "$(i18n::detect_language)"
 }
 
 # @type:        Source
