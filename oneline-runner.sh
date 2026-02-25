@@ -675,10 +675,12 @@ install::tmp::create() {
 install::download::archive() {
     TMPARCHIVE=$(mktemp --tmpdir "${UTIL_NAME}"-XXXXXX-archive.tar.gz) || return 1
     CLEANUP_COMMANDS+=("$TMPARCHIVE")
-    if curl -fSL --progress-meter "$ARCHIVE_URL" -o "$TMPARCHIVE"; then
+    if curl -fSL --progress-meter "$ARCHIVE_URL" -o "$TMPARCHIVE" 2>/dev/null || curl -fSL -# "$ARCHIVE_URL" -o "$TMPARCHIVE"; then
         local f_size=$(get_file_size_kb "$TMPARCHIVE")
         local f_type=$(file -ib "$TMPARCHIVE")
         log_info "$(_ "downloaded" "$TMPARCHIVE" "$f_size" "$f_type")"
+    elif
+
     else
         log_error "$(_ "download.failed" "$ARCHIVE_URL")"
         return 1
@@ -696,7 +698,7 @@ install::download::archive() {
 install::download::signature() {
     TMPSIGNATURE=$(mktemp --tmpdir "${UTIL_NAME}"-XXXXXX-signature.asc) || return 1
     CLEANUP_COMMANDS+=("$TMPSIGNATURE")
-    if curl -fSL --progress-meter "$SIGNATURE_URL" -o "$TMPSIGNATURE"; then
+    if curl -fSL --progress-meter "$SIGNATURE_URL" -o "$TMPSIGNATURE" 2>/dev/null || curl -fSL -# "$SIGNATURE_URL" -o "$TMPSIGNATURE"; then
         local f_size=$(get_file_size_kb "$TMPSIGNATURE")
         local f_type=$(file -ib "$TMPSIGNATURE")
         log_info "$(_ "downloaded" "$TMPSIGNATURE" "$f_size" "$f_type")"
