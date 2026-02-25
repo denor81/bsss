@@ -679,8 +679,6 @@ install::download::archive() {
         local f_size=$(get_file_size_kb "$TMPARCHIVE")
         local f_type=$(file -ib "$TMPARCHIVE")
         log_info "$(_ "downloaded" "$TMPARCHIVE" "$f_size" "$f_type")"
-    elif
-
     else
         log_error "$(_ "download.failed" "$ARCHIVE_URL")"
         return 1
