@@ -896,7 +896,7 @@ install::set_permissions() {
     chown -R root:root "$INSTALL_DIR"
     chmod -R 755 "$INSTALL_DIR"
     mkdir -p "$INSTALL_DIR/logs"
-    chmod 777 "$INSTALL_DIR/logs"
+    chmod 1777 "$INSTALL_DIR/logs"
     find "$INSTALL_DIR" -type f -name "*.sh" -exec chmod +x {} +
 }
 
