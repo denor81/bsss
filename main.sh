@@ -70,7 +70,7 @@ parse_params() {
 #               1 критическая ошибка
 check_permissions() {
     if [[ $EUID -ne 0 ]]; then
-        echo "$(_ "common.error_root_privileges")" >&3
+        log_error "$(_ "common.error_root_privileges")"
         return 1
     fi
 }
