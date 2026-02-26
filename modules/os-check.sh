@@ -27,6 +27,21 @@ get_os_id() {
     '
 }
 
+# @type:        Filter
+# @description: Извлекает версию до точки
+# @stdin:       content of /etc/os-release (text\n)
+# @stdout:      version\n
+# @exit_code:   0 успех
+get_os_ver() {
+    gawk -F= '
+        $1=="VERSION_ID" {
+            gsub (/"/, "", $2)
+            print $2
+            exit
+        }
+    '
+}
+
 # @type:        Validator
 # @description: Проверяет совместимость текущей ОС с разрешенной
 # @stdin:       нет
@@ -39,15 +54,18 @@ check() {
         return 1
     }
 
-    local id
-    id=$( get_os_id < "$OS_RELEASE_FILE_PATH" )
+    local allowed_sys_id min_sys_ver current_id current_ver
+    IFS="|" read -r allowed_sys_id min_sys_ver <<< "$ALLOWED_SYS"
 
-    if [[ "$id" != "$ALLOWED_SYS" ]]; then
-        log_error "$(_ "os.check.unsupported" "${id^:-Unknown}" "$ALLOWED_SYS")"
+    current_id=$( get_os_id < "$OS_RELEASE_FILE_PATH" )
+    current_ver=$( get_os_ver < "$OS_RELEASE_FILE_PATH" )
+
+    if [[ "$current_id" != "$allowed_sys_id" ]] || (( min_sys_ver > "${current_ver%%.*}" )); then
+        log_error "$(_ "os.check.unsupported" "${current_id^:-Unknown}" "$allowed_sys_id min version $min_sys_ver")"
         return 1
     fi
 
-    log_info "$(_ "os.check.supported" "${id^}")"
+    log_info "$(_ "os.check.supported" "${current_id^} ${current_ver}")"
 }
 
 # @type:        Orchestrator

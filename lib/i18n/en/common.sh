@@ -239,7 +239,7 @@ I18N_MESSAGES["ufw.check.installed_restart"]="UFW installed - restart the script
 
 # OS check
 I18N_MESSAGES["os.check.file_not_found"]="File does not exist: %s"
-I18N_MESSAGES["os.check.unsupported"]="System %s not supported (expected: %s)"
+I18N_MESSAGES["os.check.unsupported"]="System or version %s not supported (expected: %s)"
 I18N_MESSAGES["os.check.supported"]="System %s supported"
 
 # User create module

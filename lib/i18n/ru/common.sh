@@ -239,7 +239,7 @@ I18N_MESSAGES["ufw.check.installed_restart"]="UFW установлен - пер�
 
 # OS check
 I18N_MESSAGES["os.check.file_not_found"]="Файл не существует: %s"
-I18N_MESSAGES["os.check.unsupported"]="Система %s не поддерживается (ожидалось: %s)"
+I18N_MESSAGES["os.check.unsupported"]="Система или версия %s не поддерживается (ожидалось: %s)"
 I18N_MESSAGES["os.check.supported"]="Система %s поддерживается"
 
 # User create module
