@@ -137,13 +137,14 @@ user::log::no_new_user_needed() {
 # @exit_code:   0 успешно
 #               3 ошибка проверки состава пользователей
 user::dispatch::logic() {
-    local rc
+    local rc=0
     user::system::is_only_root || rc=$?
     case "$rc" in
         0) user::orchestrator::need_add_bsssuser ;;
         1) user::orchestrator::can_add_bsssuser ;;
         2) user::log::no_new_user_needed ;;
         3) log_error "$(_ "common.error.check_users")" ;;
+        *) log_error "Не определенный код [RC: $rc]" ;;
     esac
 }
 
