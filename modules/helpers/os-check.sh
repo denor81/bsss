@@ -55,5 +55,5 @@ sys::id_and_ver_check() {
         return 1
     fi
 
-    log_info "$(_ "os.check.supported" "${current_id^} ${current_ver}")"
+    log_info_simple_tab "$(_ "os.check.supported" "${current_id^} ${current_ver}")"
 }

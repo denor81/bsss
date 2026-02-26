@@ -139,7 +139,6 @@ runner::module::run_check() {
     local dir="${PROJECT_ROOT}/${MODULES_DIR}"
 
     log::draw_border
-    bash "${dir}/os-check.sh" || err=1
     bash "${dir}/ssh-socket-check.sh" || err=1
     bash "${dir}/system-reload-check.sh" || err=1
     bash "${dir}/user-check.sh" || err=1
