@@ -20,6 +20,7 @@ source "${PROJECT_ROOT}/lib/i18n/language_installer.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
 source "${PROJECT_ROOT}/modules/helpers/init.sh"
+source "${PROJECT_ROOT}/modules/helpers/os-check.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 
 # Что бы не путать наши логи и ошибки bash
@@ -222,7 +223,11 @@ runner::module::run_modify() {
 #               $? код ошибки от модуля
 run() {
     log_info "$(_ "init.bsss.full_name")"
+
+    log_info "$(_ "init.critical.dependencies")"
+    sys::id_and_ver_check
     sys::gawk::check_dependency
+
     sys::log::rotate_old_files
 
     runner::module::run_check

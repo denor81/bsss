@@ -12,7 +12,6 @@
 sys::gawk::check_dependency() {
     if command -v gawk >/dev/null 2>&1; then
         local gawk_v=$(gawk -V | head -n 1)
-        log_info "$(_ "init.gawk.version")"
         log_info_simple_tab "$(_ "init.gawk.installed" "$gawk_v")"
         return 0
     fi

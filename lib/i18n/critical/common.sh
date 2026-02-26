@@ -15,7 +15,7 @@ I18N_MESSAGES["common.error_root_privileges"]="Root privileges or run with 'sudo
 I18N_MESSAGES["common.error_invalid_input"]="Input error. Expected: %s"
 
 # Init messages
-I18N_MESSAGES["init.gawk.version"]="Critical dependencies:"
+I18N_MESSAGES["init.critical.dependencies"]="Critical dependencies:"
 I18N_MESSAGES["init.gawk.installed"]="gawk installed [%s]"
 
 # IO messages
