@@ -53,7 +53,7 @@ You can also configure each parameter separately from the menu.
 
 **Compatibility:**
 - Works ONLY with Ubuntu, not adapted for other systems
-- Tested on Ubuntu 20.04 and 24.04
+- Tested on Ubuntu 20.04 - 24.04
 
 Does not work with earlier versions of Ubuntu because earlier versions do not support the include parameter for sshd configurations. This parameter is the basis of the script architecture, because the script creates additional independent rules in the .d/ directory and will not edit the main sshd_config file.
 
