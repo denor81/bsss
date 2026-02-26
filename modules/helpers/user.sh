@@ -137,5 +137,5 @@ user::sudoers::create_file() {
     local sudoers_file="${SUDOERS_D_DIR}/${BSSS_USER_NAME}"
 
     echo "${BSSS_USER_NAME} ALL=(ALL) NOPASSWD:ALL" | sudo tee "$sudoers_file" > /dev/null || return 1
-    sudo chmod 0440 "$sudoers_file" || return 1
+    chmod 0440 "$sudoers_file" || return 1
 }

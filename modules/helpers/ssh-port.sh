@@ -68,16 +68,24 @@ ssh::config::create_bsss_file() {
     local port
     read -r -d '' port
     
-    # Создаем файл с настройкой порта
+    mkdir -p "$(dirname "$path")" && chmod 755 "$(dirname "$path")"
+
     if cat > "$path" << EOF
 # $BSSS_MARKER_COMMENT
 # SSH port configuration
 Port $port
 EOF
     then
+        chmod 644 "$path"
         log_info "$(_ "ssh.success_rule_created" "$path" "$port")"
     else
         log_error "$(_ "ssh.error_rule_creation_failed" "$path")"
+        return 1
+    fi
+
+    if ! sshd -t; then
+        log_error "SSH configuration test failed! Reverting..."
+        rm -f "$path"
         return 1
     fi
 }

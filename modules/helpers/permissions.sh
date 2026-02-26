@@ -22,7 +22,7 @@ permissions::config::find_last_prefix() {
             fi
             printf '%s' "$prefix"
         fi
-    done < <(sudo find "${SSH_CONFIGD_DIR}" -maxdepth 1 -type f -name "*.conf" ! -name "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" -print0 | sort -z 2>/dev/null)
+    done < <(find "${SSH_CONFIGD_DIR}" -maxdepth 1 -type f -name "*.conf" ! -name "$BSSS_PERMISSIONS_CONFIG_FILE_MASK" -print0 | sort -z 2>/dev/null)
 }
 
 # === VALIDATOR ===
@@ -120,6 +120,7 @@ permissions::rules::make_bsss_rules() {
     fi
 
     path="${SSH_CONFIGD_DIR}/${new_prefix}${BSSS_PERMISSIONS_CONFIG_FILE_NAME}"
+    mkdir -p "$(dirname "$path")" && chmod 755 "$(dirname "$path")"
 
     if cat > "$path" << EOF
 # $BSSS_MARKER_COMMENT
@@ -129,9 +130,16 @@ PasswordAuthentication no
 PubkeyAuthentication yes
 EOF
     then
+        chmod 644 "$path"
         log_info "$(_ "common.file.created" "$path")"
     else
         log_error "$(_ "common.error.create_file" "$path")"
+        return 1
+    fi
+
+    if ! sshd -t; then
+        log_error "SSH configuration test failed! Reverting..."
+        rm -f "$path"
         return 1
     fi
 }
