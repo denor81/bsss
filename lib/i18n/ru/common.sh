@@ -76,7 +76,6 @@ I18N_MESSAGES["rollback.time_expired"]="Время истекло - выполн
 
 # Module names
 I18N_MESSAGES["module.system.update.name"]="Обновление системы"
-I18N_MESSAGES["module.auto.upgrades.check.name"]="Проверка автообновлений"
 I18N_MESSAGES["module.auto.upgrades.modify.name"]="Настройка автообновлений"
 I18N_MESSAGES["module.user.create.name"]="Создание пользователя"
 I18N_MESSAGES["module.permissions.modify.name"]="Настройка прав доступа SSH"
@@ -106,6 +105,7 @@ I18N_MESSAGES["common.copy_ssh_key"]="Скопируйте на сервер к�
 
 # Common action messages
 I18N_MESSAGES["common.error.invalid_menu_id"]="Неверный ID действия: [%s]"
+I18N_MESSAGES["common.error.unknown_return_code"]="Не определенный код [RC: %s]"
 
 # Delete messages (unified)
 I18N_MESSAGES["common.delete.error"]="Ошибка при удалении: %s"
@@ -125,6 +125,7 @@ I18N_MESSAGES["ssh.success_rule_created"]="Создано правило ${UTIL_
 I18N_MESSAGES["ssh.error_port_busy"]="SSH порт %s уже занят другим сервисом."
 I18N_MESSAGES["ssh.error_rule_creation_failed"]="Не удалось создать правило SSH: %s"
 I18N_MESSAGES["ssh.error_config_sshd"]="Ошибка конфигурации ssh [sshd -t]"
+I18N_MESSAGES["ssh.error_config_test_failed"]="Тест конфигурации SSH не пройден! Откат..."
 I18N_MESSAGES["ssh.socket.unit_not_found"]="Юнит ssh.service не найден в системе"
 I18N_MESSAGES["ssh.socket.script_purpose"]="Этот скрипт переключает SSH в режим service"
 

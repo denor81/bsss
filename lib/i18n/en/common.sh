@@ -76,7 +76,6 @@ I18N_MESSAGES["rollback.time_expired"]="Time expired - performing ROLLBACK"
 
 # Module names
 I18N_MESSAGES["module.system.update.name"]="System update"
-I18N_MESSAGES["module.auto.upgrades.check.name"]="Auto upgrades check"
 I18N_MESSAGES["module.auto.upgrades.modify.name"]="Auto upgrades setup"
 I18N_MESSAGES["module.user.create.name"]="Create user"
 I18N_MESSAGES["module.permissions.modify.name"]="Configure SSH access rights"
@@ -106,6 +105,7 @@ I18N_MESSAGES["common.copy_ssh_key"]="Copy SSH key to server for connection [ssh
 
 # Common action messages
 I18N_MESSAGES["common.error.invalid_menu_id"]="Invalid action ID: [%s]"
+I18N_MESSAGES["common.error.unknown_return_code"]="Unknown return code [RC: %s]"
 
 # Delete messages (unified)
 I18N_MESSAGES["common.delete.error"]="Error deleting: %s"
@@ -125,6 +125,7 @@ I18N_MESSAGES["ssh.success_rule_created"]="${UTIL_NAME^^} rule created for SSH: 
 I18N_MESSAGES["ssh.error_port_busy"]="SSH port %s is already in use by another service."
 I18N_MESSAGES["ssh.error_rule_creation_failed"]="Failed to create SSH rule: %s"
 I18N_MESSAGES["ssh.error_config_sshd"]="SSH config error [sshd -t]"
+I18N_MESSAGES["ssh.error_config_test_failed"]="SSH configuration test failed! Reverting..."
 I18N_MESSAGES["ssh.socket.unit_not_found"]="ssh.service unit not found in system"
 I18N_MESSAGES["ssh.socket.script_purpose"]="This script switches SSH to service mode"
 

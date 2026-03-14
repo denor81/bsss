@@ -84,7 +84,7 @@ EOF
     fi
 
     if ! sshd -t; then
-        log_error "SSH configuration test failed! Reverting..."
+        log_error "$(_ "ssh.error_config_test_failed")"
         rm -f "$path"
         return 1
     fi

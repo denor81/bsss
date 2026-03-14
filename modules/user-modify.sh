@@ -144,7 +144,7 @@ user::dispatch::logic() {
         1) user::orchestrator::can_add_bsssuser ;;
         2) user::log::no_new_user_needed ;;
         3) log_error "$(_ "common.error.check_users")" ;;
-        *) log_error "Не определенный код [RC: $rc]" ;;
+        *) log_error "$(_ "common.error.unknown_return_code" "$rc")" ;;
     esac
 }
 
