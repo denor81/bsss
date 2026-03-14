@@ -17,6 +17,7 @@ source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 source "${PROJECT_ROOT}/modules/helpers/user.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
+source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
 
 trap common::int::actions INT
 trap common::exit::actions EXIT
@@ -89,6 +90,11 @@ auto::install::run() {
     log_actual_info "$(_ "auto.info.connect_instruction" "$port")"
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "^0$" >/dev/null; then
         rollback::orchestrator::watchdog_stop
+        if auto::upgrades::is_configured; then
+            log_info "$(_ "auto.upgrades.already_configured")"
+        else
+            auto::upgrades::orchestrator::enable || return $?
+        fi
         log_info "$(_ "common.success_changes_committed")"
     else
         auto::orchestrator::trigger_immediate_rollback
@@ -113,6 +119,7 @@ main() {
     log_info_simple_tab "$(_ "auto.info.ufw_disable_ping")"
     log_info_simple_tab "$(_ "auto.info.ufw_ssh_port_rule")"
     log_info_simple_tab "$(_ "auto.info.ufw_activation")"
+    log_info_simple_tab "$(_ "auto.info.auto_upgrades")"
     log_info "$(_ "auto.info.rollback_timer_activation" "$ROLLBACK_TIMER_SECONDS")"
     log_info "$(_ "auto.info.logs_location" "$(readlink -f "${PROJECT_ROOT}/logs")")"
     io::confirm_action

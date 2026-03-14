@@ -25,6 +25,7 @@ source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
+source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
 
 LOG_STRICT_MODE=false
 MAIN_SCRIPT_PID=""
@@ -171,6 +172,7 @@ full_rollback::orchestrator::execute_all() {
 
     # Выполняем команды. Если команда возвращает не 0, добавляем имя в массив.
     permissions::rules::restore || errors+=("permissions::rules::restore")
+    auto::upgrades::restore_files || errors+=("auto::upgrades::restore_files")
     ssh::rule::delete_all_bsss  || errors+=("ssh::rule::delete_all_bsss")
     ufw::rule::delete_all_bsss  || errors+=("ufw::rule::delete_all_bsss")
     ufw::status::force_disable  || errors+=("ufw::status::force_disable")
