@@ -220,7 +220,7 @@ common::pipefail::fallback() {
 sys::user::get_auth_method() {
     local auth_info
 
-    auth_info=$(journalctl _COMM=sshd --since "72h ago" 2>/dev/null | grep "Accepted" | grep "for $(logname)" | tail -1)
+    auth_info=$(journalctl _COMM=sshd --since "24h ago" 2>/dev/null | grep "Accepted" | grep "for $(logname)" | tail -1)
 
     if [[ "$auth_info" == *"publickey"* ]]; then
         printf '%s\0' "key"
