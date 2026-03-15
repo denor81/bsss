@@ -1,148 +1,53 @@
 # 🛡️ BSSS — Basic Server Security Setup
 
-**I got tired of repeating the same SSH hardening steps on every new Ubuntu VPS, so I wrote a script that does it in one command (with auto-rollback if it locks you out)**
+One-command baseline hardening for a fresh Ubuntu server, with automatic rollback if the new SSH settings lock you out.
 
 ## Purpose
 
-You've just installed a new server and need to configure basic security rules:
-- Disable password authentication
-- Disable root user login
-- Change default SSH port from 22 to a custom port
-- Synchronize UFW rules with the new SSH port
-- Enable UFW firewall
-- ... and avoid accidentally locking yourself out of the server (as often happens...)
+Secure a new server quickly and safely:
+- Disable SSH password auth
+- Disable root login
+- Change SSH port and sync UFW rules
+- Enable UFW
+- Optional swap file setup
 
-This script does everything automatically with foolproof protection.
+Auto-setup requires:
+- SSH key login
+- A non-root user (sudo)
 
-The motivation behind this script was simply: **laziness**. The laziness of configuring the same parameters repeatedly.
-
-The script allows you to perform all settings with a single click.
-
-**For automatic configuration:**
-- You must be connected to the server via SSH key
-- Using a user other than root (since during setup, rules prohibiting password and root access will be applied)
-- The script will not allow configuration if any requirements are not met
-
-You can also configure each parameter separately from the menu.
+You can also configure each part from the menu.
 
 ## Key Features
 
-**Rollback System** "Simple Simon isn’t stupid!"
-- The script launches a background process waiting for a signal confirming successful user connection with the new settings. If the signal is not received within 300 seconds, a complete rollback of all changes made by the script is initiated. This functionality lets you confidently make changes without fear of losing server access.
+- Rollback watchdog (300s) to prevent lockouts
+- Full logging to terminal, files, and systemd journal
+- Modular architecture
+- GPG-verified one-line installer
 
-**Localization**
-- The script can be easily localized to any language — all functionality is implemented (currently English and Russian supported).
+## Compatibility
 
-**Modular Architecture**
-- The script has a modular architecture and allows easy addition of new modules.
+- Ubuntu only (20.04–24.04 tested)
+- Uses sshd `Include` configs, so older Ubuntu is not supported
 
-**Comprehensive Logging**
-- Full logging and bash error capture. Logging to 2 channels — `script_dir/logs` and `journalctl`. Use `journalctl -t bsss --since "5 minutes ago"` to view logs.
-
-**GPG Verification**
-- Automatic verification of downloaded archive via GPG signature.
-
-**One-line Installation**
-- Convenient one-line launch without system installation! If desired, you can install it in the system for configuration duration and easily remove it via `bsss -u`.
-
----
-
-## ⚠️ Important Notes
-
-**STRICTLY recommended to use the script ONLY on fresh systems with no critical data!**
-
-**Compatibility:**
-- Works ONLY with Ubuntu, not adapted for other systems
-- Tested on Ubuntu 20.04 - 24.04
-
-Does not work with earlier versions of Ubuntu because earlier versions do not support the include parameter for sshd configurations. This parameter is the basis of the script architecture, because the script creates additional independent rules in the .d/ directory and will not edit the main sshd_config file.
-
----
-
-## 🚀 One Command
+## One Command
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/denor81/bsss/main/oneline-runner.sh | sudo bash
 ```
 
-That's it. Everything else is automatic.
-
----
-
-## 🎯 What It Does
-
-### Auto-Setup
-**One click to secure everything:**
-- Change SSH port (random secure port generated)
-- Enable UFW firewall
-- Configure system permissions
-- Update packages
-- **300-second rollback** if anything goes wrong
-
-### Manual Control
-Use simple menu to configure:
-- SSH port settings
-- Firewall rules (UFW)
-- User permissions
-- System updates
-- Full rollback if needed
-
----
-
-## 🔒 Why It's Safe
-
-**Zero lockout risk:**
-- Auto-rollback on connection loss (300-second watchdog)
-- Manual rollback anytime from menu
-- **See everything happening** — full logging in terminal
-
-**Verified installation:**
-- GPG signature verification before run
-- No hidden code execution
-- Systemd journal: `journalctl -t bsss --since '10 minutes ago'`
-
-**Run anytime:**
-- Idempotent — safe to repeat
-- Detects existing configurations
-- Smart pre-flight checks
-
----
-
-## 📋 Requirements
-
-**Minimal:**
-- Ubuntu Linux
-- Root access (sudo)
-- Internet connection
-
-**That's it.** No manual config files, no complex commands.
-
----
-
-## 💡 After Installation
+## Usage
 
 ```bash
-sudo bsss      # Run
+sudo bsss      # Run menu
 sudo bsss -u   # Uninstall
 ```
 
----
+## Logs
 
-## 🔍 What's Under the Hood
+```bash
+journalctl -t bsss --since "10 minutes ago"
+```
 
-Created with safety-first priority from Simple Simon:
-- **No eval** — Strict validation prevents code injection
-- **Triple logging** — Terminal + files + systemd journal
-- **Independent rollback process** — Even if connection is lost - rollback will occur in 300 seconds
+## License
 
----
-
-## 🌍 Multi-Language
-
-English and Russian. Auto-detected.
-
----
-
-## 📄 License
-
-MIT — Free to use, modify, distribute.
+MIT
