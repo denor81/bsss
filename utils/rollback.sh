@@ -26,6 +26,7 @@ source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
+source "${PROJECT_ROOT}/modules/helpers/swap.sh"
 
 LOG_STRICT_MODE=false
 MAIN_SCRIPT_PID=""
@@ -171,13 +172,14 @@ full_rollback::orchestrator::execute_all() {
     local errors=()
 
     # Выполняем команды. Если команда возвращает не 0, добавляем имя в массив.
-    permissions::rules::restore || errors+=("permissions::rules::restore")
-    auto::upgrades::restore_files || errors+=("auto::upgrades::restore_files")
-    ssh::rule::delete_all_bsss  || errors+=("ssh::rule::delete_all_bsss")
-    ufw::rule::delete_all_bsss  || errors+=("ufw::rule::delete_all_bsss")
-    ufw::status::force_disable  || errors+=("ufw::status::force_disable")
-    ufw::ping::restore          || errors+=("ufw::ping::restore")
-    sys::service::restart       || errors+=("sys::service::restart")
+    permissions::rules::restore     || errors+=("permissions::rules::restore")
+    auto::upgrades::restore_files   || errors+=("auto::upgrades::restore_files")
+    swap::orchestrator::disable     || errors+=("swap::orchestrator::disable")
+    ssh::rule::delete_all_bsss      || errors+=("ssh::rule::delete_all_bsss")
+    ufw::rule::delete_all_bsss      || errors+=("ufw::rule::delete_all_bsss")
+    ufw::status::force_disable      || errors+=("ufw::status::force_disable")
+    ufw::ping::restore              || errors+=("ufw::ping::restore")
+    sys::service::restart           || errors+=("sys::service::restart")
 
     # Проверка результатов
     if (( ${#errors[@]} == 0 )); then

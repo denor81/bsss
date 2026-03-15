@@ -142,6 +142,7 @@ runner::module::run_check() {
     bash "${dir}/ssh-socket-check.sh" || err=1
     bash "${dir}/system-reload-check.sh" || err=1
     bash "${dir}/auto-upgrades-check.sh" || err=1
+    bash "${dir}/swap-check.sh" || err=1
     bash "${dir}/user-check.sh" || err=1
     bash "${dir}/ssh-port-check.sh" || err=1
     bash "${dir}/permissions-check.sh" || err=1
@@ -189,12 +190,13 @@ runner::module::run_modify() {
         log_info_simple_tab "6. $(_ "module.user.create.name")"
         log_info_simple_tab "7. $(_ "module.permissions.modify.name")"
         log_info_simple_tab "8. $(_ "module.full_rollback.name")"
+        log_info_simple_tab "9. $(_ "module.swap.name")"
         log_info_simple_tab "0. $(_ "common.exit")"
         log_info_simple_tab "00. $(_ "common.menu_check")"
         log_info_simple_tab "01. $(_ "common.menu_language")"
 
         local menu_id
-        menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^([0-8]|0[0-1])$" "0-8" "^0$" | tr -d '\0')
+        menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^([0-9]|0[0-1])$" "0-9" "^0$" | tr -d '\0')
 
         local rc=0
         local tag
@@ -211,6 +213,7 @@ runner::module::run_modify() {
             6) tag="user-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
             7) tag="permissions-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
             8) tag="full-rollback-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
+            9) tag="swap-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
         esac
         main::process::exit_code "$rc" "$tag"
     done

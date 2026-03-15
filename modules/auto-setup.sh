@@ -18,6 +18,7 @@ source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 source "${PROJECT_ROOT}/modules/helpers/user.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
+source "${PROJECT_ROOT}/modules/helpers/swap.sh"
 
 trap common::int::actions INT
 trap common::exit::actions EXIT
@@ -95,6 +96,9 @@ auto::install::run() {
         else
             auto::upgrades::orchestrator::enable || return $?
         fi
+        if ! swap::orchestrator::enable; then
+            log_warn "$(_ "swap.warn.auto_setup_failed" "$SWAPFILE_PATH")"
+        fi
         log_info "$(_ "common.success_changes_committed")"
     else
         auto::orchestrator::trigger_immediate_rollback
@@ -120,6 +124,7 @@ main() {
     log_info_simple_tab "$(_ "auto.info.ufw_ssh_port_rule")"
     log_info_simple_tab "$(_ "auto.info.ufw_activation")"
     log_info_simple_tab "$(_ "auto.info.auto_upgrades")"
+    log_info_simple_tab "$(_ "auto.info.swap_enable")"
     log_info "$(_ "auto.info.rollback_timer_activation" "$ROLLBACK_TIMER_SECONDS")"
     log_info "$(_ "auto.info.logs_location" "$(readlink -f "${PROJECT_ROOT}/logs")")"
     io::confirm_action
