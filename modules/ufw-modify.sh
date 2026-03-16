@@ -88,7 +88,7 @@ ufw::safe::force_enable() {
 
     ufw::log::rollback::instructions
 
-    ufw::force::enable
+    ufw::status::force_enable
 
     log_actual_info
     ufw::orchestrator::log_statuses
