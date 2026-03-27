@@ -84,6 +84,7 @@ I18N_MESSAGES["module.ufw.name"]="UFW firewall configuration"
 I18N_MESSAGES["module.full_rollback.name"]="Full rollback of all settings"
 I18N_MESSAGES["module.auto.setup.name"]="Auto setup"
 I18N_MESSAGES["module.swap.name"]="Swap file configuration"
+I18N_MESSAGES["module.ipv6.name"]="IPv6 configuration"
 
 # IO ask_value
 I18N_MESSAGES["io.ask_value.select_module"]="Select module"
@@ -271,6 +272,15 @@ I18N_MESSAGES["swap.error.disk_stats_failed"]="Failed to read disk stats: %s"
 I18N_MESSAGES["swap.error.size_invalid"]="Invalid swap size: %s"
 I18N_MESSAGES["swap.error.insufficient_space"]="Not enough disk space for swap: need %s, available %s"
 I18N_MESSAGES["swap.warn.auto_setup_failed"]="Swap setup failed; continuing without swap (%s)"
+
+# IPv6 module
+I18N_MESSAGES["ipv6.check.enabled"]="IPv6 enabled (no ${UTIL_NAME^^} config found)"
+I18N_MESSAGES["ipv6.check.disabled"]="IPv6 disabled via ${UTIL_NAME^^} config"
+I18N_MESSAGES["ipv6.menu.item_enable"]="Enable IPv6"
+I18N_MESSAGES["ipv6.menu.item_disable"]="Disable IPv6"
+I18N_MESSAGES["ipv6.info.config_created"]="IPv6 config created: %s"
+I18N_MESSAGES["ipv6.info.reboot_required"]="Reboot required file created: %s"
+I18N_MESSAGES["ipv6.info.reboot_pkg_added"]="Reboot packages updated: %s -> %s"
 
 # Common helpers
 I18N_MESSAGES["common.helpers.ssh.no_active_ports"]="No active SSH ports [ss -ltnp]"
