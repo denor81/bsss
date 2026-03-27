@@ -77,9 +77,25 @@ EOF
     then
         chmod 644 "$path"
         log_info "$(_ "ipv6.info.config_created" "$path")"
+        ipv6::config::update_grub || return 1
         printf '%s\0' "$path"
     else
         log_error "$(_ "common.error.create_file" "$path")"
+        return 1
+    fi
+}
+
+# @type:        Orchestrator
+# @description: Обновляет grub после изменений конфигурации IPv6
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успешно
+#               1 ошибка
+ipv6::config::update_grub() {
+    log_info "$(_ "common.log_command" "update-grub")"
+    local res
+    if ! res=$(update-grub 2>&1); then
+        log_error "$(_ "ipv6.error.update_grub_failed" "${res:-update-grub}")"
         return 1
     fi
 }
@@ -90,7 +106,12 @@ EOF
 # @stdout:      нет
 # @exit_code:   0 успешно
 ipv6::config::remove_bsss_files() {
+    if ! ipv6::config::is_configured; then
+        return 0
+    fi
+
     sys::file::get_paths_by_mask "$GRUB_CONFIGD_DIR" "$BSSS_IPV6_GRUB_FILE_MASK" | sys::file::delete || true
+    ipv6::config::update_grub || return 1
 }
 
 # @type:        Orchestrator

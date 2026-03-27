@@ -279,6 +279,7 @@ I18N_MESSAGES["ipv6.check.disabled"]="IPv6 disabled via ${UTIL_NAME^^} config"
 I18N_MESSAGES["ipv6.menu.item_enable"]="Enable IPv6"
 I18N_MESSAGES["ipv6.menu.item_disable"]="Disable IPv6"
 I18N_MESSAGES["ipv6.info.config_created"]="IPv6 config created: %s"
+I18N_MESSAGES["ipv6.error.update_grub_failed"]="Failed to update grub: %s"
 I18N_MESSAGES["ipv6.info.reboot_required"]="Reboot required file created: %s"
 I18N_MESSAGES["ipv6.info.reboot_pkg_added"]="Reboot packages updated: %s -> %s"
 
