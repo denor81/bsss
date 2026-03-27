@@ -48,7 +48,7 @@ I18N_MESSAGES["common.error_uninstall_file_not_found"]="Uninstall paths file not
 I18N_MESSAGES["common.error_uninstall_delete_failed"]="Failed to delete: %s"
 
 # Init messages
-I18N_MESSAGES["init.bsss.full_name"]="Basic Server Security Setup"
+I18N_MESSAGES["init.bsss.full_name"]="Basic Server Security Setup v%s"
 I18N_MESSAGES["init.critical.dependencies"]="Critical dependencies:"
 I18N_MESSAGES["init.gawk.installed"]="gawk installed [%s]"
 I18N_MESSAGES["init.gawk.nul_explanation"]="gawk required for NUL delimiter (\\0) support in data streams"
@@ -236,14 +236,18 @@ I18N_MESSAGES["auto.upgrades.restore.success"]="Backup restored: %s"
 I18N_MESSAGES["auto.upgrades.restore.failed"]="Failed to restore file: %s [%s]"
 
 # Swap module
-I18N_MESSAGES["swap.check.configured"]="Swap file configured"
+I18N_MESSAGES["swap.check.configured"]="Swap file configured (size: %s)"
 I18N_MESSAGES["swap.check.not_configured"]="Swap file not configured"
 I18N_MESSAGES["swap.menu.item_enable"]="Enable swap file"
 I18N_MESSAGES["swap.menu.item_disable"]="Disable swap file"
+I18N_MESSAGES["swap.ui.get_size.prompt"]="Enter swap file size"
+I18N_MESSAGES["swap.ui.get_size.hint"]="Example: 1G or 512M, Enter for %s, 0 cancel"
 I18N_MESSAGES["swap.info.disk_header"]="Disk space"
 I18N_MESSAGES["swap.info.disk_total_free"]="Total: %s, Free: %s"
 I18N_MESSAGES["swap.info.disk_total_free_swap"]="Total: %s, Free: %s, Swap: %s"
+I18N_MESSAGES["swap.info.size_unknown"]="unknown"
 I18N_MESSAGES["swap.info.file_exists"]="Swap file already exists: %s"
+I18N_MESSAGES["swap.info.file_recreate"]="Swap file will be recreated: %s"
 I18N_MESSAGES["swap.info.file_created"]="Swap file created: %s"
 I18N_MESSAGES["swap.info.fstab_exists"]="Swap entry already exists in fstab: %s"
 I18N_MESSAGES["swap.info.fstab_added"]="Swap entry added to fstab: %s"
@@ -264,6 +268,8 @@ I18N_MESSAGES["swap.error.mkswap_failed"]="Failed to initialize swap file: %s"
 I18N_MESSAGES["swap.error.swapon_failed"]="Failed to enable swap file: %s"
 I18N_MESSAGES["swap.error.swapoff_failed"]="Failed to disable swap file: %s"
 I18N_MESSAGES["swap.error.disk_stats_failed"]="Failed to read disk stats: %s"
+I18N_MESSAGES["swap.error.size_invalid"]="Invalid swap size: %s"
+I18N_MESSAGES["swap.error.insufficient_space"]="Not enough disk space for swap: need %s, available %s"
 I18N_MESSAGES["swap.warn.auto_setup_failed"]="Swap setup failed; continuing without swap (%s)"
 
 # Common helpers

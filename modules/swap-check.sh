@@ -21,7 +21,10 @@ source "${PROJECT_ROOT}/modules/helpers/swap.sh"
 # @exit_code:   0 всегда
 check() {
     if swap::state::is_configured; then
-        log_info "$(_ "swap.check.configured")"
+        local size_h
+        size_h=$(swap::size::current_human 2>/dev/null || true)
+        size_h="${size_h:-$(_ "swap.info.size_unknown")}"
+        log_info "$(_ "swap.check.configured" "$size_h")"
         return 0
     fi
 

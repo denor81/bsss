@@ -8,8 +8,8 @@ set -Eeuo pipefail
 
 # Константы
 readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd)"
-readonly ALLOWED_PARAMS="hul:"
-readonly ALLOWED_PARAMS_HELP="[-h помощь | -u удаление | -l [ru|en] язык]"
+readonly ALLOWED_PARAMS="hvul:"
+readonly ALLOWED_PARAMS_HELP="[-h помощь | -v версия | -u удаление | -l [ru|en] язык]"
 PARAMS_ACTION=""
 PARAMS_LANG=""
 
@@ -52,6 +52,7 @@ parse_params() {
     while getopts ":$ALLOWED_PARAMS" opt "$@"; do
         case "${opt}" in
             h)  PARAMS_ACTION="help" ;;
+            v)  PARAMS_ACTION="version" ;;
             u)  PARAMS_ACTION="uninstall" ;;
             l)  PARAMS_LANG="$OPTARG" ;;
             \?) log_error "$(_ "no_translate" "Invalid parameter -$OPTARG, available: $ALLOWED_PARAMS")"; return 1 ;;
@@ -83,6 +84,15 @@ check_permissions() {
 # @exit_code:   0 успех
 show_help() {
     log_info "$(_ "common.info_short_params" "$ALLOWED_PARAMS" "$ALLOWED_PARAMS_HELP")"
+}
+
+# @type:        Sink
+# @description: Выводит версию утилиты
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успех
+show_version() {
+    log_info "$(_ "init.bsss.full_name" "$BSSS_VERSION")"
 }
 
 # @type:        Orchestrator
@@ -227,7 +237,7 @@ runner::module::run_modify() {
 #               1 критическая ошибка
 #               $? код ошибки от модуля
 run() {
-    log_info "$(_ "init.bsss.full_name")"
+    log_info "$(_ "init.bsss.full_name" "$BSSS_VERSION")"
 
     log_info "$(_ "init.critical.dependencies")"
     sys::id_and_ver_check
@@ -257,6 +267,7 @@ main() {
 
     case "$PARAMS_ACTION" in
         help)      show_help ;;
+        version)   show_version ;;
         uninstall) run_uninstall ;;
         *)         run ;;
     esac

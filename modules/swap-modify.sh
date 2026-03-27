@@ -36,7 +36,24 @@ swap::main::menu::dispatcher() {
     menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-1]$" "0-1" "^0$" | tr -d '\0') || return
 
     case "$menu_id" in
-        1) swap::state::is_configured && swap::orchestrator::disable || swap::orchestrator::enable ;;
+        1)
+            if swap::state::is_configured; then
+                swap::orchestrator::disable
+                return
+            fi
+
+            local size
+            local size_normalized
+            local hint
+            hint="$(_ "swap.ui.get_size.hint" "$SWAPFILE_SIZE")"
+            size=$(io::ask_value "$(_ "swap.ui.get_size.prompt")" "$SWAPFILE_SIZE" "^[0-9]+[MmGg]$" "$hint" "^[0]$" | tr -d '\0') || return
+            size_normalized="${size^^}"
+            if [[ ! "$size_normalized" =~ ^[0-9]+[GM]$ ]]; then
+                log_error "$(_ "swap.error.size_invalid" "$size")"
+                return 1
+            fi
+            swap::orchestrator::enable "$size_normalized"
+            ;;
     esac
 }
 

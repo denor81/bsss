@@ -96,22 +96,153 @@ swap::log::disk_stats() {
     log_info_simple_tab "$(_ "swap.info.disk_total_free" "$total_h" "$avail_h")"
 }
 
+# @type:        Filter
+# @description: Нормализует размер swap файла (uppercase, без суффикса B)
+# @params:      size Размер swap файла (string\n)
+# @stdin:       нет
+# @stdout:      size_normalized\n
+# @exit_code:   0 успешно
+#               1 ошибка
+swap::size::normalize() {
+    local size="$1"
+    size="${size^^}"
+    size="${size%B}"
+
+    if [[ -z "$size" ]]; then
+        log_error "$(_ "swap.error.size_invalid" "$1")"
+        return 1
+    fi
+
+    printf '%s' "$size"
+}
+
+# @type:        Filter
+# @description: Переводит размер swap в байты
+# @params:      size_normalized Нормализованный размер (string\n)
+#               size_raw Исходный размер для сообщения об ошибке (string\n)
+# @stdin:       нет
+# @stdout:      bytes\n
+# @exit_code:   0 успешно
+#               1 ошибка
+swap::size::to_bytes() {
+    local size_normalized="$1"
+    local size_raw="$2"
+    local bytes
+
+    if ! bytes=$(numfmt --from=iec "$size_normalized" 2>/dev/null); then
+        log_error "$(_ "swap.error.size_invalid" "$size_raw")"
+        return 1
+    fi
+
+    printf '%s' "$bytes"
+}
+
+# @type:        Filter
+# @description: Переводит байты в человекочитаемый формат
+# @params:      bytes Количество байт (num\n)
+# @stdin:       нет
+# @stdout:      human\n
+# @exit_code:   0 успешно
+#               1 ошибка
+swap::size::to_human() {
+    local bytes="$1"
+    local human
+
+    if ! human=$(numfmt --to=iec --suffix=B "$bytes" 2>/dev/null); then
+        printf '%s' "$bytes"
+        return 1
+    fi
+
+    printf '%s' "$human"
+}
+
+# @type:        Filter
+# @description: Возвращает доступные байты для раздела swap файла
+# @stdin:       нет
+# @stdout:      bytes\n
+# @exit_code:   0 успешно
+#               1 ошибка
+swap::disk::get_avail_bytes() {
+    local mount_path
+    local avail_bytes
+
+    mount_path=$(dirname "$SWAPFILE_PATH")
+    if ! avail_bytes=$(df -B1 --output=avail "$mount_path" 2>/dev/null | gawk 'NR==2 {print $1}'); then
+        log_warn "$(_ "swap.error.disk_stats_failed" "$mount_path")"
+        return 1
+    fi
+
+    if [[ -z "$avail_bytes" ]]; then
+        log_warn "$(_ "swap.error.disk_stats_failed" "$mount_path")"
+        return 1
+    fi
+
+    printf '%s' "$avail_bytes"
+}
+
+# @type:        Validator
+# @description: Проверяет достаточность свободного места для swap
+# @params:      required_bytes Требуемый размер (num\n)
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 достаточно
+#               1 недостаточно или ошибка
+swap::disk::check_space() {
+    local required_bytes="$1"
+    local avail_bytes
+    local required_h
+    local avail_h
+
+    avail_bytes=$(swap::disk::get_avail_bytes) || return 1
+
+    if (( avail_bytes < required_bytes )); then
+        required_h=$(swap::size::to_human "$required_bytes" 2>/dev/null || printf '%s' "$required_bytes")
+        avail_h=$(swap::size::to_human "$avail_bytes" 2>/dev/null || printf '%s' "$avail_bytes")
+        log_error "$(_ "swap.error.insufficient_space" "$required_h" "$avail_h")"
+        return 1
+    fi
+}
+
+# @type:        Filter
+# @description: Возвращает размер swap файла в байтах
+# @stdin:       нет
+# @stdout:      bytes\n
+# @exit_code:   0 успешно
+#               1 ошибка
+swap::size::current_bytes() {
+    if ! swap::file::exists; then
+        return 1
+    fi
+
+    stat -c "%s" "$SWAPFILE_PATH" 2>/dev/null
+}
+
+# @type:        Filter
+# @description: Возвращает размер swap файла в человекочитаемом формате
+# @stdin:       нет
+# @stdout:      human\n
+# @exit_code:   0 успешно
+#               1 ошибка
+swap::size::current_human() {
+    local bytes
+    bytes=$(swap::size::current_bytes) || return 1
+    swap::size::to_human "$bytes"
+}
+
 # @type:        Orchestrator
 # @description: Создает swap файл при отсутствии
+# @params:      size Размер swap файла (string\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успешно
 #               1 ошибка создания
 swap::file::create() {
-    if swap::file::exists; then
-        log_info "$(_ "swap.info.file_exists" "$SWAPFILE_PATH")"
-        return 0
-    fi
+    local size="$1"
 
     if command -v fallocate >/dev/null 2>&1; then
-        log_info "$(_ "common.log_command" "fallocate -l $SWAPFILE_SIZE $SWAPFILE_PATH")"
+        log_info "$(_ "common.log_command" "fallocate -l $size $SWAPFILE_PATH")"
         local res
-        if ! res=$(fallocate -l "$SWAPFILE_SIZE" "$SWAPFILE_PATH" 2>&1); then
+        if ! res=$(fallocate -l "$size" "$SWAPFILE_PATH" 2>&1); then
             log_error "$(_ "swap.error.file_create" "${res:-$SWAPFILE_PATH}")"
             return 1
         fi
@@ -200,17 +331,40 @@ swap::fstab::remove_entry() {
 
 # @type:        Orchestrator
 # @description: Включает swap файл
+# @params:      size Размер swap файла (string\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успешно
 #               1 ошибка
 swap::orchestrator::enable() {
+    local size_input="${1:-$SWAPFILE_SIZE}"
+    local size_normalized
+    local required_bytes
+
     if swap::state::is_configured; then
         log_info "$(_ "swap.info.already_configured")"
         return 0
     fi
 
-    swap::file::create || return 1
+    size_normalized=$(swap::size::normalize "$size_input") || return 1
+    required_bytes=$(swap::size::to_bytes "$size_normalized" "$size_input") || return 1
+    swap::disk::check_space "$required_bytes" || return 1
+
+    if swap::state::is_active; then
+        log_info "$(_ "common.log_command" "swapoff $SWAPFILE_PATH")"
+        local res
+        if ! res=$(swapoff "$SWAPFILE_PATH" 2>&1); then
+            log_error "$(_ "swap.error.swapoff_failed" "${res:-$SWAPFILE_PATH}")"
+            return 1
+        fi
+    fi
+
+    if swap::file::exists; then
+        log_info "$(_ "swap.info.file_recreate" "$SWAPFILE_PATH")"
+        printf '%s\0' "$SWAPFILE_PATH" | sys::file::delete || return 1
+    fi
+
+    swap::file::create "$size_normalized" || return 1
     swap::file::ensure_permissions || return 1
 
     if ! swap::state::is_active; then

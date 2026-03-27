@@ -22,11 +22,13 @@ jobs:
           FILE_NAME="bsss-framework-latest.tar.gz"
           CHECKSUM_NAME="bsss-framework-latest.sha256"
           VARS_FILE="lib/vars.conf"
+          VERSION="${GITHUB_REF_NAME#v}"
 
           # 1. Меняем значения переменных в файле перед архивацией
           # Используем регулярные выражения, чтобы найти строку и заменить число
           sed -i "s/^readonly ROLLBACK_TIMER_SECONDS=.*/readonly ROLLBACK_TIMER_SECONDS=300/" "$VARS_FILE"
           sed -i "s/^readonly SSH_PORT_CHECK_TIMEOUT=.*/readonly SSH_PORT_CHECK_TIMEOUT=10/" "$VARS_FILE"
+          sed -i "s/^readonly BSSS_VERSION=.*/readonly BSSS_VERSION=\"${VERSION}\"/" "$VARS_FILE"
 
           # 2. Теперь создаем архив (в него попадут уже измененные файлы)
           # ВАЖНО: 'git archive' берет файлы из коммита, а нам нужны измененные на диске.
