@@ -72,7 +72,7 @@ ipv6::config::create_bsss_file() {
 
     if cat > "$path" << EOF
 # $BSSS_MARKER_COMMENT
-GRUB_CMDLINE_LINUX_DEFAULT="\$GRUB_CMDLINE_LINUX_DEFAULT console=tty1 console=ttyS0 ipv6.disable=1"
+GRUB_CMDLINE_LINUX_DEFAULT="\$GRUB_CMDLINE_LINUX_DEFAULT ipv6.disable=1"
 EOF
     then
         chmod 644 "$path"
