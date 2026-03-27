@@ -27,6 +27,7 @@ source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
 source "${PROJECT_ROOT}/modules/helpers/swap.sh"
+source "${PROJECT_ROOT}/modules/helpers/ipv6.sh"
 
 LOG_STRICT_MODE=false
 MAIN_SCRIPT_PID=""
@@ -175,6 +176,7 @@ full_rollback::orchestrator::execute_all() {
     permissions::rules::restore     || errors+=("permissions::rules::restore")
     auto::upgrades::restore_files   || errors+=("auto::upgrades::restore_files")
     swap::orchestrator::disable     || errors+=("swap::orchestrator::disable")
+    ipv6::config::remove_bsss_files || errors+=("ipv6::config::remove_bsss_files")
     ssh::rule::delete_all_bsss      || errors+=("ssh::rule::delete_all_bsss")
     ufw::rule::delete_all_bsss      || errors+=("ufw::rule::delete_all_bsss")
     ufw::status::force_disable      || errors+=("ufw::status::force_disable")

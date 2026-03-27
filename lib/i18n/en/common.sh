@@ -386,6 +386,7 @@ I18N_MESSAGES["auto.info.ufw_disable_ping"]="UFW Server ping disabled [/etc/ufw/
 I18N_MESSAGES["auto.info.ufw_ssh_port_rule"]="UFW Rule created for newly installed SSH port"
 I18N_MESSAGES["auto.info.ufw_activation"]="UFW Activation"
 I18N_MESSAGES["auto.info.auto_upgrades"]="Auto upgrades and auto reboot"
+I18N_MESSAGES["auto.info.ipv6_disable"]="IPv6 disabled via grub.d"
 I18N_MESSAGES["auto.info.swap_enable"]="Swap file creation and activation"
 I18N_MESSAGES["auto.info.rollback_timer_activation"]="Background process rollback.sh will be activated for rollback after %s seconds. If it is impossible to connect to the server, rollback the changes in the current session or wait for the timer to expire and connect to the server using the old data."
 I18N_MESSAGES["auto.info.logs_location"]="To view logs, use the system log [journalctl -t ${UTIL_NAME} --since \"10 minutes ago\"] or logs in the installation directory %s"

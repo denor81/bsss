@@ -19,6 +19,7 @@ source "${PROJECT_ROOT}/modules/helpers/user.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
 source "${PROJECT_ROOT}/modules/helpers/swap.sh"
+source "${PROJECT_ROOT}/modules/helpers/ipv6.sh"
 
 trap common::int::actions INT
 trap common::exit::actions EXIT
@@ -91,6 +92,10 @@ auto::install::run() {
     log_actual_info "$(_ "auto.info.connect_instruction" "$port")"
     if io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "^0$" >/dev/null; then
         rollback::orchestrator::watchdog_stop
+        if ! ipv6::config::is_configured; then
+            ipv6::config::create_bsss_file >/dev/null
+            ipv6::reboot::mark_required
+        fi
         if auto::upgrades::is_configured; then
             log_info "$(_ "auto.upgrades.already_configured")"
         else
@@ -124,6 +129,7 @@ main() {
     log_info_simple_tab "$(_ "auto.info.ufw_ssh_port_rule")"
     log_info_simple_tab "$(_ "auto.info.ufw_activation")"
     log_info_simple_tab "$(_ "auto.info.auto_upgrades")"
+    log_info_simple_tab "$(_ "auto.info.ipv6_disable")"
     log_info_simple_tab "$(_ "auto.info.swap_enable")"
     log_info "$(_ "auto.info.rollback_timer_activation" "$ROLLBACK_TIMER_SECONDS")"
     log_info "$(_ "auto.info.logs_location" "$(readlink -f "${PROJECT_ROOT}/logs")")"
