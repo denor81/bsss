@@ -246,7 +246,6 @@ runner::module::run_modify() {
 run() {
     log_info "$(_ "init.bsss.full_name" "$BSSS_VERSION")"
 
-    log_info "$(_ "init.critical.dependencies")"
     sys::dependencies::check
     sys::id_and_ver_check
 
