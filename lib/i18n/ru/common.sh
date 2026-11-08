@@ -6,6 +6,13 @@
 
 I18N_MESSAGES["no_translate"]="%s"
 I18N_MESSAGES["update.checking"]="Проверка последней версии BSSS..."
+I18N_MESSAGES["module.update.name"]="Обновление BSSS"
+I18N_MESSAGES["update.not_installed"]="Обновление доступно только для установленной копии BSSS"
+I18N_MESSAGES["update.downloading"]="Загрузка стандартного установщика BSSS..."
+I18N_MESSAGES["update.download_failed"]="Не удалось загрузить корректный установщик. Текущая установка сохранена"
+I18N_MESSAGES["update.install_instruction"]="После удаления запустится стандартный установщик. Выберите режим установки [i]"
+I18N_MESSAGES["update.uninstall_failed"]="Удаление не завершено. Обновление остановлено, старое меню закрывается"
+I18N_MESSAGES["update.install_failed"]="Установщик завершился с ошибкой или был отменен. Повторный запуск: curl -fsSL %s | sudo bash"
 I18N_MESSAGES["update.version_failed"]="Не удалось определить последнюю версию BSSS"
 I18N_MESSAGES["update.latest"]="Определена версия на сервере: %s"
 I18N_MESSAGES["update.current"]="Текущая версия: %s"

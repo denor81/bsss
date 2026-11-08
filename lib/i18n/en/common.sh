@@ -6,6 +6,13 @@
 
 I18N_MESSAGES["no_translate"]="%s"
 I18N_MESSAGES["update.checking"]="Checking the latest BSSS version..."
+I18N_MESSAGES["module.update.name"]="Update BSSS"
+I18N_MESSAGES["update.not_installed"]="Updating is only available for an installed copy of BSSS"
+I18N_MESSAGES["update.downloading"]="Downloading the standard BSSS installer..."
+I18N_MESSAGES["update.download_failed"]="Unable to download a valid installer. The current installation is preserved"
+I18N_MESSAGES["update.install_instruction"]="The standard installer will start after removal. Select installation mode [i]"
+I18N_MESSAGES["update.uninstall_failed"]="Uninstallation did not complete. Update stopped, closing the old menu"
+I18N_MESSAGES["update.install_failed"]="The installer failed or was cancelled. Run again: curl -fsSL %s | sudo bash"
 I18N_MESSAGES["update.version_failed"]="Unable to determine the latest BSSS version"
 I18N_MESSAGES["update.latest"]="Detected server version: %s"
 I18N_MESSAGES["update.current"]="Current version: %s"

@@ -42,3 +42,67 @@ update::menu::confirm() {
         io::confirm_action "$(_ "update.confirm_update")"
     fi
 }
+
+# @type:        Sink
+# @description: Удаляет временный установщик при завершении процесса обновления
+# @params:      rc Код завершения (num) без завершающего символа
+#               installer Путь временного установщика (path) без завершающего символа
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   rc исходный код завершения
+update::installer::cleanup() {
+    local rc="$1" installer="$2"
+    rm -f "$installer"
+    exit "$rc"
+}
+
+# @type:        Orchestrator
+# @description: Обновляет установленную копию штатным удалением и онлайн-установщиком
+# @stdin:       нет (ввод через TTY)
+# @stdout:      вывод дочерних процессов
+# @exit_code:   0 установка завершена, процесс завершен
+#               1 ошибка подготовки, возврат в меню
+#               2 отмена до удаления, возврат в меню
+#               $? ошибка удаления или установки, процесс завершен
+update::orchestrator::run() {
+    if [[ ! -f "$UNINSTALL_FILE_PATH" ]] || ! command -v "$UTIL_NAME" >/dev/null 2>&1; then
+        log_error "$(_ "update.not_installed")"
+        return 1
+    fi
+    update::menu::confirm || return
+
+    local installer rc=0
+    installer=$(mktemp --tmpdir="$UPDATE_TEMP_DIR" "${UTIL_NAME}-update-XXXXXX.sh") || return
+    trap 'update::installer::cleanup "$?" "$installer"' EXIT
+    log_info "$(_ "update.downloading")"
+    if ! curl -fsSL --connect-timeout "$UPDATE_CONNECT_TIMEOUT" --max-time "$UPDATE_DOWNLOAD_TIMEOUT" "$BSSS_INSTALLER_URL" -o "$installer" 2>&3; then
+        log_error "$(_ "update.download_failed")"
+        rm -f "$installer"
+        trap common::exit::actions EXIT
+        return 1
+    fi
+    if [[ ! -s "$installer" ]] || ! bash -n "$installer" 2>&3; then
+        log_error "$(_ "update.download_failed")"
+        rm -f "$installer"
+        trap common::exit::actions EXIT
+        return 1
+    fi
+
+    log_info "$(_ "update.install_instruction")"
+    "$UTIL_NAME" -u 2>&3 || rc=$?
+    if (( rc == 2 )); then
+        rm -f "$installer"
+        trap common::exit::actions EXIT
+        return 2
+    fi
+    if (( rc != 0 )); then
+        log_error "$(_ "update.uninstall_failed")"
+        exit "$rc"
+    fi
+
+    bash "$installer" 2>&3 || rc=$?
+    if (( rc != 0 )); then
+        log_error "$(_ "update.install_failed" "$BSSS_INSTALLER_URL")"
+    fi
+    exit "$rc"
+}
