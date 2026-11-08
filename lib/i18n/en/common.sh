@@ -5,6 +5,13 @@
 # Common messages (English)
 
 I18N_MESSAGES["no_translate"]="%s"
+I18N_MESSAGES["dependencies.check"]="Checking dependencies"
+I18N_MESSAGES["dependencies.apt_missing"]="apt-get package manager not found"
+I18N_MESSAGES["dependencies.missing"]="Required packages: %s"
+I18N_MESSAGES["dependencies.confirm"]="Install all missing dependencies? Declining will exit"
+I18N_MESSAGES["dependencies.failed"]="Dependency installation failed"
+I18N_MESSAGES["dependencies.unavailable"]="Required command unavailable: %s"
+I18N_MESSAGES["dependencies.ready"]="All required dependencies are available"
 I18N_MESSAGES["common.pipefail.interrupted"]="Interrupted [RC: %d]"
 I18N_MESSAGES["common.log_command"]="Command [%s]"
 I18N_MESSAGES["common.exit"]="Exit"

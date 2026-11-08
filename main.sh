@@ -20,6 +20,7 @@ source "${PROJECT_ROOT}/lib/i18n/language_installer.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/lib/uninstall_functions.sh"
 source "${PROJECT_ROOT}/modules/helpers/init.sh"
+source "${PROJECT_ROOT}/modules/helpers/dependencies.sh"
 source "${PROJECT_ROOT}/modules/helpers/os-check.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 
@@ -243,7 +244,7 @@ run() {
     log_info "$(_ "init.bsss.full_name" "$BSSS_VERSION")"
 
     log_info "$(_ "init.critical.dependencies")"
-    sys::gawk::check_dependency
+    sys::dependencies::check
     sys::id_and_ver_check
 
     sys::log::rotate_old_files

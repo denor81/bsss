@@ -143,19 +143,52 @@ init::allready_installed() {
 #               2 - отказ пользователя от установки
 #               $? - ошибка установки зависимостей
 init::check_dependencies() {
-    if ! command -v file &>/dev/null; then
-        ui::ask_value "$(_ "file.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
-        log::command::run --info apt-get update
-        log::command::run --info apt-get install -y file
+    log_info "$(_ "dependencies.check")"
+    local entry name package
+    local -a missing=()
+    local -A seen=()
+    local -a requirements=(
+        file:file gpg:gnupg gawk:gawk ufw:ufw openssl:openssl sudo:sudo
+        ss:iproute2 sshd:openssh-server useradd:passwd chpasswd:passwd
+        fallocate:util-linux mkswap:util-linux swapon:mount swapoff:mount
+        unattended-upgrade:unattended-upgrades dpkg-reconfigure:debconf
+        numfmt:coreutils shuf:coreutils realpath:coreutils nohup:coreutils
+        find:findutils xargs:findutils grep:grep sed:sed tar:tar gzip:gzip
+    )
+    if ! command -v apt-get >/dev/null 2>&1; then
+        log_error "$(_ "dependencies.apt_missing")"
+        return 1
     fi
-    if ! command -v gpg &>/dev/null; then
-        ui::ask_value "$(_ "gpg.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
-        init::gpg::install
+    for entry in "${requirements[@]}"; do
+        name=${entry%%:*}
+        package=${entry#*:}
+        if ! command -v "$name" >/dev/null 2>&1; then
+            if [[ -z "${seen[$package]:-}" ]]; then
+                missing+=("$package")
+                seen[$package]=1
+            fi
+        fi
+    done
+    if (( ${#missing[@]} > 0 )); then
+        log_info "$(_ "dependencies.missing" "${missing[*]}")"
+        ui::ask_value "$(_ "dependencies.confirm")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
+        if ! log::command::run --info apt-get update; then
+            log_error "$(_ "dependencies.failed")"
+            return 1
+        fi
+        if ! log::command::run --info apt-get install -y "${missing[@]}"; then
+            log_error "$(_ "dependencies.failed")"
+            return 1
+        fi
     fi
-    if ! command -v gawk &>/dev/null; then
-        ui::ask_value "$(_ "gawk.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
-        init::gawk::install
-    fi
+    for entry in "${requirements[@]}"; do
+        name=${entry%%:*}
+        if ! command -v "$name" >/dev/null 2>&1; then
+            log_error "$(_ "dependencies.unavailable" "$name")"
+            return 1
+        fi
+    done
+    log_info "$(_ "dependencies.ready")"
 }
 
 # @type:        Orchestrator
@@ -465,6 +498,13 @@ _() {
 
 # Russian translations
 declare -gA I18N_MESSAGES_RU=(
+    [dependencies.check]="Проверка зависимостей"
+    [dependencies.apt_missing]="Менеджер пакетов apt-get не найден"
+    [dependencies.missing]="Требуются пакеты: %s"
+    [dependencies.confirm]="Установить все недостающие зависимости? Отказ завершит работу"
+    [dependencies.failed]="Ошибка установки зависимостей"
+    [dependencies.unavailable]="Обязательная команда недоступна: %s"
+    [dependencies.ready]="Все обязательные зависимости доступны"
     [no_translate]="%s"
     [continue]="Продолжить?"
     [canceled]="Отменено"
@@ -518,6 +558,13 @@ declare -gA I18N_MESSAGES_RU=(
 
 # English translations
 declare -gA I18N_MESSAGES_EN=(
+    [dependencies.check]="Checking dependencies"
+    [dependencies.apt_missing]="apt-get package manager not found"
+    [dependencies.missing]="Required packages: %s"
+    [dependencies.confirm]="Install all missing dependencies? Declining will exit"
+    [dependencies.failed]="Dependency installation failed"
+    [dependencies.unavailable]="Required command unavailable: %s"
+    [dependencies.ready]="All required dependencies are available"
     [no_translate]="%s"
     [continue]="Continue?"
     [canceled]="Cancelled"

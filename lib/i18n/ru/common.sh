@@ -5,6 +5,13 @@
 # Common messages
 
 I18N_MESSAGES["no_translate"]="%s"
+I18N_MESSAGES["dependencies.check"]="Проверка зависимостей"
+I18N_MESSAGES["dependencies.apt_missing"]="Менеджер пакетов apt-get не найден"
+I18N_MESSAGES["dependencies.missing"]="Требуются пакеты: %s"
+I18N_MESSAGES["dependencies.confirm"]="Установить все недостающие зависимости? Отказ завершит работу"
+I18N_MESSAGES["dependencies.failed"]="Ошибка установки зависимостей"
+I18N_MESSAGES["dependencies.unavailable"]="Обязательная команда недоступна: %s"
+I18N_MESSAGES["dependencies.ready"]="Все обязательные зависимости доступны"
 I18N_MESSAGES["common.pipefail.interrupted"]="Прервано [RC: %d]"
 I18N_MESSAGES["common.log_command"]="Команда [%s]"
 I18N_MESSAGES["common.exit"]="Выход"
