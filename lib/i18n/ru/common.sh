@@ -431,3 +431,5 @@ I18N_MESSAGES["auto.menu.item_3"]="Настройка автообновлени
 I18N_MESSAGES["auto.menu.item_4"]="Настройка swap"
 I18N_MESSAGES["auto.menu.ask_items"]="Введите номера пунктов через пробел (0 — выход)"
 I18N_MESSAGES["auto.menu.selected"]="Выбраны действия в порядке выполнения:"
+I18N_MESSAGES["auto.info.already_configured"]="Уже настроено: %s"
+I18N_MESSAGES["auto.error.ssh_ports"]="Настроенные и активные SSH порты не соответствуют выбранному порту"
