@@ -243,8 +243,8 @@ run() {
     log_info "$(_ "init.bsss.full_name" "$BSSS_VERSION")"
 
     log_info "$(_ "init.critical.dependencies")"
-    sys::id_and_ver_check
     sys::gawk::check_dependency
+    sys::id_and_ver_check
 
     sys::log::rotate_old_files
 
