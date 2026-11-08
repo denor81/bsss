@@ -11,12 +11,12 @@
 update::version::latest() {
     local url version
     log_info "$(_ "update.checking")"
-    if ! url=$(curl -fsSL --connect-timeout 10 --max-time 30 -o /dev/null -w '%{url_effective}' "https://github.com/denor81/bsss/releases/latest" 2>&3); then
+    if ! url=$(curl -fsSL --connect-timeout "$UPDATE_CONNECT_TIMEOUT" --max-time "$UPDATE_REQUEST_TIMEOUT" -o /dev/null -w '%{url_effective}' "$BSSS_LATEST_RELEASE_URL" 2>&3); then
         log_error "$(_ "update.version_failed")"
         return 1
     fi
     version=${url##*/}
-    if [[ ! "$url" == https://github.com/denor81/bsss/releases/tag/* || ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    if [[ ! "$url" == "$BSSS_RELEASE_TAG_URL/"* || ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         log_error "$(_ "update.version_failed")"
         return 1
     fi
