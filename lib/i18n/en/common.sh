@@ -235,7 +235,7 @@ I18N_MESSAGES["ufw.error.reload_failed"]="Failed to execute [ufw reload] [RC: %s
 # Update module
 I18N_MESSAGES["system.update.apt_not_found"]="Package manager apt-get not found"
 I18N_MESSAGES["system.update.error"]="Error updating system packages"
-I18N_MESSAGES["system.update.confirm"]="Update system packages? [apt-get update && apt-get upgrade -y]"
+I18N_MESSAGES["system.update.confirm"]="Update system packages? [apt-get update && apt-get upgrade --with-new-pkgs -y]"
 
 # Reload check module
 I18N_MESSAGES["system.reload.not_required"]="Reboot not required"
