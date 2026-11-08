@@ -53,6 +53,12 @@ sys::dependencies::check() {
         unattended-upgrade:unattended-upgrades dpkg-reconfigure:debconf
         numfmt:coreutils shuf:coreutils realpath:coreutils nohup:coreutils
         find:findutils xargs:findutils grep:grep sed:sed tar:tar gzip:gzip
+        dpkg:dpkg basename:coreutils cat:coreutils chmod:coreutils chown:coreutils
+        cp:coreutils cut:coreutils date:coreutils df:coreutils dirname:coreutils
+        du:coreutils head:coreutils id:coreutils ln:coreutils logname:coreutils
+        mkdir:coreutils mkfifo:coreutils mktemp:coreutils mv:coreutils readlink:coreutils
+        rm:coreutils sleep:coreutils sort:coreutils stat:coreutils tail:coreutils
+        tee:coreutils touch:coreutils tr:coreutils wc:coreutils
     )
     if ! command -v apt-get >/dev/null 2>&1; then
         log_error "$(_ "dependencies.apt_missing")"
