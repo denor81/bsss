@@ -204,7 +204,7 @@ auto::upgrades::orchestrator::enable() {
     auto::upgrades::write_configs || return 1
 
     log_info "$(_ "common.log_command" "DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -plow unattended-upgrades")"
-    if ! DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -plow unattended-upgrades 1>&3; then
+    if ! DEBIAN_FRONTEND=noninteractive log::command::run --info dpkg-reconfigure -plow unattended-upgrades; then
         log_error "$(_ "auto.upgrades.reconfigure.failed")"
         return 1
     fi

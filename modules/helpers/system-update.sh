@@ -27,7 +27,7 @@ sys::update::execute() {
     local update_cmd=""
     [[ ! -t 0 ]] && IFS= read -r -d '' update_cmd || return 1
 
-    if ! bash -c "$update_cmd" 1>&3; then
+    if ! log::command::run --info bash -c "$update_cmd"; then
         log_error "$(_ "system.update.error")"
         return 1
     fi
