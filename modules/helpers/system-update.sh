@@ -16,7 +16,7 @@ sys::update::get_command() {
     fi
 
     if [[ "${1:-}" == "auto" ]]; then
-        printf '%s\0' "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade -y"
+        printf '%s\0' "apt-get update && DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade -y"
     else
         printf '%s\0' "apt-get update && apt-get upgrade -y"
     fi

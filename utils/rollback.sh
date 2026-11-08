@@ -62,7 +62,10 @@ rollback::orchestrator::exit() {
 # @exit_code:   0 всегда
 rollback::orchestrator::stop_usr1() {
     log_info "$(_ "rollback.stop_usr1_received")"
-    kill "$SLEEP_PID" 2>/dev/null
+    # sleep наследует игнорирование TERM; KILL завершает только процесс таймера.
+    # || true: таймер мог уже завершиться; wait получает код завершения по сигналу.
+    kill -KILL "$SLEEP_PID" 2>/dev/null || true
+    wait "$SLEEP_PID" 2>/dev/null || true
     exit 0
 }
 
@@ -73,7 +76,10 @@ rollback::orchestrator::stop_usr1() {
 # @exit_code:   0 всегда
 rollback::orchestrator::immediate_usr2() {
     log_info "$(_ "rollback.immediate_usr2_received")"
-    kill "$SLEEP_PID" 2>/dev/null
+    # sleep наследует игнорирование TERM; KILL завершает только процесс таймера.
+    # || true: таймер мог уже завершиться; wait получает код завершения по сигналу.
+    kill -KILL "$SLEEP_PID" 2>/dev/null || true
+    wait "$SLEEP_PID" 2>/dev/null || true
     rollback::dispatcher
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
@@ -210,6 +216,8 @@ rollback::orchestrator::full() {
 # @exit_code:   0 откат выполнен успешно
 #               1 неизвестный тип отката
 rollback::dispatcher() {
+    # Начатый откат нельзя отменить подтверждением или запустить повторно.
+    trap '' SIGUSR1 SIGUSR2
     case "$ROLLBACK_TYPE" in
         "ssh") rollback::orchestrator::ssh ;;
         "ufw") rollback::orchestrator::ufw ;;
@@ -226,6 +234,7 @@ rollback::dispatcher() {
 #               watchdog_fifo FIFO для коммуникации (path)
 #               sync_fifo FIFO для синхронизации (path)
 #               quiet Режим без вывода (string\n)
+#               timeout Время до отката (num) без завершающего символа, опционально
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 всегда
@@ -235,6 +244,7 @@ rollback::orchestrator::watchdog_timer() {
     local watchdog_fifo="$3"
     local sync_fifo="$4"
     local quiet="$5"
+    local timeout="${6:-$ROLLBACK_TIMER_SECONDS}"
     
     exec 3> "$watchdog_fifo"
 
@@ -242,7 +252,7 @@ rollback::orchestrator::watchdog_timer() {
     log_info "$(_ "rollback.redirection_opened" $$ "$(basename "$watchdog_fifo")")"
 
     if [[ $quiet != "quiet" ]]; then
-    log_info "$(_ "rollback.timer_started" "$ROLLBACK_TIMER_SECONDS")"
+        log_info "$(_ "rollback.timer_started" "$timeout")"
         case "$ROLLBACK_TYPE" in
             "ssh") log_bold_info "$(_ "rollback.timeout_ssh")" ;;
             "ufw") log_bold_info "$(_ "rollback.timeout_ufw")" ;;
@@ -253,7 +263,7 @@ rollback::orchestrator::watchdog_timer() {
         log_bold_info "$(_ "rollback.timeout_reconnect")"
     fi
 
-    sleep "$ROLLBACK_TIMER_SECONDS" &
+    sleep "$timeout" &
     SLEEP_PID=$!
 
     # Rollback готов приимать сигналы - уведомляю главный скрипт

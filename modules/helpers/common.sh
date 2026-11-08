@@ -86,15 +86,17 @@ ssh::log::active_ports_from_ss() {
 # @description: Запускает фоновый процесс rollback (watchdog)
 # @params:      rollback_type Тип отката (string\n)
 #               quiet Флаг тихого режима (string)
+#               timeout Время до отката (num) без завершающего символа, опционально
 # @stdin:       нет
 # @stdout:      PID процесса watchdog
 # @exit_code:   0 успех
 rollback::orchestrator::watchdog_start() {
     local rollback_type="$1"
     local quiet="${2:-}"
+    local timeout="${3:-$ROLLBACK_TIMER_SECONDS}"
     local rollback_module="${PROJECT_ROOT}/${UTILS_DIR}/$ROLLBACK_MODULE_NAME"
 
-    nohup bash "$rollback_module" "$rollback_type" "$$" "$WATCHDOG_FIFO" "$SYNC_FIFO" "$quiet" >/dev/null 2>&1 &
+    nohup bash "$rollback_module" "$rollback_type" "$$" "$WATCHDOG_FIFO" "$SYNC_FIFO" "$quiet" "$timeout" >/dev/null 2>&1 &
     printf '%s' $!
 }
 
