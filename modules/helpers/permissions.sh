@@ -39,6 +39,22 @@ permissions::rules::is_configured() {
 
 # === SINK ===
 
+# @type:        Validator
+# @description: Проверяет соответствие итоговой конфигурации SSH шаблону доступа BSSS
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 все три значения соответствуют шаблону
+#               1 шаблон не применен
+#               $? ошибка чтения конфигурации
+permissions::rules::is_effective() {
+    sshd -T | gawk '
+        $1 == "permitrootlogin" { root = ($2 == "no") }
+        $1 == "passwordauthentication" { password = ($2 == "no") }
+        $1 == "pubkeyauthentication" { key = ($2 == "yes") }
+        END { exit (root && password && key) ? 0 : 1 }
+    '
+}
+
 # @type:        Sink
 # @description: Логировать все BSSS конфигурации permissions
 # @stdin:       нет

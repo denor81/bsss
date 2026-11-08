@@ -102,6 +102,16 @@ ssh::port::is_port_free() {
 
 # === SINK ===
 
+# @type:        Source
+# @description: Получает настроенные SSH порты из sshd -T
+# @stdin:       нет
+# @stdout:      port\0 (0..N)
+# @exit_code:   0 успешно
+#               $? ошибка чтения конфигурации
+ssh::port::get_configured() {
+    sshd -T | gawk 'BEGIN { ORS="\0" } $1 == "port" { print $2 }' | sort -zu
+}
+
 # @type:        Sink
 # @description: Устанавливать новый SSH порт
 # @stdin:       port\0

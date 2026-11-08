@@ -243,8 +243,10 @@ sys::user::get_auth_method() {
 #               1 ошибка конфигурации sshd
 sys::service::restart() {
     if sshd -t; then
-        systemctl daemon-reload && log_info "$(_ "ssh.service.daemon_reloaded")"
-        systemctl restart ssh.service && log_info "$(_ "ssh.service.restarted")"
+        systemctl daemon-reload
+        log_info "$(_ "ssh.service.daemon_reloaded")"
+        systemctl restart ssh.service
+        log_info "$(_ "ssh.service.restarted")"
     else
         log_error "$(_ "ssh.error_config_sshd")"
         return 1
@@ -322,14 +324,17 @@ ufw::rule::get_all() {
 # @description: Добавляет правило UFW для BSSS
 # @stdin:       port\0 (0..N)
 # @stdout:      нет
-# @exit_code:   0 всегда успешно
+# @exit_code:   0 правила добавлены
+#               $? ошибка добавления правила
 ufw::rule::add_bsss() {
     local port
     while read -r -d '' port; do
         if ufw allow "${port}"/tcp comment "$BSSS_MARKER_COMMENT" >/dev/null 2>&1; then
             log_info "$(_ "common.helpers.ufw.rule.added" "$port")"
         else
-            log_info "$(_ "common.helpers.ufw.rule.add_error" "$port")"
+            local rc=$?
+            log_error "$(_ "common.helpers.ufw.rule.add_error" "$port")"
+            return "$rc"
         fi
     done
 }
