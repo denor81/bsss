@@ -20,7 +20,7 @@ sys::gawk::check_dependency() {
     log_info "$(_ "init.gawk.nul_explanation")"
 
     if io::confirm_action "$(_ "common.install.confirm" "gawk")" || return; then
-        if apt-get update && apt-get install -y gawk; then
+        if log::command::run --info apt-get update && log::command::run --info apt-get install -y gawk; then
             log_info "$(_ "common.install.success" "gawk")"
         else
             local rc

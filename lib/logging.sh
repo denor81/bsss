@@ -59,6 +59,24 @@ log::to_journal() {
     fi
 }
 
+# @type:        Orchestrator
+# @description: Запускает команду, опционально направляя весь вывод в информационный лог
+# @params:      --info Информационный режим (string) без завершающего символа, необязательный
+#               args Команда и аргументы (array) без завершающего символа
+# @stdin:       stdin команды
+# @stdout:      stdout команды в строгом режиме, нет в информационном
+# @exit_code:   $? код команды или ошибка логирования (pipefail)
+log::command::run() {
+    if [[ "${1:-}" == "--info" ]]; then
+        shift
+        "$@" 2>&1 | while IFS= read -r line || [[ -n "$line" ]]; do
+            log_info "$line"
+        done
+    else
+        "$@"
+    fi
+}
+
 # @type:        Sink
 # @description: Записывает сообщение в лог-файл с timestamp
 # @params:      message - Текст сообщения для записи

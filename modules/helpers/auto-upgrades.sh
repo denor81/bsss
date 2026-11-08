@@ -46,13 +46,13 @@ auto::upgrades::ensure_package() {
     fi
 
     log_info "$(_ "common.log_command" "DEBIAN_FRONTEND=noninteractive apt-get update")"
-    if ! DEBIAN_FRONTEND=noninteractive apt-get update 1>&3; then
+    if ! DEBIAN_FRONTEND=noninteractive log::command::run --info apt-get update; then
         log_error "$(_ "common.install.error" "unattended-upgrades")"
         return 1
     fi
 
     log_info "$(_ "common.log_command" "DEBIAN_FRONTEND=noninteractive apt-get install -y unattended-upgrades")"
-    if ! DEBIAN_FRONTEND=noninteractive apt-get install -y unattended-upgrades 1>&3; then
+    if ! DEBIAN_FRONTEND=noninteractive log::command::run --info apt-get install -y unattended-upgrades; then
         log_error "$(_ "common.install.error" "unattended-upgrades")"
         return 1
     fi

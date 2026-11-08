@@ -145,8 +145,8 @@ init::allready_installed() {
 init::check_dependencies() {
     if ! command -v file &>/dev/null; then
         ui::ask_value "$(_ "file.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
-        apt-get update
-        apt-get install -y file
+        log::command::run --info apt-get update
+        log::command::run --info apt-get install -y file
     fi
     if ! command -v gpg &>/dev/null; then
         ui::ask_value "$(_ "gpg.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
@@ -167,12 +167,12 @@ init::check_dependencies() {
 init::gawk::install() {
     log_info "$(_ "gawk.installing")"
 
-    if ! apt-get update >/dev/null; then
+    if ! log::command::run --info apt-get update; then
         log_error "$(_ "apt_update_failed")"
         return 1
     fi
 
-    if ! apt-get install -y gawk || ! command -v gawk &>/dev/null; then
+    if ! log::command::run --info apt-get install -y gawk || ! command -v gawk &>/dev/null; then
         log_error "$(_ "gawk.install_failed")"
         return 1
     fi
@@ -190,12 +190,12 @@ init::gawk::install() {
 init::gpg::install() {
     log_info "$(_ "gpg.installing")"
 
-    if ! apt-get update >/dev/null; then
+    if ! log::command::run --info apt-get update; then
         log_error "$(_ "apt_update_failed")"
         return 1
     fi
 
-    if ! apt-get install -y gnupg; then
+    if ! log::command::run --info apt-get install -y gnupg; then
         log_error "$(_ "gpg.install_failed")"
         return 1
     fi
@@ -378,6 +378,24 @@ log_warn() {
 # @exit_code:   0 - всегда
 log_info() {
     log_generic "$1" "$SYMBOL_INFO" "INFO"
+}
+
+# @type:        Orchestrator
+# @description: Запускает команду, опционально направляя весь вывод в информационный лог
+# @params:      --info Информационный режим (string) без завершающего символа, необязательный
+#               args Команда и аргументы (array) без завершающего символа
+# @stdin:       stdin команды
+# @stdout:      stdout команды в строгом режиме, нет в информационном
+# @exit_code:   $? код команды или ошибка логирования (pipefail)
+log::command::run() {
+    if [[ "${1:-}" == "--info" ]]; then
+        shift
+        "$@" 2>&1 | while IFS= read -r line || [[ -n "$line" ]]; do
+            log_info "$line"
+        done
+    else
+        "$@"
+    fi
 }
 
 # @type:        Sink
