@@ -31,7 +31,7 @@ swap::state::is_active() {
 #               1 запись отсутствует
 swap::fstab::has_entry() {
     [[ -f "$SWAPFILE_FSTAB_PATH" ]] || return 1
-    gawk -v entry="$SWAPFILE_FSTAB_ENTRY" '$0 == entry { found=1 } END { exit found ? 0 : 1 }' "$SWAPFILE_FSTAB_PATH"
+    gawk -v target="$SWAPFILE_PATH" '$1 == target && $3 == "swap" { found=1 } END { exit found ? 0 : 1 }' "$SWAPFILE_FSTAB_PATH"
 }
 
 # @type:        Validator
@@ -319,7 +319,7 @@ swap::fstab::remove_entry() {
 
     local tmp
     tmp=$(mktemp)
-    if gawk -v entry="$SWAPFILE_FSTAB_ENTRY" '$0 != entry' "$SWAPFILE_FSTAB_PATH" > "$tmp"; then
+    if gawk -v target="$SWAPFILE_PATH" '!($1 == target && $3 == "swap")' "$SWAPFILE_FSTAB_PATH" > "$tmp"; then
         mv "$tmp" "$SWAPFILE_FSTAB_PATH"
         log_info "$(_ "swap.info.fstab_removed" "$SWAPFILE_FSTAB_PATH")"
     else
