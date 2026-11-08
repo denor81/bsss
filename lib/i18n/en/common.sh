@@ -5,6 +5,12 @@
 # Common messages (English)
 
 I18N_MESSAGES["no_translate"]="%s"
+I18N_MESSAGES["update.checking"]="Checking the latest BSSS version..."
+I18N_MESSAGES["update.version_failed"]="Unable to determine the latest BSSS version"
+I18N_MESSAGES["update.latest"]="Detected server version: %s"
+I18N_MESSAGES["update.current"]="Current version: %s"
+I18N_MESSAGES["update.confirm_update"]="Update BSSS by uninstalling and running the standard installer?"
+I18N_MESSAGES["update.confirm_reinstall"]="Versions match. Reinstall BSSS using the standard uninstaller and installer?"
 I18N_MESSAGES["dependencies.check"]="Checking dependencies"
 I18N_MESSAGES["dependencies.os_unsupported"]="Ubuntu 20.04 or newer is required"
 I18N_MESSAGES["dependencies.systemd_required"]="Running systemd and the systemctl, journalctl commands are required"
