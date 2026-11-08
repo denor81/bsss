@@ -159,7 +159,7 @@ ssh::log::bsss_configs() {
     done < <(grep -EiHs '^\s*port\b' "${SSH_CONFIGD_DIR}/"$BSSS_SSH_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
-        log_warn "$(_ "ssh.info_no_rules" "$SSH_CONFIG_FILE")"
+        log_info "$(_ "ssh.info_no_rules" "$SSH_CONFIG_FILE")"
     fi
 }
 

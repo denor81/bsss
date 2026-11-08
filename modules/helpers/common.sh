@@ -74,6 +74,8 @@ ssh::log::active_ports_from_ss() {
     if [[ -z "$active_ports" ]]; then
         log_error "$(_ "common.helpers.ssh.no_active_ports")"
         (( strict_mode == 1 )) && return 1
+    elif ssh::port::has_default "$active_ports"; then
+        log_warn "$(_ "common.helpers.ssh.active_ports" "$active_ports")"
     else
         log_info "$(_ "common.helpers.ssh.active_ports" "$active_ports")"
     fi
@@ -411,7 +413,7 @@ ufw::log::rules() {
     done < <(ufw::rule::get_all)
 
     if (( found == 0 )); then
-        log_warn "$(_ "common.helpers.ufw.rules_not_found")"
+        log_info "$(_ "common.helpers.ufw.rules_not_found")"
     fi
 }
 
@@ -448,22 +450,66 @@ ufw::orchestrator::log_statuses() {
     ufw::log::ping_status
 }
 
+# @type:        Validator
+# @description: Проверяет наличие стандартного SSH порта в списке
+# @params:      ports Порты через запятую (string) без завершающего символа
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 стандартный порт найден
+#               1 стандартного порта нет
+ssh::port::has_default() {
+    [[ ",$1," == *",$DEFAULT_SSH_PORT,"* ]]
+}
+
+# @type:        Validator
+# @description: Определяет необходимость предупреждения для строки sshd -T
+# @params:      line Имя параметра и значение (string) без завершающего символа
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 требуется предупреждение
+#               1 информационная строка
+ssh::config::needs_attention() {
+    local key value
+    read -r key value <<< "$1"
+    case "$key" in
+        port) ssh::port::has_default "$value" ;;
+        passwordauthentication|permitrootlogin) [[ "$value" == "yes" ]] ;;
+        *) return 1 ;;
+    esac
+}
+
 # @type:        Orchestrator
-# @description: Выводит активные правила UFW
+# @description: Выводит конфигурацию SSH с предупреждениями в строках и заголовке
 # @params:      pattern Шаблон для фильтрации конфигурации (string\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 всегда успешно
 common::log::current_config() {
     local pattern="$1"
-    local line
+    local line config warning=0
 
-    log_info "$(_ "permissions.check.current_ssh_config")"
+    # || true: sshd -T или grep могут не сработать в некоторых случаях
+    config=$(sshd -T 2>/dev/null | grep -Ei "$pattern" | sort || true)
+    while IFS= read -r line; do
+        if ssh::config::needs_attention "$line"; then
+            warning=1
+        fi
+    done <<< "$config"
+
+    if (( warning == 1 )); then
+        log_warn "$(_ "permissions.check.current_ssh_config")"
+    else
+        log_info "$(_ "permissions.check.current_ssh_config")"
+    fi
 
     while IFS= read -r line; do
-        log_info_simple_tab "$(_ "no_translate" "$line")"
-    # || true: sshd -T или grep могут не сработать в некоторых случаях
-    done < <(sshd -T 2>/dev/null | grep -Ei "$pattern" | sort || true)
+        [[ -n "$line" ]] || continue
+        if ssh::config::needs_attention "$line"; then
+            log_warn_simple_tab "$(_ "no_translate" "$line")"
+        else
+            log_info_simple_tab "$(_ "no_translate" "$line")"
+        fi
+    done <<< "$config"
 }
 
 # @type:        Orchestrator

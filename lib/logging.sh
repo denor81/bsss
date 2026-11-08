@@ -370,6 +370,26 @@ log_info_simple_tab() {
 }
 
 # @type:        Sink
+# @description: Выводит предупреждение с отступом
+# @params:      message Уже переведенное сообщение (string) без завершающего символа
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успешно
+log_warn_simple_tab() {
+    local msg="$1"
+    local type="WARN"
+
+    if [[ "$LOG_STRICT_MODE" == "true" ]]; then
+        printf '%s\t%s\n' "$SYMBOL_WARN" "$msg" >&3
+    else
+        # || true: rollback продолжает работу при закрытом дескрипторе
+        printf '%s\t%s\n' "$SYMBOL_WARN" "$msg" >&3 || true
+    fi
+    log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
+    log::to_journal "$msg" "$type"
+}
+
+# @type:        Sink
 # @description: Выводит информационное сообщение о запуске процесса
 # @params:      module_name - Имя модуля (опционально, по умолчанию $CURRENT_MODULE_NAME)
 #               pid - PID процесса (опционально, по умолчанию $$)
