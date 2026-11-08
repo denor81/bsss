@@ -2,6 +2,37 @@
 # Part of the BSSS project (https://github.com/denor81/bsss)
 # Licensed under MIT
 
+# @type:        Validator
+# @description: Проверяет Ubuntu, работающий systemd и наличие конфигурации GRUB
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 окружение поддерживается
+#               1 окружение не поддерживается
+sys::environment::check() {
+    local ID="" VERSION_ID=""
+    if [[ ! -r /etc/os-release ]]; then
+        log_error "$(_ "dependencies.os_unsupported")"
+        return 1
+    fi
+    source /etc/os-release
+    if [[ "$ID" != ubuntu || ! "$VERSION_ID" =~ ^[0-9]+\.[0-9]+$ ]] || (( ${VERSION_ID%%.*} < 20 )); then
+        log_error "$(_ "dependencies.os_unsupported")"
+        return 1
+    fi
+    if ! command -v systemctl >/dev/null 2>&1 || ! command -v journalctl >/dev/null 2>&1 || [[ ! -d /run/systemd/system ]]; then
+        log_error "$(_ "dependencies.systemd_required")"
+        return 1
+    fi
+    if ! systemctl show --property=Version --value >/dev/null 2>&1; then
+        log_error "$(_ "dependencies.systemd_required")"
+        return 1
+    fi
+    if ! command -v update-grub >/dev/null 2>&1 || [[ ! -f /etc/default/grub || ! -d /boot/grub ]]; then
+        log_error "$(_ "dependencies.grub_required")"
+        return 1
+    fi
+}
+
 # @type:        Orchestrator
 # @description: Проверяет обязательные команды и устанавливает недостающие пакеты одним вызовом apt
 # @stdin:       нет (подтверждение через TTY)
@@ -11,6 +42,7 @@
 #               2 отказ пользователя
 sys::dependencies::check() {
     log_info "$(_ "dependencies.check")"
+    sys::environment::check
     local entry name package
     local -a missing=()
     local -A seen=()

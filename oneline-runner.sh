@@ -135,7 +135,7 @@ init::allready_installed() {
 }
 
 # @type:        Orchestrator
-# @description: Проверяет и устанавливает зависимости (GPG, gawk)
+# @description: Проверяет окружение и устанавливает обязательные зависимости одним вызовом apt
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
@@ -144,6 +144,7 @@ init::allready_installed() {
 #               $? - ошибка установки зависимостей
 init::check_dependencies() {
     log_info "$(_ "dependencies.check")"
+    sys::environment::check
     local entry name package
     local -a missing=()
     local -A seen=()
@@ -189,6 +190,37 @@ init::check_dependencies() {
         fi
     done
     log_info "$(_ "dependencies.ready")"
+}
+
+# @type:        Validator
+# @description: Проверяет Ubuntu, работающий systemd и наличие конфигурации GRUB
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 окружение поддерживается
+#               1 окружение не поддерживается
+sys::environment::check() {
+    local ID="" VERSION_ID=""
+    if [[ ! -r /etc/os-release ]]; then
+        log_error "$(_ "dependencies.os_unsupported")"
+        return 1
+    fi
+    source /etc/os-release
+    if [[ "$ID" != ubuntu || ! "$VERSION_ID" =~ ^[0-9]+\.[0-9]+$ ]] || (( ${VERSION_ID%%.*} < 20 )); then
+        log_error "$(_ "dependencies.os_unsupported")"
+        return 1
+    fi
+    if ! command -v systemctl >/dev/null 2>&1 || ! command -v journalctl >/dev/null 2>&1 || [[ ! -d /run/systemd/system ]]; then
+        log_error "$(_ "dependencies.systemd_required")"
+        return 1
+    fi
+    if ! systemctl show --property=Version --value >/dev/null 2>&1; then
+        log_error "$(_ "dependencies.systemd_required")"
+        return 1
+    fi
+    if ! command -v update-grub >/dev/null 2>&1 || [[ ! -f /etc/default/grub || ! -d /boot/grub ]]; then
+        log_error "$(_ "dependencies.grub_required")"
+        return 1
+    fi
 }
 
 # @type:        Orchestrator
@@ -499,6 +531,9 @@ _() {
 # Russian translations
 declare -gA I18N_MESSAGES_RU=(
     [dependencies.check]="Проверка зависимостей"
+    [dependencies.os_unsupported]="Требуется Ubuntu версии 20.04 или новее"
+    [dependencies.systemd_required]="Требуется работающий systemd и команды systemctl, journalctl"
+    [dependencies.grub_required]="Требуются update-grub, /etc/default/grub и /boot/grub. Автоматическая установка загрузчика не выполняется"
     [dependencies.apt_missing]="Менеджер пакетов apt-get не найден"
     [dependencies.missing]="Требуются пакеты: %s"
     [dependencies.confirm]="Установить все недостающие зависимости? Отказ завершит работу"
@@ -559,6 +594,9 @@ declare -gA I18N_MESSAGES_RU=(
 # English translations
 declare -gA I18N_MESSAGES_EN=(
     [dependencies.check]="Checking dependencies"
+    [dependencies.os_unsupported]="Ubuntu 20.04 or newer is required"
+    [dependencies.systemd_required]="Running systemd and the systemctl, journalctl commands are required"
+    [dependencies.grub_required]="update-grub, /etc/default/grub and /boot/grub are required. The bootloader is not installed automatically"
     [dependencies.apt_missing]="apt-get package manager not found"
     [dependencies.missing]="Required packages: %s"
     [dependencies.confirm]="Install all missing dependencies? Declining will exit"

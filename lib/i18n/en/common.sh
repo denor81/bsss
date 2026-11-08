@@ -6,6 +6,9 @@
 
 I18N_MESSAGES["no_translate"]="%s"
 I18N_MESSAGES["dependencies.check"]="Checking dependencies"
+I18N_MESSAGES["dependencies.os_unsupported"]="Ubuntu 20.04 or newer is required"
+I18N_MESSAGES["dependencies.systemd_required"]="Running systemd and the systemctl, journalctl commands are required"
+I18N_MESSAGES["dependencies.grub_required"]="update-grub, /etc/default/grub and /boot/grub are required. The bootloader is not installed automatically"
 I18N_MESSAGES["dependencies.apt_missing"]="apt-get package manager not found"
 I18N_MESSAGES["dependencies.missing"]="Required packages: %s"
 I18N_MESSAGES["dependencies.confirm"]="Install all missing dependencies? Declining will exit"

@@ -6,6 +6,9 @@
 
 I18N_MESSAGES["no_translate"]="%s"
 I18N_MESSAGES["dependencies.check"]="Проверка зависимостей"
+I18N_MESSAGES["dependencies.os_unsupported"]="Требуется Ubuntu версии 20.04 или новее"
+I18N_MESSAGES["dependencies.systemd_required"]="Требуется работающий systemd и команды systemctl, journalctl"
+I18N_MESSAGES["dependencies.grub_required"]="Требуются update-grub, /etc/default/grub и /boot/grub. Автоматическая установка загрузчика не выполняется"
 I18N_MESSAGES["dependencies.apt_missing"]="Менеджер пакетов apt-get не найден"
 I18N_MESSAGES["dependencies.missing"]="Требуются пакеты: %s"
 I18N_MESSAGES["dependencies.confirm"]="Установить все недостающие зависимости? Отказ завершит работу"
