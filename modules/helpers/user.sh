@@ -128,7 +128,8 @@ user::pass::set() {
 }
 
 # @type:        Sink
-# @description: Создает файл в /etc/sudoers.d/ для парольного доступа к sudo
+# @description: Создает файл в /etc/sudoers.d/ с выбранным режимом доступа к sudo
+# @params:      sudo_mode Режим sudo: PASSWD или NOPASSWD (string) без завершающего символа
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успешно
@@ -136,6 +137,6 @@ user::pass::set() {
 user::sudoers::create_file() {
     local sudoers_file="${SUDOERS_D_DIR}/${BSSS_USER_NAME}"
 
-    echo "${BSSS_USER_NAME} ALL=(ALL) NOPASSWD:ALL" | sudo tee "$sudoers_file" > /dev/null || return 1
+    echo "${BSSS_USER_NAME} ALL=(ALL) ${1}:ALL" | sudo tee "$sudoers_file" > /dev/null || return 1
     chmod 0440 "$sudoers_file" || return 1
 }

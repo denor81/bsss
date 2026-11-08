@@ -19,6 +19,7 @@ trap log_stop EXIT
 
 # @type:        Orchestrator
 # @description: Создает пользователя BSSS, устанавливает пароль и права sudo
+# @params:      sudo_mode Режим sudo: PASSWD или NOPASSWD (string) без завершающего символа
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успешно создан пользователь
@@ -35,7 +36,7 @@ user::create::execute_with_logging() {
 
     printf '%s:%s\0' "$BSSS_USER_NAME" "$password" | user::pass::set
 
-    if ! user::sudoers::create_file; then
+    if ! user::sudoers::create_file "$1"; then
         log_error "$(_ "user.create.create_error")"
         return 1
     fi
@@ -85,7 +86,29 @@ user::main::menu::dispatcher() {
     menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-1]$" "0-1" "^0$" | tr -d '\0') || return
 
     case "$menu_id" in
-        1) user::create::execute_with_logging ;;
+        1) user::sudo::menu ;;
+    esac
+}
+
+# @type:        Orchestrator
+# @description: Выбирает режим запроса пароля sudo и создает пользователя
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 успешно
+#               2 отмена пользователем
+#               $? другие ошибки
+user::sudo::menu() {
+    log_info "$(_ "common.menu_header")"
+    log_info_simple_tab "1. $(_ "user.create.menu.with_sudo_password")"
+    log_info_simple_tab "2. $(_ "user.create.menu.without_sudo_password")"
+    log_info_simple_tab "0. $(_ "common.exit")"
+
+    local menu_id
+    menu_id=$(io::ask_value "$(_ "common.ask_select_action")" "" "^[0-2]$" "0-2" "^0$" | tr -d '\0') || return
+
+    case "$menu_id" in
+        1) user::create::execute_with_logging "PASSWD" ;;
+        2) user::create::execute_with_logging "NOPASSWD" ;;
     esac
 }
 
