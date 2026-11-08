@@ -135,17 +135,44 @@ init::allready_installed() {
 }
 
 # @type:        Orchestrator
-# @description: Проверяет и устанавливает зависимости (GPG)
+# @description: Проверяет и устанавливает зависимости (GPG, gawk)
 # @params:      нет
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - зависимости в порядке
+#               2 - отказ пользователя от установки
 #               $? - ошибка установки зависимостей
 init::check_dependencies() {
     if ! command -v gpg &>/dev/null; then
         ui::ask_value "$(_ "gpg.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
         init::gpg::install
     fi
+    if ! command -v gawk &>/dev/null; then
+        ui::ask_value "$(_ "gawk.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
+        init::gawk::install
+    fi
+}
+
+# @type:        Orchestrator
+# @description: Устанавливает gawk через apt и проверяет его доступность
+# @stdin:       нет
+# @stdout:      нет
+# @exit_code:   0 - успешно
+#               1 - ошибка установки или gawk недоступен
+init::gawk::install() {
+    log_info "$(_ "gawk.installing")"
+
+    if ! apt-get update >/dev/null; then
+        log_error "$(_ "apt_update_failed")"
+        return 1
+    fi
+
+    if ! apt-get install -y gawk || ! command -v gawk &>/dev/null; then
+        log_error "$(_ "gawk.install_failed")"
+        return 1
+    fi
+
+    log_success "$(_ "gawk.installed")"
 }
 
 # @type:        Orchestrator
@@ -459,6 +486,10 @@ declare -gA I18N_MESSAGES_RU=(
     [gpg.installed]="GPG успешно установлен"
     [apt_update_failed]="Ошибка обновления индексов apt"
     [gpg.install_failed]="Ошибка установки GPG через apt"
+    [gawk.ask_install]="gawk не установлен. Это критическая зависимость BSSS. Установить gawk?"
+    [gawk.installing]="Установка gawk через apt..."
+    [gawk.installed]="gawk успешно установлен"
+    [gawk.install_failed]="Не удалось установить gawk или команда недоступна"
 )
 
 # English translations
@@ -507,6 +538,10 @@ declare -gA I18N_MESSAGES_EN=(
     [gpg.installed]="GPG installed successfully"
     [apt_update_failed]="apt index update error"
     [gpg.install_failed]="GPG installation via apt error"
+    [gawk.ask_install]="gawk is not installed. It is a critical BSSS dependency. Install gawk?"
+    [gawk.installing]="Installing gawk via apt..."
+    [gawk.installed]="gawk installed successfully"
+    [gawk.install_failed]="Failed to install gawk or the command is unavailable"
 )
 
 #########################################
