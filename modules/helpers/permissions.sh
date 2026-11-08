@@ -61,7 +61,7 @@ permissions::log::bsss_configs() {
     done < <(grep -EiHs '^\s*(PubkeyAuthentication|PasswordAuthentication|PermitRootLogin)\b' "${SSH_CONFIGD_DIR}/"$BSSS_PERMISSIONS_CONFIG_FILE_MASK || true)
 
     if (( found == 0 )); then
-        log_info "$(_ "common.info.no_rules")"
+        log_warn "$(_ "common.info.no_rules")"
     fi
 }
 

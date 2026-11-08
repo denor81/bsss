@@ -411,7 +411,7 @@ ufw::log::rules() {
     done < <(ufw::rule::get_all)
 
     if (( found == 0 )); then
-        log_info "$(_ "common.helpers.ufw.rules_not_found")"
+        log_warn "$(_ "common.helpers.ufw.rules_not_found")"
     fi
 }
 
@@ -423,7 +423,7 @@ ufw::log::rules() {
 ufw::log::status() {
     ufw::status::is_active && \
     log_info "$(_ "ufw.status.enabled")" || \
-    log_info "$(_ "ufw.status.disabled")"
+    log_warn "$(_ "ufw.status.disabled")"
 }
 
 # @type:        Sink
@@ -434,7 +434,7 @@ ufw::log::status() {
 ufw::log::ping_status() {
     ufw::ping::is_configured && \
     log_info "$(_ "ufw.status.ping_blocked")" || \
-    log_info "$(_ "ufw.status.ping_allowed")"
+    log_warn "$(_ "ufw.status.ping_allowed")"
 }
 
 # @type:        Orchestrator
