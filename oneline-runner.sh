@@ -143,6 +143,11 @@ init::allready_installed() {
 #               2 - отказ пользователя от установки
 #               $? - ошибка установки зависимостей
 init::check_dependencies() {
+    if ! command -v file &>/dev/null; then
+        ui::ask_value "$(_ "file.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
+        apt-get update
+        apt-get install -y file
+    fi
     if ! command -v gpg &>/dev/null; then
         ui::ask_value "$(_ "gpg.ask_install")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
         init::gpg::install
@@ -482,6 +487,7 @@ declare -gA I18N_MESSAGES_RU=(
     [gpg.verify_failed]="GPG подпись НЕВЕРНА! Подробности в журнале."
     [gpg.verify_success]="GPG подпись верна"
     [gpg.ask_install]="GPG не установлен. Установить GPG для проверки подписи?"
+    [file.ask_install]="file не установлен. Установить для определения типов скачанных файлов?"
     [gpg.installing]="Установка GPG через apt..."
     [gpg.installed]="GPG успешно установлен"
     [apt_update_failed]="Ошибка обновления индексов apt"
@@ -534,6 +540,7 @@ declare -gA I18N_MESSAGES_EN=(
     [gpg.verify_failed]="GPG signature INVALID! Details in journal."
     [gpg.verify_success]="GPG signature valid"
     [gpg.ask_install]="GPG not installed. Install GPG for signature verification?"
+    [file.ask_install]="file is not installed. Install it to identify downloaded file types?"
     [gpg.installing]="Installing GPG via apt..."
     [gpg.installed]="GPG installed successfully"
     [apt_update_failed]="apt index update error"
