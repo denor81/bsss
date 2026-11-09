@@ -141,6 +141,11 @@ user::pass::set() {
 user::sudoers::create_file() {
     local sudoers_file="${SUDOERS_D_DIR}/${BSSS_USER_NAME}"
 
-    echo "${BSSS_USER_NAME} ALL=(ALL) ${1}:ALL" | sudo tee "$sudoers_file" > /dev/null || return 1
+    {
+        if [[ "$1" == "PASSWD" ]]; then
+            printf 'Defaults:%s timestamp_type=global, timestamp_timeout=30\n' "$BSSS_USER_NAME"
+        fi
+        printf '%s ALL=(ALL) %s:ALL\n' "$BSSS_USER_NAME" "$1"
+    } | sudo tee "$sudoers_file" > /dev/null || return 1
     chmod 0440 "$sudoers_file" || return 1
 }
