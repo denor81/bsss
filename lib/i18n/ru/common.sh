@@ -340,7 +340,7 @@ I18N_MESSAGES["user.create.other_users_exist"]="Дополнительный п�
 # User create menu
 I18N_MESSAGES["user.create.menu.header"]="Что будет происходить:"
 I18N_MESSAGES["user.create.menu.create_user"]="Создание: [useradd -m -d /home/%s -s /bin/bash -G sudo %s]"
-I18N_MESSAGES["user.create.menu.generate_pass"]="Генерация пароля: [openssl rand -base64 %s]"
+I18N_MESSAGES["user.create.menu.generate_pass"]="Генерация hex-пароля: %s символов"
 I18N_MESSAGES["user.create.menu.create_sudoers"]="Создание правил в %s/%s"
 I18N_MESSAGES["user.create.menu.password_once"]="Пароль будет выведен только раз на экран терминала (в логи не пишется)"
 I18N_MESSAGES["user.create.menu.after_create"]="После создания пользователя необходимо скопировать ваш SSH ключ на сервер командой ssh-copy-id"

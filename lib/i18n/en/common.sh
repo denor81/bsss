@@ -340,7 +340,7 @@ I18N_MESSAGES["user.create.other_users_exist"]="Additional user already created"
 # User create menu
 I18N_MESSAGES["user.create.menu.header"]="What will happen:"
 I18N_MESSAGES["user.create.menu.create_user"]="Creating: [useradd -m -d /home/%s -s /bin/bash -G sudo %s]"
-I18N_MESSAGES["user.create.menu.generate_pass"]="Generating password: [openssl rand -base64 %s]"
+I18N_MESSAGES["user.create.menu.generate_pass"]="Generating hex password: %s characters"
 I18N_MESSAGES["user.create.menu.create_sudoers"]="Creating rules in %s/%s"
 I18N_MESSAGES["user.create.menu.password_once"]="Password will be shown only once on terminal screen (not logged)"
 I18N_MESSAGES["user.create.menu.after_create"]="After creating user, copy your SSH key to server with ssh-copy-id command"

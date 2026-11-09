@@ -15,7 +15,7 @@ user::list::get() {
 }
 
 # @type:        Source
-# @description: Генерирует случайный пароль указанной длины
+# @description: Генерирует случайный hex-пароль указанной длины
 # @params:      length Длина пароля (num\n)
 # @stdin:       нет
 # @stdout:      password\n
@@ -28,7 +28,7 @@ user::pass::generate() {
         return 1
     fi
 
-    openssl rand -base64 "$length" | tr -d "=+/" | cut -c1-"$length"
+    openssl rand -hex "$(((length + 1) / 2))" | cut -c1-"$length"
 }
 
 # @type:        Validator
