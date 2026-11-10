@@ -55,6 +55,14 @@ shfmt -w main.sh modules/*.sh lib/*.sh
 - **Вывод в journal**: `log::to_journal` для systemd journal
 - **Логи пользователя**: `read` с перенаправлением `2>&3` для изоляции от ошибок bash
 
+### Direct terminal package operations
+
+- Explicitly use `io::command::run_terminal` for the selected package index updates, installations, system upgrades, and `unattended-upgrades` reconfiguration. Do not detect or reroute commands automatically.
+- Package commands use the controlling terminal for stdin, stdout, and stderr. Their raw output bypasses BSSS log capture; surrounding BSSS messages keep using the logger.
+- Keep the existing global interceptors and `log::command::run` unchanged. Terminal redirections belong only to the selected command, not the parent shell.
+- The standalone `oneline-runner.sh` keeps its own identical helper because project libraries are not available yet.
+- A missing controlling terminal is an error. Do not add a silent fallback or suppress command failures.
+
 ## 3. Контракт функции
 
 Обязательна аннотация перед каждой функцией:
@@ -104,6 +112,15 @@ shfmt -w main.sh modules/*.sh lib/*.sh
 - Строгий режим: `set -Eeuo pipefail`
 - Используйте `gawk` (GNU Awk для NUL-разделителей)
 - ЗАПРЕЩЕНО: `eval`, `mapfile -t` без `-d ''`
+
+### Bash-native implementation principles
+
+- The best code is code that does not need to be written. Prefer native Bash behavior, existing tools, and the smallest implementation over extra wrappers, state, handlers, or observers.
+- Rely on `set -Eeuo pipefail`: termination on an unhandled error is intentional. Do not add redundant status checks, explicit returns, or error suppression where strict mode already provides the required behavior.
+- Keep explicit handling for meaningful branches, validators, expected failures, cancellation, and special exit codes. Remember that conditional contexts such as `if`, `!`, and `||` can disable `errexit` inside called functions.
+- Preserve native pipelines, file descriptors, argument arrays, and the project's NUL-delimited streams. Do not replace them with unnecessary buffering, string parsing, or manual status bookkeeping.
+- Before adding a function, helper, handler, or observer, inspect similar implementations and follow the author's style. Keep shared mechanisms, domain helpers, and module orchestration strictly separated.
+- Write new documentation, comments, and function contracts in English. Do not translate existing text as part of unrelated changes.
 
 ### Валидация
 - Порты: `"^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"`

@@ -20,7 +20,7 @@ You can also configure each part from the menu.
 ## Key Features
 
 - Rollback watchdog (300s) to prevent lockouts
-- Full logging to terminal, files, and systemd journal
+- Application logging to terminal, files, and systemd journal
 - Modular architecture
 - GPG-verified one-line installer
 
@@ -47,6 +47,12 @@ sudo bsss -u   # Uninstall
 ```bash
 journalctl -t bsss --since "10 minutes ago"
 ```
+
+### Package command output
+
+Package index updates, installations, system upgrades, and `unattended-upgrades` reconfiguration use the controlling terminal directly so interactive package dialogs remain usable. This applies to dependency installation during startup and one-line installation, system updates from the menu or auto-setup, UFW installation, and auto-update setup. Updating BSSS itself uses the same one-line installer path.
+
+Raw package output is not captured in BSSS log files or forwarded to the journal by BSSS. BSSS confirmations and status messages are still logged. These commands require a controlling terminal; existing noninteractive options remain unchanged.
 
 ## License
 
