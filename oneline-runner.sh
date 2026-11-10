@@ -138,7 +138,9 @@ init::allready_installed() {
 # @description: Проверяет окружение и устанавливает обязательные зависимости одним вызовом apt
 # @params:      нет
 # @stdin:       нет
+#               Package commands read directly from /dev/tty.
 # @stdout:      нет
+#               Package command output goes directly to /dev/tty.
 # @exit_code:   0 - зависимости в порядке
 #               2 - отказ пользователя от установки
 #               $? - ошибка установки зависимостей
@@ -179,11 +181,11 @@ init::check_dependencies() {
     if (( ${#missing[@]} > 0 )); then
         log_info "$(_ "dependencies.missing" "${missing[*]}")"
         ui::ask_value "$(_ "dependencies.confirm")" "y" "^[yn]$" "Y/n" "^[n0]$" >/dev/null
-        if ! log::command::run --info apt-get update; then
+        if ! io::command::run_terminal apt-get update; then
             log_error "$(_ "dependencies.failed")"
             return 1
         fi
-        if ! log::command::run --info apt-get install -y "${missing[@]}"; then
+        if ! io::command::run_terminal apt-get install -y "${missing[@]}"; then
             log_error "$(_ "dependencies.failed")"
             return 1
         fi
@@ -232,18 +234,20 @@ sys::environment::check() {
 # @type:        Orchestrator
 # @description: Устанавливает gawk через apt и проверяет его доступность
 # @stdin:       нет
+#               Package commands read directly from /dev/tty.
 # @stdout:      нет
+#               Package command output goes directly to /dev/tty.
 # @exit_code:   0 - успешно
 #               1 - ошибка установки или gawk недоступен
 init::gawk::install() {
     log_info "$(_ "gawk.installing")"
 
-    if ! log::command::run --info apt-get update; then
+    if ! io::command::run_terminal apt-get update; then
         log_error "$(_ "apt_update_failed")"
         return 1
     fi
 
-    if ! log::command::run --info apt-get install -y gawk || ! command -v gawk &>/dev/null; then
+    if ! io::command::run_terminal apt-get install -y gawk || ! command -v gawk &>/dev/null; then
         log_error "$(_ "gawk.install_failed")"
         return 1
     fi
@@ -255,18 +259,20 @@ init::gawk::install() {
 # @description: Устанавливает GPG через apt
 # @params:      нет
 # @stdin:       нет
+#               Package commands read directly from /dev/tty.
 # @stdout:      нет
+#               Package command output goes directly to /dev/tty.
 # @exit_code:   0 - успешно
 #               1 - ошибка установки
 init::gpg::install() {
     log_info "$(_ "gpg.installing")"
 
-    if ! log::command::run --info apt-get update; then
+    if ! io::command::run_terminal apt-get update; then
         log_error "$(_ "apt_update_failed")"
         return 1
     fi
 
-    if ! log::command::run --info apt-get install -y gnupg; then
+    if ! io::command::run_terminal apt-get install -y gnupg; then
         log_error "$(_ "gpg.install_failed")"
         return 1
     fi
@@ -320,6 +326,17 @@ init::ask_language() {
 #                                       #
 #                                       #
 #########################################
+# @type:        Orchestrator
+# @description: Runs a command directly in the controlling terminal, bypassing output capture
+# @params:      args Command and arguments (array), without terminators
+# @stdin:       Command-defined bytes from /dev/tty; no fixed terminator
+# @stdout:      Command-defined bytes to /dev/tty; no fixed terminator
+# @exit_code:   0 success
+#               $? command status or terminal redirection failure
+io::command::run_terminal() {
+    "$@" </dev/tty >/dev/tty 2>&1
+}
+
 # @type:        Source
 # @description: Получает размер файла в KB
 # @params:      file_path\n
