@@ -2,6 +2,17 @@
 # Part of the BSSS project (https://github.com/denor81/bsss)
 # Licensed under MIT
 
+# @type:        Orchestrator
+# @description: Runs a command directly in the controlling terminal, bypassing output capture
+# @params:      args Command and arguments (array), without terminators
+# @stdin:       Command-defined bytes from /dev/tty; no fixed terminator
+# @stdout:      Command-defined bytes to /dev/tty; no fixed terminator
+# @exit_code:   0 success
+#               $? command status or terminal redirection failure
+io::command::run_terminal() {
+    "$@" </dev/tty >/dev/tty 2>&1
+}
+
 # @type:        Source
 # @description: Получает список путей через нулевой разделитель
 # @params:      dir Директория для поиска (string\n)

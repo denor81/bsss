@@ -18,7 +18,9 @@ source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 # @type:        Orchestrator
 # @description: Проверять наличие UFW и устанавливать при необходимости
 # @stdin:       нет
+#               Package commands read directly from /dev/tty.
 # @stdout:      нет
+#               Package command output goes directly to /dev/tty.
 # @exit_code:   0 UFW установлен или уже был установлен
 #               1 ошибка установки UFW
 #               2 отказ пользователя от установки
@@ -30,7 +32,7 @@ check() {
     else
         log_error "$(_ "common.install.not_installed" "UFW")"
         if io::confirm_action "$(_ "common.install.confirm" "UFW")" || return; then
-            if ! (log::command::run --info apt-get update && log::command::run --info apt-get install -y ufw); then
+            if ! (io::command::run_terminal apt-get update && io::command::run_terminal apt-get install -y ufw); then
                 log_error "$(_ "common.install.error" "UFW")"
                 return 1
             else

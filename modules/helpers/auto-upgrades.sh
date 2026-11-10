@@ -25,7 +25,9 @@ auto::upgrades::is_configured() {
 # @type:        Orchestrator
 # @description: Устанавливает пакет unattended-upgrades
 # @stdin:       нет
+#               Package commands read directly from /dev/tty.
 # @stdout:      нет
+#               Package command output goes directly to /dev/tty.
 # @exit_code:   0 успешно
 #               1 ошибка установки
 #               4 требуется предварительная настройка
@@ -46,13 +48,13 @@ auto::upgrades::ensure_package() {
     fi
 
     log_info "$(_ "common.log_command" "DEBIAN_FRONTEND=noninteractive apt-get update")"
-    if ! DEBIAN_FRONTEND=noninteractive log::command::run --info apt-get update; then
+    if ! DEBIAN_FRONTEND=noninteractive io::command::run_terminal apt-get update; then
         log_error "$(_ "common.install.error" "unattended-upgrades")"
         return 1
     fi
 
     log_info "$(_ "common.log_command" "DEBIAN_FRONTEND=noninteractive apt-get install -y unattended-upgrades")"
-    if ! DEBIAN_FRONTEND=noninteractive log::command::run --info apt-get install -y unattended-upgrades; then
+    if ! DEBIAN_FRONTEND=noninteractive io::command::run_terminal apt-get install -y unattended-upgrades; then
         log_error "$(_ "common.install.error" "unattended-upgrades")"
         return 1
     fi
@@ -193,7 +195,9 @@ EOF
 # @type:        Orchestrator
 # @description: Включает автообновления и автоперезагрузку
 # @stdin:       нет
+#               Package commands read directly from /dev/tty.
 # @stdout:      нет
+#               Package command output goes directly to /dev/tty.
 # @exit_code:   0 успешно
 #               1 ошибка настройки
 #               4 требуется предварительная настройка
@@ -204,7 +208,7 @@ auto::upgrades::orchestrator::enable() {
     auto::upgrades::write_configs || return 1
 
     log_info "$(_ "common.log_command" "DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -plow unattended-upgrades")"
-    if ! DEBIAN_FRONTEND=noninteractive log::command::run --info dpkg-reconfigure -plow unattended-upgrades; then
+    if ! DEBIAN_FRONTEND=noninteractive io::command::run_terminal dpkg-reconfigure -plow unattended-upgrades; then
         log_error "$(_ "auto.upgrades.reconfigure.failed")"
         return 1
     fi

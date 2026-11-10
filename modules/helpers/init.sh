@@ -5,7 +5,9 @@
 # @type:        Validator
 # @description: Проверяет наличие gawk и предлагает установку
 # @stdin:       нет
+#               Package commands read directly from /dev/tty.
 # @stdout:      нет
+#               Package command output goes directly to /dev/tty.
 # @exit_code:   0 gawk найден или установлен
 #               1 gawk не найден и не установлен
 #               2 выход пользователя
@@ -20,7 +22,7 @@ sys::gawk::check_dependency() {
     log_info "$(_ "init.gawk.nul_explanation")"
 
     if io::confirm_action "$(_ "common.install.confirm" "gawk")" || return; then
-        if log::command::run --info apt-get update && log::command::run --info apt-get install -y gawk; then
+        if io::command::run_terminal apt-get update && io::command::run_terminal apt-get install -y gawk; then
             log_info "$(_ "common.install.success" "gawk")"
         else
             local rc

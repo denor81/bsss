@@ -36,7 +36,9 @@ sys::environment::check() {
 # @type:        Orchestrator
 # @description: Проверяет обязательные команды и устанавливает недостающие пакеты одним вызовом apt
 # @stdin:       нет (подтверждение через TTY)
+#               Package commands read directly from /dev/tty.
 # @stdout:      нет
+#               Package command output goes directly to /dev/tty.
 # @exit_code:   0 зависимости доступны
 #               1 ошибка установки или проверки
 #               2 отказ пользователя
@@ -77,11 +79,11 @@ sys::dependencies::check() {
     if (( ${#missing[@]} > 0 )); then
         log_info "$(_ "dependencies.missing" "${missing[*]}")"
         io::confirm_action "$(_ "dependencies.confirm")"
-        if ! log::command::run --info apt-get update; then
+        if ! io::command::run_terminal apt-get update; then
             log_error "$(_ "dependencies.failed")"
             return 1
         fi
-        if ! log::command::run --info apt-get install -y "${missing[@]}"; then
+        if ! io::command::run_terminal apt-get install -y "${missing[@]}"; then
             log_error "$(_ "dependencies.failed")"
             return 1
         fi

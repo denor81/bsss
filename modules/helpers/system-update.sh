@@ -25,14 +25,16 @@ sys::update::get_command() {
 # @type:        Sink
 # @description: Выполняет обновление системы используя переданную команду
 # @stdin:       command\0
+#               Package commands read directly from /dev/tty.
 # @stdout:      нет
+#               Package command output goes directly to /dev/tty.
 # @exit_code:   0 успешно
 #               1 ошибка выполнения команды
 sys::update::execute() {
     local update_cmd=""
     [[ ! -t 0 ]] && IFS= read -r -d '' update_cmd || return 1
 
-    if ! log::command::run --info bash -c "$update_cmd"; then
+    if ! io::command::run_terminal bash -c "$update_cmd"; then
         log_error "$(_ "system.update.error")"
         return 1
     fi
