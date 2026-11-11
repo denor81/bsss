@@ -44,12 +44,14 @@ sudo bsss -u   # Uninstall
 
 ### User sudo status
 
-User creation explains the selected sudo mode and asks for confirmation before making changes. Password-protected sudo uses a shared 30-minute authentication cache across the user's terminal sessions. Passwordless sudo does not prompt for a password; the account itself still receives a password.
+User creation explains the selected sudo mode and asks for confirmation before making changes. When BSSS creates an account with password-protected sudo, it configures a shared 30-minute authentication cache across the user's terminal sessions. Passwordless sudo does not prompt for a password; the account itself still receives a password.
 
-The BSSS user's information row includes `sudocache`, read from the user's sudo policy rather than just the file created by BSSS:
+Every listed account with a nonzero UID uses the same sudo policy check for both `sudo` and `sudocache`, regardless of account name or membership in the `sudo` group. Accounts with UID 0 are shown as `sudo:superuser` without a policy query:
 
 ```text
-2. bsssuser|id:1000|sudo:pass|sudocache:30m
+1. root|id:0|sudo:superuser
+2. ubuntu|id:1000|sudo:pass|sudocache:default
+3. bsssuser|id:1001|sudo:pass|sudocache:30m
 ```
 
 - `30m` (or another duration): explicitly configured timeout in minutes.
@@ -59,7 +61,7 @@ The BSSS user's information row includes `sudocache`, read from the user's sudo 
 - `n/a`: no sudo access, or no password is required.
 - `mixed`: command/runas-specific overrides prevent a single reliable summary.
 
-This reports configuration, not whether a cached authentication is currently valid. The check uses noninteractive `sudo -ll`; policy or parsing failures are not reported as disabled caching.
+This reports configuration, not whether a cached authentication is currently valid. The shared check uses noninteractive `sudo -n -ll -U username`; policy-query or parsing failures propagate as errors rather than being reported as missing sudo access or disabled caching. Reporting does not modify any user's sudo policy.
 
 ## Logs
 
