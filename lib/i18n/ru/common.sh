@@ -235,7 +235,21 @@ I18N_MESSAGES["ufw.error.reload_failed"]="Не удалось выполнить
 # Update module
 I18N_MESSAGES["system.update.apt_not_found"]="Менеджер пакетов apt-get не найден"
 I18N_MESSAGES["system.update.error"]="Ошибка при обновлении системных пакетов"
-I18N_MESSAGES["system.update.confirm"]="Обновить системные пакеты? [apt-get update && apt-get upgrade --with-new-pkgs -y]"
+I18N_MESSAGES["system.update.confirm"]="Обновить системные пакеты? [%s]"
+I18N_MESSAGES["system.update.cleanup_confirm"]="Обновить системные пакеты и выполнить автоочистку? [%s]"
+I18N_MESSAGES["system.update.menu.cleanup"]="Обновление с автоочисткой"
+I18N_MESSAGES["system.update.menu.only_update"]="Только обновление"
+I18N_MESSAGES["system.update.menu.back"]="Назад"
+I18N_MESSAGES["system.update.cleanup_error"]="Ошибка при очистке неиспользуемых пакетов и кеша APT"
+I18N_MESSAGES["system.update.disk.before"]="До обновления (/): всего %s, занято %s, свободно %s."
+I18N_MESSAGES["system.update.disk.after_update"]="После обновления (/): всего %s, занято %s, свободно %s."
+I18N_MESSAGES["system.update.disk.after_cleanup"]="После автоочистки (/): всего %s, занято %s, свободно %s."
+I18N_MESSAGES["system.update.disk.total.increased"]="Итого относительно начала: свободного места стало больше на %s."
+I18N_MESSAGES["system.update.disk.total.decreased"]="Итого относительно начала: свободного места стало меньше на %s."
+I18N_MESSAGES["system.update.disk.total.unchanged"]="Итого относительно начала: свободное место не изменилось."
+I18N_MESSAGES["system.update.disk.cleanup.increased"]="После обновления очистка освободила %s."
+I18N_MESSAGES["system.update.disk.cleanup.decreased"]="За время очистки свободного места стало меньше на %s."
+I18N_MESSAGES["system.update.disk.cleanup.unchanged"]="За время очистки свободное место не изменилось."
 
 # Reload check module
 I18N_MESSAGES["system.reload.not_required"]="Перезагрузка не требуется"

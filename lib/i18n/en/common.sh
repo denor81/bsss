@@ -235,7 +235,21 @@ I18N_MESSAGES["ufw.error.reload_failed"]="Failed to execute [ufw reload] [RC: %s
 # Update module
 I18N_MESSAGES["system.update.apt_not_found"]="Package manager apt-get not found"
 I18N_MESSAGES["system.update.error"]="Error updating system packages"
-I18N_MESSAGES["system.update.confirm"]="Update system packages? [apt-get update && apt-get upgrade --with-new-pkgs -y]"
+I18N_MESSAGES["system.update.confirm"]="Update system packages? [%s]"
+I18N_MESSAGES["system.update.cleanup_confirm"]="Update system packages and clean up unused packages and cached archives? [%s]"
+I18N_MESSAGES["system.update.menu.cleanup"]="Update with automatic cleanup"
+I18N_MESSAGES["system.update.menu.only_update"]="Update only"
+I18N_MESSAGES["system.update.menu.back"]="Back"
+I18N_MESSAGES["system.update.cleanup_error"]="Error removing unused packages and cleaning the APT cache"
+I18N_MESSAGES["system.update.disk.before"]="Before update (/): total %s, used %s, available %s."
+I18N_MESSAGES["system.update.disk.after_update"]="After update (/): total %s, used %s, available %s."
+I18N_MESSAGES["system.update.disk.after_cleanup"]="After automatic cleanup (/): total %s, used %s, available %s."
+I18N_MESSAGES["system.update.disk.total.increased"]="Overall since start: available space increased by %s."
+I18N_MESSAGES["system.update.disk.total.decreased"]="Overall since start: available space decreased by %s."
+I18N_MESSAGES["system.update.disk.total.unchanged"]="Overall since start: available space is unchanged."
+I18N_MESSAGES["system.update.disk.cleanup.increased"]="Cleanup after the update freed %s."
+I18N_MESSAGES["system.update.disk.cleanup.decreased"]="During cleanup, available space decreased by %s."
+I18N_MESSAGES["system.update.disk.cleanup.unchanged"]="During cleanup, available space is unchanged."
 
 # Reload check module
 I18N_MESSAGES["system.reload.not_required"]="Reboot not required"
