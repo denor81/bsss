@@ -1,0 +1,1 @@
+User bsssuser is not allowed to run sudo on server.

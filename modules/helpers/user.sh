@@ -70,6 +70,124 @@ user::system::is_only_root() {
     fi
 }
 
+# @type:        Filter
+# @description: Summarizes authentication and cache settings from a verbose sudo listing
+# @stdin:       LC_ALL=C sudo -ll output (line\n, 0..N)
+# @stdout:      sudo:mode|sudocache:value\0
+# @exit_code:   0 recognized listing
+#               1 unsupported or incomplete listing
+#               $? parsing failure
+user::sudo::parse_status() {
+    gawk '
+        BEGIN { RS=""; ORS="\0"; cache="default"; authenticate=1; mode="nosudo" }
+
+        # Parse comma-separated settings without treating quoted values as options.
+        function options(text, scope,    fields, count, i, option, value, scoped_cache, scoped_authenticate) {
+            count = patsplit(text, fields, /([^,"\\]|\\.|"([^"\\]|\\.)*")+/)
+            for (i = 1; i <= count; i++) {
+                option = fields[i]
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", option)
+                if (option == "!timestamp_timeout") option = "timestamp_timeout=0"
+                if (option ~ /^timestamp_timeout[[:space:]]*=/) {
+                    sub(/^[^=]*=[[:space:]]*/, "", option)
+                    gsub(/^"|"$/, "", option)
+                    if (option !~ /^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$/) {
+                        invalid = 1
+                        continue
+                    }
+                    value = option + 0
+                    value = value < 0 ? "unlimited" : (value == 0 ? "no" : value "m")
+                    if (scope == "defaults") cache = value
+                    else if (scope == "entry") entry_cache = value
+                    else scoped_cache = value
+                } else if (option == "authenticate" || option == "!authenticate") {
+                    value = option == "authenticate"
+                    if (scope == "defaults") authenticate = value
+                    else if (scope == "entry") entry_auth = value
+                    else scoped_authenticate = value
+                }
+            }
+            if (scope == "scoped") {
+                if (scoped_cache != "" && scoped_cache != cache) mixed = 1
+                if (scoped_authenticate != "" && scoped_authenticate != authenticate) scoped_auth = 1
+            }
+        }
+
+        /^Matching Defaults entries for / {
+            sub(/^[^\n]*\n/, "")
+            options($0, "defaults")
+            next
+        }
+        /^Runas and Command-specific defaults for / {
+            count = split($0, lines, "\n")
+            settings = ""
+            for (i = 2; i <= count; i++) {
+                if (lines[i] ~ /^[ \t]*Defaults[!>]/) {
+                    options(settings, "scoped")
+                    settings = lines[i]
+                    sub(/^[ \t]*Defaults[!>]([^, \t\\]|\\.)+([ \t]*,[ \t]*([^, \t\\]|\\.)+)*[ \t]+/, "", settings)
+                } else settings = settings "\n" lines[i]
+            }
+            options(settings, "scoped")
+            next
+        }
+        /^(Sudoers entry|LDAP Role):/ {
+            entry_auth = authenticate
+            entry_cache = cache
+            count = split($0, lines, "\n")
+            settings = ""
+            section = ""
+            for (i = 2; i <= count; i++) {
+                line = lines[i]
+                if (line ~ /^[ \t]+Options:/) {
+                    sub(/^[ \t]+Options:[ \t]*/, "", line)
+                    settings = line
+                    section = "options"
+                } else if (line ~ /^[ \t]+Commands:/) {
+                    options(settings, "entry")
+                    section = "commands"
+                } else if (line ~ /^[ \t]+[[:alpha:]]+:/ && section != "commands") {
+                    section = ""
+                } else if (section == "options") {
+                    settings = settings "\n" line
+                } else if (section == "commands") {
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+                    if (line == "") continue
+                    recognized = 1
+                    if (line == "!ALL") mode = "nosudo"
+                    else if (line !~ /^!/) {
+                        if (line == "ALL" || mode == "nosudo" || entry_auth)
+                            mode = entry_auth ? "pass" : "nopass"
+                        if (entry_cache != cache) mixed = 1
+                    }
+                }
+            }
+            next
+        }
+        /^User [^[:space:]]+ is not allowed to run sudo on / {
+            recognized = 1
+            mode = "nosudo"
+        }
+        END {
+            if (invalid || !recognized) exit 1
+            if (mode == "nosudo" || (mode == "nopass" && !scoped_auth)) cache = "n/a"
+            else if (mixed || scoped_auth) cache = "mixed"
+            print "sudo:" mode "|sudocache:" cache
+        }
+    '
+}
+
+# @type:        Source
+# @description: Lists the user policy once and streams it to the sudo status parser
+# @params:      username Account name (string), without terminator
+# @stdin:       None
+# @stdout:      sudo:mode|sudocache:value\0
+# @exit_code:   0 status obtained
+#               $? sudo or parsing failure
+user::sudo::get_status() {
+    LC_ALL=C sudo -n -ll -U "$1" | user::sudo::parse_status
+}
+
 # @type:        Sink
 # @description: Отображает информацию о пользователях в системе
 # @stdin:       нет
@@ -79,6 +197,7 @@ user::info::block() {
     local login_user=$(logname 2>/dev/null || echo "N/A")
     local auth_method=$(sys::user::get_auth_method | tr -d '\0')
     local i=0
+    local sudo_status
 
     if user::system::is_only_root; then
         log_warn "$(_ "common.info.users_in_system")"
@@ -94,6 +213,9 @@ user::info::block() {
 
         if [[ "$uid" -eq 0 ]]; then
             active_mark+="sudo:superuser"
+        elif [[ "$username" == "$BSSS_USER_NAME" ]]; then
+            sudo_status=$(user::sudo::get_status "$username" | tr -d '\0')
+            active_mark+="$sudo_status"
         elif sudo -l -U "$username" 2>/dev/null | grep -Eq "NOPASSWD\:\s+ALL"; then
             active_mark+="sudo:nopass"
         elif id -nG "$username" | grep -qw "sudo"; then

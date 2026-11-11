@@ -1,0 +1,14 @@
+Matching Defaults entries for bsssuser on server:
+    env_reset, timestamp_timeout=30
+
+Runas and Command-specific defaults for bsssuser:
+    Defaults!/usr/bin/systemctl timestamp_timeout=0
+    Defaults>root, postgres timestamp_timeout=2.5
+
+User bsssuser may run the following commands on server:
+
+Sudoers entry:
+    RunAsUsers: ALL
+    Options: authenticate
+    Commands:
+        ALL

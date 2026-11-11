@@ -1,0 +1,17 @@
+Matching Defaults entries for bsssuser on server:
+    env_reset, mail_badpass, timestamp_type=global,
+    timestamp_timeout=30
+
+User bsssuser may run the following commands on server:
+
+Sudoers entry:
+    RunAsUsers: ALL
+    RunAsGroups: ALL
+    Commands:
+        ALL
+
+Sudoers entry:
+    RunAsUsers: ALL
+    Options: authenticate
+    Commands:
+        ALL
