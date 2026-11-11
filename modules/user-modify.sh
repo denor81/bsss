@@ -18,14 +18,21 @@ source "${PROJECT_ROOT}/modules/helpers/user.sh"
 trap log_stop EXIT
 
 # @type:        Orchestrator
-# @description: Создает пользователя BSSS, устанавливает пароль и права sudo
-# @params:      sudo_mode Режим sudo: PASSWD или NOPASSWD (string) без завершающего символа
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 успешно создан пользователь
-#               1 ошибка создания пользователя или sudoers файла
-#               $? другие ошибки
+# @description: Explains and confirms the sudo mode before creating the BSSS user
+# @params:      sudo_mode PASSWD or NOPASSWD (string), without terminator
+# @stdin:       User confirmation from TTY
+# @stdout:      None
+# @exit_code:   0 user created
+#               1 user or sudoers creation failed
+#               2 user cancellation
+#               $? other errors
 user::create::execute_with_logging() {
+    case "$1" in
+        PASSWD) log_info "$(_ "user.create.menu.sudo_password_info")" ;;
+        NOPASSWD) log_info "$(_ "user.create.menu.sudo_nopassword_info")" ;;
+    esac
+    io::confirm_action "$(_ "user.create.menu.confirm" "$BSSS_USER_NAME")" || return
+
     local password
     password="$(user::pass::generate)"
 
