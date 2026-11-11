@@ -497,18 +497,28 @@ ssh::config::needs_attention() {
 }
 
 # @type:        Orchestrator
-# @description: Displays SSH configuration with a bold heading and per-line warnings
+# @description: Displays SSH configuration with a bold heading, preserving warning detection
 # @params:      pattern Шаблон для фильтрации конфигурации (string\n)
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 всегда успешно
 common::log::current_config() {
     local pattern="$1"
-    local line config
+    local line config warning=0
 
     # || true: sshd -T или grep могут не сработать в некоторых случаях
     config=$(sshd -T 2>/dev/null | grep -Ei "$pattern" | sort || true)
-    log_bold_info "$(_ "permissions.check.current_ssh_config")"
+    while IFS= read -r line; do
+        if ssh::config::needs_attention "$line"; then
+            warning=1
+        fi
+    done <<< "$config"
+
+    if (( warning == 1 )); then
+        log_warn "$(_ "permissions.check.current_ssh_config")" "bold"
+    else
+        log_info "$(_ "permissions.check.current_ssh_config")" "bold"
+    fi
 
     while IFS= read -r line; do
         [[ -n "$line" ]] || continue

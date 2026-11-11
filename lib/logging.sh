@@ -149,19 +149,26 @@ log_error() {
 # @type:        Sink
 # @description: Выводит информационное сообщение с символом [ ]
 # @params:      message - Уже переведенное сообщение
+#               style Optional bold terminal formatting (string), without terminator
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_info() {
     local msg="$1"
     local type="INFO"
+    local color="" color_reset=""
+
+    if [[ "${2:-}" == "bold" ]]; then
+        color='\e[1m'
+        color_reset='\e[0m'
+    fi
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&3
+        echo -e "${color}$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg${color_reset}" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg" >&3 || true
+        echo -e "${color}$SYMBOL_INFO [$CURRENT_MODULE_NAME] $msg${color_reset}" >&3 || true
     fi
     log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
@@ -263,19 +270,26 @@ log_bold_info() {
 # @type:        Sink
 # @description: Выводит предупреждение с символом [!]
 # @params:      message - Уже переведенное сообщение
+#               style Optional bold terminal formatting (string), without terminator
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 - всегда
 log_warn() {
     local msg="$1"
     local type="WARN"
+    local color="" color_reset=""
+
+    if [[ "${2:-}" == "bold" ]]; then
+        color='\e[1m'
+        color_reset='\e[0m'
+    fi
 
     if [[ "$LOG_STRICT_MODE" == "true" ]]; then
-        echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&3
+        echo -e "${color}$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg${color_reset}" >&3
     else
         # || true: stderr может быть закрыт или перенаправлен (например, при прерывании скрипта)
         # используется только для rollback.sh
-        echo -e "$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg" >&3 || true
+        echo -e "${color}$SYMBOL_WARN [$CURRENT_MODULE_NAME] $msg${color_reset}" >&3 || true
     fi
     log::to_file "[$type] [$CURRENT_MODULE_NAME] $msg"
     log::to_journal "$msg" "$type"
