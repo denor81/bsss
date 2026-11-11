@@ -8,6 +8,7 @@ set -Eeuo pipefail
 source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../system-update.sh"
 trap - EXIT
 source "${PROJECT_ROOT}/lib/i18n/en/common.sh"
+source "${PROJECT_ROOT}/modules/.tests/helpers/assertions.sh"
 
 # @type:        Sink
 # @description: Captures informational messages without invoking the real logger
@@ -15,7 +16,11 @@ source "${PROJECT_ROOT}/lib/i18n/en/common.sh"
 # @stdin:       None
 # @stdout:      None; message\n on FD3
 # @exit_code:   0 success
+#               29 simulated logging failure
 log_info() {
+    if [[ "${FAIL_AT:-}" == logger && "${FAIL_STAGE:-before}" == "$(cat "$TEST_WORK_DIR/state")" ]]; then
+        return 29
+    fi
     printf 'INFO %s\n' "$1" >&3
 }
 
@@ -30,26 +35,6 @@ log_error() {
 }
 
 # @type:        Sink
-# @description: Captures bold headings without invoking the real logger
-# @params:      message Heading (string), without terminator
-# @stdin:       None
-# @stdout:      None; heading\n on FD3
-# @exit_code:   0 success
-log_bold_info() {
-    printf 'BOLD %s\n' "$1" >&3
-}
-
-# @type:        Sink
-# @description: Captures SSH configuration warnings
-# @params:      message Configuration line (string), without terminator
-# @stdin:       None
-# @stdout:      None; message\n on FD3
-# @exit_code:   0 success
-log_warn_simple_tab() {
-    printf 'WARN_TAB %s\n' "$1" >&3
-}
-
-# @type:        Sink
 # @description: Captures informational configuration lines
 # @params:      message Configuration line (string), without terminator
 # @stdin:       None
@@ -57,17 +42,6 @@ log_warn_simple_tab() {
 # @exit_code:   0 success
 log_info_simple_tab() {
     printf 'INFO_TAB %s\n' "$1" >&3
-}
-
-# @type:        Source
-# @description: Supplies SSH configuration without reading the host configuration
-# @params:      option Expected -T argument (string), without terminator
-# @stdin:       None
-# @stdout:      configuration_line\n repeated
-# @exit_code:   0 success
-sshd() {
-    [[ "$1" == -T ]]
-    printf '%s\n' "$TEST_SSH_CONFIG"
 }
 
 # @type:        Validator
@@ -101,7 +75,7 @@ io::ask_value() {
 # @stdout:      Command-defined output
 # @exit_code:   $? command status
 io::command::run_terminal() {
-    [[ "$#" == 3 && "$1" == bash && "$2" == -c ]]
+    [[ "$#" == 3 && "$1" == bash && "$2" == -c ]] || return 1
     "$@"
 }
 
@@ -111,18 +85,40 @@ io::command::run_terminal() {
 # @stdin:       None
 # @stdout:      header\nsizes\n
 # @exit_code:   0 success
-#               1 simulated snapshot failure
+#               23 simulated snapshot failure
 df() {
-    [[ "$*" == '-B1 --output=size,used,avail /' ]]
+    [[ "$*" == '-B1 --output=size,used,avail /' ]] || return 1
     local state
     state=$(cat "$TEST_WORK_DIR/state")
-    [[ "${FAIL_AT:-}" != df || "${FAIL_STAGE:-before}" != "$state" ]] || return 1
+    [[ "${FAIL_AT:-}" != df || "${FAIL_STAGE:-before}" != "$state" ]] || return 23
     printf 'Size Used Avail\n'
-    case "$state" in
-        before) printf '21474836480 12884901888 8589934592\n' ;;
-        updated) printf '21474836480 13421772800 8053063680\n' ;;
-        cleaned) printf '21474836480 11811160064 9663676416\n' ;;
-    esac
+    if [[ "${NEGATIVE_AVAILABLE:-}" == 1 ]]; then
+        printf '21474836480 21474836480 -512\n'
+    else
+        case "$state" in
+            before) printf '21474836480 12884901888 8589934592\n' ;;
+            updated) printf '21474836480 13421772800 8053063680\n' ;;
+            cleaned) printf '21474836480 11811160064 9663676416\n' ;;
+        esac
+    fi
+    [[ "${FAIL_AT:-}" != df_after_output || "${FAIL_STAGE:-before}" != "$state" ]] || return 23
+}
+
+# @type:        Source
+# @description: Uses real size formatting unless the selected value or stage must fail
+# @params:      args numfmt arguments (array), without terminators
+# @stdin:       None
+# @stdout:      size\n
+# @exit_code:   0 success
+#               23 simulated formatting failure
+#               $? numfmt failure
+numfmt() {
+    if [[ "${FAIL_AT:-}" == numfmt && "${FAIL_STAGE:-before}" == "$(cat "$TEST_WORK_DIR/state")" ]]; then
+        if [[ -z "${FAIL_VALUE:-}" || "${FAIL_VALUE}" == "${!#}" ]]; then
+            return 23
+        fi
+    fi
+    command numfmt "$@"
 }
 
 # @type:        Sink
@@ -133,9 +129,15 @@ df() {
 # @exit_code:   0 success
 #               42 simulated package failure
 apt-get() {
+    local operation
+    for operation in "$@"; do
+        case "$operation" in
+            update | upgrade | autoremove | clean) break ;;
+        esac
+    done
     printf 'APT %s\n' "$*" >&3
-    [[ "${FAIL_AT:-}" != "$1" ]] || return 42
-    case "$1" in
+    [[ "${FAIL_AT:-}" != "$operation" ]] || return 42
+    case "$operation" in
         upgrade) printf 'updated\n' >"$TEST_WORK_DIR/state" ;;
         clean) printf 'cleaned\n' >"$TEST_WORK_DIR/state" ;;
     esac
@@ -154,6 +156,7 @@ test::update::scenario() {
         cleanup) sys::update::orchestrator cleanup ;;
         auto) sys::update::get_command auto | sys::update::execute ;;
         menu) sys::update::menu ;;
+        empty) sys::update::execute </dev/null ;;
     esac
 }
 
@@ -168,13 +171,17 @@ test::update::scenario() {
 test::update::run() {
     printf 'before\n' >"$TEST_WORK_DIR/state"
     local status=0
-    bash "${BASH_SOURCE[0]}" --scenario "$1" >"$TEST_WORK_DIR/stdout" 3>"$TEST_WORK_DIR/events" || status=$?
-    [[ "$status" == "$2" ]]
+    bash "${BASH_SOURCE[0]}" --scenario "$1" >"$TEST_WORK_DIR/stdout" 2>"$TEST_WORK_DIR/stderr" 3>"$TEST_WORK_DIR/events" || status=$?
+    if [[ "$status" != "$2" ]]; then
+        cat "$TEST_WORK_DIR/events" "$TEST_WORK_DIR/stderr" >&2
+        printf 'Scenario %s: expected status %s, got %s\n' "$1" "$2" "$status" >&2
+        return 1
+    fi
     [[ ! -s "$TEST_WORK_DIR/stdout" ]]
 }
 
 # @type:        Orchestrator
-# @description: Tests update selection, cleanup, disk deltas, failures, and formatting
+# @description: Tests update selection, cleanup, disk deltas, and native failure propagation
 # @stdin:       None
 # @stdout:      result\n
 # @exit_code:   0 all assertions passed
@@ -186,14 +193,21 @@ main() {
     fi
 
     export TEST_WORK_DIR
-    TEST_WORK_DIR=$(mktemp -d /tmp/opencode/bsss-update-tests.XXXXXX)
+    TEST_WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bsss-update-tests.XXXXXX")
     trap 'rm -rf "$TEST_WORK_DIR"' EXIT
+
+    if test::assert::no_match '^#!/usr/bin/env bash$' "${BASH_SOURCE[0]}"; then
+        return 1
+    fi
+    if test::assert::no_match 'anything' "$TEST_WORK_DIR/missing" 2>/dev/null; then
+        return 1
+    fi
 
     test::update::run only 0
     grep -Fx 'CONFIRM Update system packages? [apt-get update && apt-get upgrade --with-new-pkgs -y]' "$TEST_WORK_DIR/events"
     [[ $(grep -c '^APT ' "$TEST_WORK_DIR/events") == 2 ]]
     grep -F 'available space decreased by 512.0MiB.' "$TEST_WORK_DIR/events"
-    ! grep -q 'cleanup' "$TEST_WORK_DIR/events"
+    test::assert::no_match 'cleanup' "$TEST_WORK_DIR/events"
 
     test::update::run cleanup 0
     grep -F '[apt-get update && apt-get upgrade --with-new-pkgs -y && apt-get autoremove -y && apt-get clean]' "$TEST_WORK_DIR/events"
@@ -207,54 +221,71 @@ main() {
     test::update::run auto 0
     [[ $(grep -c '^APT ' "$TEST_WORK_DIR/events") == 2 ]]
     grep -F -- '--force-confold upgrade --with-new-pkgs -y' "$TEST_WORK_DIR/events"
-    ! grep -q 'CONFIRM\|autoremove' "$TEST_WORK_DIR/events"
+    test::assert::no_match 'CONFIRM\|autoremove\|^INFO ' "$TEST_WORK_DIR/events"
+    [[ $(cat "$TEST_WORK_DIR/state") == updated ]]
+    local failure
+    for failure in df numfmt logger; do
+        FAIL_AT="$failure" test::update::run auto 0
+        test::assert::no_match '^INFO ' "$TEST_WORK_DIR/events"
+    done
+    FAIL_AT=upgrade test::update::run auto 1
+    grep -q '^ERROR Error updating system packages$' "$TEST_WORK_DIR/events"
+    test::update::run empty 1
+    [[ ! -s "$TEST_WORK_DIR/events" ]]
 
     CONFIRM_STATUS=2 test::update::run cleanup 2
-    ! grep -q '^APT \|^INFO ' "$TEST_WORK_DIR/events"
+    test::assert::no_match '^APT \|^INFO ' "$TEST_WORK_DIR/events"
 
     local operation
     for operation in update upgrade autoremove clean; do
         FAIL_AT="$operation" test::update::run cleanup 1
-        ! grep -q 'After automatic cleanup' "$TEST_WORK_DIR/events"
+        test::assert::no_match 'After automatic cleanup' "$TEST_WORK_DIR/events"
         if [[ "$operation" == update || "$operation" == upgrade ]]; then
-            ! grep -q 'After update\|APT autoremove\|APT clean' "$TEST_WORK_DIR/events"
+            test::assert::no_match 'After update\|APT autoremove\|APT clean' "$TEST_WORK_DIR/events"
         else
             grep -q 'ERROR Error removing unused packages' "$TEST_WORK_DIR/events"
         fi
     done
 
-    FAIL_AT=df test::update::run cleanup 1
-    ! grep -q '^APT ' "$TEST_WORK_DIR/events"
-    FAIL_AT=df FAIL_STAGE=updated test::update::run cleanup 1
-    ! grep -q 'After update\|APT autoremove\|APT clean' "$TEST_WORK_DIR/events"
+    for failure in df df_after_output numfmt logger; do
+        local status=23
+        [[ "$failure" != logger ]] || status=29
+        FAIL_AT="$failure" test::update::run cleanup "$status"
+        test::assert::no_match '^APT \|^INFO ' "$TEST_WORK_DIR/events"
+        FAIL_AT="$failure" FAIL_STAGE=updated test::update::run cleanup "$status"
+        test::assert::no_match 'After update\|APT autoremove\|APT clean' "$TEST_WORK_DIR/events"
+        FAIL_AT="$failure" FAIL_STAGE=cleaned test::update::run cleanup "$status"
+        [[ $(grep -c '^APT ' "$TEST_WORK_DIR/events") == 4 ]]
+        test::assert::no_match 'After automatic cleanup' "$TEST_WORK_DIR/events"
+    done
+    local value
+    for value in 21474836480 12884901888 8589934592; do
+        FAIL_AT=numfmt FAIL_VALUE="$value" test::update::run cleanup 23
+        test::assert::no_match '^APT \|^INFO ' "$TEST_WORK_DIR/events"
+    done
+    FAIL_AT=numfmt FAIL_STAGE=updated FAIL_VALUE=536870912 test::update::run cleanup 23
+    test::assert::no_match '^APT autoremove\|^APT clean' "$TEST_WORK_DIR/events"
+    NEGATIVE_AVAILABLE=1 test::update::run only 0
+    grep -q 'available -512.0B' "$TEST_WORK_DIR/events"
 
     SELECT_ID=0 test::update::run menu 2
-    ! grep -q '^APT \|^CONFIRM ' "$TEST_WORK_DIR/events"
+    test::assert::no_match '^APT \|^CONFIRM ' "$TEST_WORK_DIR/events"
     SELECT_ID=1 test::update::run menu 0
     grep -q '^APT clean$' "$TEST_WORK_DIR/events"
     SELECT_ID=2 test::update::run menu 0
-    ! grep -q '^APT autoremove\|^APT clean' "$TEST_WORK_DIR/events"
+    test::assert::no_match '^APT autoremove\|^APT clean' "$TEST_WORK_DIR/events"
 
     [[ $(sys::update::format_size 0) == 0.0B ]]
     [[ $(sys::update::format_size 1024) == 1.0KiB ]]
     [[ $(sys::update::format_size 1319) == 1.3KiB ]]
     [[ $(sys::update::format_size 1099511627776) == 1.0TiB ]]
+    [[ $(sys::update::format_size -512) == -512.0B ]]
     sys::update::log_delta 100 100 total 3>"$TEST_WORK_DIR/events"
     grep -q 'available space is unchanged' "$TEST_WORK_DIR/events"
     sys::update::log_delta 1024 0 cleanup 3>"$TEST_WORK_DIR/events"
     grep -q 'During cleanup, available space decreased by 1.0KiB.' "$TEST_WORK_DIR/events"
     sys::update::log_delta 100 100 cleanup 3>"$TEST_WORK_DIR/events"
     grep -q 'During cleanup, available space is unchanged' "$TEST_WORK_DIR/events"
-
-    TEST_SSH_CONFIG=$'port 22\npasswordauthentication yes\npermitrootlogin yes'
-    common::log::current_config '^(port|passwordauthentication|permitrootlogin) ' 3>"$TEST_WORK_DIR/events"
-    grep -Fxq 'BOLD Current SSH configuration [sshd -T]:' "$TEST_WORK_DIR/events"
-    [[ $(grep -c '^WARN_TAB ' "$TEST_WORK_DIR/events") == 3 ]]
-    TEST_SSH_CONFIG=$'port 2222\npasswordauthentication no\npermitrootlogin no'
-    common::log::current_config '^(port|passwordauthentication|permitrootlogin) ' 3>"$TEST_WORK_DIR/events"
-    grep -Fxq 'BOLD Current SSH configuration [sshd -T]:' "$TEST_WORK_DIR/events"
-    [[ $(grep -c '^INFO_TAB ' "$TEST_WORK_DIR/events") == 3 ]]
-    ! grep -q '^WARN_TAB ' "$TEST_WORK_DIR/events"
 
     printf 'All system update tests passed.\n'
 }

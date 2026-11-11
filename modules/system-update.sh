@@ -18,29 +18,43 @@ source "${PROJECT_ROOT}/modules/helpers/system-update.sh"
 trap log_stop EXIT
 
 # @type:        Orchestrator
-# @description: Confirms and executes the same generated system update command
+# @description: Confirms package commands and logs disk usage around each selected stage
 # @params:      cleanup Optional cleanup mode (string), without terminator
 # @stdin:       User confirmation from TTY
 # @stdout:      None
 # @exit_code:   0 success
 #               1 update or cleanup failure
 #               2 user cancellation
+#               $? snapshot, formatting, or logging failure
 sys::update::orchestrator() {
-    local update_cmd cleanup_cmd confirmation_cmd question
-    local -a commands
-    update_cmd=$(sys::update::get_command | tr -d '\0') || return
-    commands=("$update_cmd")
-    confirmation_cmd="$update_cmd"
+    local update_cmd cleanup_cmd=""
+    local stats total used available initial_available updated_available
+    update_cmd=$(sys::update::get_command | tr -d '\0')
     if [[ "${1:-}" == "cleanup" ]]; then
-        cleanup_cmd=$(sys::update::get_command "cleanup" | tr -d '\0') || return
-        commands+=("$cleanup_cmd")
-        confirmation_cmd+=" && $cleanup_cmd"
-        question="$(_ "system.update.cleanup_confirm" "$confirmation_cmd")"
+        cleanup_cmd=$(sys::update::get_command "cleanup" | tr -d '\0')
+        io::confirm_action "$(_ "system.update.cleanup_confirm" "$update_cmd && $cleanup_cmd")"
     else
-        question="$(_ "system.update.confirm" "$confirmation_cmd")"
+        io::confirm_action "$(_ "system.update.confirm" "$update_cmd")"
     fi
-    io::confirm_action "$question"
-    printf '%s\0' "${commands[@]}" | sys::update::execute
+
+    stats=$(sys::update::get_disk_stats | tr -d '\0')
+    read -r total used initial_available <<< "$stats"
+    sys::update::log_disk "before" "$total" "$used" "$initial_available"
+
+    printf '%s\0' "$update_cmd" | sys::update::execute
+    stats=$(sys::update::get_disk_stats | tr -d '\0')
+    read -r total used updated_available <<< "$stats"
+    sys::update::log_disk "after_update" "$total" "$used" "$updated_available"
+    sys::update::log_delta "$initial_available" "$updated_available" "total"
+
+    if [[ -n "$cleanup_cmd" ]]; then
+        printf '%s\0' "$cleanup_cmd" | sys::update::execute "cleanup"
+        stats=$(sys::update::get_disk_stats | tr -d '\0')
+        read -r total used available <<< "$stats"
+        sys::update::log_disk "after_cleanup" "$total" "$used" "$available"
+        sys::update::log_delta "$updated_available" "$available" "cleanup"
+        sys::update::log_delta "$initial_available" "$available" "total"
+    fi
 }
 
 # @type:        Orchestrator
@@ -50,6 +64,7 @@ sys::update::orchestrator() {
 # @exit_code:   0 success
 #               1 update or cleanup failure
 #               2 user cancellation
+#               $? snapshot, formatting, or logging failure
 sys::update::menu() {
     log_info "$(_ "common.menu_header")"
     log_info_simple_tab "1. $(_ "system.update.menu.cleanup")"
