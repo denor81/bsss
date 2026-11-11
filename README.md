@@ -42,6 +42,25 @@ sudo bsss      # Run menu
 sudo bsss -u   # Uninstall
 ```
 
+### User sudo status
+
+User creation explains the selected sudo mode and asks for confirmation before making changes. Password-protected sudo uses a shared 30-minute authentication cache across the user's terminal sessions. Passwordless sudo does not prompt for a password; the account itself still receives a password.
+
+The BSSS user's information row includes `sudocache`, read from the user's sudo policy rather than just the file created by BSSS:
+
+```text
+2. bsssuser|id:1000|sudo:pass|sudocache:30m
+```
+
+- `30m` (or another duration): explicitly configured timeout in minutes.
+- `no`: caching is disabled (`timestamp_timeout=0` or `!timestamp_timeout`).
+- `default`: no explicit timeout; sudo uses its built-in default.
+- `unlimited`: a negative timeout, with no time-based expiry until reboot or explicit invalidation.
+- `n/a`: no sudo access, or no password is required.
+- `mixed`: command/runas-specific overrides prevent a single reliable summary.
+
+This reports configuration, not whether a cached authentication is currently valid. The check uses noninteractive `sudo -ll`; policy or parsing failures are not reported as disabled caching.
+
 ## Logs
 
 ```bash
