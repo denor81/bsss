@@ -143,7 +143,7 @@ main() {
     fi
 
     export TEST_WORK_DIR SELECT_ID CONFIRM_STATUS
-    TEST_WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp/opencode}/bsss-user-create.XXXXXX")
+    TEST_WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bsss-user-create.XXXXXX")
     trap 'rm -rf "$TEST_WORK_DIR"' EXIT
 
     for SELECT_ID in 1 2; do

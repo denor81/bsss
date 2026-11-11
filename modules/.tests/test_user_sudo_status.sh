@@ -141,7 +141,7 @@ main() {
     fi
 
     export TEST_WORK_DIR SUDO_FIXTURE SUDO_STATUS
-    TEST_WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp/opencode}/bsss-user-sudo.XXXXXX")
+    TEST_WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bsss-user-sudo.XXXXXX")
     trap 'rm -rf "$TEST_WORK_DIR"' EXIT
 
     test::sudo::check pass 30m <"$FIXTURES_DIR/pass.txt"
