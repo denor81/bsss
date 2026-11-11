@@ -193,6 +193,7 @@ user::sudo::get_status() {
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 успешно
+#               $? sudo or parsing failure
 user::info::block() {
     local login_user=$(logname 2>/dev/null || echo "N/A")
     local auth_method=$(sys::user::get_auth_method | tr -d '\0')
@@ -213,15 +214,9 @@ user::info::block() {
 
         if [[ "$uid" -eq 0 ]]; then
             active_mark+="sudo:superuser"
-        elif [[ "$username" == "$BSSS_USER_NAME" ]]; then
+        else
             sudo_status=$(user::sudo::get_status "$username" | tr -d '\0')
             active_mark+="$sudo_status"
-        elif sudo -l -U "$username" 2>/dev/null | grep -Eq "NOPASSWD\:\s+ALL"; then
-            active_mark+="sudo:nopass"
-        elif id -nG "$username" | grep -qw "sudo"; then
-            active_mark+="sudo:pass"
-        else
-            active_mark+="sudo:nosudo"
         fi
 
         log_info_simple_tab "${i}. ${username}|id:${uid}${active_mark}"

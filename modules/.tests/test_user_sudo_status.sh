@@ -25,17 +25,20 @@ readonly FIXTURES_DIR="${PROJECT_ROOT}/modules/.tests/fixtures/sudo"
 #               23 simulated policy failure
 sudo() {
     printf 'SUDO %s\n' "$*" >&3
-    if [[ "$*" == "-n -ll -U $BSSS_USER_NAME" ]]; then
-        [[ "$LC_ALL" == C ]] || return 1
-        cat "$SUDO_FIXTURE"
-        if [[ "${SUDO_STATUS:-0}" != 0 ]]; then
-            printf 'sudo: simulated policy failure\n' >&2
-            return "$SUDO_STATUS"
-        fi
-    elif [[ "$*" == '-l -U alice' ]]; then
-        printf '    (ALL) NOPASSWD: ALL\n'
-    else
-        return 1
+    [[ $# == 4 && "$1" == -n && "$2" == -ll && "$3" == -U && "$LC_ALL" == C ]] || return 1
+
+    local fixture
+    case "$4" in
+        ubuntu) fixture="$SUDO_FIXTURE" ;;
+        "$BSSS_USER_NAME") fixture="$FIXTURES_DIR/pass.txt" ;;
+        alice) fixture="$FIXTURES_DIR/nopass.txt" ;;
+        bob) fixture="$FIXTURES_DIR/nosudo.txt" ;;
+        *) return 1 ;;
+    esac
+    sed "s/bsssuser/$4/g" "$fixture"
+    if [[ "$4" == ubuntu && "${SUDO_STATUS:-0}" != 0 ]]; then
+        printf 'sudo: simulated policy failure\n' >&2
+        return "$SUDO_STATUS"
     fi
 }
 
@@ -45,7 +48,12 @@ sudo() {
 # @stdout:      username:password:uid:gid:gecos:home:shell\0 repeated
 # @exit_code:   0 success
 user::list::get() {
-    printf '%s\0' 'root:x:0:0::/root:/bin/bash' "$BSSS_USER_NAME:x:1000:1000::/home/$BSSS_USER_NAME:/bin/bash" 'alice:x:1001:1001::/home/alice:/bin/bash'
+    printf '%s\0' \
+        'root:x:0:0::/root:/bin/bash' \
+        'ubuntu:x:1000:1000::/home/ubuntu:/bin/bash' \
+        "$BSSS_USER_NAME:x:1001:1001::/home/$BSSS_USER_NAME:/bin/bash" \
+        'alice:x:1002:1002::/home/alice:/bin/bash' \
+        'bob:x:1003:1003::/home/bob:/bin/bash'
 }
 
 # @type:        Source
@@ -54,7 +62,7 @@ user::list::get() {
 # @stdout:      username\n
 # @exit_code:   0 success
 logname() {
-    printf '%s\n' "$BSSS_USER_NAME"
+    printf 'ubuntu\n'
 }
 
 # @type:        Source
@@ -191,26 +199,23 @@ EOF
     SUDO_STATUS=0
     SUDO_FIXTURE="$FIXTURES_DIR/pass.txt"
     test::sudo::run 0
-    grep -Fx "USER 2. $BSSS_USER_NAME|id:1000<<<Session owner|auth:key|sudo:pass|sudocache:30m" "$TEST_WORK_DIR/events"
-    [[ $(grep -c "^SUDO -n -ll -U $BSSS_USER_NAME$" "$TEST_WORK_DIR/events") == 1 ]]
+    grep -Fx 'USER 2. ubuntu|id:1000<<<Session owner|auth:key|sudo:pass|sudocache:30m' "$TEST_WORK_DIR/events"
+    grep -Fx "USER 3. $BSSS_USER_NAME|id:1001|sudo:pass|sudocache:30m" "$TEST_WORK_DIR/events"
     grep -Fx 'USER 1. root|id:0|sudo:superuser' "$TEST_WORK_DIR/events"
-    grep -Fx 'USER 3. alice|id:1001|sudo:nopass' "$TEST_WORK_DIR/events"
-    [[ $(grep -c '^USER .*sudocache:' "$TEST_WORK_DIR/events") == 1 ]]
+    grep -Fx 'USER 4. alice|id:1002|sudo:nopass|sudocache:n/a' "$TEST_WORK_DIR/events"
+    grep -Fx 'USER 5. bob|id:1003|sudo:nosudo|sudocache:n/a' "$TEST_WORK_DIR/events"
+    local username
+    for username in ubuntu "$BSSS_USER_NAME" alice bob; do
+        [[ $(grep -c "^SUDO -n -ll -U $username$" "$TEST_WORK_DIR/events") == 1 ]]
+    done
+    test::assert::no_match '^SUDO .* -U root$' "$TEST_WORK_DIR/events"
     [[ ! -s "$TEST_WORK_DIR/stderr" ]]
 
-    for SUDO_FIXTURE in "$FIXTURES_DIR/nopass.txt" "$FIXTURES_DIR/nosudo.txt"; do
-        test::sudo::run 0
-        grep -F 'sudocache:n/a' "$TEST_WORK_DIR/events"
+    for SUDO_STATUS in 23 1; do
+        test::sudo::run "$SUDO_STATUS"
+        grep -Fx 'sudo: simulated policy failure' "$TEST_WORK_DIR/stderr"
+        test::assert::no_match "^USER 2\.\|^AFTER$" "$TEST_WORK_DIR/events"
     done
-
-    SUDO_FIXTURE="$FIXTURES_DIR/pass.txt"
-    SUDO_STATUS=23
-    test::sudo::run 23
-    grep -Fx 'sudo: simulated policy failure' "$TEST_WORK_DIR/stderr"
-    test::assert::no_match "^USER 2\.\|^AFTER$" "$TEST_WORK_DIR/events"
-    SUDO_STATUS=1
-    test::sudo::run 1
-    test::assert::no_match "^USER 2\.\|^AFTER$" "$TEST_WORK_DIR/events"
 
     SUDO_STATUS=0
     SUDO_FIXTURE=/dev/null
