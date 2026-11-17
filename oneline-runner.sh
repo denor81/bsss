@@ -118,22 +118,6 @@ init::check_root() {
     fi
 }
 
-# @type:        Filter
-# @description: Проверяет установлен ли скрипт уже
-# @params:
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - не установлен (можно устанавливать)
-#               1 - установлен (нельзя продолжать)
-init::allready_installed() {
-    if [[ -d "$INSTALL_DIR" ]] || [[ -L "$SYMBOL_LINK_PATH" ]]; then
-        log_error "$(_ "error_already_installed")"
-        log_info "$(_ "info_installed_usage")"
-        log_info "$(_ "info_installed_uninstall")"
-        return 1
-    fi
-}
-
 # @type:        Orchestrator
 # @description: Проверяет окружение и устанавливает обязательные зависимости одним вызовом apt
 # @params:      нет
@@ -578,6 +562,12 @@ declare -gA I18N_MESSAGES_RU=(
     [error_already_installed]="Скрипт уже установлен в системе или установлен другой скрипт с таким же именем каталога."
     [info_installed_usage]="Для запуска Basic Server Security Setup (${UTIL_NAME^^}) используйте команду: sudo ${UTIL_NAME}, если не сработает - проверьте, что установлено в каталоге ${INSTALL_DIR} или куда ссылается ссылка ${UTIL_NAME} [find /bin /usr/bin /usr/local/bin -type l -ls | grep ${UTIL_NAME}]"
     [info_installed_uninstall]="Для удаления ранее установленного скрипта ${UTIL_NAME^^} выполните: sudo ${UTIL_NAME} -u"
+    [existing.prepare_before_uninstall]="Обнаружен установленный ${UTIL_NAME^^}. Новая версия будет скачана и проверена до запуска штатного удаления. После успешного удаления установка продолжится автоматически."
+    [existing.uninstall_start]="Новая версия подготовлена. Запускаю штатное удаление установленного ${UTIL_NAME^^}..."
+    [existing.uninstall_cancelled]="Удаление установленного ${UTIL_NAME^^} отменено"
+    [existing.uninstall_failed]="Штатное удаление ${UTIL_NAME^^} завершилось с ошибкой [RC: %s]"
+    [existing.uninstall_incomplete]="Штатное удаление завершилось, но установочные пути ${UTIL_NAME^^} остались"
+    [existing.uninstall_complete]="Установленный ${UTIL_NAME^^} удалён штатными средствами"
     [tmpdir.created]="Создана временная директория %s"
     [download.failed]="Не удалось скачать (проверьте интернет или URL) [%s]"
     [downloaded]="Скачан в %s (размер: %s, тип: %s)"
@@ -641,6 +631,12 @@ declare -gA I18N_MESSAGES_EN=(
     [error_already_installed]="Script already installed in system or another script with same directory name installed."
     [info_installed_usage]="To run Basic Server Security Setup (${UTIL_NAME^^}) use: sudo ${UTIL_NAME}. If not working, check what is installed in ${INSTALL_DIR} or where ${UTIL_NAME} link points to [find /bin /usr/bin /usr/local/bin -type l -ls | grep ${UTIL_NAME}]"
     [info_installed_uninstall]="To uninstall previously installed ${UTIL_NAME^^} script run: sudo ${UTIL_NAME} -u"
+    [existing.prepare_before_uninstall]="An installed ${UTIL_NAME^^} was detected. The new version will be downloaded and verified before standard removal starts. Installation will continue automatically after successful removal."
+    [existing.uninstall_start]="The new version is ready. Starting the installed ${UTIL_NAME^^} standard uninstaller..."
+    [existing.uninstall_cancelled]="Installed ${UTIL_NAME^^} removal was cancelled"
+    [existing.uninstall_failed]="Standard ${UTIL_NAME^^} removal failed [RC: %s]"
+    [existing.uninstall_incomplete]="Standard removal completed, but ${UTIL_NAME^^} installation paths remain"
+    [existing.uninstall_complete]="Installed ${UTIL_NAME^^} was removed using its standard uninstaller"
     [tmpdir.created]="Created temporary directory %s"
     [download.failed]="Failed to download (check internet or URL) [%s]"
     [downloaded]="Downloaded to %s (size: %s, type: %s)"
@@ -737,6 +733,93 @@ ui::ask_value() {
 #                                       #
 #                                       #
 #########################################
+# @type:        Validator
+# @description: Detects an existing installation or a conflicting installation path
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 an installation path exists
+#               1 no installation paths exist
+install::existing::is_detected() {
+    [[ -d "$INSTALL_DIR" || -e "$SYMBOL_LINK_PATH" || -L "$SYMBOL_LINK_PATH" ]]
+}
+
+# @type:        Validator
+# @description: Verifies that the existing paths belong to a standard BSSS installation
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 valid BSSS installation
+#               1 incomplete, modified, or conflicting installation
+install::existing::is_valid() {
+    local main_script_path="${INSTALL_DIR}/${MAIN_SCRIPT_FILE_NAME}"
+    local uninstall_file_path="${INSTALL_DIR}/${INSTALL_LOG_FILE_NAME}"
+
+    [[ -d "$INSTALL_DIR" && ! -L "$INSTALL_DIR" ]] || return 1
+    [[ -f "$main_script_path" && ! -L "$main_script_path" ]] || return 1
+    [[ -f "$uninstall_file_path" && ! -L "$uninstall_file_path" && -r "$uninstall_file_path" ]] || return 1
+    grep -Fq '# BSSS: Basic Server Security Setup' "$main_script_path" || return 1
+    grep -Fxq "$INSTALL_DIR" "$uninstall_file_path" || return 1
+    grep -Fxq "$SYMBOL_LINK_PATH" "$uninstall_file_path" || return 1
+
+    if [[ -e "$SYMBOL_LINK_PATH" || -L "$SYMBOL_LINK_PATH" ]]; then
+        [[ -L "$SYMBOL_LINK_PATH" ]] || return 1
+        [[ "$(readlink -f "$SYMBOL_LINK_PATH")" == "$(readlink -f "$main_script_path")" ]] || return 1
+    fi
+}
+
+# @type:        Sink
+# @description: Logs the existing installation usage and manual uninstall hints
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 success
+install::existing::log_hints() {
+    log_error "$(_ "error_already_installed")"
+    log_info "$(_ "info_installed_usage")"
+    log_info "$(_ "info_installed_uninstall")"
+}
+
+# @type:        Orchestrator
+# @description: Runs the installed BSSS uninstaller in the controlling terminal
+# @stdin:       Installed uninstaller input from /dev/tty; no fixed terminator
+# @stdout:      Installed uninstaller output to /dev/tty; no fixed terminator
+# @exit_code:   0 no installation exists or standard uninstall completed
+#               1 invalid installation or incomplete uninstall
+#               2 uninstall cancelled by the user
+#               130 uninstall interrupted by the user
+#               $? installed uninstaller failure
+install::existing::remove() {
+    install::existing::is_detected || return 0
+
+    if ! install::existing::is_valid; then
+        install::existing::log_hints
+        return 1
+    fi
+
+    log_info "$(_ "existing.uninstall_start")"
+
+    local rc=0
+    io::command::run_terminal \
+        bash "${INSTALL_DIR}/${MAIN_SCRIPT_FILE_NAME}" \
+        -l "$INSTALLER_LANG" -u || rc=$?
+
+    if (( rc == 2 || rc == 130 )); then
+        log_warn "$(_ "existing.uninstall_cancelled")"
+        install::existing::log_hints
+        return "$rc"
+    fi
+    if (( rc != 0 )); then
+        log_error "$(_ "existing.uninstall_failed" "$rc")"
+        install::existing::log_hints
+        return "$rc"
+    fi
+    if install::existing::is_detected; then
+        log_error "$(_ "existing.uninstall_incomplete")"
+        install::existing::log_hints
+        return 1
+    fi
+
+    log_success "$(_ "existing.uninstall_complete")"
+}
+
 # @type:        Orchestrator
 # @description: Оркестратор установки: подтверждение, подготовка и установка в систему
 # @params:      нет
@@ -748,8 +831,18 @@ install::orchestrator() {
     log_info "$(_ "install.info.install_dir" "$INSTALL_DIR")"
     log_info "$(_ "install.info.usage_run")"
 
-    ui::ask_value "$(_ "continue")" "y" "^[yn]$" "Y/n" "^[c0n]$" >/dev/null
+    if install::existing::is_detected; then
+        if ! install::existing::is_valid; then
+            install::existing::log_hints
+            return 1
+        fi
+        log_info "$(_ "existing.prepare_before_uninstall")"
+    else
+        ui::ask_value "$(_ "continue")" "y" "^[yn]$" "Y/n" "^[c0n]$" >/dev/null
+    fi
+
     install::prepare
+    install::existing::remove
     install::to_system
 }
 
@@ -784,7 +877,7 @@ install::dispatcher() {
 
     case "${choice,,}" in
         y) onetime_runner::orchestrator ;;
-        i) init::allready_installed && install::orchestrator ;;
+        i) install::orchestrator ;;
         *) log_error "$(_ "error_invalid_input" "$hint")"; return 1 ;;
     esac
 }
@@ -1148,4 +1241,6 @@ install::main() {
 #                                       #
 #########################################
 
-install::main
+if [[ -z "${BASH_SOURCE[0]:-}" || "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    install::main
+fi
