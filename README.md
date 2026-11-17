@@ -10,6 +10,7 @@ Secure a new server quickly and safely:
 - Change SSH port and sync UFW rules
 - Enable UFW
 - Optional swap file setup
+- Change the server hostname with cloud-init protection and rollback
 
 Auto-setup requires:
 - SSH key login
@@ -23,6 +24,7 @@ You can also configure each part from the menu.
 - Application logging to terminal, files, and systemd journal
 - Modular architecture
 - GPG-verified one-line installer
+- Persistent hostname diagnostics and safe restore from BSSS backups
 
 ## Compatibility
 

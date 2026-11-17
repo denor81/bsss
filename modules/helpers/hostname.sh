@@ -43,10 +43,11 @@ hostname::cloud_init::is_installed() {
 #               1 no configuration files found
 hostname::cloud_init::get_config_files() {
     (
-        [[ -f "$CLOUD_INIT_CONFIG_FILE" ]] && printf '%s\0' "$CLOUD_INIT_CONFIG_FILE"
-        if [[ -d "$CLOUD_INIT_CONFIGD_DIR" ]]; then
-            find "$CLOUD_INIT_CONFIGD_DIR" -maxdepth 1 -type f -name "*.cfg" -print0 | sort -z
-        fi
+        shopt -s nullglob
+        local files=()
+        [[ -f "$CLOUD_INIT_CONFIG_FILE" ]] && files+=("$CLOUD_INIT_CONFIG_FILE")
+        files+=("${CLOUD_INIT_CONFIGD_DIR}/"*.cfg)
+        (( ${#files[@]} > 0 )) && printf '%s\0' "${files[@]}"
     )
 }
 
@@ -259,13 +260,22 @@ hostname::reboot::mark_required() {
     local pkgs_file="${REBOOT_REQUIRED_FILE_PATH}.pkgs"
 
     if [[ ! -f "$REBOOT_REQUIRED_FILE_PATH" ]]; then
-        touch "$REBOOT_REQUIRED_FILE_PATH"
+        if ! touch "$REBOOT_REQUIRED_FILE_PATH"; then
+            log_error "$(_ "common.error.create_file" "$REBOOT_REQUIRED_FILE_PATH")"
+            return 1
+        fi
         log_info "$(_ "hostname.reboot.required" "$REBOOT_REQUIRED_FILE_PATH")"
     fi
 
-    [[ -f "$pkgs_file" ]] || touch "$pkgs_file"
+    if [[ ! -f "$pkgs_file" ]] && ! touch "$pkgs_file"; then
+        log_error "$(_ "common.error.create_file" "$pkgs_file")"
+        return 1
+    fi
     if ! grep -Fxq "$BSSS_HOSTNAME_REBOOT_PKG_NAME" "$pkgs_file"; then
-        printf '%s\n' "$BSSS_HOSTNAME_REBOOT_PKG_NAME" >> "$pkgs_file"
+        if ! printf '%s\n' "$BSSS_HOSTNAME_REBOOT_PKG_NAME" >> "$pkgs_file"; then
+            log_error "$(_ "common.error.create_file" "$pkgs_file")"
+            return 1
+        fi
         log_info "$(_ "hostname.reboot.pkg_added" "$BSSS_HOSTNAME_REBOOT_PKG_NAME" "$pkgs_file")"
     fi
 
@@ -362,20 +372,20 @@ hostname::orchestrator::restore() {
     fi
 
     local current_hostname
-    current_hostname=$(hostname::name::get_current)
+    current_hostname=$(hostname::name::get_current) || return 1
 
-    hostname::file::restore "$HOSTNAME_BACKUP_PATH" "$HOSTNAME_FILE_PATH"
-    hostname::file::restore "$HOSTS_BACKUP_PATH" "$HOSTS_FILE_PATH"
+    hostname::file::restore "$HOSTNAME_BACKUP_PATH" "$HOSTNAME_FILE_PATH" || return 1
+    hostname::file::restore "$HOSTS_BACKUP_PATH" "$HOSTS_FILE_PATH" || return 1
     if [[ -f "$BSSS_CLOUD_INIT_HOSTNAME_FILE" ]]; then
-        printf '%s\0' "$BSSS_CLOUD_INIT_HOSTNAME_FILE" | sys::file::delete
+        printf '%s\0' "$BSSS_CLOUD_INIT_HOSTNAME_FILE" | sys::file::delete || return 1
     fi
 
     local restored_hostname
-    restored_hostname=$(tr -d '[:space:]' < "$HOSTNAME_FILE_PATH")
+    restored_hostname=$(tr -d '[:space:]' < "$HOSTNAME_FILE_PATH") || return 1
     if [[ "$current_hostname" != "$restored_hostname" ]]; then
         log_info "$(_ "common.log_command" "hostnamectl set-hostname $restored_hostname")"
-        hostnamectl set-hostname "$restored_hostname"
-        hostname::reboot::mark_required
+        hostnamectl set-hostname "$restored_hostname" || return 1
+        hostname::reboot::mark_required || return 1
     fi
 
     hostname::log::status
