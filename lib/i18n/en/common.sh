@@ -460,6 +460,7 @@ I18N_MESSAGES["auto.info.auto_setup_rules"]="Only selected actions will run. Con
 I18N_MESSAGES["auto.info.rollback_timer_activation"]="Background process rollback.sh will be activated for rollback after %s seconds. If it is impossible to connect to the server, rollback the changes in the current session or wait for the timer to expire and connect to the server using the old data."
 I18N_MESSAGES["auto.info.logs_location"]="To view logs, use the system log [journalctl -t ${UTIL_NAME} --since \"10 minutes ago\"] or logs in the installation directory %s"
 I18N_MESSAGES["auto.info.connect_instruction"]="Open a new terminal and connect via SSH key on port %s. If you cannot connect, enter 0 to rollback changes or confirm successful connection to commit settings"
+I18N_MESSAGES["auto.info.hostname_selected"]="Server renaming was selected in automatic setup. Enter the new hostname, then setup will continue automatically."
 
 # UFW activation
 I18N_MESSAGES["ufw.success.enabled"]="UFW successfully enabled [ufw --force enable]"
@@ -478,6 +479,7 @@ I18N_MESSAGES["auto.menu.item_5"]="Block ping"
 I18N_MESSAGES["auto.menu.item_6"]="Configure SSH access: disable root and password login, enable key authentication"
 I18N_MESSAGES["auto.menu.item_7"]="Configure swap (%s, unless already configured)"
 I18N_MESSAGES["auto.menu.item_8"]="Disable IPv6"
+I18N_MESSAGES["auto.menu.item_9"]="Change server hostname"
 I18N_MESSAGES["auto.menu.ask_items"]="Enter item numbers separated by spaces (0 to exit)"
 I18N_MESSAGES["auto.menu.selected"]="Selected actions in execution order:"
 I18N_MESSAGES["auto.info.already_configured"]="Already configured: %s"

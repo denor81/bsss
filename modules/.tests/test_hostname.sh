@@ -36,10 +36,10 @@ main() {
 
     local hosts_result
     hosts_result=$(printf '127.0.0.1 localhost\n127.0.1.1 old.example.test old alias\n' | hostname::hosts::replace old server-01)
-    grep -Fx $'127.0.1.1\tserver-01.example.test\tserver-01\talias' <<< "$hosts_result"
+    grep -Fxq $'127.0.1.1\tserver-01.example.test\tserver-01\talias' <<< "$hosts_result"
 
     hosts_result=$(printf '127.0.0.1 localhost\n' | hostname::hosts::replace old server-01)
-    grep -Fx $'127.0.1.1\tserver-01' <<< "$hosts_result"
+    grep -Fxq $'127.0.1.1\tserver-01' <<< "$hosts_result"
 
     local test_dir
     test_dir=$(mktemp -d "${TMPDIR:-/tmp}/bsss-hostname-tests.XXXXXX")

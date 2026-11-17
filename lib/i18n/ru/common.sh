@@ -460,6 +460,7 @@ I18N_MESSAGES["auto.info.auto_setup_rules"]="Будут выполнены то�
 I18N_MESSAGES["auto.info.rollback_timer_activation"]="Будет активирован фоновый процесс rollback.sh для отката по истечению %s секунд. В случае невозможности подключиться к серверу откатите изменения в текущем сеансе или дождитесь истечения таймера и подключайтесь к серверу по старым данным."
 I18N_MESSAGES["auto.info.logs_location"]="Для просмотра логов используйте системный журнал [journalctl -t ${UTIL_NAME} --since \"10 minutes ago\"] или логи в каталоге установки %s"
 I18N_MESSAGES["auto.info.connect_instruction"]="Откройте новый терминал и выполните подключение по SSH ключу через порт %s. Если не удается подключиться - введите 0 для отката изменений или подтвердите успешное подключение для фиксации настроек"
+I18N_MESSAGES["auto.info.hostname_selected"]="В автоматической настройке выбрано переименование сервера. Укажите новое имя, после чего настройка продолжится автоматически."
 
 # UFW activation
 I18N_MESSAGES["ufw.success.enabled"]="UFW успешно активирован [ufw --force enable]"
@@ -478,6 +479,7 @@ I18N_MESSAGES["auto.menu.item_5"]="Заблокировать ping"
 I18N_MESSAGES["auto.menu.item_6"]="Настроить доступ SSH: запрет root и пароля, вход по ключам"
 I18N_MESSAGES["auto.menu.item_7"]="Настроить swap (%s, если еще не настроен)"
 I18N_MESSAGES["auto.menu.item_8"]="Отключить IPv6"
+I18N_MESSAGES["auto.menu.item_9"]="Изменить имя сервера"
 I18N_MESSAGES["auto.menu.ask_items"]="Введите номера пунктов через пробел (0 — выход)"
 I18N_MESSAGES["auto.menu.selected"]="Выбраны действия в порядке выполнения:"
 I18N_MESSAGES["auto.info.already_configured"]="Уже настроено: %s"

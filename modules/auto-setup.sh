@@ -20,6 +20,7 @@ source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
 source "${PROJECT_ROOT}/modules/helpers/swap.sh"
 source "${PROJECT_ROOT}/modules/helpers/ipv6.sh"
+source "${PROJECT_ROOT}/modules/helpers/hostname.sh"
 source "${PROJECT_ROOT}/modules/helpers/system-update.sh"
 source "${PROJECT_ROOT}/modules/helpers/auto-setup.sh"
 
@@ -134,17 +135,18 @@ auto::menu::select() {
         "$(_ "auto.menu.item_6")"
         "$(_ "auto.menu.item_7" "$SWAPFILE_SIZE")"
         "$(_ "auto.menu.item_8")"
+        "$(_ "auto.menu.item_9")"
     )
     while true; do
         log_info "$(_ "common.menu_header")"
-        for item in 1 2 3 4 5 6 7 8; do
+        for item in 1 2 3 4 5 6 7 8 9; do
             log_info_simple_tab "$item. ${items[item-1]}"
         done
         log_info_simple_tab "0. $(_ "common.exit")"
-        selection=$(io::ask_value "$(_ "auto.menu.ask_items")" "" "^[1-8]( +[1-8])*$" "1-8" "^0$" | tr -d '\0') || return
+        selection=$(io::ask_value "$(_ "auto.menu.ask_items")" "" "^[1-9]( +[1-9])*$" "1-9" "^0$" | tr -d '\0') || return
 
         log_info "$(_ "auto.menu.selected")"
-        for item in 1 2 3 4 5 6 7 8; do
+        for item in 1 2 3 4 5 6 7 8 9; do
             if auto::menu::is_selected "$selection" "$item"; then
                 log_info_simple_tab "$item. ${items[item-1]}"
             fi
@@ -159,12 +161,14 @@ auto::menu::select() {
 # @type:        Orchestrator
 # @description: Выполняет выбранные действия в фиксированном порядке
 # @params:      selection Номера через пробел (string) без завершающего символа
+#               new_hostname New server hostname (string) without a terminator
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 настройка завершена
 #               $? код ошибки выбранного действия
 auto::install::run() {
     local selection="$1"
+    local new_hostname="${2:-}"
     if auto::menu::is_selected "$selection" 1; then
         sys::update::get_command "auto" | sys::update::execute
     fi
@@ -198,6 +202,9 @@ auto::install::run() {
             ipv6::reboot::mark_required
         fi
     fi
+    if auto::menu::is_selected "$selection" 9; then
+        hostname::orchestrator::configure "$new_hostname"
+    fi
 }
 
 # @type:        Orchestrator
@@ -214,8 +221,12 @@ main() {
     log_info "$(_ "auto.info.auto_setup_rules")"
     log_info "$(_ "auto.info.rollback_timer_activation" "$AUTO_SETUP_ROLLBACK_TIMER_SECONDS")"
     log_info "$(_ "auto.info.logs_location" "$(readlink -f "${PROJECT_ROOT}/logs")")"
-    local selection ports
+    local selection ports new_hostname=""
     selection=$(auto::menu::select | tr -d '\0')
+    if auto::menu::is_selected "$selection" 9; then
+        log_info "$(_ "auto.info.hostname_selected")"
+        new_hostname=$(hostname::ui::get_new | tr -d '\0') || return
+    fi
     auto::selection::check "$selection"
 
     make_fifo_and_start_reader
@@ -225,13 +236,14 @@ main() {
     WATCHDOG_PID=$!
     stop_sync_rollback
 
-    auto::install::run "$selection"
+    auto::install::run "$selection" "$new_hostname"
 
     log_actual_info
     common::log::current_config "^port"
     ssh::orchestrator::log_statuses
     ufw::orchestrator::log_statuses
     permissions::orchestrator::log_statuses
+    hostname::log::status
     ports=$(ssh::port::get_from_ss | tr '\0' ',' | sed 's/,$//')
     log_actual_info "$(_ "auto.info.connect_instruction" "$ports")"
     io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "^0$" >/dev/null
