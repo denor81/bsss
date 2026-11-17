@@ -173,6 +173,28 @@ hostname::hosts::replace() {
     '
 }
 
+# @type:        Validator
+# @description: Checks whether the 127.0.1.1 hosts entry contains the hostname
+# @params:      hostname Short hostname to find (string) without a terminator
+# @stdin:       hosts file content (text\n)
+# @stdout:      None
+# @exit_code:   0 hostname found
+#               1 hostname not found
+hostname::hosts::contains() {
+    local hostname="$1"
+
+    gawk -v target="$hostname" '
+        $1 == "127.0.1.1" {
+            for (i = 2; i <= NF; i++) {
+                if ($i == target || index($i, target ".") == 1) {
+                    found = 1
+                }
+            }
+        }
+        END { exit found ? 0 : 1 }
+    '
+}
+
 # @type:        Orchestrator
 # @description: Creates a persistent backup without replacing an existing original backup
 # @params:      source_path Source configuration path (path) without a terminator
@@ -322,7 +344,8 @@ hostname::orchestrator::configure() {
     hostnamectl set-hostname "$new_hostname"
     hostname::hosts::update "$old_hostname" "$new_hostname"
 
-    if [[ "$(hostname::name::get_current)" != "$new_hostname" || "$(tr -d '[:space:]' < "$HOSTNAME_FILE_PATH")" != "$new_hostname" ]]; then
+    if [[ "$(hostname::name::get_current)" != "$new_hostname" || "$(tr -d '[:space:]' < "$HOSTNAME_FILE_PATH")" != "$new_hostname" ]] \
+        || ! hostname::hosts::contains "$new_hostname" < "$HOSTS_FILE_PATH"; then
         log_error "$(_ "hostname.error.verify" "$new_hostname")"
         return 1
     fi
@@ -397,10 +420,15 @@ hostname::orchestrator::restore() {
 # @stdout:      None
 # @exit_code:   0 status logged
 hostname::log::status() {
-    local active file_hostname hosts_entries setting
+    local active fqdn file_hostname hosts_entries setting
 
     active=$(hostname::name::get_current)
     log_info "$(_ "hostname.check.active" "$active")"
+    if fqdn=$(hostname -f 2>/dev/null); then
+        log_info "$(_ "hostname.check.fqdn" "$fqdn")"
+    else
+        log_warn "$(_ "hostname.check.fqdn_failed")"
+    fi
 
     if [[ -f "$HOSTNAME_FILE_PATH" ]]; then
         file_hostname=$(tr -d '[:space:]' < "$HOSTNAME_FILE_PATH")
