@@ -202,7 +202,7 @@ I18N_MESSAGES["ufw.error.enable_failed"]="Ошибка при активации
 # Success messages
 I18N_MESSAGES["ufw.success.backup_created"]="Создан бэкап: [%s]"
 I18N_MESSAGES["ufw.error.backup_failed"]="Не удалось создать бэкап %s [%s]"
-I18N_MESSAGES["ufw.success.before_rules_edited"]="Отредактированы правила ping: [%s]"
+I18N_MESSAGES["ufw.success.before_rules_edited"]="Заблокирован ICMP Echo Request: [%s]"
 I18N_MESSAGES["ufw.success.reloaded"]="UFW перезагружен [ufw reload]"
 I18N_MESSAGES["ufw.success.enabled"]="UFW включен"
 I18N_MESSAGES["ufw.warning.continue_without_rules"]="Невозможно продолжить: нет правил ${UTIL_NAME^^} в UFW"
@@ -212,25 +212,29 @@ I18N_MESSAGES["ufw.rollback.test_access"]="Проверьте доступ к с
 # Menu messages
 I18N_MESSAGES["ufw.menu.item_disable"]="Выключить UFW"
 I18N_MESSAGES["ufw.menu.item_enable"]="Включить UFW"
-I18N_MESSAGES["ufw.menu.item_ping_enable"]="Ping будет включен [ACCEPT] [По умолчанию]"
-I18N_MESSAGES["ufw.menu.item_ping_disable"]="Ping будет отключен [DROP]"
+I18N_MESSAGES["ufw.menu.item_ping_enable"]="Ответы на Ping будут разрешены [ICMP Echo Request, IPv4 и IPv6] [По умолчанию]"
+I18N_MESSAGES["ufw.menu.item_ping_disable"]="Запретить ответы на Ping [ICMP Echo Request, IPv4 и IPv6]"
 
 # Status messages
 I18N_MESSAGES["ufw.status.enabled"]="UFW включен"
 I18N_MESSAGES["ufw.status.disabled"]="UFW отключен"
-I18N_MESSAGES["ufw.status.ping_blocked"]="UFW ping запрещен [DROP] [Состояние: модифицировано]"
-I18N_MESSAGES["ufw.status.ping_allowed"]="UFW ping разрешен [ACCEPT] [Состояние: по умолчанию]"
+I18N_MESSAGES["ufw.status.ping_blocked"]="Ответы на Ping запрещены [ICMP Echo Request, IPv4 и IPv6] [Состояние: модифицировано]"
+I18N_MESSAGES["ufw.status.ping_allowed"]="Ответы на Ping разрешены [ICMP Echo Request, IPv4 и IPv6] [Состояние: по умолчанию]"
+I18N_MESSAGES["ufw.status.ping_legacy"]="Обнаружена устаревшая конфигурация BSSS Ping только для IPv4"
+I18N_MESSAGES["ufw.status.ping_inconsistent"]="Конфигурация BSSS Ping не соответствует правилам IPv4 и IPv6"
+I18N_MESSAGES["ufw.status.ping_unconfirmed"]="Состояние ответов на Ping не подтверждено для IPv4 и IPv6"
 
 # Info messages
 I18N_MESSAGES["ufw.info.no_rules_but_active"]="Нет правил ${UTIL_NAME^^}, но UFW активен - можно отключить"
 
 # Success messages
-I18N_MESSAGES["ufw.success.backup_restored"]="Восстановлен файл before.rules: [%s]"
+I18N_MESSAGES["ufw.success.backup_restored"]="Восстановлен файл правил UFW: [%s]"
 
 # Error messages
 I18N_MESSAGES["ufw.error.restore_failed"]="Не удалось восстановить %s из бэкапа [%s]"
 I18N_MESSAGES["ufw.error.edit_failed"]="Ошибка при редактировании: [%s]"
 I18N_MESSAGES["ufw.error.reload_failed"]="Не удалось выполнить [ufw reload] [RC: %s]"
+I18N_MESSAGES["ufw.error.ping_state_exists"]="Существующая конфигурация BSSS Ping должна быть сначала восстановлена"
 
 # System messages
 
@@ -477,7 +481,7 @@ I18N_MESSAGES["auto.menu.item_1"]="Обновить систему"
 I18N_MESSAGES["auto.menu.item_2"]="Включить автоматические обновления и автоперезагрузку"
 I18N_MESSAGES["auto.menu.item_3"]="Настроить нестандартный SSH-порт (сохранить настроенный или выбрать случайный)"
 I18N_MESSAGES["auto.menu.item_4"]="Включить UFW (разрешить используемые SSH-порты)"
-I18N_MESSAGES["auto.menu.item_5"]="Заблокировать ping"
+I18N_MESSAGES["auto.menu.item_5"]="Запретить ответы на Ping"
 I18N_MESSAGES["auto.menu.item_6"]="Настроить доступ SSH: запрет root и пароля, вход по ключам"
 I18N_MESSAGES["auto.menu.item_7"]="Настроить swap (%s, если еще не настроен)"
 I18N_MESSAGES["auto.menu.item_8"]="Отключить IPv6"
@@ -487,3 +491,4 @@ I18N_MESSAGES["auto.menu.selected"]="Выбраны действия в поря
 I18N_MESSAGES["auto.info.already_configured"]="Уже настроено: %s"
 I18N_MESSAGES["auto.error.ssh_ports"]="Настроенные и активные SSH порты не соответствуют выбранному порту"
 I18N_MESSAGES["auto.warning.ping_requires_ufw"]="Для блокировки ping включите UFW или выберите также пункт включения UFW"
+I18N_MESSAGES["auto.warning.ping_restore_required"]="Сначала восстановите существующую конфигурацию Ping через меню UFW и Ping"

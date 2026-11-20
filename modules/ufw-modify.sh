@@ -120,10 +120,10 @@ ufw::log::rollback::instructions() {
 ufw::toggle::ping() {
     if ufw::ping::is_configured; then
         ufw::ping::restore
+        ufw::status::reload
     else
         ufw::orchestrator::disable_ping
     fi
-    ufw::status::reload
 }
 
 # @type:        Orchestrator

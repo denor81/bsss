@@ -202,7 +202,7 @@ I18N_MESSAGES["ufw.error.enable_failed"]="Error during activation [ufw --force e
 # Success messages
 I18N_MESSAGES["ufw.success.backup_created"]="Backup created: [%s]"
 I18N_MESSAGES["ufw.error.backup_failed"]="Failed to create backup %s [%s]"
-I18N_MESSAGES["ufw.success.before_rules_edited"]="Ping rules edited: [%s]"
+I18N_MESSAGES["ufw.success.before_rules_edited"]="ICMP Echo Request blocked: [%s]"
 I18N_MESSAGES["ufw.success.reloaded"]="UFW reloaded [ufw reload]"
 I18N_MESSAGES["ufw.success.enabled"]="UFW enabled"
 I18N_MESSAGES["ufw.warning.continue_without_rules"]="Cannot continue: no ${UTIL_NAME^^} rules in UFW"
@@ -212,25 +212,29 @@ I18N_MESSAGES["ufw.rollback.test_access"]="Test server access after enabling UFW
 # Menu messages
 I18N_MESSAGES["ufw.menu.item_disable"]="Disable UFW"
 I18N_MESSAGES["ufw.menu.item_enable"]="Enable UFW"
-I18N_MESSAGES["ufw.menu.item_ping_enable"]="Ping will be enabled [ACCEPT] [Default]"
-I18N_MESSAGES["ufw.menu.item_ping_disable"]="Ping will be disabled [DROP]"
+I18N_MESSAGES["ufw.menu.item_ping_enable"]="Ping replies will be allowed [ICMP Echo Request, IPv4 and IPv6] [Default]"
+I18N_MESSAGES["ufw.menu.item_ping_disable"]="Block Ping replies [ICMP Echo Request, IPv4 and IPv6]"
 
 # Status messages
 I18N_MESSAGES["ufw.status.enabled"]="UFW enabled"
 I18N_MESSAGES["ufw.status.disabled"]="UFW disabled"
-I18N_MESSAGES["ufw.status.ping_blocked"]="UFW ping blocked [DROP] [State: modified]"
-I18N_MESSAGES["ufw.status.ping_allowed"]="UFW ping allowed [ACCEPT] [State: default]"
+I18N_MESSAGES["ufw.status.ping_blocked"]="Ping replies are blocked [ICMP Echo Request, IPv4 and IPv6] [State: modified]"
+I18N_MESSAGES["ufw.status.ping_allowed"]="Ping replies are allowed [ICMP Echo Request, IPv4 and IPv6] [State: default]"
+I18N_MESSAGES["ufw.status.ping_legacy"]="Legacy IPv4-only BSSS Ping configuration detected"
+I18N_MESSAGES["ufw.status.ping_inconsistent"]="BSSS Ping configuration does not match the IPv4 and IPv6 rules"
+I18N_MESSAGES["ufw.status.ping_unconfirmed"]="Ping reply state is not confirmed for IPv4 and IPv6"
 
 # Info messages
 I18N_MESSAGES["ufw.info.no_rules_but_active"]="No ${UTIL_NAME^^} rules, but UFW is active - can be disabled"
 
 # Success messages
-I18N_MESSAGES["ufw.success.backup_restored"]="before.rules file restored: [%s]"
+I18N_MESSAGES["ufw.success.backup_restored"]="UFW rules file restored: [%s]"
 
 # Error messages
 I18N_MESSAGES["ufw.error.restore_failed"]="Failed to restore %s from backup [%s]"
 I18N_MESSAGES["ufw.error.edit_failed"]="Error during editing: [%s]"
 I18N_MESSAGES["ufw.error.reload_failed"]="Failed to execute [ufw reload] [RC: %s]"
+I18N_MESSAGES["ufw.error.ping_state_exists"]="The existing BSSS Ping configuration must be restored first"
 
 # System messages (English)
 
@@ -477,7 +481,7 @@ I18N_MESSAGES["auto.menu.item_1"]="Update the system"
 I18N_MESSAGES["auto.menu.item_2"]="Enable automatic updates and automatic reboot"
 I18N_MESSAGES["auto.menu.item_3"]="Configure a non-default SSH port (keep configured ports or choose a random port)"
 I18N_MESSAGES["auto.menu.item_4"]="Enable UFW (allow active SSH ports)"
-I18N_MESSAGES["auto.menu.item_5"]="Block ping"
+I18N_MESSAGES["auto.menu.item_5"]="Block Ping replies"
 I18N_MESSAGES["auto.menu.item_6"]="Configure SSH access: disable root and password login, enable key authentication"
 I18N_MESSAGES["auto.menu.item_7"]="Configure swap (%s, unless already configured)"
 I18N_MESSAGES["auto.menu.item_8"]="Disable IPv6"
@@ -487,3 +491,4 @@ I18N_MESSAGES["auto.menu.selected"]="Selected actions in execution order:"
 I18N_MESSAGES["auto.info.already_configured"]="Already configured: %s"
 I18N_MESSAGES["auto.error.ssh_ports"]="Configured and active SSH ports do not match the selected port"
 I18N_MESSAGES["auto.warning.ping_requires_ufw"]="Blocking ping requires active UFW; enable UFW or also select the UFW activation item"
+I18N_MESSAGES["auto.warning.ping_restore_required"]="Restore the existing Ping configuration from the UFW and Ping menu first"

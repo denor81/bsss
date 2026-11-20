@@ -382,31 +382,161 @@ ufw::status::force_disable() {
 }
 
 # @type:        Validator
-# @description: Проверяет, существует ли бэкап файла настроек PING
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 бэкап существует (PING отключен)
-#               1 бэкап не существует (PING не отключен)
+# @description: Checks whether any BSSS Ping backup exists
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 one or more backups exist
+#               1 no backups exist
 ufw::ping::is_configured() {
-    [[ -f "$UFW_BEFORE_RULES_BACKUP" ]]
+    [[ -f "$UFW_BEFORE_RULES_BACKUP" || -f "$UFW_BEFORE6_RULES_BACKUP" ]]
+}
+
+# @type:        Validator
+# @description: Checks whether only the legacy IPv4 Ping backup exists
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 legacy state detected
+#               1 state is not legacy
+ufw::ping::is_legacy() {
+    [[ -f "$UFW_BEFORE_RULES_BACKUP" && ! -f "$UFW_BEFORE6_RULES_BACKUP" ]]
+}
+
+# @type:        Source
+# @description: Reads an IPv4 or IPv6 UFW input echo-request rule
+# @params:      path UFW rules file (path) without a terminator
+#               family Rule family: ipv4 or ipv6 (string) without a terminator
+# @stdin:       None
+# @stdout:      target<TAB>path:rule\0 (0..N)
+# @exit_code:   0 rule emitted or absent
+#               1 unsupported family
+#               $? gawk failure
+ufw::ping::get_rule() {
+    local path="$1"
+    local family="$2"
+    local chain protocol option
+
+    case "$family" in
+        ipv4)
+            chain="ufw-before-input"
+            protocol="icmp"
+            option="--icmp-type"
+            ;;
+        ipv6)
+            chain="ufw6-before-input"
+            protocol="icmpv6"
+            option="--icmpv6-type"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    if [[ -r "$path" ]]; then
+        gawk -v chain="$chain" -v protocol="$protocol" -v option="$option" '
+            BEGIN { ORS = "\0" }
+            $1 == "-A" && $2 == chain {
+                rule_protocol = ""
+                rule_type = ""
+                target = ""
+                for (i = 3; i <= NF; i++) {
+                    if ($i == "-p") {
+                        rule_protocol = $(i + 1)
+                    } else if ($i == option) {
+                        rule_type = $(i + 1)
+                    } else if ($i == "-j") {
+                        target = $(i + 1)
+                    }
+                }
+                if (rule_protocol == protocol && rule_type == "echo-request" &&
+                    (target == "ACCEPT" || target == "DROP")) {
+                    print target "\t" FILENAME ":" $0
+                }
+            }
+        ' "$path"
+    fi
+}
+
+# @type:        Validator
+# @description: Checks the effective target of one UFW Ping rule
+# @params:      path UFW rules file (path) without a terminator
+#               family Rule family: ipv4 or ipv6 (string) without a terminator
+#               expected Expected target: ACCEPT or DROP (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 expected rule found
+#               1 expected rule absent
+ufw::ping::rule_is() {
+    local path="$1"
+    local family="$2"
+    local expected="$3"
+    local record target
+    local count=0
+    local matches=0
+
+    while IFS= read -r -d '' record; do
+        IFS=$'\t' read -r target _ <<< "$record"
+        count=$((count + 1))
+        [[ "$target" != "$expected" ]] || matches=$((matches + 1))
+    done < <(ufw::ping::get_rule "$path" "$family")
+    [[ "$count" == "1" && "$matches" == "1" ]]
+}
+
+# @type:        Validator
+# @description: Checks whether BSSS Ping blocking is effective for IPv4 and IPv6
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 both echo-request rules use DROP
+#               1 one or more rules differ
+ufw::ping::is_effective() {
+    ufw::ping::rule_is "$UFW_BEFORE_RULES" "ipv4" "DROP" &&
+        ufw::ping::rule_is "$UFW_BEFORE6_RULES" "ipv6" "DROP"
+}
+
+# @type:        Validator
+# @description: Checks whether automatic setup must refuse existing BSSS Ping state
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 legacy or inconsistent BSSS state requires manual restore
+#               1 no BSSS state or the current dual-stack state is effective
+ufw::ping::requires_restore() {
+    ufw::ping::is_configured &&
+        { ufw::ping::is_legacy || ! ufw::ping::is_effective; }
+}
+
+# @type:        Sink
+# @description: Restores one UFW rules file from a BSSS backup
+# @params:      target_path UFW rules file (path) without a terminator
+#               backup_path BSSS backup file (path) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 backup restored or absent
+#               $? copy or deletion failure
+ufw::ping::restore_file() {
+    local target_path="$1"
+    local backup_path="$2"
+    local res
+
+    if [[ -f "$backup_path" ]]; then
+        if res=$(cp -pv "$backup_path" "$target_path" 2>&1); then
+            log_info "$(_ "ufw.success.backup_restored" "$res")"
+        else
+            local rc=$?
+            log_error "$(_ "ufw.error.restore_failed" "$target_path" "$res")"
+            return "$rc"
+        fi
+        printf '%s\0' "$backup_path" | sys::file::delete
+    fi
 }
 
 # @type:        Orchestrator
-# @description: Восстанавливает файл before.rules из бэкапа и удаляет бэкап
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 успешно восстановлено
-#               $? код ошибки cp или rm
+# @description: Restores all available current or legacy UFW Ping backups
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 available backups restored
+#               $? restore failure
 ufw::ping::restore() {
-    if res=$(cp -pv "$UFW_BEFORE_RULES_BACKUP" "$UFW_BEFORE_RULES" 2>&1); then
-        log_info "$(_ "ufw.success.backup_restored" "$res")"
-    # else
-    #     local rc=$?
-    #     log_error "$(_ "ufw.error.restore_failed" "$UFW_BEFORE_RULES" "$res")"
-    #     return "$rc"
-    fi
-
-    printf '%s\0' "$UFW_BEFORE_RULES_BACKUP" | sys::file::delete
+    ufw::ping::restore_file "$UFW_BEFORE_RULES" "$UFW_BEFORE_RULES_BACKUP" || return
+    ufw::ping::restore_file "$UFW_BEFORE6_RULES" "$UFW_BEFORE6_RULES_BACKUP"
 }
 
 # @type:        Orchestrator
@@ -447,14 +577,48 @@ ufw::log::status() {
 }
 
 # @type:        Sink
-# @description: Логирует состояние PING
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 всегда успешно
+# @description: Logs UFW Ping rule lines or their expected file paths
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 rule details logged
+ufw::log::ping_rules() {
+    local path family record line found
+
+    while IFS=$'\t' read -r path family; do
+        found=false
+        while IFS= read -r -d '' record; do
+            IFS=$'\t' read -r _ line <<< "$record"
+            log_info_simple_tab "$(_ "no_translate" "$line")"
+            found=true
+        done < <(ufw::ping::get_rule "$path" "$family")
+        [[ "$found" == "true" ]] || log_info_simple_tab "$(_ "no_translate" "$path")"
+    done << EOF
+$UFW_BEFORE_RULES	ipv4
+$UFW_BEFORE6_RULES	ipv6
+EOF
+}
+
+# @type:        Sink
+# @description: Logs effective, legacy, or unconfirmed UFW Ping state
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 status logged
 ufw::log::ping_status() {
-    ufw::ping::is_configured && \
-    log_info "$(_ "ufw.status.ping_blocked")" || \
-    log_warn "$(_ "ufw.status.ping_allowed")"
+    if ufw::ping::is_legacy; then
+        log_warn "$(_ "ufw.status.ping_legacy")"
+    elif ufw::ping::is_configured; then
+        if ufw::ping::is_effective; then
+            log_info "$(_ "ufw.status.ping_blocked")"
+        else
+            log_warn "$(_ "ufw.status.ping_inconsistent")"
+        fi
+    elif ufw::ping::rule_is "$UFW_BEFORE_RULES" "ipv4" "ACCEPT" &&
+        ufw::ping::rule_is "$UFW_BEFORE6_RULES" "ipv6" "ACCEPT"; then
+        log_warn "$(_ "ufw.status.ping_allowed")"
+    else
+        log_warn "$(_ "ufw.status.ping_unconfirmed")"
+    fi
+    ufw::log::ping_rules
 }
 
 # @type:        Orchestrator

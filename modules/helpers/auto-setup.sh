@@ -71,7 +71,6 @@ auto::ping::disable() {
     fi
 
     ufw::orchestrator::disable_ping
-    ufw::status::reload
 }
 
 # @type:        Orchestrator

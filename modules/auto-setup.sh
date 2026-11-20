@@ -100,6 +100,10 @@ auto::selection::check() {
             return 4
         fi
     fi
+    if auto::menu::is_selected "$selection" 5 && ufw::ping::requires_restore; then
+        log_warn "$(_ "auto.warning.ping_restore_required")"
+        return 4
+    fi
     if auto::menu::is_selected "$selection" 5 && ! auto::menu::is_selected "$selection" 4; then
         ufw status >/dev/null
         if ! ufw::status::is_active; then
