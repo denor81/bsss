@@ -49,7 +49,7 @@ ssh::install::port() {
 
     sys::service::restart
     if ! ssh::port::wait_for_up "$port"; then
-        ssh::orchestrator::trigger_immediate_rollback
+        rollback::orchestrator::trigger_immediate
     fi
     
     log_actual_info
@@ -61,7 +61,7 @@ ssh::install::port() {
         rollback::orchestrator::watchdog_stop
         log_info "$(_ "common.success_changes_committed")"
     else
-        ssh::orchestrator::trigger_immediate_rollback
+        rollback::orchestrator::trigger_immediate
     fi
 }
 

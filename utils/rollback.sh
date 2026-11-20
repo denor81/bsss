@@ -29,6 +29,7 @@ source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
 source "${PROJECT_ROOT}/modules/helpers/swap.sh"
 source "${PROJECT_ROOT}/modules/helpers/ipv6.sh"
 source "${PROJECT_ROOT}/modules/helpers/hostname.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns.sh"
 
 LOG_STRICT_MODE=false
 MAIN_SCRIPT_PID=""
@@ -172,6 +173,23 @@ rollback::orchestrator::permissions() {
 }
 
 # @type:        Orchestrator
+# @description: Restores the exact DNS state saved before a standalone transaction
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 DNS state restored
+#               1 restoration failed
+rollback::orchestrator::dns() {
+    log_warn "$(_ "dns.rollback.dismantle")"
+
+    if dns::rollback::restore; then
+        log_success "$(_ "dns.rollback.success")"
+    else
+        log_warn "$(_ "rollback.error.rollback_errors" "dns::rollback::restore")"
+        return 1
+    fi
+}
+
+# @type:        Orchestrator
 # @description: Выполняет полный откат всех настроек BSSS
 # @stdin:       нет
 # @stdout:      нет
@@ -185,6 +203,7 @@ full_rollback::orchestrator::execute_all() {
     swap::orchestrator::disable     || errors+=("swap::orchestrator::disable")
     ipv6::config::remove_bsss_files || errors+=("ipv6::config::remove_bsss_files")
     hostname::orchestrator::restore || errors+=("hostname::orchestrator::restore")
+    dns::orchestrator::dismantle    || errors+=("dns::orchestrator::dismantle")
     ssh::rule::delete_all_bsss      || errors+=("ssh::rule::delete_all_bsss")
     ufw::rule::delete_all_bsss      || errors+=("ufw::rule::delete_all_bsss")
     ufw::status::force_disable      || errors+=("ufw::status::force_disable")
@@ -224,6 +243,7 @@ rollback::dispatcher() {
         "ssh") rollback::orchestrator::ssh ;;
         "ufw") rollback::orchestrator::ufw ;;
         "permissions") rollback::orchestrator::permissions ;;
+        "dns") rollback::orchestrator::dns ;;
         "full") rollback::orchestrator::full ;;
         *) log_error "$(_ "rollback.unknown_type" "$ROLLBACK_TYPE")"; return 1 ;;
     esac
@@ -259,6 +279,7 @@ rollback::orchestrator::watchdog_timer() {
             "ssh") log_bold_info "$(_ "rollback.timeout_ssh")" ;;
             "ufw") log_bold_info "$(_ "rollback.timeout_ufw")" ;;
             "permissions") log_bold_info "$(_ "rollback.timeout_permissions")" ;;
+            "dns") log_bold_info "$(_ "dns.rollback.timeout")" ;;
             "full") log_bold_info "$(_ "rollback.timeout_generic")" ;;
             *) log_bold_info "$(_ "rollback.timeout_generic")" ;;
         esac

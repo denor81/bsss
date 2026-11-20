@@ -209,12 +209,13 @@ runner::module::run_modify() {
         log_info_simple_tab "10. $(_ "module.ipv6.name")"
         log_info_simple_tab "11. $(_ "module.update.name")"
         log_info_simple_tab "12. $(_ "module.hostname.name")"
+        log_info_simple_tab "13. $(_ "module.dns.name")"
         log_info_simple_tab "0. $(_ "common.exit")"
         log_info_simple_tab "00. $(_ "common.menu_check")"
         log_info_simple_tab "01. $(_ "common.menu_language")"
 
         local menu_id
-        menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^([0-9]|0[0-1]|1[0-2])$" "0-12" "^0$" | tr -d '\0')
+        menu_id=$(io::ask_value "$(_ "io.ask_value.select_module")" "" "^([0-9]|0[0-1]|1[0-3])$" "0-13" "^0$" | tr -d '\0')
 
         local rc=0
         local tag
@@ -235,6 +236,7 @@ runner::module::run_modify() {
             10) tag="ipv6-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
             11) tag="update"; update::orchestrator::run || rc=$? ;;
             12) tag="hostname-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
+            13) tag="dns-modify.sh"; bash "${dir}/${tag}" || rc=$? ;;
         esac
         main::process::exit_code "$rc" "$tag"
     done

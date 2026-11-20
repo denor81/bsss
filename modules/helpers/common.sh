@@ -531,15 +531,14 @@ common::log::current_config() {
 }
 
 # @type:        Orchestrator
-# @description: Инициирует немедленный откат через SIGUSR2 и ожидает завершения watchdog
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 - откат выполнен, процесс заблокирован
-ssh::orchestrator::trigger_immediate_rollback() {
-    # || true: WATCHDOG_PID может уже не существовать или завершиться во время kill/wait
+# @description: Initiates immediate rollback through SIGUSR2 and waits for watchdog completion
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 rollback completed, process remains blocked
+rollback::orchestrator::trigger_immediate() {
+    # The watchdog may already be gone or finish during kill/wait.
     log_info "$(_ "rollback.signal_usr2_sent")"
     kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
-    # || true: Процесс может уже завершиться к моменту вызова wait
     wait "$WATCHDOG_PID" 2>/dev/null || true
     while true; do sleep 1; done
 }

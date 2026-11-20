@@ -64,7 +64,7 @@ ufw::toggle::status() {
 #               1 ошибка активации UFW
 ufw::status::force_enable() {
     if ! ufw --force enable >/dev/null 2>&1; then
-        rollback::orchestrator::immediate_usr2
+        rollback::orchestrator::trigger_immediate
         log_error "$(_ "ufw.error.enable_failed")"
         return 1
     else
@@ -97,7 +97,7 @@ ufw::safe::force_enable() {
         log_info "$(_ "common.success_changes_committed")"
         rollback::orchestrator::watchdog_stop
     else
-        rollback::orchestrator::immediate_usr2
+        rollback::orchestrator::trigger_immediate
     fi
 }
 

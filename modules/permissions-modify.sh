@@ -20,20 +20,6 @@ trap common::exit::actions EXIT
 trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
-# @description: Инициирует немедленный откат через SIGUSR2 и ожидает завершения watchdog
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 откат выполнен, процесс заблокирован
-permissions::orchestrator::trigger_immediate_rollback() {
-    # || true: WATCHDOG_PID может уже не существовать или завершиться во время kill/wait
-    log_info "$(_ "rollback.signal_usr2_sent")"
-    kill -USR2 "$WATCHDOG_PID" 2>/dev/null || true
-    # || true: Процесс может уже завершиться к моменту вызова wait
-    wait "$WATCHDOG_PID" 2>/dev/null || true
-    while true; do sleep 1; done
-}
-
-# @type:        Orchestrator
 # @description: Выполняет откат правил permissions и рестарт сервиса
 # @stdin:       нет
 # @stdout:      нет
@@ -71,7 +57,7 @@ permissions::orchestrator::install::rules() {
         rollback::orchestrator::watchdog_stop
         log_info "$(_ "common.success_changes_committed")"
     else
-        permissions::orchestrator::trigger_immediate_rollback
+        rollback::orchestrator::trigger_immediate
     fi
 }
 

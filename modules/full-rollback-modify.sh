@@ -39,7 +39,7 @@ full_rollback::orchestrator::run_module() {
     WATCHDOG_PID=$(rollback::orchestrator::watchdog_start "full" "quiet")
     stop_sync_rollback
 
-    ssh::orchestrator::trigger_immediate_rollback
+    rollback::orchestrator::trigger_immediate
 
 }
 
