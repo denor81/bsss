@@ -128,6 +128,424 @@ dns::ui::select_profile() {
 }
 
 # @type:        Source
+# @description: Reads one systemd unit property
+# @params:      service Unit name (string) without a terminator
+#               property Property name (string) without a terminator
+# @stdin:       None
+# @stdout:      property_value\n
+# @exit_code:   0 property read
+#               $? systemctl failure
+dns::service::get_property() {
+    systemctl show "$1" --property="$2" --value 2>/dev/null
+}
+
+# @type:        Validator
+# @description: Checks whether the resolver preparation has any persistent artifact
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 one or more artifacts exist
+#               1 no artifacts exist
+dns::prepare::has_artifacts() {
+    local path
+    local -a paths=(
+        "$DNS_PREPARE_DIR"
+        "$DNS_PREPARE_STAGING_DIR"
+        "$DNS_PREPARE_CLEANUP_DIR"
+        "$DNS_PREPARE_TEMP_LINK"
+    )
+
+    for path in "${paths[@]}"; do
+        [[ -e "$path" || -L "$path" ]] && return
+    done
+    return 1
+}
+
+# @type:        Orchestrator
+# @description: Acquires the nonblocking resolver preparation lock
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 lock acquired
+#               4 another DNS preparation operation is active
+#               1 lock file could not be opened
+dns::prepare::lock() {
+    if [[ -n "$DNS_PREPARE_LOCK_FD" ]]; then
+        return
+    fi
+
+    exec {DNS_PREPARE_LOCK_FD}> "$DNS_PREPARE_LOCK_FILE" || return 1
+    if ! flock -n "$DNS_PREPARE_LOCK_FD"; then
+        exec {DNS_PREPARE_LOCK_FD}>&-
+        DNS_PREPARE_LOCK_FD=""
+        log_warn "$(_ "dns.prepare.locked")"
+        return 4
+    fi
+}
+
+# @type:        Sink
+# @description: Releases the resolver preparation lock
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 lock released or was not held
+dns::prepare::unlock() {
+    if [[ -n "$DNS_PREPARE_LOCK_FD" ]]; then
+        exec {DNS_PREPARE_LOCK_FD}>&-
+        DNS_PREPARE_LOCK_FD=""
+    fi
+}
+
+# @type:        Validator
+# @description: Checks whether the exact inactive networkd resolver baseline is present
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 exact baseline found
+#               1 baseline differs or could not be inspected
+dns::direct::is_baseline() {
+    local load_state unit_file_state active_state sub_state
+    local networkd_state networkd_sub_state network_manager_state
+
+    load_state=$(dns::service::get_property "$DNS_RESOLVED_SERVICE" "LoadState") || return 1
+    unit_file_state=$(dns::service::get_property "$DNS_RESOLVED_SERVICE" "UnitFileState") || return 1
+    active_state=$(dns::service::get_property "$DNS_RESOLVED_SERVICE" "ActiveState") || return 1
+    sub_state=$(dns::service::get_property "$DNS_RESOLVED_SERVICE" "SubState") || return 1
+    networkd_state=$(dns::service::get_property "$DNS_NETWORKD_SERVICE" "ActiveState") || return 1
+    networkd_sub_state=$(dns::service::get_property "$DNS_NETWORKD_SERVICE" "SubState") || return 1
+    network_manager_state=$(dns::service::get_property "$DNS_NETWORK_MANAGER_SERVICE" "ActiveState") || return 1
+
+    [[ "$load_state" == "loaded" &&
+        "$unit_file_state" == "disabled" &&
+        "$active_state" == "inactive" &&
+        "$sub_state" == "dead" &&
+        "$networkd_state" == "active" &&
+        "$networkd_sub_state" == "running" &&
+        "$network_manager_state" != "active" &&
+        "$network_manager_state" != "activating" &&
+        -f "$DNS_RESOLV_CONF_PATH" &&
+        ! -L "$DNS_RESOLV_CONF_PATH" ]]
+}
+
+# @type:        Source
+# @description: Classifies the resolver mode relevant to BSSS
+# @stdin:       None
+# @stdout:      resolved-stub|networkd-direct|interrupted|unsupported\0
+# @exit_code:   0 mode classified
+dns::resolver::get_mode() {
+    local target
+
+    if dns::prepare::has_artifacts; then
+        printf 'interrupted\0'
+    elif [[ -L "$DNS_RESOLV_CONF_PATH" ]] &&
+        target=$(readlink -f "$DNS_RESOLV_CONF_PATH") &&
+        [[ "$target" == "$DNS_RESOLVED_STUB_PATH" ]] &&
+        systemctl is-active --quiet "$DNS_RESOLVED_SERVICE"; then
+        printf 'resolved-stub\0'
+    elif dns::direct::is_baseline; then
+        printf 'networkd-direct\0'
+    else
+        printf 'unsupported\0'
+    fi
+}
+
+# @type:        Validator
+# @description: Validates a nameserver-only resolv.conf file
+# @params:      path Resolver file path (path) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 valid nameserver-only file
+#               1 empty, malformed, or unsupported file
+#               $? gawk failure
+dns::direct::content_is_supported() {
+    gawk '
+        function ipv4(value, parts, count, i) {
+            count = split(value, parts, ".")
+            if (count != 4) {
+                return 0
+            }
+            for (i = 1; i <= 4; i++) {
+                if (parts[i] !~ /^(0|[1-9][0-9]{0,2})$/ ||
+                    parts[i] + 0 > 255) {
+                    return 0
+                }
+            }
+            return 1
+        }
+        function hextets(value, parts, count, i) {
+            if (value == "") {
+                return 0
+            }
+            count = split(value, parts, ":")
+            for (i = 1; i <= count; i++) {
+                if (parts[i] !~ /^[0-9A-Fa-f]{1,4}$/) {
+                    return -1
+                }
+            }
+            return count
+        }
+        function ipv6(value, separator, left, right, left_count, right_count) {
+            if (value !~ /^[0-9A-Fa-f:]+$/ || value !~ /:/ ||
+                value ~ /%/ || value ~ /::.*::/) {
+                return 0
+            }
+            separator = index(value, "::")
+            if (separator == 0) {
+                return hextets(value) == 8
+            }
+            left = substr(value, 1, separator - 1)
+            right = substr(value, separator + 2)
+            left_count = left == "" ? 0 : hextets(left)
+            right_count = right == "" ? 0 : hextets(right)
+            return left_count >= 0 && right_count >= 0 &&
+                left_count + right_count < 8
+        }
+        /^[[:space:]]*($|#)/ {
+            next
+        }
+        {
+            if (NF != 2 || $1 != "nameserver" ||
+                !(ipv4($2) || ipv6($2))) {
+                invalid = 1
+                exit
+            }
+            found = 1
+        }
+        END { exit found && !invalid ? 0 : 1 }
+    ' "$1"
+}
+
+# @type:        Validator
+# @description: Validates the direct resolver file object and content
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 supported object and content
+#               4 unsupported or ambiguous resolver file
+dns::direct::file_is_supported() {
+    local uid gid links type mount_target attributes
+
+    [[ -f "$DNS_RESOLV_CONF_PATH" && ! -L "$DNS_RESOLV_CONF_PATH" ]] || return 4
+    IFS=$'\t' read -r uid gid links type < <(
+        stat -c $'%u\t%g\t%h\t%F' "$DNS_RESOLV_CONF_PATH"
+    ) || return 4
+    [[ "$uid" == "0" && "$gid" == "0" && "$links" == "1" && "$type" == "regular file" ]] || return 4
+
+    mount_target=$(findmnt -n -T "$DNS_RESOLV_CONF_PATH" -o TARGET) || return 4
+    [[ "$mount_target" != "$DNS_RESOLV_CONF_PATH" ]] || return 4
+
+    attributes=$(lsattr -d "$DNS_RESOLV_CONF_PATH" 2>/dev/null) || return 4
+    [[ "${attributes%% *}" != *i* ]] || return 4
+    dns::direct::content_is_supported "$DNS_RESOLV_CONF_PATH" || return 4
+}
+
+# @type:        Source
+# @description: Emits the resolver file identity used for the final source recheck
+# @stdin:       None
+# @stdout:      device<TAB>inode<TAB>size<TAB>uid<TAB>gid<TAB>mode<TAB>sha256\0
+# @exit_code:   0 fingerprint emitted
+#               $? stat or sha256sum failure
+dns::direct::fingerprint() {
+    local metadata hash
+
+    metadata=$(stat -c $'%d\t%i\t%s\t%u\t%g\t%a' "$DNS_RESOLV_CONF_PATH") || return 1
+    hash=$(sha256sum "$DNS_RESOLV_CONF_PATH") || return 1
+    printf '%s\t%s\0' "$metadata" "${hash%% *}"
+}
+
+# @type:        Validator
+# @description: Validates or creates the private BSSS state directory
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 secure state directory available
+#               1 creation or validation failed
+dns::prepare::ensure_state_dir() {
+    local uid gid mode mode_value
+
+    if [[ ! -e "$BSSS_STATE_DIR" && ! -L "$BSSS_STATE_DIR" ]]; then
+        mkdir -m 700 "$BSSS_STATE_DIR" || return 1
+    fi
+    [[ -d "$BSSS_STATE_DIR" && ! -L "$BSSS_STATE_DIR" ]] || return 1
+
+    IFS=$'\t' read -r uid gid mode < <(stat -c $'%u\t%g\t%a' "$BSSS_STATE_DIR") || return 1
+    mode_value=$((8#$mode))
+    [[ "$uid" == "0" && "$gid" == "0" ]] && (( (mode_value & 8#022) == 0 ))
+}
+
+# @type:        Source
+# @description: Renders the resolver preparation state file
+# @params:      profile Resolver profile identifier (string) without a terminator
+#               hash Resolver backup SHA-256 (string) without a terminator
+# @stdin:       None
+# @stdout:      state content (text\n)
+# @exit_code:   0 state rendered
+#               1 invalid profile or hash
+dns::prepare::render_state() {
+    local profile="$1"
+    local hash="$2"
+
+    dns::profile::is_valid "$profile" || return 1
+    [[ "$hash" =~ ^[0-9a-f]{64}$ ]] || return 1
+    printf '# %s\nschema\t1\nprofile\t%s\nsha256\t%s\n' "$BSSS_MARKER_COMMENT" "$profile" "$hash"
+}
+
+# @type:        Source
+# @description: Validates and reads a complete resolver preparation bundle
+# @params:      directory Bundle directory (path) without a terminator
+# @stdin:       None
+# @stdout:      profile<TAB>sha256\0
+# @exit_code:   0 valid complete bundle
+#               1 invalid or incomplete bundle
+dns::prepare::read_bundle() {
+    local directory="$1"
+    local state="${directory}/state"
+    local backup="${directory}/resolv.conf"
+    local uid gid mode links type profile hash actual_hash
+
+    [[ -d "$directory" && ! -L "$directory" ]] || return 1
+    IFS=$'\t' read -r uid gid mode < <(stat -c $'%u\t%g\t%a' "$directory") || return 1
+    [[ "$uid" == "0" && "$gid" == "0" && "$mode" == "700" ]] || return 1
+
+    [[ -f "$state" && ! -L "$state" ]] || return 1
+    IFS=$'\t' read -r uid gid mode links type < <(stat -c $'%u\t%g\t%a\t%h\t%F' "$state") || return 1
+    [[ "$uid" == "0" && "$gid" == "0" && "$mode" == "600" &&
+        "$links" == "1" && "$type" == "regular file" ]] || return 1
+
+    IFS=$'\t' read -r profile hash < <(
+        gawk -v marker="# ${BSSS_MARKER_COMMENT}" '
+            NR == 1 { valid = $0 == marker; next }
+            NR == 2 { valid = valid && $0 == "schema\t1"; next }
+            NR == 3 && $1 == "profile" { profile = $2; next }
+            NR == 4 && $1 == "sha256" { hash = $2; next }
+            { valid = 0 }
+            END {
+                if (valid && NR == 4 &&
+                    (profile == "google-cloudflare" || profile == "yandex-google") &&
+                    hash ~ /^[0-9a-f]{64}$/) {
+                    print profile "\t" hash
+                    exit 0
+                }
+                exit 1
+            }
+        ' "$state"
+    ) || return 1
+
+    [[ -f "$backup" && ! -L "$backup" ]] || return 1
+    IFS=$'\t' read -r uid gid links type < <(stat -c $'%u\t%g\t%h\t%F' "$backup") || return 1
+    [[ "$uid" == "0" && "$gid" == "0" && "$links" == "1" && "$type" == "regular file" ]] || return 1
+    actual_hash=$(sha256sum "$backup") || return 1
+    [[ "${actual_hash%% *}" == "$hash" ]] || return 1
+
+    printf '%s\t%s\0' "$profile" "$hash"
+}
+
+# @type:        Validator
+# @description: Checks whether a partial staging or cleanup directory is safely removable
+# @params:      directory Bundle directory (path) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 only valid expected entries are present
+#               1 foreign metadata or entries found
+dns::prepare::partial_is_owned() {
+    local directory="$1"
+    local uid gid mode entry name links type
+    local -a entries=()
+
+    [[ -d "$directory" && ! -L "$directory" ]] || return 1
+    IFS=$'\t' read -r uid gid mode < <(stat -c $'%u\t%g\t%a' "$directory") || return 1
+    [[ "$uid" == "0" && "$gid" == "0" && "$mode" == "700" ]] || return 1
+
+    while IFS= read -r -d '' entry; do
+        entries+=("$entry")
+    done < <(
+        shopt -s nullglob dotglob
+        for entry in "$directory"/*; do
+            printf '%s\0' "$entry"
+        done
+    )
+    for entry in "${entries[@]}"; do
+        name="${entry##*/}"
+        [[ "$name" == "state" || "$name" == "resolv.conf" ]] || return 1
+        [[ -f "$entry" && ! -L "$entry" ]] || return 1
+        IFS=$'\t' read -r uid gid mode links type < <(stat -c $'%u\t%g\t%a\t%h\t%F' "$entry") || return 1
+        [[ "$uid" == "0" && "$gid" == "0" && "$links" == "1" && "$type" == regular*file ]] || return 1
+        [[ "$name" != "state" || "$mode" == "600" ]] || return 1
+    done
+}
+
+# @type:        Sink
+# @description: Removes an owned partial staging or cleanup directory
+# @params:      directory Bundle directory (path) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 exact owned entries removed
+#               1 foreign state or deletion failure
+dns::prepare::remove_partial() {
+    local directory="$1"
+
+    dns::prepare::partial_is_owned "$directory" || return 1
+    [[ ! -e "${directory}/state" ]] || rm -- "${directory}/state" || return 1
+    [[ ! -e "${directory}/resolv.conf" ]] || rm -- "${directory}/resolv.conf" || return 1
+    rmdir -- "$directory"
+}
+
+# @type:        Sink
+# @description: Removes the exact owned temporary resolv.conf symlink
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 owned link removed or absent
+#               1 foreign object found or deletion failed
+dns::prepare::remove_temp_link() {
+    if [[ ! -e "$DNS_PREPARE_TEMP_LINK" && ! -L "$DNS_PREPARE_TEMP_LINK" ]]; then
+        return
+    fi
+    [[ -L "$DNS_PREPARE_TEMP_LINK" &&
+        "$(readlink "$DNS_PREPARE_TEMP_LINK")" == "$DNS_RESOLVED_STUB_PATH" ]] || return 1
+    rm -- "$DNS_PREPARE_TEMP_LINK"
+}
+
+# @type:        Orchestrator
+# @description: Publishes the short-lived resolver preparation bundle
+# @params:      profile Resolver profile identifier (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 durable bundle published
+#               1 creation, validation, flush, or rename failed
+dns::prepare::create_bundle() {
+    local profile="$1"
+    local hash
+
+    dns::prepare::ensure_state_dir || return 1
+    dns::prepare::has_artifacts && return 1
+
+    (
+        umask 077
+        mkdir -m 700 "$DNS_PREPARE_STAGING_DIR" || exit 1
+        cp -a -- "$DNS_RESOLV_CONF_PATH" "${DNS_PREPARE_STAGING_DIR}/resolv.conf" || exit 1
+        hash=$(sha256sum "${DNS_PREPARE_STAGING_DIR}/resolv.conf") || exit 1
+        dns::prepare::render_state "$profile" "${hash%% *}" > "${DNS_PREPARE_STAGING_DIR}/state" || exit 1
+        chown root:root "${DNS_PREPARE_STAGING_DIR}/state" || exit 1
+        chmod 600 "${DNS_PREPARE_STAGING_DIR}/state" || exit 1
+        dns::prepare::read_bundle "$DNS_PREPARE_STAGING_DIR" >/dev/null || exit 1
+        sync -f "$DNS_PREPARE_STAGING_DIR" || exit 1
+        mv -T "$DNS_PREPARE_STAGING_DIR" "$DNS_PREPARE_DIR" || exit 1
+        sync -f "$BSSS_STATE_DIR"
+    ) || return 1
+
+    log_info "$(_ "dns.prepare.bundle_created" "$DNS_PREPARE_DIR")"
+}
+
+# @type:        Sink
+# @description: Removes a complete resolver preparation bundle after a validated outcome
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 bundle removed
+#               1 validation, rename, flush, or deletion failed
+dns::prepare::cleanup_bundle() {
+    dns::prepare::read_bundle "$DNS_PREPARE_DIR" >/dev/null || return 1
+    [[ ! -e "$DNS_PREPARE_CLEANUP_DIR" && ! -L "$DNS_PREPARE_CLEANUP_DIR" ]] || return 1
+    mv -T "$DNS_PREPARE_DIR" "$DNS_PREPARE_CLEANUP_DIR" || return 1
+    sync -f "$BSSS_STATE_DIR" || return 1
+    dns::prepare::remove_partial "$DNS_PREPARE_CLEANUP_DIR" || return 1
+    log_info "$(_ "dns.prepare.bundle_removed" "$DNS_PREPARE_DIR")"
+}
+
+# @type:        Source
 # @description: Renders the BSSS systemd-resolved drop-in for a profile
 # @params:      profile Resolver profile identifier (string) without a terminator
 # @stdin:       None
@@ -1133,4 +1551,590 @@ dns::orchestrator::dismantle() {
     fi
 
     [[ "$restart_required" == "false" ]] || dns::service::restart
+}
+
+# @type:        Validator
+# @description: Checks whether resolver bootstrap is released for the current Ubuntu version
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 bootstrap release supported
+#               1 bootstrap release unsupported or unavailable
+dns::prepare::os_is_supported() {
+    local id version
+    local supported_pattern="^(${DNS_BOOTSTRAP_SUPPORTED_UBUNTU_VERSIONS})$"
+
+    IFS=$'\t' read -r id version < <(dns::os::get_release) || return 1
+    [[ "$id" == "ubuntu" && "$version" =~ $supported_pattern ]]
+}
+
+# @type:        Validator
+# @description: Checks that the test name cannot be answered from /etc/hosts
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 test name absent
+#               1 test name found or hosts file unreadable
+dns::prepare::test_name_is_external() {
+    [[ -r "$HOSTS_FILE_PATH" ]] || return 1
+    ! gawk -v name="$DNS_TEST_DOMAIN" '
+        /^[[:space:]]*($|#)/ {
+            next
+        }
+        {
+            for (i = 2; i <= NF; i++) {
+                value = tolower($i)
+                sub(/\.$/, "", value)
+                expected = tolower(name)
+                sub(/\.$/, "", expected)
+                if (value == expected) {
+                    found = 1
+                    exit
+                }
+            }
+        }
+        END { exit found ? 0 : 1 }
+    ' "$HOSTS_FILE_PATH"
+}
+
+# @type:        Orchestrator
+# @description: Validates direct libc DNS while systemd-resolved remains inactive
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 direct DNS query succeeded without activating resolved
+#               1 query failed or resolved changed state
+dns::direct::validate_query() {
+    local output
+
+    [[ "$(dns::service::get_property "$DNS_RESOLVED_SERVICE" "ActiveState")" == "inactive" ]] || return 1
+    log_info "$(_ "common.log_command" "timeout ${DNS_QUERY_TIMEOUT_SECONDS}s getent ahosts $DNS_TEST_DOMAIN")"
+    if ! output=$(timeout "${DNS_QUERY_TIMEOUT_SECONDS}s" getent ahosts "$DNS_TEST_DOMAIN" 2>&1); then
+        output=$(tail -n 3 <<< "$output" | tr '\n' ' ')
+        log_warn "$(_ "dns.prepare.direct_query_failed" "$DNS_TEST_DOMAIN" "$output")"
+        return 1
+    fi
+    [[ -n "$output" ]] || return 1
+    [[ "$(dns::service::get_property "$DNS_RESOLVED_SERVICE" "ActiveState")" == "inactive" ]]
+}
+
+# @type:        Orchestrator
+# @description: Checks every condition for the narrow networkd-direct bootstrap
+# @params:      profile Resolver profile identifier (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 preparation can start
+#               4 preconfiguration required
+#               1 invalid internal profile
+dns::prepare::preflight() {
+    local profile="$1"
+    local command listener conflict cmdline
+    local -a commands=(
+        systemctl systemd-analyze resolvectl readlink ss gawk openssl timeout
+        mktemp mv cp cmp chown chmod mkdir rmdir rm ln flock sync sha256sum
+        stat findmnt lsattr getent
+    )
+
+    dns::profile::is_valid "$profile" || return 1
+    if ! dns::prepare::os_is_supported; then
+        log_warn "$(_ "dns.prepare.unsupported_release" "$DNS_BOOTSTRAP_SUPPORTED_UBUNTU_VERSIONS")"
+        return 4
+    fi
+    for command in "${commands[@]}"; do
+        if ! command -v "$command" >/dev/null 2>&1; then
+            log_warn "$(_ "dns.preflight.missing_command" "$command")"
+            return 4
+        fi
+    done
+    if ! dns::direct::is_baseline; then
+        log_warn "$(_ "dns.prepare.baseline_required")"
+        return 4
+    fi
+    if ! dns::direct::file_is_supported; then
+        log_warn "$(_ "dns.prepare.resolv_unsupported" "$DNS_RESOLV_CONF_PATH")"
+        return 4
+    fi
+    if dns::prepare::has_artifacts; then
+        log_warn "$(_ "dns.prepare.recovery_required" "$DNS_PREPARE_DIR")"
+        return 4
+    fi
+    if [[ -e "$BSSS_DNS_CONFIG_FILE" || -L "$BSSS_DNS_CONFIG_FILE" ||
+        -e "$BSSS_DNS_ROLLBACK_FILE" || -L "$BSSS_DNS_ROLLBACK_FILE" ]]; then
+        log_warn "$(_ "dns.prepare.existing_dns_state")"
+        return 4
+    fi
+    if [[ -L "$DNS_RESOLVED_CONFIG_DIR" ||
+        ( -e "$DNS_RESOLVED_CONFIG_DIR" && ! -d "$DNS_RESOLVED_CONFIG_DIR" ) ]]; then
+        log_warn "$(_ "dns.preflight.config_dir" "$DNS_RESOLVED_CONFIG_DIR")"
+        return 4
+    fi
+    if [[ -e "$BSSS_STATE_DIR" || -L "$BSSS_STATE_DIR" ]]; then
+        dns::prepare::ensure_state_dir || {
+            log_warn "$(_ "dns.prepare.state_dir_unsafe" "$BSSS_STATE_DIR")"
+            return 4
+        }
+    fi
+    if IFS= read -r -d '' listener < <(dns::runtime::local_resolvers); then
+        log_warn "$(_ "dns.preflight.local_resolver" "$listener")"
+        return 4
+    fi
+    cmdline=$(< /proc/cmdline) || return 4
+    if gawk '
+        {
+            for (i = 1; i <= NF; i++) {
+                if ($i ~ /^(nameserver|domain)=/) {
+                    exit 0
+                }
+            }
+            exit 1
+        }
+    ' <<< "$cmdline"; then
+        log_warn "$(_ "dns.prepare.kernel_override")"
+        return 4
+    fi
+    if ! dns::prepare::test_name_is_external; then
+        log_warn "$(_ "dns.prepare.test_name_local" "$DNS_TEST_DOMAIN")"
+        return 4
+    fi
+    if IFS= read -r -d '' conflict < <(dns::config::late_conflicts); then
+        log_warn "$(_ "dns.preflight.late_conflict" "$conflict")"
+        return 4
+    fi
+    if ! dns::direct::validate_query; then
+        return 4
+    fi
+    dns::endpoint::check_profile "$profile"
+}
+
+# @type:        Orchestrator
+# @description: Waits for exact systemd unit runtime state
+# @params:      service Unit name (string) without a terminator
+#               active_state Expected ActiveState (string) without a terminator
+#               sub_state Expected SubState (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 expected state reached
+#               1 timeout or property inspection failure
+dns::service::wait_state() {
+    local service="$1"
+    local expected_active="$2"
+    local expected_sub="$3"
+    local attempts=$((DNS_SERVICE_POLL_SECONDS * 4))
+    local active sub attempt
+
+    for (( attempt = 0; attempt < attempts; attempt++ )); do
+        active=$(dns::service::get_property "$service" "ActiveState") || return 1
+        sub=$(dns::service::get_property "$service" "SubState") || return 1
+        [[ "$active" == "$expected_active" && "$sub" == "$expected_sub" ]] && return
+        sleep 0.25
+    done
+    return 1
+}
+
+# @type:        Orchestrator
+# @description: Enables and starts systemd-resolved with bounded state polling
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 service enabled and running
+#               1 enable, flush, start, or state validation failed
+dns::service::enable_start() {
+    log_info "$(_ "common.log_command" "systemctl enable $DNS_RESOLVED_SERVICE")"
+    systemctl enable "$DNS_RESOLVED_SERVICE" || return 1
+    [[ "$(dns::service::get_property "$DNS_RESOLVED_SERVICE" "UnitFileState")" == "enabled" ]] || return 1
+    sync -f /etc/systemd/system || return 1
+
+    log_info "$(_ "common.log_command" "systemctl start --no-block $DNS_RESOLVED_SERVICE")"
+    systemctl start --no-block "$DNS_RESOLVED_SERVICE" || return 1
+    dns::service::wait_state "$DNS_RESOLVED_SERVICE" "active" "running" || return 1
+    log_info "$(_ "dns.prepare.service_started" "$DNS_RESOLVED_SERVICE")"
+}
+
+# @type:        Orchestrator
+# @description: Stops and disables systemd-resolved with bounded state polling
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 service disabled and inactive
+#               1 stop, disable, flush, or state validation failed
+dns::service::stop_disable() {
+    log_info "$(_ "common.log_command" "systemctl stop --no-block $DNS_RESOLVED_SERVICE")"
+    systemctl stop --no-block "$DNS_RESOLVED_SERVICE" || return 1
+    dns::service::wait_state "$DNS_RESOLVED_SERVICE" "inactive" "dead" || return 1
+
+    log_info "$(_ "common.log_command" "systemctl disable $DNS_RESOLVED_SERVICE")"
+    systemctl disable "$DNS_RESOLVED_SERVICE" || return 1
+    [[ "$(dns::service::get_property "$DNS_RESOLVED_SERVICE" "UnitFileState")" == "disabled" ]] || return 1
+    sync -f /etc/systemd/system
+}
+
+# @type:        Orchestrator
+# @description: Performs an uncached non-synthetic DNS query through systemd-resolved
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 query succeeded
+#               1 cache flush or query failed
+dns::resolver::query_strict() {
+    local output
+    local command_text="timeout ${DNS_QUERY_TIMEOUT_SECONDS}s resolvectl query --protocol=dns --synthesize=no --cache=no $DNS_TEST_DOMAIN"
+
+    log_info "$(_ "common.log_command" "resolvectl flush-caches")"
+    resolvectl flush-caches || return 1
+    log_info "$(_ "common.log_command" "$command_text")"
+    if output=$(timeout "${DNS_QUERY_TIMEOUT_SECONDS}s" resolvectl query \
+        --protocol=dns \
+        --synthesize=no \
+        --cache=no \
+        "$DNS_TEST_DOMAIN" 2>&1); then
+        log_info "$(_ "dns.query.success" "$DNS_TEST_DOMAIN")"
+        return
+    fi
+
+    output=$(tail -n 3 <<< "$output" | tr '\n' ' ')
+    log_error "$(_ "dns.query.failed" "$DNS_TEST_DOMAIN" "$output")"
+    return 1
+}
+
+# @type:        Orchestrator
+# @description: Proves exact strict runtime state before or after the stub switch
+# @params:      profile Resolver profile identifier (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 exact strict runtime confirmed
+#               1 runtime evidence differs or is unavailable
+dns::resolver::validate_strict_runtime() {
+    local profile="$1"
+    local expected_dns runtime_dns runtime_domains runtime_dot domain_output route_issue
+
+    expected_dns=$(dns::profile::get_servers "$profile" | tr -d '\0') || return 1
+    systemctl is-active --quiet "$DNS_RESOLVED_SERVICE" || return 1
+    dns::runtime::stub_is_listening || return 1
+    dns::config::matches_profile "$profile" || return 1
+
+    IFS= read -r -d '' runtime_dns < <(dns::runtime::get_global "dns") || return 1
+    IFS= read -r -d '' runtime_domains < <(dns::runtime::get_global "domain") || return 1
+    IFS= read -r -d '' runtime_dot < <(dns::runtime::get_global "dnsovertls") || return 1
+    [[ -n "$runtime_dns" && "$runtime_dns" == "$expected_dns" ]] || return 1
+    [[ "$runtime_domains" == "~." && "$runtime_dot" == "yes" ]] || return 1
+
+    domain_output=$(resolvectl --no-pager domain 2>/dev/null) || return 1
+    if IFS= read -r -d '' route_issue < <(dns::runtime::route_issues <<< "$domain_output"); then
+        return 1
+    fi
+    dns::resolver::query_strict
+}
+
+# @type:        Sink
+# @description: Atomically switches /etc/resolv.conf to the standard resolved stub
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 durable symlink installed
+#               1 foreign temp object, link, rename, flush, or validation failure
+dns::prepare::switch_to_stub() {
+    local resolv_dir="${DNS_RESOLV_CONF_PATH%/*}"
+
+    [[ ! -e "$DNS_PREPARE_TEMP_LINK" && ! -L "$DNS_PREPARE_TEMP_LINK" ]] || return 1
+    ln -s "$DNS_RESOLVED_STUB_PATH" "$DNS_PREPARE_TEMP_LINK" || return 1
+    if [[ ! -L "$DNS_PREPARE_TEMP_LINK" ||
+        "$(readlink "$DNS_PREPARE_TEMP_LINK")" != "$DNS_RESOLVED_STUB_PATH" ]]; then
+        dns::prepare::remove_temp_link || true
+        return 1
+    fi
+    mv -T "$DNS_PREPARE_TEMP_LINK" "$DNS_RESOLV_CONF_PATH" || return 1
+    sync -f "$resolv_dir" || return 1
+    [[ -L "$DNS_RESOLV_CONF_PATH" &&
+        "$(readlink -f "$DNS_RESOLV_CONF_PATH")" == "$DNS_RESOLVED_STUB_PATH" ]]
+}
+
+# @type:        Sink
+# @description: Atomically restores the direct resolver file from the recovery bundle
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 durable exact file restored
+#               1 bundle, copy, rename, flush, or metadata validation failed
+dns::prepare::restore_resolv_conf() {
+    local bundle profile hash tmp expected actual
+    local resolv_dir="${DNS_RESOLV_CONF_PATH%/*}"
+
+    IFS= read -r -d '' bundle < <(dns::prepare::read_bundle "$DNS_PREPARE_DIR") || return 1
+    IFS=$'\t' read -r profile hash <<< "$bundle"
+    : "$profile"
+
+    tmp=$(mktemp "${resolv_dir}/.resolv.conf.bsss_restore.XXXXXX") || return 1
+    if ! cp -a -- "$DNS_PREPARE_BACKUP_FILE" "$tmp"; then
+        rm -f -- "$tmp"
+        return 1
+    fi
+    actual=$(sha256sum "$tmp") || {
+        rm -f -- "$tmp"
+        return 1
+    }
+    [[ "${actual%% *}" == "$hash" ]] || {
+        rm -f -- "$tmp"
+        return 1
+    }
+    expected=$(stat -c $'%s\t%u\t%g\t%a' "$DNS_PREPARE_BACKUP_FILE") || {
+        rm -f -- "$tmp"
+        return 1
+    }
+    actual=$(stat -c $'%s\t%u\t%g\t%a' "$tmp") || {
+        rm -f -- "$tmp"
+        return 1
+    }
+    [[ "$actual" == "$expected" ]] || {
+        rm -f -- "$tmp"
+        return 1
+    }
+
+    mv -T "$tmp" "$DNS_RESOLV_CONF_PATH" || return 1
+    sync -f "$resolv_dir" || return 1
+    [[ -f "$DNS_RESOLV_CONF_PATH" && ! -L "$DNS_RESOLV_CONF_PATH" ]] || return 1
+    actual=$(sha256sum "$DNS_RESOLV_CONF_PATH") || return 1
+    [[ "${actual%% *}" == "$hash" ]] || return 1
+    actual=$(stat -c $'%s\t%u\t%g\t%a' "$DNS_RESOLV_CONF_PATH") || return 1
+    [[ "$actual" == "$expected" ]]
+}
+
+# @type:        Orchestrator
+# @description: Restores the exact pre-preparation direct resolver baseline
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 baseline restored and bundle removed
+#               1 safe restoration could not be proved
+dns::prepare::rollback() {
+    local bundle profile hash current_hash expected_metadata current_metadata
+
+    IFS= read -r -d '' bundle < <(dns::prepare::read_bundle "$DNS_PREPARE_DIR") || return 1
+    IFS=$'\t' read -r profile hash <<< "$bundle"
+    : "$profile"
+
+    if [[ -L "$DNS_RESOLV_CONF_PATH" ]] &&
+        [[ "$(readlink -f "$DNS_RESOLV_CONF_PATH")" == "$DNS_RESOLVED_STUB_PATH" ]]; then
+        dns::prepare::restore_resolv_conf || return 1
+    elif [[ -f "$DNS_RESOLV_CONF_PATH" && ! -L "$DNS_RESOLV_CONF_PATH" ]]; then
+        current_hash=$(sha256sum "$DNS_RESOLV_CONF_PATH") || return 1
+        [[ "${current_hash%% *}" == "$hash" ]] || return 1
+        expected_metadata=$(stat -c $'%s\t%u\t%g\t%a' "$DNS_PREPARE_BACKUP_FILE") || return 1
+        current_metadata=$(stat -c $'%s\t%u\t%g\t%a' "$DNS_RESOLV_CONF_PATH") || return 1
+        [[ "$current_metadata" == "$expected_metadata" ]] || return 1
+    else
+        return 1
+    fi
+
+    dns::prepare::remove_temp_link || return 1
+    dns::service::stop_disable || return 1
+    dns::config::remove || return 1
+    if [[ -d "$DNS_RESOLVED_CONFIG_DIR" ]]; then
+        sync -f "$DNS_RESOLVED_CONFIG_DIR" || return 1
+    fi
+    sync -f /etc/systemd/system || return 1
+    dns::direct::validate_query || return 1
+    dns::prepare::cleanup_bundle || return 1
+    log_info "$(_ "dns.prepare.rollback_complete")"
+}
+
+# @type:        Orchestrator
+# @description: Handles INT or TERM during resolver preparation
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   130 interrupted after successful rollback
+#               1 rollback failed
+dns::prepare::on_signal() {
+    trap - INT TERM
+    if dns::prepare::rollback; then
+        dns::prepare::unlock
+        exit 130
+    fi
+    dns::prepare::unlock
+    exit 1
+}
+
+# @type:        Orchestrator
+# @description: Applies strict DoT and standardizes the exact networkd-direct baseline
+# @params:      profile Resolver profile identifier (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 resolver prepared
+#               3 changes failed and were rolled back
+#               4 preconfiguration required
+#               1 critical mutation or rollback failure
+dns::prepare::run() {
+    local profile="$1"
+    local fingerprint current_fingerprint
+    local rc
+
+    dns::prepare::lock || return $?
+    dns::prepare::preflight "$profile" || {
+        rc=$?
+        dns::prepare::unlock
+        return "$rc"
+    }
+    IFS= read -r -d '' fingerprint < <(dns::direct::fingerprint) || {
+        dns::prepare::unlock
+        return 1
+    }
+    if ! dns::prepare::create_bundle "$profile"; then
+        if [[ -d "$DNS_PREPARE_STAGING_DIR" ]] &&
+            dns::prepare::partial_is_owned "$DNS_PREPARE_STAGING_DIR"; then
+            dns::prepare::remove_partial "$DNS_PREPARE_STAGING_DIR" || true
+        fi
+        dns::prepare::unlock
+        return 1
+    fi
+
+    trap dns::prepare::on_signal INT TERM
+    if ! dns::config::install "$profile" ||
+        ! sync -f "$DNS_RESOLVED_CONFIG_DIR" ||
+        ! dns::service::enable_start ||
+        ! dns::resolver::validate_strict_runtime "$profile"; then
+        trap - INT TERM
+        if dns::prepare::rollback; then
+            trap common::int::actions INT
+            trap - TERM
+            dns::prepare::unlock
+            return 3
+        fi
+        trap common::int::actions INT
+        trap - TERM
+        dns::prepare::unlock
+        return 1
+    fi
+
+    IFS= read -r -d '' current_fingerprint < <(dns::direct::fingerprint) || current_fingerprint=""
+    if [[ "$current_fingerprint" != "$fingerprint" ]] ||
+        ! dns::prepare::switch_to_stub ||
+        ! timeout "${DNS_QUERY_TIMEOUT_SECONDS}s" getent ahosts "$DNS_TEST_DOMAIN" >/dev/null ||
+        ! dns::resolver::validate_strict_runtime "$profile" ||
+        ! dns::status::is_protected; then
+        trap - INT TERM
+        if dns::prepare::rollback; then
+            trap common::int::actions INT
+            trap - TERM
+            dns::prepare::unlock
+            return 3
+        fi
+        trap common::int::actions INT
+        trap - TERM
+        dns::prepare::unlock
+        return 1
+    fi
+
+    trap common::int::actions INT
+    trap - TERM
+    dns::prepare::cleanup_bundle || {
+        dns::prepare::unlock
+        return 1
+    }
+    dns::prepare::unlock
+    log_success "$(_ "dns.prepare.success")"
+    dns::log::status
+}
+
+# @type:        Orchestrator
+# @description: Recovers an interrupted resolver preparation
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 interrupted state finalized or restored
+#               4 foreign or inconsistent state requires manual inspection
+#               1 recovery operation failed
+dns::prepare::recover() {
+    local bundle profile hash
+
+    dns::prepare::lock || return $?
+    if [[ -e "$DNS_PREPARE_STAGING_DIR" || -L "$DNS_PREPARE_STAGING_DIR" ]]; then
+        if [[ -e "$DNS_PREPARE_DIR" || -L "$DNS_PREPARE_DIR" ||
+            -e "$DNS_PREPARE_CLEANUP_DIR" || -L "$DNS_PREPARE_CLEANUP_DIR" ]] ||
+            ! dns::prepare::partial_is_owned "$DNS_PREPARE_STAGING_DIR" ||
+            ! dns::direct::is_baseline ||
+            [[ -e "$BSSS_DNS_CONFIG_FILE" || -L "$BSSS_DNS_CONFIG_FILE" ]]; then
+            dns::prepare::unlock
+            return 4
+        fi
+        dns::prepare::remove_temp_link || {
+            dns::prepare::unlock
+            return 4
+        }
+        dns::prepare::remove_partial "$DNS_PREPARE_STAGING_DIR" || {
+            dns::prepare::unlock
+            return 1
+        }
+        dns::prepare::unlock
+        log_info "$(_ "dns.prepare.recovery_complete")"
+        return
+    fi
+
+    if [[ -e "$DNS_PREPARE_CLEANUP_DIR" || -L "$DNS_PREPARE_CLEANUP_DIR" ]]; then
+        if [[ -e "$DNS_PREPARE_DIR" || -L "$DNS_PREPARE_DIR" ]] ||
+            ! dns::prepare::partial_is_owned "$DNS_PREPARE_CLEANUP_DIR" ||
+            ! dns::status::is_protected; then
+            dns::prepare::unlock
+            return 4
+        fi
+        dns::prepare::remove_temp_link || {
+            dns::prepare::unlock
+            return 4
+        }
+        dns::prepare::remove_partial "$DNS_PREPARE_CLEANUP_DIR" || {
+            dns::prepare::unlock
+            return 1
+        }
+        dns::prepare::unlock
+        log_info "$(_ "dns.prepare.recovery_complete")"
+        return
+    fi
+
+    if [[ ! -e "$DNS_PREPARE_DIR" && ! -L "$DNS_PREPARE_DIR" &&
+        ( -e "$DNS_PREPARE_TEMP_LINK" || -L "$DNS_PREPARE_TEMP_LINK" ) ]]; then
+        if ! dns::direct::is_baseline ||
+            [[ -e "$BSSS_DNS_CONFIG_FILE" || -L "$BSSS_DNS_CONFIG_FILE" ]]; then
+            dns::prepare::unlock
+            return 4
+        fi
+        dns::prepare::remove_temp_link || {
+            dns::prepare::unlock
+            return 4
+        }
+        dns::prepare::unlock
+        log_info "$(_ "dns.prepare.recovery_complete")"
+        return
+    fi
+
+    IFS= read -r -d '' bundle < <(dns::prepare::read_bundle "$DNS_PREPARE_DIR") || {
+        dns::prepare::unlock
+        return 4
+    }
+    IFS=$'\t' read -r profile hash <<< "$bundle"
+    : "$hash"
+
+    if [[ -L "$DNS_RESOLV_CONF_PATH" ]] &&
+        [[ "$(readlink -f "$DNS_RESOLV_CONF_PATH")" == "$DNS_RESOLVED_STUB_PATH" ]] &&
+        dns::resolver::validate_strict_runtime "$profile" &&
+        timeout "${DNS_QUERY_TIMEOUT_SECONDS}s" getent ahosts "$DNS_TEST_DOMAIN" >/dev/null &&
+        dns::status::is_protected; then
+        dns::prepare::cleanup_bundle || {
+            dns::prepare::unlock
+            return 1
+        }
+    else
+        dns::prepare::rollback || {
+            dns::prepare::unlock
+            return 1
+        }
+    fi
+
+    dns::prepare::unlock
+    log_info "$(_ "dns.prepare.recovery_complete")"
+}
+
+# @type:        Orchestrator
+# @description: Refuses full rollback before its watchdog when preparation may be active
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 lock held and no preparation artifacts exist
+#               1 full rollback must not start
+dns::prepare::guard_full_rollback() {
+    if ! dns::prepare::lock; then
+        log_error "$(_ "dns.prepare.full_rollback_blocked")"
+        return 1
+    fi
+    if dns::prepare::has_artifacts; then
+        log_error "$(_ "dns.prepare.full_rollback_blocked")"
+        dns::prepare::unlock
+        return 1
+    fi
 }

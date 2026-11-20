@@ -16,6 +16,7 @@ source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns.sh"
 
 trap common::int::actions INT
 trap common::exit::actions EXIT
@@ -32,6 +33,8 @@ full_rollback::orchestrator::run_module() {
     log_info "$(_ "full_rollback.info.full_rollback_warning")"
 
     io::confirm_action
+
+    dns::prepare::guard_full_rollback
 
     make_fifo_and_start_reader
 

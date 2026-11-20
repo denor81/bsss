@@ -29,7 +29,34 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 #               3 watchdog rollback completed
 #               4 preconfiguration required
 dns::main::menu() {
+    local mode
+    mode=$(dns::resolver::get_mode | tr -d '\0')
+
     dns::log::status
+    if [[ "$mode" == "interrupted" ]]; then
+        log_warn "$(_ "dns.prepare.interrupted")"
+        log_info "$(_ "common.menu_header")"
+        log_info_simple_tab "1. $(_ "dns.menu.recover")"
+        log_info_simple_tab "0. $(_ "common.exit")"
+
+        local recovery_rc
+        io::ask_value "$(_ "common.ask_select_action")" "" "^[0-1]$" "0-1" "^0$" >/dev/null || return
+        io::confirm_action "$(_ "dns.confirm.recover")"
+        dns::prepare::recover || {
+            recovery_rc=$?
+            (( recovery_rc != 4 )) || log_warn "$(_ "dns.prepare.foreign_state" "$BSSS_STATE_DIR")"
+            return "$recovery_rc"
+        }
+        return
+    fi
+
+    if [[ "$mode" == "networkd-direct" ]]; then
+        if dns::prepare::os_is_supported; then
+            log_warn "$(_ "dns.prepare.available")"
+        else
+            log_warn "$(_ "dns.prepare.unsupported_release" "$DNS_BOOTSTRAP_SUPPORTED_UBUNTU_VERSIONS")"
+        fi
+    fi
     log_info "$(_ "common.menu_header")"
     log_info_simple_tab "1. $(_ "dns.menu.google_cloudflare")"
     log_info_simple_tab "2. $(_ "dns.menu.yandex_google")"
@@ -56,8 +83,13 @@ dns::main::menu() {
             ;;
     esac
 
-    io::confirm_action "$(_ "dns.confirm.apply" "$(dns::profile::get_name "$profile")")"
-    dns::transaction::apply "$profile"
+    if [[ "$mode" == "networkd-direct" ]]; then
+        io::confirm_action "$(_ "dns.confirm.prepare" "$(dns::profile::get_name "$profile")")"
+        dns::prepare::run "$profile"
+    else
+        io::confirm_action "$(_ "dns.confirm.apply" "$(dns::profile::get_name "$profile")")"
+        dns::transaction::apply "$profile"
+    fi
 }
 
 # @type:        Orchestrator

@@ -94,6 +94,7 @@ auto::install::check() {
 auto::selection::check() {
     local selection="$1"
     local dns_profile="$2"
+    local dns_mode
     if auto::menu::is_selected "$selection" 2; then
         if ! auto::upgrades::is_installed; then
             log_warn "$(_ "common.install.not_installed" "unattended-upgrades")"
@@ -112,6 +113,19 @@ auto::selection::check() {
         fi
     fi
     if auto::menu::is_selected "$selection" 10; then
+        dns_mode=$(dns::resolver::get_mode | tr -d '\0')
+        if [[ "$dns_mode" == "interrupted" ]]; then
+            log_warn "$(_ "dns.prepare.auto_required")"
+            return 4
+        fi
+        if [[ "$dns_mode" == "networkd-direct" ]]; then
+            if dns::prepare::os_is_supported; then
+                log_warn "$(_ "dns.prepare.auto_required")"
+            else
+                log_warn "$(_ "dns.prepare.unsupported_release" "$DNS_BOOTSTRAP_SUPPORTED_UBUNTU_VERSIONS")"
+            fi
+            return 4
+        fi
         dns::preflight::check_apply "$dns_profile" || return $?
     fi
 }
