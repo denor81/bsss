@@ -44,8 +44,10 @@ MOCK_STUB_AVAILABLE=1
 MOCK_TIMEOUT_EXIT=0
 TEST_TABBED_LOG=""
 TEST_WARN_COUNT=0
+TEST_INFO_LOG="${TEST_TMP}/info.log"
 TEST_WARN_LOG="${TEST_TMP}/warnings.log"
 TEST_TAB_LOG="${TEST_TMP}/tabbed.log"
+: > "$TEST_INFO_LOG"
 : > "$TEST_WARN_LOG"
 : > "$TEST_TAB_LOG"
 
@@ -106,12 +108,13 @@ _() {
 }
 
 # @type:        Sink
-# @description: Discards an informational test log
+# @description: Captures an informational test log
+# @params:      message Rendered message (string) without a terminator
 # @stdin:       None
 # @stdout:      None
 # @exit_code:   0 always
 log_info() {
-    :
+    printf '%s\n' "$1" >> "$TEST_INFO_LOG"
 }
 
 # @type:        Sink
@@ -318,6 +321,21 @@ MOCK_CONFIG=$(cat "${FIXTURE_DIR}/resolved-255.conf")
 
 rm "$BSSS_DNS_CONFIG_FILE"
 dns::preflight::check_target "false" || test::fail "missing target was not accepted for initial apply"
+dns::config::remove || test::fail "absent target removal failed"
+dns::rollback::cleanup || test::fail "absent rollback cleanup failed"
+
+# @type:        Sink
+# @description: Mocks successful watchdog shutdown during a first-install commit
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 always
+rollback::orchestrator::watchdog_stop() {
+    :
+}
+
+WATCHDOG_PID="test"
+dns::transaction::commit
+test::assert::equals "" "$WATCHDOG_PID" "first-install transaction commit"
 dns::config::render "$DNS_PROFILE_GOOGLE_CLOUDFLARE" > "$BSSS_DNS_CONFIG_FILE"
 
 issues=$(dns::status::issues | tr '\0' '\n')
@@ -325,6 +343,27 @@ test::assert::equals "" "$issues" "protected status issues"
 dns::status::is_protected || test::fail "strict recognized profile was not protected"
 profile=$(dns::status::get_profile | tr -d '\0')
 test::assert::equals "$DNS_PROFILE_GOOGLE_CLOUDFLARE" "$profile" "recognized profile"
+
+: > "$TEST_INFO_LOG"
+: > "$TEST_TAB_LOG"
+dns::log::status
+info_log=$(cat "$TEST_INFO_LOG")
+tabbed_log=$(cat "$TEST_TAB_LOG")
+test::assert::contains "$info_log" "dns.config.bsss_found" "BSSS configuration heading"
+for setting in \
+    "DNS=${DNS_SERVERS_GOOGLE_CLOUDFLARE}" \
+    "FallbackDNS=" \
+    "Domains=~." \
+    "DNSOverTLS=yes" \
+    "DNSSEC=no" \
+    "LLMNR=no" \
+    "MulticastDNS=no"; do
+    test::assert::contains "$tabbed_log" "${BSSS_DNS_CONFIG_FILE}:${setting}" "BSSS setting $setting"
+done
+[[ "$(grep -Fc "${BSSS_DNS_CONFIG_FILE}:DNS=" "$TEST_TAB_LOG")" == "1" ]] ||
+    test::fail "DNS reset was logged as a duplicate effective setting"
+[[ "$(grep -Fc "${BSSS_DNS_CONFIG_FILE}:Domains=" "$TEST_TAB_LOG")" == "1" ]] ||
+    test::fail "Domains reset was logged as a duplicate effective setting"
 
 MOCK_GLOBAL_DNS=""
 MOCK_GLOBAL_DOMAINS=""
@@ -449,5 +488,20 @@ test::assert::equals \
     "endpoint:$DNS_PROFILE_GOOGLE_CLOUDFLARE apply:$DNS_PROFILE_GOOGLE_CLOUDFLARE" \
     "$AUTO_DNS_CALLS" \
     "automatic DNS order"
+
+# @type:        Sink
+# @description: Mocks a failed file deletion
+# @stdin:       path\0
+# @stdout:      None
+# @exit_code:   1 always
+sys::file::delete() {
+    cat >/dev/null
+    return 1
+}
+
+dns::config::render "$DNS_PROFILE_GOOGLE_CLOUDFLARE" > "$BSSS_DNS_CONFIG_FILE"
+if dns::config::remove; then
+    test::fail "DNS target deletion failure was suppressed"
+fi
 
 echo "All DNS helper tests passed"

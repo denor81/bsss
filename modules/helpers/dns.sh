@@ -544,6 +544,28 @@ dns::log::issues() {
 }
 
 # @type:        Sink
+# @description: Logs the effective settings from the BSSS-owned DNS configuration
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 configuration logged or absent
+#               $? inspection or parser failure
+dns::log::bsss_config() {
+    local name value
+
+    if ! dns::config::is_owned "$BSSS_DNS_CONFIG_FILE"; then
+        log_info "$(_ "dns.config.bsss_absent" "$BSSS_DNS_CONFIG_FILE")"
+        return
+    fi
+
+    log_info "$(_ "dns.config.bsss_found")"
+    dns::config::parse_effective < "$BSSS_DNS_CONFIG_FILE" |
+        while IFS=$'\t' read -r name value; do
+            [[ "$value" == "__unset__" ]] && continue
+            log_info_simple_tab "$(_ "no_translate" "${BSSS_DNS_CONFIG_FILE}:${name}=${value}")"
+        done
+}
+
+# @type:        Sink
 # @description: Logs the supported protected DNS state or its detected issues
 # @stdin:       None
 # @stdout:      None
@@ -558,6 +580,7 @@ dns::log::status() {
             "$DNS_PROFILE_GOOGLE_CLOUDFLARE") log_info "$(_ "dns.status.protected_google_cloudflare")" ;;
             "$DNS_PROFILE_YANDEX_GOOGLE") log_info "$(_ "dns.status.protected_yandex_google")" ;;
         esac
+        dns::log::bsss_config
         return
     fi
 
@@ -855,14 +878,14 @@ dns::config::install() {
 # @exit_code:   0 target removed or absent
 #               1 target is foreign or deletion failed
 dns::config::remove() {
-    [[ -e "$BSSS_DNS_CONFIG_FILE" || -L "$BSSS_DNS_CONFIG_FILE" ]] || return
+    if [[ -e "$BSSS_DNS_CONFIG_FILE" || -L "$BSSS_DNS_CONFIG_FILE" ]]; then
+        if ! dns::config::is_owned "$BSSS_DNS_CONFIG_FILE"; then
+            log_error "$(_ "dns.config.foreign_target" "$BSSS_DNS_CONFIG_FILE")"
+            return 1
+        fi
 
-    if ! dns::config::is_owned "$BSSS_DNS_CONFIG_FILE"; then
-        log_error "$(_ "dns.config.foreign_target" "$BSSS_DNS_CONFIG_FILE")"
-        return 1
+        printf '%s\0' "$BSSS_DNS_CONFIG_FILE" | sys::file::delete
     fi
-
-    printf '%s\0' "$BSSS_DNS_CONFIG_FILE" | sys::file::delete
 }
 
 # @type:        Orchestrator
@@ -951,8 +974,9 @@ dns::rollback::prepare() {
 # @exit_code:   0 snapshot removed or absent
 #               1 deletion failed
 dns::rollback::cleanup() {
-    [[ -e "$BSSS_DNS_ROLLBACK_FILE" || -L "$BSSS_DNS_ROLLBACK_FILE" ]] || return
-    printf '%s\0' "$BSSS_DNS_ROLLBACK_FILE" | sys::file::delete
+    if [[ -e "$BSSS_DNS_ROLLBACK_FILE" || -L "$BSSS_DNS_ROLLBACK_FILE" ]]; then
+        printf '%s\0' "$BSSS_DNS_ROLLBACK_FILE" | sys::file::delete
+    fi
 }
 
 # @type:        Orchestrator
