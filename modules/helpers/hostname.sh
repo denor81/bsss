@@ -420,19 +420,19 @@ hostname::orchestrator::restore() {
 # @stdout:      None
 # @exit_code:   0 status logged
 hostname::log::status() {
-    local active fqdn file_hostname hosts_entries setting
+    local active file_hostname hosts_entries setting
 
     active=$(hostname::name::get_current)
     log_info "$(_ "hostname.check.active" "$active")"
-    if fqdn=$(hostname -f 2>/dev/null); then
-        log_info "$(_ "hostname.check.fqdn" "$fqdn")"
-    else
-        log_warn "$(_ "hostname.check.fqdn_failed")"
-    fi
 
     if [[ -f "$HOSTNAME_FILE_PATH" ]]; then
         file_hostname=$(tr -d '[:space:]' < "$HOSTNAME_FILE_PATH")
-        log_info "$(_ "hostname.check.hostname_file" "$HOSTNAME_FILE_PATH" "$file_hostname")"
+        if [[ -n "$file_hostname" ]]; then
+            log_info "$(_ "hostname.check.hostname_file" "$HOSTNAME_FILE_PATH")"
+            log_info_simple_tab "$(_ "no_translate" "$file_hostname")"
+        else
+            log_warn "$(_ "hostname.check.hostname_file_empty" "$HOSTNAME_FILE_PATH")"
+        fi
     else
         log_warn "$(_ "hostname.check.file_missing" "$HOSTNAME_FILE_PATH")"
     fi
@@ -457,11 +457,15 @@ hostname::log::status() {
     fi
 
     log_info "$(_ "hostname.cloud_init.installed")"
-    [[ ! -f "$CLOUD_INIT_DISABLED_FILE" ]] || log_info "$(_ "hostname.cloud_init.disabled" "$CLOUD_INIT_DISABLED_FILE")"
+    if [[ -f "$CLOUD_INIT_DISABLED_FILE" ]]; then
+        log_info_simple_tab "$(_ "hostname.cloud_init.disabled" "$CLOUD_INIT_DISABLED_FILE")"
+        return
+    fi
+
     setting=$(hostname::cloud_init::get_preserve_setting | tr -d '\0')
     if [[ "$setting" == "true" ]]; then
-        log_info "$(_ "hostname.cloud_init.setting" "$setting")"
+        log_info_simple_tab "$(_ "hostname.cloud_init.setting" "$setting")"
     else
-        log_warn "$(_ "hostname.cloud_init.setting" "$setting")"
+        log_warn_simple_tab "$(_ "hostname.cloud_init.setting" "$setting")"
     fi
 }

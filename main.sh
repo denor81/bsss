@@ -201,7 +201,7 @@ runner::module::run_modify() {
         log_info_simple_tab "2. $(_ "module.system.update.name")"
         log_info_simple_tab "3. $(_ "module.auto.upgrades.modify.name")"
         log_info_simple_tab "4. $(_ "module.ssh.name")"
-        log_info_simple_tab "5. $(_ "module.ufw.name")"
+        log_info_simple_tab "5. $(_ "module.ufw_ping.name")"
         log_info_simple_tab "6. $(_ "module.user.create.name")"
         log_info_simple_tab "7. $(_ "module.permissions.modify.name")"
         log_info_simple_tab "8. $(_ "module.full_rollback.name")"
