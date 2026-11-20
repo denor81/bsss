@@ -108,6 +108,25 @@ dns::profile::get_name() {
     esac
 }
 
+# @type:        Interactive
+# @description: Displays resolver profiles and returns the selected identifier
+# @stdin:       User input from the controlling terminal
+# @stdout:      profile\0
+# @exit_code:   0 profile selected
+#               2 cancelled by user
+dns::ui::select_profile() {
+    log_info "$(_ "dns.auto.profile_question")"
+    log_info_simple_tab "1. $(_ "dns.menu.google_cloudflare")"
+    log_info_simple_tab "2. $(_ "dns.menu.yandex_google")"
+
+    local choice
+    choice=$(io::ask_value "$(_ "common.ask_select_action")" "1" "^[1-2]$" "1-2" | tr -d '\0') || return
+    case "$choice" in
+        1) printf '%s\0' "$DNS_PROFILE_GOOGLE_CLOUDFLARE" ;;
+        2) printf '%s\0' "$DNS_PROFILE_YANDEX_GOOGLE" ;;
+    esac
+}
+
 # @type:        Source
 # @description: Renders the BSSS systemd-resolved drop-in for a profile
 # @params:      profile Resolver profile identifier (string) without a terminator

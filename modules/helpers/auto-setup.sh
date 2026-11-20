@@ -93,3 +93,18 @@ auto::permissions::configure() {
     sys::service::restart
     permissions::rules::is_effective
 }
+
+# @type:        Orchestrator
+# @description: Rechecks endpoints and applies DNS last under the final runtime state
+# @params:      profile Resolver profile identifier (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 DNS profile applied and validated
+#               4 an endpoint is unavailable
+#               1 mutation or validation failed
+auto::dns::configure() {
+    local profile="$1"
+
+    dns::endpoint::check_profile "$profile" || return $?
+    dns::orchestrator::apply "$profile"
+}

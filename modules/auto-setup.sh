@@ -21,6 +21,7 @@ source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
 source "${PROJECT_ROOT}/modules/helpers/swap.sh"
 source "${PROJECT_ROOT}/modules/helpers/ipv6.sh"
 source "${PROJECT_ROOT}/modules/helpers/hostname.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns.sh"
 source "${PROJECT_ROOT}/modules/helpers/system-update.sh"
 source "${PROJECT_ROOT}/modules/helpers/auto-setup.sh"
 
@@ -84,6 +85,7 @@ auto::install::check() {
 # @type:        Orchestrator
 # @description: Проверяет зависимости выбранных действий до запуска watchdog
 # @params:      selection Номера через пробел (string) без завершающего символа
+#               dns_profile Resolver profile identifier (string) without a terminator
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 зависимости доступны
@@ -91,6 +93,7 @@ auto::install::check() {
 #               $? ошибка проверки
 auto::selection::check() {
     local selection="$1"
+    local dns_profile="$2"
     if auto::menu::is_selected "$selection" 2; then
         if ! auto::upgrades::is_installed; then
             log_warn "$(_ "common.install.not_installed" "unattended-upgrades")"
@@ -103,6 +106,9 @@ auto::selection::check() {
             log_warn "$(_ "auto.warning.ping_requires_ufw")"
             return 4
         fi
+    fi
+    if auto::menu::is_selected "$selection" 10; then
+        dns::preflight::check_apply "$dns_profile" || return $?
     fi
 }
 
@@ -136,17 +142,18 @@ auto::menu::select() {
         "$(_ "auto.menu.item_7" "$SWAPFILE_SIZE")"
         "$(_ "auto.menu.item_8")"
         "$(_ "auto.menu.item_9")"
+        "$(_ "dns.auto.menu.item")"
     )
     while true; do
         log_info "$(_ "common.menu_header")"
-        for item in 1 2 3 4 5 6 7 8 9; do
+        for item in 1 2 3 4 5 6 7 8 9 10; do
             log_info_simple_tab "$item. ${items[item-1]}"
         done
         log_info_simple_tab "0. $(_ "common.exit")"
-        selection=$(io::ask_value "$(_ "auto.menu.ask_items")" "" "^[1-9]( +[1-9])*$" "1-9" "^0$" | tr -d '\0') || return
+        selection=$(io::ask_value "$(_ "auto.menu.ask_items")" "" "^(10|[1-9])( +(10|[1-9]))*$" "1-10" "^0$" | tr -d '\0') || return
 
         log_info "$(_ "auto.menu.selected")"
-        for item in 1 2 3 4 5 6 7 8 9; do
+        for item in 1 2 3 4 5 6 7 8 9 10; do
             if auto::menu::is_selected "$selection" "$item"; then
                 log_info_simple_tab "$item. ${items[item-1]}"
             fi
@@ -162,6 +169,7 @@ auto::menu::select() {
 # @description: Выполняет выбранные действия в фиксированном порядке
 # @params:      selection Номера через пробел (string) без завершающего символа
 #               new_hostname New server hostname (string) without a terminator
+#               dns_profile Resolver profile identifier (string) without a terminator
 # @stdin:       нет
 # @stdout:      нет
 # @exit_code:   0 настройка завершена
@@ -169,6 +177,7 @@ auto::menu::select() {
 auto::install::run() {
     local selection="$1"
     local new_hostname="${2:-}"
+    local dns_profile="${3:-$DNS_DEFAULT_PROFILE}"
     if auto::menu::is_selected "$selection" 1; then
         sys::update::get_command "auto" | sys::update::execute
     fi
@@ -205,6 +214,9 @@ auto::install::run() {
     if auto::menu::is_selected "$selection" 9; then
         hostname::orchestrator::configure "$new_hostname"
     fi
+    if auto::menu::is_selected "$selection" 10; then
+        auto::dns::configure "$dns_profile"
+    fi
 }
 
 # @type:        Orchestrator
@@ -221,13 +233,17 @@ main() {
     log_info "$(_ "auto.info.auto_setup_rules")"
     log_info "$(_ "auto.info.rollback_timer_activation" "$AUTO_SETUP_ROLLBACK_TIMER_SECONDS")"
     log_info "$(_ "auto.info.logs_location" "$(readlink -f "${PROJECT_ROOT}/logs")")"
-    local selection ports new_hostname=""
+    local selection ports new_hostname="" dns_profile="$DNS_DEFAULT_PROFILE"
     selection=$(auto::menu::select | tr -d '\0')
     if auto::menu::is_selected "$selection" 9; then
         log_info "$(_ "auto.info.hostname_selected")"
         new_hostname=$(hostname::ui::get_new | tr -d '\0') || return
     fi
-    auto::selection::check "$selection"
+    if auto::menu::is_selected "$selection" 10; then
+        dns_profile=$(dns::ui::select_profile | tr -d '\0') || return
+        log_info "$(_ "dns.auto.profile_selected" "$(dns::profile::get_name "$dns_profile")")"
+    fi
+    auto::selection::check "$selection" "$dns_profile"
 
     make_fifo_and_start_reader
     start_sync_rollback
@@ -236,7 +252,7 @@ main() {
     WATCHDOG_PID=$!
     stop_sync_rollback
 
-    auto::install::run "$selection" "$new_hostname"
+    auto::install::run "$selection" "$new_hostname" "$dns_profile"
 
     log_actual_info
     common::log::current_config "^port"
@@ -244,6 +260,7 @@ main() {
     ufw::orchestrator::log_statuses
     permissions::orchestrator::log_statuses
     hostname::log::status
+    dns::log::status
     ports=$(ssh::port::get_from_ss | tr '\0' ',' | sed 's/,$//')
     log_actual_info "$(_ "auto.info.connect_instruction" "$ports")"
     io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "^0$" >/dev/null
