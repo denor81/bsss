@@ -160,6 +160,7 @@ runner::module::run_check() {
     bash "${dir}/ssh-port-check.sh" || err=1
     bash "${dir}/permissions-check.sh" || err=1
     bash "${dir}/ufw-check.sh" || err=1
+    bash "${dir}/dns-check.sh" || err=1
     bash "${dir}/hostname-check.sh" || err=1
     (( err == 1 )) && { log_error "$(_ "common.error_module_error")"; log::draw_border; return 1; }
     log::draw_border
