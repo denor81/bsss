@@ -337,13 +337,18 @@ dns::runtime::route_issues() {
 #               $? resolvectl or gawk failure
 dns::runtime::get_global() {
     local property="$1"
+    local output
 
     case "$property" in
         dns|domain|dnsovertls) ;;
         *) return 1 ;;
     esac
 
-    resolvectl --no-pager "$property" | gawk '
+    if ! output=$(resolvectl --no-pager "$property" 2>&1); then
+        return 1
+    fi
+
+    gawk '
         BEGIN { ORS = "\0" }
         /^Global:/ {
             value = substr($0, index($0, ":") + 1)
@@ -354,7 +359,7 @@ dns::runtime::get_global() {
             exit
         }
         END { exit found ? 0 : 1 }
-    '
+    ' <<< "$output"
 }
 
 # @type:        Source
@@ -384,8 +389,10 @@ dns::status::issues() {
         dns::issue::emit "unsupported_os" "unknown"
     fi
 
+    local resolved_active=1
     if ! systemctl is-active --quiet "$DNS_RESOLVED_SERVICE"; then
         dns::issue::emit "resolved_inactive"
+        resolved_active=0
     fi
 
     local resolv_target="unavailable"
@@ -432,6 +439,8 @@ dns::status::issues() {
     else
         dns::issue::emit "effective_unavailable"
     fi
+
+    (( resolved_active == 1 )) || return 0
 
     local runtime_unavailable=0
     local runtime_dns expected_runtime_dns

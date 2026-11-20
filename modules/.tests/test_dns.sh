@@ -42,14 +42,20 @@ MOCK_LINK_DOMAINS=""
 MOCK_MALFORMED_PROPERTY=""
 MOCK_STUB_AVAILABLE=1
 MOCK_TIMEOUT_EXIT=0
+MOCK_RESOLVED_ACTIVE=1
+MOCK_RESOLVECTL_FAILURE=0
 TEST_TABBED_LOG=""
 TEST_WARN_COUNT=0
 TEST_INFO_LOG="${TEST_TMP}/info.log"
 TEST_WARN_LOG="${TEST_TMP}/warnings.log"
 TEST_TAB_LOG="${TEST_TMP}/tabbed.log"
+TEST_RESOLVECTL_CALL_LOG="${TEST_TMP}/resolvectl-calls.log"
+TEST_RUNTIME_ERROR_LOG="${TEST_TMP}/runtime-errors.log"
 : > "$TEST_INFO_LOG"
 : > "$TEST_WARN_LOG"
 : > "$TEST_TAB_LOG"
+: > "$TEST_RESOLVECTL_CALL_LOG"
+: > "$TEST_RUNTIME_ERROR_LOG"
 
 # @type:        Sink
 # @description: Fails the current test with a message
@@ -146,14 +152,16 @@ log_info_simple_tab() {
 }
 
 # @type:        Validator
-# @description: Mocks active and loaded systemd service checks
+# @description: Mocks systemd service state and load checks
 # @stdin:       None
 # @stdout:      load_state\n for systemctl show
-# @exit_code:   0 always
+# @exit_code:   0 requested state matches
+#               1 resolved is inactive
 systemctl() {
-    if [[ "${1:-}" == "show" ]]; then
-        printf 'loaded\n'
-    fi
+    case "${1:-}" in
+        show) printf 'loaded\n' ;;
+        is-active) (( MOCK_RESOLVED_ACTIVE == 1 )) ;;
+    esac
 }
 
 # @type:        Source
@@ -195,6 +203,12 @@ systemd-analyze() {
 # @exit_code:   0 supported property
 #               1 unsupported property
 resolvectl() {
+    printf '%s\n' "$*" >> "$TEST_RESOLVECTL_CALL_LOG"
+    if (( MOCK_RESOLVECTL_FAILURE == 1 )); then
+        printf 'mock D-Bus failure\n' >&2
+        return 1
+    fi
+
     if [[ "${2:-}" == "$MOCK_MALFORMED_PROPERTY" && -n "$MOCK_MALFORMED_PROPERTY" ]]; then
         printf 'malformed output\n'
         return
@@ -364,6 +378,30 @@ done
     test::fail "DNS reset was logged as a duplicate effective setting"
 [[ "$(grep -Fc "${BSSS_DNS_CONFIG_FILE}:Domains=" "$TEST_TAB_LOG")" == "1" ]] ||
     test::fail "Domains reset was logged as a duplicate effective setting"
+
+MOCK_RESOLVED_ACTIVE=0
+: > "$TEST_RESOLVECTL_CALL_LOG"
+: > "$TEST_RUNTIME_ERROR_LOG"
+: > "$TEST_WARN_LOG"
+: > "$TEST_TAB_LOG"
+dns::log::status 2> "$TEST_RUNTIME_ERROR_LOG"
+[[ ! -s "$TEST_RESOLVECTL_CALL_LOG" ]] ||
+    test::fail "inactive systemd-resolved still invoked resolvectl"
+[[ ! -s "$TEST_RUNTIME_ERROR_LOG" ]] ||
+    test::fail "inactive systemd-resolved leaked an error to stderr"
+grep -Fq "dns.issue.resolved_inactive" "$TEST_TAB_LOG" ||
+    test::fail "inactive systemd-resolved issue was not logged"
+MOCK_RESOLVED_ACTIVE=1
+
+MOCK_RESOLVECTL_FAILURE=1
+: > "$TEST_RESOLVECTL_CALL_LOG"
+: > "$TEST_RUNTIME_ERROR_LOG"
+issues=$(dns::status::issues 2> "$TEST_RUNTIME_ERROR_LOG" | tr '\0' '\n')
+test::assert::contains "$issues" "runtime_unavailable" "handled resolvectl failure"
+[[ ! -s "$TEST_RUNTIME_ERROR_LOG" ]] ||
+    test::fail "handled resolvectl failure leaked an error to stderr"
+test::assert::equals "4" "$(wc -l < "$TEST_RESOLVECTL_CALL_LOG")" "runtime resolvectl command count"
+MOCK_RESOLVECTL_FAILURE=0
 
 MOCK_GLOBAL_DNS=""
 MOCK_GLOBAL_DOMAINS=""
