@@ -438,7 +438,8 @@ dns::status::issues() {
     if [[ -n "$profile" ]]; then
         expected_runtime_dns=$(dns::profile::get_servers "$profile" | tr -d '\0')
         if IFS= read -r -d '' runtime_dns < <(dns::runtime::get_global "dns"); then
-            [[ "$runtime_dns" == "$expected_runtime_dns" ]] ||
+            # systemd 249 can omit resolved.conf global values from this command.
+            [[ -z "$runtime_dns" || "$runtime_dns" == "$expected_runtime_dns" ]] ||
                 dns::issue::emit "runtime_dns" "${runtime_dns:-__unset__}"
         else
             runtime_unavailable=1
@@ -447,7 +448,7 @@ dns::status::issues() {
 
     local runtime_domains
     if IFS= read -r -d '' runtime_domains < <(dns::runtime::get_global "domain"); then
-        [[ "$runtime_domains" == "~." ]] ||
+        [[ -z "$runtime_domains" || "$runtime_domains" == "~." ]] ||
             dns::issue::emit "runtime_domains" "${runtime_domains:-__unset__}"
     else
         runtime_unavailable=1
@@ -455,7 +456,7 @@ dns::status::issues() {
 
     local runtime_dot
     if IFS= read -r -d '' runtime_dot < <(dns::runtime::get_global "dnsovertls"); then
-        [[ "$runtime_dot" == "yes" ]] ||
+        [[ -z "$runtime_dot" || "$runtime_dot" == "yes" ]] ||
             dns::issue::emit "runtime_dot" "${runtime_dot:-__unset__}"
     else
         runtime_unavailable=1
