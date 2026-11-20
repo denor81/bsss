@@ -412,6 +412,19 @@ MOCK_GLOBAL_DNS="$DNS_SERVERS_GOOGLE_CLOUDFLARE"
 MOCK_GLOBAL_DOMAINS="~."
 MOCK_GLOBAL_DOT="yes"
 
+dns::resolver::validate_strict_runtime "$DNS_PROFILE_GOOGLE_CLOUDFLARE" ||
+    test::fail "exact strict bootstrap runtime was rejected"
+MOCK_GLOBAL_DNS=""
+if dns::resolver::validate_strict_runtime "$DNS_PROFILE_GOOGLE_CLOUDFLARE"; then
+    test::fail "empty systemd 249 runtime evidence was accepted for bootstrap"
+fi
+MOCK_GLOBAL_DNS="$DNS_SERVERS_GOOGLE_CLOUDFLARE"
+MOCK_LINK_DOMAINS="Link 4 (wg0): ~corp.example"
+if dns::resolver::validate_strict_runtime "$DNS_PROFILE_GOOGLE_CLOUDFLARE"; then
+    test::fail "per-link route domain was accepted for bootstrap"
+fi
+MOCK_LINK_DOMAINS=""
+
 dns::config::render "$DNS_PROFILE_YANDEX_GOOGLE" > "$BSSS_DNS_CONFIG_FILE"
 MOCK_CONFIG=${MOCK_CONFIG/$DNS_SERVERS_GOOGLE_CLOUDFLARE/$DNS_SERVERS_YANDEX_GOOGLE}
 MOCK_GLOBAL_DNS="$DNS_SERVERS_YANDEX_GOOGLE"
