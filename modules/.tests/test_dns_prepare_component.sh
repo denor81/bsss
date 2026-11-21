@@ -320,7 +320,7 @@ dns::recovery::create_bundle "$DNS_PROFILE_GOOGLE_CLOUDFLARE" ||
     test::fail "recovery finalization bundle creation failed"
 dns::resolved::install "$DNS_PROFILE_GOOGLE_CLOUDFLARE" ||
     test::fail "recovery finalization profile install failed"
-dns::prepare::enable_start ||
+dns::service::enable_start ||
     test::fail "recovery finalization service start failed"
 dns::prepare::switch_to_stub ||
     test::fail "recovery finalization stub switch failed"

@@ -2,72 +2,6 @@
 # Part of the BSSS project (https://github.com/denor81/bsss)
 # Licensed under MIT
 
-# @type:        Orchestrator
-# @description: Waits for an exact systemd unit runtime state
-# @params:      service Unit name (string) without a terminator
-#               active_state Expected ActiveState (string) without a terminator
-#               sub_state Expected SubState (string) without a terminator
-# @stdin:       None
-# @stdout:      None
-# @exit_code:   0 expected state reached
-#               1 timeout or property inspection failure
-dns::prepare::wait_service() {
-    local service="$1"
-    local expected_active="$2"
-    local expected_sub="$3"
-    local attempts=$((DNS_SERVICE_POLL_SECONDS * 4))
-    local active sub attempt
-
-    for (( attempt = 0; attempt < attempts; attempt++ )); do
-        active=$(dns::state::unit_property "$service" "ActiveState") || return 1
-        sub=$(dns::state::unit_property "$service" "SubState") || return 1
-        if [[ "$active" == "$expected_active" && "$sub" == "$expected_sub" ]]; then
-            return
-        fi
-        sleep 0.25
-    done
-    return 1
-}
-
-# @type:        Orchestrator
-# @description: Enables and starts systemd-resolved with bounded state polling
-# @stdin:       None
-# @stdout:      None
-# @exit_code:   0 service enabled and running
-#               1 enable, flush, start, or state validation failed
-dns::prepare::enable_start() {
-    local unit_state
-
-    systemctl enable "$DNS_RESOLVED_SERVICE" || return 1
-    unit_state=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "UnitFileState") ||
-        return 1
-    [[ "$unit_state" == "enabled" ]] || return 1
-    sync -f /etc/systemd/system || return 1
-
-    systemctl start --no-block "$DNS_RESOLVED_SERVICE" || return 1
-    dns::prepare::wait_service "$DNS_RESOLVED_SERVICE" "active" "running"
-}
-
-# @type:        Orchestrator
-# @description: Stops and disables systemd-resolved with bounded state polling
-# @stdin:       None
-# @stdout:      None
-# @exit_code:   0 service disabled and inactive
-#               1 stop, disable, flush, or state validation failed
-dns::prepare::stop_disable() {
-    local unit_state
-
-    systemctl stop --no-block "$DNS_RESOLVED_SERVICE" || return 1
-    dns::prepare::wait_service "$DNS_RESOLVED_SERVICE" "inactive" "dead" ||
-        return 1
-
-    systemctl disable "$DNS_RESOLVED_SERVICE" || return 1
-    unit_state=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "UnitFileState") ||
-        return 1
-    [[ "$unit_state" == "disabled" ]] || return 1
-    sync -f /etc/systemd/system
-}
-
 # @type:        Sink
 # @description: Atomically switches resolv.conf to the standard resolved stub
 # @stdin:       None
@@ -145,7 +79,7 @@ dns::prepare::rollback() {
     fi
 
     dns::recovery::remove_temp_link || return 1
-    dns::prepare::stop_disable || return 1
+    dns::service::stop_disable || return 1
     dns::prepare::remove_config || return 1
     dns::runtime::query_libc "$DNS_TEST_DOMAIN" || return 1
     dns::state::direct_baseline || return 1
@@ -188,7 +122,7 @@ dns::prepare::apply() {
 
     if dns::resolved::install "$profile" &&
         sync -f "$DNS_RESOLVED_CONFIG_DIR" &&
-        dns::prepare::enable_start &&
+        dns::service::enable_start &&
         dns::validate::strict_runtime "$profile"; then
         IFS= read -r -d '' current_fingerprint < <(dns::recovery::fingerprint) ||
             current_fingerprint=""

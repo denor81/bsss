@@ -58,8 +58,7 @@ dns::resolved::install() {
 # @exit_code:   0 service restarted and active
 #               $? systemctl failure
 dns::resolved::restart() {
-    systemctl restart "$DNS_RESOLVED_SERVICE" || return
-    systemctl is-active --quiet "$DNS_RESOLVED_SERVICE"
+    dns::service::restart
 }
 
 # @type:        Sink
