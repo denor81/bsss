@@ -87,6 +87,27 @@ dns::prepare::rollback() {
 }
 
 # @type:        Orchestrator
+# @description: Aborts an active resolver preparation after INT or TERM
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   130 interrupted with safe rollback or before mutation
+#               1 rollback failed
+dns::prepare::on_signal() {
+    trap - INT TERM
+
+    if [[ -n "$DNS_PREPARE_LOCK_FD" ]] && dns::recovery::has_artifacts; then
+        if dns::prepare::rollback; then
+            dns::recovery::unlock
+            exit 130
+        fi
+        dns::recovery::unlock
+        exit 1
+    fi
+    dns::recovery::unlock
+    exit 130
+}
+
+# @type:        Orchestrator
 # @description: Applies strict DoT and standardizes an exact networkd-direct baseline
 # @params:      profile Resolver profile identifier (string) without a terminator
 # @stdin:       None
@@ -258,4 +279,31 @@ dns::prepare::recover() {
     status="${status:-0}"
     dns::recovery::unlock
     return "$status"
+}
+
+# @type:        Orchestrator
+# @description: Holds the DNS operation lock and refuses unsafe full rollback
+# @stdin:       None
+# @stdout:      issue_code<TAB>arguments...\0 on a blocker
+# @exit_code:   0 lock held and no interrupted DNS state exists
+#               1 artifact inspection failure
+#               4 lock busy or interrupted DNS state requires standalone recovery
+dns::prepare::guard_full_rollback() {
+    local status
+
+    if dns::recovery::lock; then
+        :
+    else
+        status=$?
+        if (( status == 4 )); then
+            dns::check::block "operation_locked"
+            return
+        fi
+        return "$status"
+    fi
+    if dns::mode::has_artifacts; then
+        dns::recovery::unlock
+        dns::check::block "recovery_required"
+        return
+    fi
 }

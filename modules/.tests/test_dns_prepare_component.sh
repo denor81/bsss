@@ -350,4 +350,32 @@ dns::prepare::recover ||
 [[ ! -e "$DNS_PREPARE_STAGING_DIR" ]] ||
     test::fail "staging recovery left its directory"
 
+test::reset_direct
+dns::prepare::guard_full_rollback ||
+    test::fail "clean full rollback guard failed"
+[[ -n "$DNS_PREPARE_LOCK_FD" ]] ||
+    test::fail "full rollback guard did not retain its lock"
+dns::recovery::unlock
+
+mkdir -m 700 "$DNS_PREPARE_STAGING_DIR"
+touch "${DNS_PREPARE_STAGING_DIR}/state"
+chmod 600 "${DNS_PREPARE_STAGING_DIR}/state"
+if blocker=$(dns::prepare::guard_full_rollback | tr '\0' '\n'); then
+    test::fail "full rollback guard accepted preparation artifacts"
+else
+    test::assert::equals "4" "$?" "full rollback artifact status"
+fi
+[[ "$blocker" == "recovery_required" ]] ||
+    test::fail "full rollback guard emitted an unexpected blocker"
+[[ -z "$DNS_PREPARE_LOCK_FD" ]] ||
+    test::fail "blocked full rollback retained its lock"
+rm -rf "$DNS_PREPARE_STAGING_DIR"
+
+test::reset_direct
+if (dns::prepare::on_signal); then
+    test::fail "signal handler returned success"
+else
+    test::assert::equals "130" "$?" "pre-mutation signal status"
+fi
+
 printf 'All DNS direct preparation component tests passed\n'
