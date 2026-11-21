@@ -29,7 +29,7 @@ source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
 source "${PROJECT_ROOT}/modules/helpers/swap.sh"
 source "${PROJECT_ROOT}/modules/helpers/ipv6.sh"
 source "${PROJECT_ROOT}/modules/helpers/hostname.sh"
-source "${PROJECT_ROOT}/modules/helpers/dns.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns/facade.sh"
 
 LOG_STRICT_MODE=false
 MAIN_SCRIPT_PID=""
@@ -75,14 +75,17 @@ rollback::orchestrator::stop_usr1() {
 # @description: Выполняет немедленный откат при получении SIGUSR2
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 всегда
+# @exit_code:   0 откат выполнен успешно
+#               1 откат завершился ошибкой, родитель всё равно уведомлен
 rollback::orchestrator::immediate_usr2() {
+    local rollback_status=0
+
     log_info "$(_ "rollback.immediate_usr2_received")"
     # sleep наследует игнорирование TERM; KILL завершает только процесс таймера.
     # || true: таймер мог уже завершиться; wait получает код завершения по сигналу.
     kill -KILL "$SLEEP_PID" 2>/dev/null || true
     wait "$SLEEP_PID" 2>/dev/null || true
-    rollback::dispatcher
+    rollback::dispatcher || rollback_status=$?
 
     if kill -0 "$MAIN_SCRIPT_PID" 2>/dev/null; then
         # || true: MAIN_SCRIPT_PID может завершиться до отправки сигнала
@@ -92,7 +95,7 @@ rollback::orchestrator::immediate_usr2() {
         wait "$MAIN_SCRIPT_PID" 2>/dev/null || true
     fi
 
-    exit 0
+    exit "$rollback_status"
 }
 
 # @type:        Orchestrator
@@ -181,10 +184,10 @@ rollback::orchestrator::permissions() {
 rollback::orchestrator::dns() {
     log_warn "$(_ "dns.rollback.dismantle")"
 
-    if dns::rollback::restore; then
+    if dns::orchestrator::recover; then
         log_success "$(_ "dns.rollback.success")"
     else
-        log_warn "$(_ "rollback.error.rollback_errors" "dns::rollback::restore")"
+        log_warn "$(_ "rollback.error.rollback_errors" "dns::orchestrator::recover")"
         return 1
     fi
 }
@@ -193,7 +196,8 @@ rollback::orchestrator::dns() {
 # @description: Выполняет полный откат всех настроек BSSS
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 всегда
+# @exit_code:   0 все откаты выполнены успешно
+#               1 один или несколько откатов завершились ошибкой
 full_rollback::orchestrator::execute_all() {
     local errors=()
 
@@ -216,6 +220,7 @@ full_rollback::orchestrator::execute_all() {
     else
         # Формируем сообщение об ошибках (через запятую)
         log_warn "$(_ "rollback.error.rollback_errors" "${errors[*]}")"
+        return 1
     fi
 }
 
@@ -223,7 +228,8 @@ full_rollback::orchestrator::execute_all() {
 # @description: Выполняет полный откат всех настроек BSSS
 # @stdin:       нет
 # @stdout:      нет
-# @exit_code:   0 всегда
+# @exit_code:   0 все откаты выполнены успешно
+#               1 один или несколько откатов завершились ошибкой
 rollback::orchestrator::full() {
     log_warn "$(_ "rollback.full_dismantle")"
 

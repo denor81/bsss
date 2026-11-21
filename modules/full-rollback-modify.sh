@@ -16,7 +16,7 @@ source "${PROJECT_ROOT}/modules/helpers/common.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
-source "${PROJECT_ROOT}/modules/helpers/dns.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns/facade.sh"
 
 trap common::int::actions INT
 trap common::exit::actions EXIT
@@ -34,7 +34,7 @@ full_rollback::orchestrator::run_module() {
 
     io::confirm_action
 
-    dns::prepare::guard_full_rollback
+    dns::presentation::execute dns::prepare::guard_full_rollback
 
     make_fifo_and_start_reader
 

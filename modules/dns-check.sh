@@ -11,7 +11,7 @@ readonly PROJECT_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" &&
 source "${PROJECT_ROOT}/lib/vars.conf"
 source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
-source "${PROJECT_ROOT}/modules/helpers/dns.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns/facade.sh"
 
 # @type:        Orchestrator
 # @description: Reports DNS protection and detected configuration issues
@@ -21,7 +21,7 @@ source "${PROJECT_ROOT}/modules/helpers/dns.sh"
 #               $? inspection or logging failure
 main() {
     i18n::load
-    dns::log::status
+    dns::presentation::status
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

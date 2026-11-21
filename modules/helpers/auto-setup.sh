@@ -104,6 +104,5 @@ auto::permissions::configure() {
 auto::dns::configure() {
     local profile="$1"
 
-    dns::endpoint::check_profile "$profile" || return $?
-    dns::orchestrator::apply "$profile"
+    dns::presentation::execute dns::orchestrator::apply "resolved-stub" "$profile"
 }

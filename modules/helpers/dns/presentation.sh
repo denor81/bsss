@@ -103,6 +103,70 @@ dns::presentation::issues() {
 }
 
 # @type:        Sink
+# @description: Renders preflight or recovery blocker records
+# @stdin:       issue_code<TAB>argument...\0 (0..N)
+# @stdout:      None
+# @exit_code:   0 blockers rendered
+#               1 malformed input
+dns::presentation::blockers() {
+    local record="" code args arg1 arg2 arg3 arg4
+
+    while IFS= read -r -d '' record; do
+        [[ "$record" == *$'\t'* ]] || return 1
+        code="${record%%$'\t'*}"
+        args="${record#*$'\t'}"
+        IFS=$'\t' read -r arg1 arg2 arg3 arg4 <<< "$args"
+        case "$code" in
+            unsupported_release)  log_warn "$(_ "dns.prepare.unsupported_release" "$arg4")" ;;
+            mode_changed|unsupported_mode) log_warn "$(_ "dns.prepare.baseline_required")" ;;
+            missing_command)      log_warn "$(_ "dns.preflight.missing_command" "$arg1")" ;;
+            config_dir_unsafe)    log_warn "$(_ "dns.preflight.config_dir" "$arg1")" ;;
+            stale_backup)         log_warn "$(_ "dns.preflight.stale_backup" "$arg1")" ;;
+            foreign_target)       log_warn "$(_ "dns.preflight.foreign_target" "$arg1")" ;;
+            target_absent)        log_warn "$(_ "dns.preflight.target_missing" "$arg1")" ;;
+            local_resolver)       log_warn "$(_ "dns.preflight.local_resolver" "$arg1")" ;;
+            route_domain)         log_warn "$(_ "dns.preflight.route_domain" "$arg1" "$arg2")" ;;
+            late_conflict)        log_warn "$(_ "dns.preflight.late_conflict" "$arg1")" ;;
+            endpoint_unavailable) log_warn "$(_ "dns.endpoint.failed" "$arg1" "$arg2" "unavailable")" ;;
+            resolv_conf_unsupported) log_warn "$(_ "dns.prepare.resolv_unsupported" "$arg1")" ;;
+            state_dir_unsafe)     log_warn "$(_ "dns.prepare.state_dir_unsafe" "$arg1")" ;;
+            kernel_override)      log_warn "$(_ "dns.prepare.kernel_override")" ;;
+            test_name_local)      log_warn "$(_ "dns.prepare.test_name_local" "$arg1")" ;;
+            direct_query_failed)  log_warn "$(_ "dns.prepare.direct_query_failed" "$arg1" "failed")" ;;
+            stub_inactive)        log_warn "$(_ "dns.preflight.stub_inactive")" ;;
+            effective_unavailable) log_warn "$(_ "dns.preflight.effective_unavailable")" ;;
+            existing_dns_state)   log_warn "$(_ "dns.prepare.existing_dns_state")" ;;
+            recovery_required)    log_warn "$(_ "dns.prepare.recovery_required" "$BSSS_STATE_DIR")" ;;
+            recovery_inconsistent) log_warn "$(_ "dns.prepare.foreign_state" "$BSSS_STATE_DIR")" ;;
+            operation_locked)     log_warn "$(_ "dns.prepare.locked")" ;;
+            *)                    log_warn "$(_ "dns.issue.unknown" "$code")" ;;
+        esac
+        record=""
+    done
+    [[ -z "$record" ]]
+}
+
+# @type:        Orchestrator
+# @description: Runs a component operation and renders its blocker stream
+# @params:      command Function or command name (string) without a terminator
+#               ... Command arguments (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   $? component status
+#               1 blocker rendering failure
+dns::presentation::execute() {
+    local -a statuses
+
+    if "$@" | dns::presentation::blockers; then
+        statuses=("${PIPESTATUS[@]}")
+    else
+        statuses=("${PIPESTATUS[@]}")
+    fi
+    (( statuses[1] == 0 )) || return 1
+    return "${statuses[0]}"
+}
+
+# @type:        Sink
 # @description: Logs effective settings from the BSSS-owned DNS configuration
 # @stdin:       None
 # @stdout:      None

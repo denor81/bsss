@@ -166,6 +166,15 @@ log_info_simple_tab() {
     printf '%s\n' "$1" >> "$TAB_LOG"
 }
 
+io::ask_value() {
+    [[ "$2" == "1" ]] || return 1
+    printf '1\0'
+}
+
+selected_profile=$(dns::presentation::select_profile | tr -d '\0')
+[[ "$selected_profile" == "$DNS_DEFAULT_PROFILE" ]] ||
+    test::fail "profile selection did not use the recommended default"
+
 dns::diagnostics::is_protected() {
     return 1
 }

@@ -13,11 +13,10 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
-source "${PROJECT_ROOT}/modules/helpers/dns.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns/facade.sh"
 
-trap common::int::actions INT
+trap dns::prepare::on_signal INT TERM
 trap common::exit::actions EXIT
-trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 
 # @type:        Orchestrator
 # @description: Displays DNS actions and dispatches the selected action
@@ -29,29 +28,31 @@ trap common::rollback::stop_script_by_rollback_timer SIGUSR1
 #               3 watchdog rollback completed
 #               4 preconfiguration required
 dns::main::menu() {
-    local mode
-    mode=$(dns::resolver::get_mode | tr -d '\0')
+    local mode status
+    if mode=$(dns::mode::get | tr -d '\0'); then
+        :
+    else
+        status=$?
+        (( status == 4 )) || return "$status"
+    fi
 
-    dns::log::status
+    dns::presentation::status
     if [[ "$mode" == "interrupted" ]]; then
         log_warn "$(_ "dns.prepare.interrupted")"
         log_info "$(_ "common.menu_header")"
         log_info_simple_tab "1. $(_ "dns.menu.recover")"
         log_info_simple_tab "0. $(_ "common.exit")"
 
-        local recovery_rc
         io::ask_value "$(_ "common.ask_select_action")" "" "^[0-1]$" "0-1" "^0$" >/dev/null || return
         io::confirm_action "$(_ "dns.confirm.recover")"
-        dns::prepare::recover || {
-            recovery_rc=$?
-            (( recovery_rc != 4 )) || log_warn "$(_ "dns.prepare.foreign_state" "$BSSS_STATE_DIR")"
-            return "$recovery_rc"
-        }
+        dns::presentation::execute dns::orchestrator::recover || return
+        log_success "$(_ "dns.prepare.recovery_complete")"
+        dns::presentation::status
         return
     fi
 
     if [[ "$mode" == "networkd-direct" ]]; then
-        if dns::prepare::os_is_supported; then
+        if dns::check::compatibility "$mode" >/dev/null; then
             log_warn "$(_ "dns.prepare.available")"
         else
             log_warn "$(_ "dns.prepare.unsupported_release" "$DNS_BOOTSTRAP_SUPPORTED_UBUNTU_VERSIONS")"
@@ -78,18 +79,25 @@ dns::main::menu() {
         2) profile="$DNS_PROFILE_YANDEX_GOOGLE" ;;
         3)
             io::confirm_action "$(_ "dns.confirm.remove")"
-            dns::transaction::remove
+            dns::presentation::execute dns::orchestrator::remove || return
+            log_success "$(_ "dns.rollback.new_config_removed")"
+            dns::presentation::status
             return
             ;;
     esac
 
     if [[ "$mode" == "networkd-direct" ]]; then
-        io::confirm_action "$(_ "dns.confirm.prepare" "$(dns::profile::get_name "$profile")")"
-        dns::prepare::run "$profile"
+        io::confirm_action "$(_ "dns.confirm.prepare" "$(dns::presentation::profile_name "$profile")")"
     else
-        io::confirm_action "$(_ "dns.confirm.apply" "$(dns::profile::get_name "$profile")")"
-        dns::transaction::apply "$profile"
+        io::confirm_action "$(_ "dns.confirm.apply" "$(dns::presentation::profile_name "$profile")")"
     fi
+    dns::presentation::execute dns::orchestrator::apply "$mode" "$profile" || return
+    if [[ "$mode" == "networkd-direct" ]]; then
+        log_success "$(_ "dns.prepare.success")"
+    else
+        log_success "$(_ "dns.config.installed" "$BSSS_DNS_CONFIG_FILE")"
+    fi
+    dns::presentation::status
 }
 
 # @type:        Orchestrator

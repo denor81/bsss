@@ -21,7 +21,7 @@ source "${PROJECT_ROOT}/modules/helpers/auto-upgrades.sh"
 source "${PROJECT_ROOT}/modules/helpers/swap.sh"
 source "${PROJECT_ROOT}/modules/helpers/ipv6.sh"
 source "${PROJECT_ROOT}/modules/helpers/hostname.sh"
-source "${PROJECT_ROOT}/modules/helpers/dns.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns/facade.sh"
 source "${PROJECT_ROOT}/modules/helpers/system-update.sh"
 source "${PROJECT_ROOT}/modules/helpers/auto-setup.sh"
 
@@ -94,7 +94,7 @@ auto::install::check() {
 auto::selection::check() {
     local selection="$1"
     local dns_profile="$2"
-    local dns_mode
+    local dns_mode dns_status
     if auto::menu::is_selected "$selection" 2; then
         if ! auto::upgrades::is_installed; then
             log_warn "$(_ "common.install.not_installed" "unattended-upgrades")"
@@ -113,20 +113,25 @@ auto::selection::check() {
         fi
     fi
     if auto::menu::is_selected "$selection" 10; then
-        dns_mode=$(dns::resolver::get_mode | tr -d '\0')
+        if dns_mode=$(dns::mode::get | tr -d '\0'); then
+            :
+        else
+            dns_status=$?
+            (( dns_status == 4 )) || return "$dns_status"
+        fi
         if [[ "$dns_mode" == "interrupted" ]]; then
             log_warn "$(_ "dns.prepare.auto_required")"
             return 4
         fi
         if [[ "$dns_mode" == "networkd-direct" ]]; then
-            if dns::prepare::os_is_supported; then
+            if dns::check::compatibility "$dns_mode" >/dev/null; then
                 log_warn "$(_ "dns.prepare.auto_required")"
             else
                 log_warn "$(_ "dns.prepare.unsupported_release" "$DNS_BOOTSTRAP_SUPPORTED_UBUNTU_VERSIONS")"
             fi
             return 4
         fi
-        dns::preflight::check_apply "$dns_profile" || return $?
+        dns::presentation::execute dns::check::apply "$dns_mode" "$dns_profile" || return
     fi
 }
 
@@ -258,8 +263,8 @@ main() {
         new_hostname=$(hostname::ui::get_new | tr -d '\0') || return
     fi
     if auto::menu::is_selected "$selection" 10; then
-        dns_profile=$(dns::ui::select_profile | tr -d '\0') || return
-        log_info "$(_ "dns.auto.profile_selected" "$(dns::profile::get_name "$dns_profile")")"
+        dns_profile=$(dns::presentation::select_profile | tr -d '\0') || return
+        log_info "$(_ "dns.auto.profile_selected" "$(dns::presentation::profile_name "$dns_profile")")"
     fi
     auto::selection::check "$selection" "$dns_profile"
 
@@ -278,7 +283,7 @@ main() {
     ufw::orchestrator::log_statuses
     permissions::orchestrator::log_statuses
     hostname::log::status
-    dns::log::status
+    dns::presentation::status
     ports=$(ssh::port::get_from_ss | tr '\0' ',' | sed 's/,$//')
     log_actual_info "$(_ "auto.info.connect_instruction" "$ports")"
     io::ask_value "$(_ "common.confirm_connection" "connected" "0")" "" "^connected$" "connected" "^0$" >/dev/null

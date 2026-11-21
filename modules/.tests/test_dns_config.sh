@@ -6,6 +6,7 @@
 set -Eeuo pipefail
 
 readonly PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+readonly FIXTURE_DIR="${PROJECT_ROOT}/modules/.tests/fixtures/dns"
 readonly TEST_TMP="$(mktemp -d "${TMPDIR:-/tmp}/bsss-dns-config-test.XXXXXX")"
 trap 'rm -rf "$TEST_TMP"' EXIT
 
@@ -103,6 +104,12 @@ EOF
 )
 expected_config=$'DNS\t8.8.8.8#dns.google\nFallbackDNS\t\nDomains\t~.\nDNSOverTLS\tyes\nDNSSEC\tno\nLLMNR\tno\nMulticastDNS\tno'
 test::assert::equals "$expected_config" "$parsed" "effective list reset parsing"
+
+for fixture in resolved-249.conf resolved-255.conf resolved-259.conf; do
+    parsed=$(dns::config::parse_effective < "${FIXTURE_DIR}/${fixture}" | tr '\0' '\n')
+    expected_config=$'DNS\t8.8.8.8#dns.google 1.1.1.1#one.one.one.one\nFallbackDNS\t\nDomains\t~.\nDNSOverTLS\tyes\nDNSSEC\tno\nLLMNR\tno\nMulticastDNS\tno'
+    test::assert::equals "$expected_config" "$parsed" "systemd fixture $fixture"
+done
 
 printf '%s\n' '[Resolve]' 'Cache=yes' > "${TEST_VENDOR_DIR}/98-cache.conf"
 printf '%s\n' '[Resolve]' 'DNS=9.9.9.9#dns.quad9.net' > "${TEST_VENDOR_DIR}/zz-foreign.conf"

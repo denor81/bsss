@@ -11,6 +11,7 @@ source "${PROJECT_ROOT}/modules/helpers/dns/validate.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/resolved.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/recovery.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/prepare.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns/orchestrator.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/diagnostics.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/presentation.sh"
 
