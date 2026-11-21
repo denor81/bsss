@@ -6,6 +6,7 @@ source "${PROJECT_ROOT}/modules/helpers/dns/state.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/config.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/runtime.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/check.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns/validate.sh"
 
 # @type:        Orchestrator
 # @description: Returns the DNS mode through the new component pipeline

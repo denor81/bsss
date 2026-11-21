@@ -101,8 +101,8 @@ EOF
         dns::config::parse_effective |
         tr '\0' '\n'
 )
-expected=$'DNS\t8.8.8.8#dns.google\nFallbackDNS\t\nDomains\t~.\nDNSOverTLS\tyes\nDNSSEC\tno\nLLMNR\tno\nMulticastDNS\tno'
-test::assert::equals "$expected" "$parsed" "effective list reset parsing"
+expected_config=$'DNS\t8.8.8.8#dns.google\nFallbackDNS\t\nDomains\t~.\nDNSOverTLS\tyes\nDNSSEC\tno\nLLMNR\tno\nMulticastDNS\tno'
+test::assert::equals "$expected_config" "$parsed" "effective list reset parsing"
 
 printf '%s\n' '[Resolve]' 'Cache=yes' > "${TEST_VENDOR_DIR}/98-cache.conf"
 printf '%s\n' '[Resolve]' 'DNS=9.9.9.9#dns.quad9.net' > "${TEST_VENDOR_DIR}/zz-foreign.conf"
