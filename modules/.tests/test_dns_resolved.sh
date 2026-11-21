@@ -55,6 +55,27 @@ dns::resolved::flush_cache() {
     return
 }
 
+dns::state::resolved_stub() {
+    return
+}
+
+dns::runtime::stub_is_listening() {
+    return
+}
+
+dns::runtime::query_libc() {
+    return
+}
+
+dns::check::mode() {
+    test::fail "standard validation used public mode with a transaction snapshot"
+}
+
+touch "$BSSS_DNS_ROLLBACK_FILE"
+dns::resolved::validate_standard ||
+    test::fail "standard validation rejected a physical stub with a snapshot"
+rm "$BSSS_DNS_ROLLBACK_FILE"
+
 dns::resolved::validate_standard() {
     return
 }

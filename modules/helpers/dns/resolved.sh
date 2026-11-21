@@ -82,7 +82,7 @@ dns::resolved::flush_cache() {
 # @exit_code:   0 standard resolution works
 #               1 restored state is unusable
 dns::resolved::validate_standard() {
-    dns::check::mode "resolved-stub" >/dev/null || return 1
+    dns::state::resolved_stub || return 1
     dns::runtime::stub_is_listening || return 1
     dns::runtime::query_libc "$DNS_TEST_DOMAIN"
 }
