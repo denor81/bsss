@@ -93,6 +93,10 @@ test::capture dns::check::block "sample_issue" "one" "two"
 test::assert::equals "4" "$TEST_STATUS" "blocker status"
 test::assert::equals $'sample_issue\tone\ttwo' "$TEST_OUTPUT" "blocker record"
 
+test::capture dns::check::emit "sample_without_arguments"
+test::assert::equals "0" "$TEST_STATUS" "argument-free issue status"
+test::assert::equals $'sample_without_arguments\t' "$TEST_OUTPUT" "argument-free issue record"
+
 test::capture dns::check::emit "sample_issue" $'bad\nfield'
 test::assert::equals "1" "$TEST_STATUS" "malformed issue status"
 test::assert::equals "" "$TEST_OUTPUT" "malformed issue output"
@@ -211,7 +215,7 @@ test::assert::equals $'ens3\t~corp.example\nens3\texample.test' "$routes" "route
 
 test::capture dns::check::apply "interrupted" "$DNS_PROFILE_GOOGLE_CLOUDFLARE"
 test::assert::equals "4" "$TEST_STATUS" "recovery-required status"
-test::assert::equals "recovery_required" "$TEST_OUTPUT" "recovery-required issue"
+test::assert::equals $'recovery_required\t' "$TEST_OUTPUT" "recovery-required issue"
 
 if dns::check::apply "resolved-stub" "unknown" >/dev/null; then
     test::fail "unsupported profile was accepted"

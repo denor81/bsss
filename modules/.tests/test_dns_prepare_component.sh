@@ -365,7 +365,7 @@ if blocker=$(dns::prepare::guard_full_rollback | tr '\0' '\n'); then
 else
     test::assert::equals "4" "$?" "full rollback artifact status"
 fi
-[[ "$blocker" == "recovery_required" ]] ||
+[[ "$blocker" == $'recovery_required\t' ]] ||
     test::fail "full rollback guard emitted an unexpected blocker"
 [[ -z "$DNS_PREPARE_LOCK_FD" ]] ||
     test::fail "blocked full rollback retained its lock"

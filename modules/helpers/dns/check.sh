@@ -12,7 +12,7 @@
 #               1 malformed field
 dns::check::emit() {
     local code="$1"
-    local field
+    local field separator=""
 
     shift
     [[ -n "$code" && "$code" != *[$'\t\n']* ]] || return 1
@@ -20,9 +20,10 @@ dns::check::emit() {
         [[ "$field" != *[$'\t\n']* ]] || return 1
     done
 
-    printf '%s' "$code"
+    printf '%s\t' "$code"
     for field in "$@"; do
-        printf '\t%s' "$field"
+        printf '%s%s' "$separator" "$field"
+        separator=$'\t'
     done
     printf '\0'
 }

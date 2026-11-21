@@ -108,7 +108,7 @@ if blocker=$(dns::orchestrator::recover | tr '\0' '\n'); then
 else
     [[ "$?" == "4" ]] || test::fail "mixed interrupted state returned the wrong status"
 fi
-[[ "$blocker" == "recovery_inconsistent" ]] ||
+[[ "$blocker" == $'recovery_inconsistent\t' ]] ||
     test::fail "mixed interrupted state emitted the wrong blocker"
 rm "$BSSS_DNS_ROLLBACK_FILE"
 DIRECT_ARTIFACTS=0
