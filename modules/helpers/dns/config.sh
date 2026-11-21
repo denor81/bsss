@@ -246,3 +246,53 @@ dns::config::matches_profile() {
     dns::config::is_owned "$BSSS_DNS_CONFIG_FILE" || return 1
     cmp --silent "$BSSS_DNS_CONFIG_FILE" <(dns::config::render "$1")
 }
+
+# @type:        Filter
+# @description: Identifies a supported profile from effective resolved settings
+# @stdin:       setting<TAB>value\0 (7 records)
+# @stdout:      profile\0
+# @exit_code:   0 supported profile identified
+#               1 malformed, incomplete, or custom settings
+dns::config::profile_filter() {
+    local record="" key value
+    local -A settings=()
+    local -a keys=(DNS FallbackDNS Domains DNSOverTLS DNSSEC LLMNR MulticastDNS)
+
+    while IFS= read -r -d '' record; do
+        [[ "$record" == *$'\t'* ]] || return 1
+        key="${record%%$'\t'*}"
+        value="${record#*$'\t'}"
+        [[ -n "$key" && "$key" != *[$'\t\n']* && "$value" != *[$'\t\n']* ]] || return 1
+        case "$key" in
+            DNS|FallbackDNS|Domains|DNSOverTLS|DNSSEC|LLMNR|MulticastDNS) ;;
+            *) return 1 ;;
+        esac
+        [[ ! -v "settings[$key]" ]] || return 1
+        settings["$key"]="$value"
+        record=""
+    done
+    [[ -z "$record" ]] || return 1
+    for key in "${keys[@]}"; do
+        [[ -v "settings[$key]" ]] || return 1
+    done
+
+    case "${settings[DNS]}" in
+        "$DNS_SERVERS_GOOGLE_CLOUDFLARE") printf '%s\0' "$DNS_PROFILE_GOOGLE_CLOUDFLARE" ;;
+        "$DNS_SERVERS_YANDEX_GOOGLE") printf '%s\0' "$DNS_PROFILE_YANDEX_GOOGLE" ;;
+        *) return 1 ;;
+    esac
+}
+
+# @type:        Source
+# @description: Identifies the supported effective resolver profile
+# @stdin:       None
+# @stdout:      profile\0
+# @exit_code:   0 supported profile identified
+#               1 inspection, parsing, or profile recognition failure
+dns::config::get_profile() {
+    local -a statuses
+
+    dns::config::get_effective | dns::config::profile_filter
+    statuses=("${PIPESTATUS[@]}")
+    (( statuses[0] == 0 && statuses[1] == 0 ))
+}
