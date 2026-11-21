@@ -11,7 +11,7 @@ trap 'rm -rf "$TEST_TMP"' EXIT
 
 readonly OS_RELEASE_FILE_PATH="${TEST_TMP}/os-release"
 readonly DNS_SUPPORTED_UBUNTU_VERSIONS="22.04|24.04|26.04"
-readonly DNS_BOOTSTRAP_SUPPORTED_UBUNTU_VERSIONS="22.04|24.04"
+readonly DNS_BOOTSTRAP_SUPPORTED_UBUNTU_VERSIONS="22.04|24.04|26.04"
 readonly DNS_PROFILE_GOOGLE_CLOUDFLARE="google-cloudflare"
 readonly DNS_PROFILE_YANDEX_GOOGLE="yandex-google"
 readonly DNS_SERVERS_GOOGLE_CLOUDFLARE="8.8.8.8#dns.google 1.1.1.1#one.one.one.one"
@@ -111,9 +111,13 @@ dns::check::compatibility "networkd-direct" ||
     test::fail "networkd-direct was rejected on Ubuntu 22.04"
 
 printf 'ID=ubuntu\nVERSION_ID=26.04\n' > "$OS_RELEASE_FILE_PATH"
+dns::check::compatibility "networkd-direct" ||
+    test::fail "networkd-direct was rejected on Ubuntu 26.04"
+
+printf 'ID=ubuntu\nVERSION_ID=20.04\n' > "$OS_RELEASE_FILE_PATH"
 test::capture dns::check::compatibility "networkd-direct"
 test::assert::equals "4" "$TEST_STATUS" "direct release blocker status"
-test::assert::equals $'unsupported_release\tnetworkd-direct\tubuntu\t26.04\t22.04|24.04' \
+test::assert::equals $'unsupported_release\tnetworkd-direct\tubuntu\t20.04\t22.04|24.04|26.04' \
     "$TEST_OUTPUT" "direct release blocker"
 
 dns::check::compatibility "interrupted" ||
