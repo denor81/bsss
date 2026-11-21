@@ -4,6 +4,7 @@
 
 source "${PROJECT_ROOT}/modules/helpers/dns/state.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/config.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns/runtime.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/check.sh"
 
 # @type:        Orchestrator

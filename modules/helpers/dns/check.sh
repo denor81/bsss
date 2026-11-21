@@ -163,42 +163,6 @@ dns::check::target() {
 }
 
 # @type:        Validator
-# @description: Checks whether the standard resolved stub listens on UDP and TCP
-# @stdin:       None
-# @stdout:      None
-# @exit_code:   0 both listeners found
-#               1 listener state differs or inspection failed
-dns::check::stub_is_listening() {
-    ss -H -lntu | gawk '
-        $5 ~ /^127\.0\.0\.53(%[^:]*)?:53$/ && $1 == "udp" { udp = 1 }
-        $5 ~ /^127\.0\.0\.53(%[^:]*)?:53$/ && $1 == "tcp" { tcp = 1 }
-        END { exit udp && tcp ? 0 : 1 }
-    '
-}
-
-# @type:        Source
-# @description: Lists port 53 listeners other than supported resolved stubs
-# @stdin:       None
-# @stdout:      address\0 (0..N)
-# @exit_code:   0 listeners inspected
-#               $? ss or gawk failure
-dns::check::local_resolvers() {
-    ss -H -lntu | gawk '
-        BEGIN { ORS = "\0" }
-        $5 ~ /:53$/ &&
-        $5 !~ /^127\.0\.0\.53(%[^:]*)?:53$/ &&
-        $5 !~ /^127\.0\.0\.54(%[^:]*)?:53$/ {
-            addresses[$5] = 1
-        }
-        END {
-            for (address in addresses) {
-                print address
-            }
-        }
-    '
-}
-
-# @type:        Validator
 # @description: Rejects foreign local DNS listeners
 # @stdin:       None
 # @stdout:      issue_code<TAB>address\0 on a blocker
@@ -208,39 +172,11 @@ dns::check::local_resolvers() {
 dns::check::local_resolver() {
     local listeners listener
 
-    listeners=$(dns::check::local_resolvers | tr '\0' '\n') || return 1
+    listeners=$(dns::runtime::local_resolvers | tr '\0' '\n') || return 1
     [[ -z "$listeners" ]] || {
         listener="${listeners%%$'\n'*}"
         dns::check::block "local_resolver" "$listener"
     }
-}
-
-# @type:        Filter
-# @description: Emits per-link DNS route domains
-# @stdin:       resolvectl domain output (text\n)
-# @stdout:      link<TAB>domain\0 (0..N)
-# @exit_code:   0 parsed
-#               $? gawk failure
-dns::check::route_domains() {
-    gawk '
-        BEGIN { ORS = "\0" }
-        /^Link [0-9]+ \(/ {
-            separator = index($0, ":")
-            if (separator == 0) {
-                next
-            }
-            link = substr($0, 1, separator - 1)
-            sub(/^Link [0-9]+ \(/, "", link)
-            sub(/\)$/, "", link)
-            domains = substr($0, separator + 1)
-            count = split(domains, values, /[[:space:]]+/)
-            for (i = 1; i <= count; i++) {
-                if (values[i] != "") {
-                    print link "\t" values[i]
-                }
-            }
-        }
-    '
 }
 
 # @type:        Validator
@@ -251,10 +187,9 @@ dns::check::route_domains() {
 #               1 runtime inspection or parsing failed
 #               4 domain found
 dns::check::routes() {
-    local output issues issue link domain
+    local issues issue link domain
 
-    output=$(resolvectl --no-pager domain 2>/dev/null) || return 1
-    issues=$(dns::check::route_domains <<< "$output" | tr '\0' '\n') || return 1
+    issues=$(dns::runtime::route_domains | tr '\0' '\n') || return 1
     [[ -z "$issues" ]] || {
         issue="${issues%%$'\n'*}"
         [[ "$issue" == *$'\t'* && "${issue#*$'\t'}" != *$'\t'* ]] || return 1
@@ -515,15 +450,10 @@ dns::check::test_name() {
 #               1 mode inspection failure
 #               4 query failed or mode changed
 dns::check::direct_query() {
-    local output
-
-    if ! output=$(timeout "${DNS_QUERY_TIMEOUT_SECONDS}s" getent ahosts "$DNS_TEST_DOMAIN" 2>&1); then
+    if ! dns::runtime::query_libc "$DNS_TEST_DOMAIN"; then
         dns::check::block "direct_query_failed" "$DNS_TEST_DOMAIN"
         return
     fi
-    [[ -n "$output" ]] ||
-        dns::check::block "direct_query_failed" "$DNS_TEST_DOMAIN" ||
-        return
     dns::check::mode "networkd-direct"
 }
 
@@ -542,7 +472,7 @@ dns::check::resolved() {
     dns::check::mode "resolved-stub" || return
     dns::check::commands systemctl systemd-analyze resolvectl readlink ss gawk openssl timeout \
         mktemp mv cp cmp chown chmod mkdir || return
-    dns::check::stub_is_listening ||
+    dns::runtime::stub_is_listening ||
         dns::check::block "stub_inactive" ||
         return
     dns::check::local_resolver || return

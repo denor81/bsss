@@ -147,7 +147,7 @@ routes=$(
 Global: ~.
 Link 2 (ens3): ~corp.example example.test
 EOF
-        dns::check::route_domains |
+        dns::runtime::parse_route_domains |
         tr '\0' '\n'
 )
 test::assert::equals $'ens3\t~corp.example\nens3\texample.test' "$routes" "route domain parsing"
@@ -158,7 +158,7 @@ test::assert::equals $'ens3\t~corp.example\nens3\texample.test' "$routes" "route
     dns::check::compatibility() { CHECK_CALLS+="compat "; }
     dns::check::mode() { CHECK_CALLS+="mode "; }
     dns::check::commands() { CHECK_CALLS+="commands "; }
-    dns::check::stub_is_listening() { CHECK_CALLS+="stub "; }
+    dns::runtime::stub_is_listening() { CHECK_CALLS+="stub "; }
     dns::check::local_resolver() { CHECK_CALLS+="local "; }
     dns::check::config_dir() { CHECK_CALLS+="dir "; }
     dns::check::target() { CHECK_CALLS+="target "; }
