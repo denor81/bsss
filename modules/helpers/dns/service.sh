@@ -38,7 +38,7 @@ dns::service::wait_state() {
 dns::service::enable_start() {
     local unit_state
 
-    systemctl enable "$DNS_RESOLVED_SERVICE" || return 1
+    systemctl --quiet enable "$DNS_RESOLVED_SERVICE" || return 1
     unit_state=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "UnitFileState") ||
         return 1
     [[ "$unit_state" == "enabled" ]] || return 1
@@ -77,7 +77,7 @@ dns::service::stop_disable() {
         units+=("${trigger_units[@]}")
     fi
 
-    systemctl disable "${units[@]}" || return 1
+    systemctl --quiet disable "${units[@]}" || return 1
     for unit in "${units[@]}"; do
         unit_state=$(dns::state::unit_property "$unit" "UnitFileState") ||
             return 1

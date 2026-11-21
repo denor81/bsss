@@ -152,9 +152,14 @@ stat() {
 # @exit_code:   0 supported command
 #               1 unsupported command or property
 systemctl() {
-    local command="$1"
-    local service="${2:-}"
-    local property="${3:-}"
+    local command service property
+
+    if [[ "$1" == "--quiet" ]]; then
+        shift
+    fi
+    command="$1"
+    service="${2:-}"
+    property="${3:-}"
     property="${property#--property=}"
 
     [[ "$command" != "$SYSTEMCTL_FAILURE" ]] || return 1

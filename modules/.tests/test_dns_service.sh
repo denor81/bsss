@@ -66,9 +66,15 @@ dns::state::unit_property() {
 # @exit_code:   0 modeled transition
 #               1 injected or unknown command
 systemctl() {
-    local command="$1"
+    local option="" command
 
-    SYSTEMCTL_CALLS+="$*"$'\n'
+    if [[ "$1" == "--quiet" ]]; then
+        option="$1 "
+        shift
+    fi
+    command="$1"
+
+    SYSTEMCTL_CALLS+="${option}$*"$'\n'
     [[ "$command" != "$SYSTEMCTL_FAILURE" ]] || return 1
     case "$command" in
         enable) UNIT_FILE_STATE="enabled" ;;
@@ -93,6 +99,8 @@ dns::service::enable_start ||
     "$ACTIVE_STATE" == "active" &&
     "$SUB_STATE" == "running" ]] ||
     test::fail "enable/start produced the wrong state"
+[[ "$SYSTEMCTL_CALLS" == *"--quiet enable systemd-resolved.service"* ]] ||
+    test::fail "service enable was not quiet"
 
 dns::service::restart ||
     test::fail "bounded restart failed"
@@ -111,7 +119,7 @@ SUB_STATE="running"
 SYSTEMCTL_CALLS=""
 dns::service::stop_disable ||
     test::fail "trigger-unit stop/disable failed"
-[[ "$SYSTEMCTL_CALLS" == *"disable systemd-resolved.service systemd-resolved-varlink.socket systemd-resolved-monitor.socket"* ]] ||
+[[ "$SYSTEMCTL_CALLS" == *"--quiet disable systemd-resolved.service systemd-resolved-varlink.socket systemd-resolved-monitor.socket"* ]] ||
     test::fail "trigger units were not disabled"
 [[ "$SYSTEMCTL_CALLS" == *"stop --no-block systemd-resolved.service systemd-resolved-varlink.socket systemd-resolved-monitor.socket"* ]] ||
     test::fail "trigger units were not stopped"
