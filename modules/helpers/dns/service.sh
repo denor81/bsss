@@ -60,21 +60,33 @@ dns::service::restart() {
 }
 
 # @type:        Sink
-# @description: Stops and disables systemd-resolved with bounded state polling
+# @description: Stops and disables systemd-resolved and its triggering units
 # @stdin:       None
 # @stdout:      None
-# @exit_code:   0 service disabled and inactive
-#               1 stop, disable, flush, or state validation failed
+# @exit_code:   0 units disabled and inactive
+#               1 inspection, stop, disable, flush, or state validation failed
 dns::service::stop_disable() {
-    local unit_state
+    local triggered_by unit unit_state
+    local -a units=("$DNS_RESOLVED_SERVICE")
+    local -a trigger_units=()
 
-    systemctl stop --no-block "$DNS_RESOLVED_SERVICE" || return 1
-    dns::service::wait_state "$DNS_RESOLVED_SERVICE" "inactive" "dead" ||
+    triggered_by=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "TriggeredBy") ||
         return 1
+    if [[ -n "$triggered_by" ]]; then
+        read -r -a trigger_units <<< "$triggered_by"
+        units+=("${trigger_units[@]}")
+    fi
 
-    systemctl disable "$DNS_RESOLVED_SERVICE" || return 1
-    unit_state=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "UnitFileState") ||
-        return 1
-    [[ "$unit_state" == "disabled" ]] || return 1
-    sync -f /etc/systemd/system
+    systemctl disable "${units[@]}" || return 1
+    for unit in "${units[@]}"; do
+        unit_state=$(dns::state::unit_property "$unit" "UnitFileState") ||
+            return 1
+        [[ "$unit_state" == "disabled" ]] || return 1
+    done
+    sync -f /etc/systemd/system || return 1
+
+    systemctl stop --no-block "${units[@]}" || return 1
+    for unit in "${units[@]}"; do
+        dns::service::wait_state "$unit" "inactive" "dead" || return 1
+    done
 }

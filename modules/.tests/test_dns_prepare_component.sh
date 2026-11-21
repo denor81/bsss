@@ -165,6 +165,7 @@ systemctl() {
                 "${DNS_RESOLVED_SERVICE}:UnitFileState") printf '%s\n' "$RESOLVED_ENABLED" ;;
                 "${DNS_RESOLVED_SERVICE}:ActiveState") printf '%s\n' "$RESOLVED_ACTIVE" ;;
                 "${DNS_RESOLVED_SERVICE}:SubState") printf '%s\n' "$RESOLVED_SUBSTATE" ;;
+                "${DNS_RESOLVED_SERVICE}:TriggeredBy") printf '\n' ;;
                 "${DNS_NETWORKD_SERVICE}:ActiveState") printf 'active\n' ;;
                 "${DNS_NETWORKD_SERVICE}:SubState") printf 'running\n' ;;
                 "${DNS_NETWORK_MANAGER_SERVICE}:ActiveState") printf 'inactive\n' ;;

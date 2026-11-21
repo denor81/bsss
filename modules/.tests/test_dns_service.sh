@@ -13,6 +13,8 @@ UNIT_FILE_STATE="disabled"
 ACTIVE_STATE="inactive"
 SUB_STATE="dead"
 SYSTEMCTL_FAILURE=""
+SYSTEMCTL_CALLS=""
+TRIGGERED_BY=""
 
 # @type:        Sink
 # @description: Fails the current test
@@ -52,6 +54,7 @@ dns::state::unit_property() {
         UnitFileState) printf '%s\n' "$UNIT_FILE_STATE" ;;
         ActiveState) printf '%s\n' "$ACTIVE_STATE" ;;
         SubState) printf '%s\n' "$SUB_STATE" ;;
+        TriggeredBy) printf '%s\n' "$TRIGGERED_BY" ;;
         *) return 1 ;;
     esac
 }
@@ -65,6 +68,7 @@ dns::state::unit_property() {
 systemctl() {
     local command="$1"
 
+    SYSTEMCTL_CALLS+="$*"$'\n'
     [[ "$command" != "$SYSTEMCTL_FAILURE" ]] || return 1
     case "$command" in
         enable) UNIT_FILE_STATE="enabled" ;;
@@ -99,6 +103,18 @@ dns::service::stop_disable ||
     "$ACTIVE_STATE" == "inactive" &&
     "$SUB_STATE" == "dead" ]] ||
     test::fail "stop/disable produced the wrong state"
+
+TRIGGERED_BY="systemd-resolved-varlink.socket systemd-resolved-monitor.socket"
+UNIT_FILE_STATE="enabled"
+ACTIVE_STATE="active"
+SUB_STATE="running"
+SYSTEMCTL_CALLS=""
+dns::service::stop_disable ||
+    test::fail "trigger-unit stop/disable failed"
+[[ "$SYSTEMCTL_CALLS" == *"disable systemd-resolved.service systemd-resolved-varlink.socket systemd-resolved-monitor.socket"* ]] ||
+    test::fail "trigger units were not disabled"
+[[ "$SYSTEMCTL_CALLS" == *"stop --no-block systemd-resolved.service systemd-resolved-varlink.socket systemd-resolved-monitor.socket"* ]] ||
+    test::fail "trigger units were not stopped"
 
 SYSTEMCTL_FAILURE="restart"
 if dns::service::restart; then
