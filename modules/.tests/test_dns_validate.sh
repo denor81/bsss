@@ -118,7 +118,7 @@ else
 fi
 test::assert::equals "1" "$status" "unterminated effective record status"
 
-RUNTIME_DNS="8.8.8.8 1.1.1.1"
+RUNTIME_DNS="8.8.8.8#dns.google 1.1.1.1#one.one.one.one"
 RUNTIME_DOMAINS="~."
 RUNTIME_DOT="yes"
 
@@ -159,7 +159,6 @@ printf 'ID=ubuntu\nVERSION_ID=24.04\n' > "$OS_RELEASE_FILE_PATH"
     VALIDATE_CALLS=""
 
     # Test doubles intentionally record validation order.
-    dns::check::mode() { VALIDATE_CALLS+="mode "; }
     dns::config::is_owned() { VALIDATE_CALLS+="owned "; }
     dns::config::matches_profile() { VALIDATE_CALLS+="match "; }
     dns::validate::effective() { VALIDATE_CALLS+="effective "; }
@@ -169,12 +168,26 @@ printf 'ID=ubuntu\nVERSION_ID=24.04\n' > "$OS_RELEASE_FILE_PATH"
     dns::check::late_conflict() { VALIDATE_CALLS+="conflict "; }
     dns::validate::global_runtime() { VALIDATE_CALLS+="runtime "; }
     dns::runtime::query_strict() { VALIDATE_CALLS+="strict "; }
+    dns::validate::strict_runtime "$DNS_PROFILE_GOOGLE_CLOUDFLARE" ||
+        test::fail "mock strict runtime validation failed"
+    test::assert::equals \
+        "owned match effective stub local routes conflict runtime strict " \
+        "$VALIDATE_CALLS" \
+        "strict runtime validation order"
+)
+
+(
+    VALIDATE_CALLS=""
+
+    # Test doubles intentionally record protected-state composition.
+    dns::check::mode() { VALIDATE_CALLS+="mode "; }
+    dns::validate::strict_runtime() { VALIDATE_CALLS+="strict "; }
     dns::runtime::query_libc() { VALIDATE_CALLS+="libc "; }
 
     dns::validate::protected "$DNS_PROFILE_GOOGLE_CLOUDFLARE" ||
         test::fail "mock protected validation failed"
     test::assert::equals \
-        "mode owned match effective stub local routes conflict runtime strict libc " \
+        "mode strict libc " \
         "$VALIDATE_CALLS" \
         "protected validation order"
 )

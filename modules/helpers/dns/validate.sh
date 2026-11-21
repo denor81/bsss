@@ -70,30 +70,6 @@ dns::validate::effective() {
     return "${statuses[1]}"
 }
 
-# @type:        Source
-# @description: Returns profile endpoint addresses in resolved runtime order
-# @params:      profile Resolver profile identifier (string) without a terminator
-# @stdin:       None
-# @stdout:      addresses\0
-# @exit_code:   0 addresses emitted
-#               1 unsupported profile or malformed endpoint stream
-dns::validate::addresses() {
-    local profile="$1"
-    local record="" ip hostname addresses=""
-
-    dns::profile::is_valid "$profile" || return 1
-    while IFS= read -r -d '' record; do
-        [[ "$record" == *$'\t'* ]] || return 1
-        ip="${record%%$'\t'*}"
-        hostname="${record#*$'\t'}"
-        [[ -n "$ip" && -n "$hostname" && "$hostname" != *[$'\t\n']* ]] || return 1
-        addresses+="${addresses:+ }${ip}"
-        record=""
-    done < <(dns::profile::get_endpoints "$profile")
-    [[ -z "$record" && -n "$addresses" ]] || return 1
-    printf '%s\0' "$addresses"
-}
-
 # @type:        Validator
 # @description: Checks whether empty Global runtime values are allowed on this release
 # @stdin:       None
@@ -126,7 +102,7 @@ dns::validate::global_runtime() {
     local profile="$1"
     local expected_dns runtime_dns runtime_domains runtime_dot allow_empty=0 status
 
-    expected_dns=$(dns::validate::addresses "$profile" | tr -d '\0') || return 1
+    expected_dns=$(dns::profile::get_servers "$profile" | tr -d '\0') || return 1
     runtime_dns=$(dns::runtime::get_global "dns" | tr -d '\0') || return 1
     runtime_domains=$(dns::runtime::get_global "domain" | tr -d '\0') || return 1
     runtime_dot=$(dns::runtime::get_global "dnsovertls" | tr -d '\0') || return 1
@@ -148,18 +124,17 @@ dns::validate::global_runtime() {
 }
 
 # @type:        Validator
-# @description: Confirms strict protected DNS state for a resolver profile
+# @description: Confirms strict resolved runtime state for a resolver profile
 # @params:      profile Resolver profile identifier (string) without a terminator
 # @stdin:       None
 # @stdout:      issue_code<TAB>arguments...\0 on a blocker
-# @exit_code:   0 protected state confirmed
+# @exit_code:   0 strict runtime state confirmed
 #               1 technical or internal failure
 #               4 observed state differs
-dns::validate::protected() {
+dns::validate::strict_runtime() {
     local profile="$1"
 
     dns::profile::is_valid "$profile" || return 1
-    dns::check::mode "resolved-stub" || return
     if ! dns::config::is_owned "$BSSS_DNS_CONFIG_FILE" ||
         ! dns::config::matches_profile "$profile"; then
         dns::check::block "config_mismatch" "$BSSS_DNS_CONFIG_FILE"
@@ -176,6 +151,22 @@ dns::validate::protected() {
     dns::runtime::query_strict "$DNS_TEST_DOMAIN" ||
         dns::check::block "strict_query_failed" "$DNS_TEST_DOMAIN" ||
         return
+}
+
+# @type:        Validator
+# @description: Confirms strict protected DNS state for a resolver profile
+# @params:      profile Resolver profile identifier (string) without a terminator
+# @stdin:       None
+# @stdout:      issue_code<TAB>arguments...\0 on a blocker
+# @exit_code:   0 protected state confirmed
+#               1 technical or internal failure
+#               4 observed state differs
+dns::validate::protected() {
+    local profile="$1"
+
+    dns::profile::is_valid "$profile" || return 1
+    dns::check::mode "resolved-stub" || return
+    dns::validate::strict_runtime "$profile" || return
     dns::runtime::query_libc "$DNS_TEST_DOMAIN" ||
         dns::check::block "libc_query_failed" "$DNS_TEST_DOMAIN"
 }
