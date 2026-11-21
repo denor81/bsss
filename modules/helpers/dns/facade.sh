@@ -8,6 +8,7 @@ source "${PROJECT_ROOT}/modules/helpers/dns/runtime.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/check.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/validate.sh"
 source "${PROJECT_ROOT}/modules/helpers/dns/resolved.sh"
+source "${PROJECT_ROOT}/modules/helpers/dns/recovery.sh"
 
 # @type:        Orchestrator
 # @description: Returns the DNS mode through the new component pipeline
