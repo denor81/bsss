@@ -163,6 +163,27 @@ dns::check::target() {
 }
 
 # @type:        Validator
+# @description: Checks preconditions for removing the BSSS resolved configuration
+# @stdin:       None
+# @stdout:      issue_code<TAB>arguments...\0 on a blocker
+# @exit_code:   0 owned target can be removed
+#               1 technical or internal failure
+#               4 observed blocker
+dns::check::remove() {
+    dns::check::compatibility "resolved-stub" || return
+    dns::check::mode "resolved-stub" || return
+    dns::check::commands systemctl resolvectl readlink ss gawk mv cp rm sync || return
+    dns::check::config_dir || return
+    dns::check::target || return
+    if [[ ! -e "$BSSS_DNS_CONFIG_FILE" && ! -L "$BSSS_DNS_CONFIG_FILE" ]]; then
+        dns::check::block "target_absent" "$BSSS_DNS_CONFIG_FILE"
+        return
+    fi
+    dns::config::is_owned "$BSSS_DNS_CONFIG_FILE" ||
+        dns::check::block "foreign_target" "$BSSS_DNS_CONFIG_FILE"
+}
+
+# @type:        Validator
 # @description: Rejects foreign local DNS listeners
 # @stdin:       None
 # @stdout:      issue_code<TAB>address\0 on a blocker

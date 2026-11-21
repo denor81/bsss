@@ -18,6 +18,8 @@ dns::resolved::snapshot() {
         "$BSSS_DNS_CONFIG_FILE" \
         "$BSSS_DNS_ROLLBACK_FILE" ||
         return 1
+    sync -f "$BSSS_DNS_ROLLBACK_FILE" || return 1
+    sync -f "$DNS_RESOLVED_CONFIG_DIR"
 }
 
 # @type:        Sink
@@ -49,6 +51,8 @@ dns::resolved::install() {
         rm -f "$temporary_file" || true
         return 1
     fi
+    sync -f "$BSSS_DNS_CONFIG_FILE" || return 1
+    sync -f "$DNS_RESOLVED_CONFIG_DIR"
 }
 
 # @type:        Sink
@@ -96,11 +100,15 @@ dns::resolved::restore() {
     fi
 
     if [[ -e "$BSSS_DNS_ROLLBACK_FILE" || -L "$BSSS_DNS_ROLLBACK_FILE" ]]; then
-        [[ -f "$BSSS_DNS_ROLLBACK_FILE" && ! -L "$BSSS_DNS_ROLLBACK_FILE" ]] || return 1
+        dns::config::is_owned "$BSSS_DNS_ROLLBACK_FILE" || return 1
         mv -fT "$BSSS_DNS_ROLLBACK_FILE" "$BSSS_DNS_CONFIG_FILE" || return 1
     elif [[ -e "$BSSS_DNS_CONFIG_FILE" || -L "$BSSS_DNS_CONFIG_FILE" ]]; then
         rm -- "$BSSS_DNS_CONFIG_FILE" || return 1
     fi
+    if [[ -e "$BSSS_DNS_CONFIG_FILE" ]]; then
+        sync -f "$BSSS_DNS_CONFIG_FILE" || return 1
+    fi
+    sync -f "$DNS_RESOLVED_CONFIG_DIR" || return 1
 
     dns::resolved::restart || return 1
     dns::resolved::flush_cache || return 1
@@ -116,7 +124,20 @@ dns::resolved::restore() {
 dns::resolved::cleanup() {
     if [[ -e "$BSSS_DNS_ROLLBACK_FILE" || -L "$BSSS_DNS_ROLLBACK_FILE" ]]; then
         rm -- "$BSSS_DNS_ROLLBACK_FILE" || return 1
+        sync -f "$DNS_RESOLVED_CONFIG_DIR" || return 1
     fi
+}
+
+# @type:        Sink
+# @description: Removes the owned BSSS resolved configuration durably
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 owned target removed
+#               1 target missing, foreign, deletion, or flush failure
+dns::resolved::remove_target() {
+    dns::config::is_owned "$BSSS_DNS_CONFIG_FILE" || return 1
+    rm -- "$BSSS_DNS_CONFIG_FILE" || return 1
+    sync -f "$DNS_RESOLVED_CONFIG_DIR"
 }
 
 # @type:        Orchestrator
@@ -143,15 +164,17 @@ dns::resolved::apply() {
     local profile="$1"
 
     dns::check::apply "resolved-stub" "$profile" || return
-    if dns::config::matches_profile "$profile"; then
-        dns::validate::protected "$profile"
+    if dns::config::matches_profile "$profile" &&
+        dns::validate::protected "$profile" >/dev/null 2>&1; then
         return
     fi
 
     dns::resolved::snapshot || return 1
-    dns::resolved::install "$profile" ||
-        dns::resolved::rollback ||
-        return
+    if ! dns::config::matches_profile "$profile"; then
+        dns::resolved::install "$profile" ||
+            dns::resolved::rollback ||
+            return
+    fi
     dns::resolved::restart ||
         dns::resolved::rollback ||
         return
@@ -164,4 +187,61 @@ dns::resolved::apply() {
     dns::resolved::cleanup ||
         dns::resolved::rollback ||
         return
+}
+
+# @type:        Orchestrator
+# @description: Removes the BSSS resolved configuration transactionally
+# @stdin:       None
+# @stdout:      issue_code<TAB>arguments...\0 on a blocker
+# @exit_code:   0 configuration removed and standard DNS validated
+#               1 technical error or failed rollback
+#               3 removal failed and rollback completed
+#               4 preflight blocker
+dns::resolved::remove() {
+    dns::check::remove || return
+    dns::resolved::snapshot || return 1
+    dns::resolved::remove_target ||
+        dns::resolved::rollback ||
+        return
+    dns::resolved::restart ||
+        dns::resolved::rollback ||
+        return
+    dns::resolved::flush_cache ||
+        dns::resolved::rollback ||
+        return
+    dns::resolved::validate_standard ||
+        dns::resolved::rollback ||
+        return
+    dns::resolved::cleanup ||
+        dns::resolved::rollback ||
+        return
+}
+
+# @type:        Orchestrator
+# @description: Restores a transaction left with an owned resolved snapshot
+# @stdin:       None
+# @stdout:      issue_code<TAB>arguments...\0 on a blocker
+# @exit_code:   0 previous resolved configuration restored
+#               1 technical or restore failure
+#               4 foreign or inconsistent interrupted state
+dns::resolved::recover() {
+    if dns::recovery::has_artifacts; then
+        dns::check::block "recovery_inconsistent"
+        return
+    fi
+    dns::config::is_owned "$BSSS_DNS_ROLLBACK_FILE" || {
+        dns::check::block "recovery_inconsistent"
+        return
+    }
+    if [[ ! -L "$DNS_RESOLV_CONF_PATH" ||
+        "$(readlink -f "$DNS_RESOLV_CONF_PATH")" != "$DNS_RESOLVED_STUB_PATH" ]]; then
+        dns::check::block "recovery_inconsistent"
+        return
+    fi
+    if [[ -e "$BSSS_DNS_CONFIG_FILE" || -L "$BSSS_DNS_CONFIG_FILE" ]] &&
+        ! dns::config::is_owned "$BSSS_DNS_CONFIG_FILE"; then
+        dns::check::block "foreign_target" "$BSSS_DNS_CONFIG_FILE"
+        return
+    fi
+    dns::resolved::restore
 }

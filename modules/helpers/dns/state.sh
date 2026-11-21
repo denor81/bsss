@@ -76,6 +76,7 @@ dns::state::direct_baseline() {
 dns::mode::has_artifacts() {
     local path
     local -a paths=(
+        "$BSSS_DNS_ROLLBACK_FILE"
         "$DNS_PREPARE_DIR"
         "$DNS_PREPARE_STAGING_DIR"
         "$DNS_PREPARE_CLEANUP_DIR"

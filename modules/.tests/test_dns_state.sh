@@ -18,6 +18,7 @@ readonly DNS_PREPARE_DIR="${TEST_TMP}/var/lib/bsss/dns-resolver-prepare"
 readonly DNS_PREPARE_STAGING_DIR="${TEST_TMP}/var/lib/bsss/.dns-resolver-prepare.new"
 readonly DNS_PREPARE_CLEANUP_DIR="${TEST_TMP}/var/lib/bsss/.dns-resolver-prepare.cleanup"
 readonly DNS_PREPARE_TEMP_LINK="${TEST_TMP}/etc/.resolv.conf.bsss_prepare"
+readonly BSSS_DNS_ROLLBACK_FILE="${TEST_TMP}/etc/systemd/resolved.conf.d/99-bsss-dot.conf.bsss_backup"
 
 MOCK_RESOLVED_LOAD="loaded"
 MOCK_RESOLVED_ENABLED="disabled"
@@ -180,6 +181,14 @@ mode=$(dns::mode::get | tr -d '\0')
 test::assert::equals "resolved-stub" "$mode" "stub mode ignores irrelevant direct probes"
 dns::state::resolved_stub ||
     test::fail "physical resolved stub was rejected"
+
+mkdir -p "$(dirname "$BSSS_DNS_ROLLBACK_FILE")"
+touch "$BSSS_DNS_ROLLBACK_FILE"
+mode=$(dns::mode::get | tr -d '\0')
+test::assert::equals "interrupted" "$mode" "resolved snapshot changes public mode"
+dns::state::resolved_stub ||
+    test::fail "resolved snapshot changed physical stub state"
+rm "$BSSS_DNS_ROLLBACK_FILE"
 
 mkdir -p "$DNS_PREPARE_STAGING_DIR"
 MOCK_FAILED_PROPERTY="${DNS_RESOLVED_SERVICE}:ActiveState"
