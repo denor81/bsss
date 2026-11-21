@@ -15,6 +15,59 @@ dns::state::unit_property() {
 }
 
 # @type:        Validator
+# @description: Checks the physical resolved-stub shape without considering recovery artifacts
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 active standard stub found
+#               1 shape differs or could not be inspected
+dns::state::resolved_stub() {
+    local active_state
+
+    [[ -L "$DNS_RESOLV_CONF_PATH" ]] || return 1
+    [[ "$(readlink -f "$DNS_RESOLV_CONF_PATH")" == "$DNS_RESOLVED_STUB_PATH" ]] ||
+        return 1
+    active_state=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "ActiveState") ||
+        return 1
+    [[ "$active_state" == "active" ]]
+}
+
+# @type:        Validator
+# @description: Checks the physical networkd-direct shape without considering recovery artifacts
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 exact inactive networkd baseline found
+#               1 shape differs or could not be inspected
+dns::state::direct_baseline() {
+    local load_state unit_file_state active_state sub_state
+    local networkd_state networkd_sub_state network_manager_state
+
+    [[ -f "$DNS_RESOLV_CONF_PATH" && ! -L "$DNS_RESOLV_CONF_PATH" ]] || return 1
+    load_state=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "LoadState") ||
+        return 1
+    unit_file_state=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "UnitFileState") ||
+        return 1
+    active_state=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "ActiveState") ||
+        return 1
+    sub_state=$(dns::state::unit_property "$DNS_RESOLVED_SERVICE" "SubState") ||
+        return 1
+    networkd_state=$(dns::state::unit_property "$DNS_NETWORKD_SERVICE" "ActiveState") ||
+        return 1
+    networkd_sub_state=$(dns::state::unit_property "$DNS_NETWORKD_SERVICE" "SubState") ||
+        return 1
+    network_manager_state=$(dns::state::unit_property "$DNS_NETWORK_MANAGER_SERVICE" "ActiveState") ||
+        return 1
+
+    [[ "$load_state" == "loaded" &&
+        "$unit_file_state" == "disabled" &&
+        "$active_state" == "inactive" &&
+        "$sub_state" == "dead" &&
+        "$networkd_state" == "active" &&
+        "$networkd_sub_state" == "running" &&
+        "$network_manager_state" != "active" &&
+        "$network_manager_state" != "activating" ]]
+}
+
+# @type:        Validator
 # @description: Checks whether resolver preparation artifacts exist
 # @stdin:       None
 # @stdout:      None

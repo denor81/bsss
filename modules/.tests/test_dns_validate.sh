@@ -180,7 +180,7 @@ printf 'ID=ubuntu\nVERSION_ID=24.04\n' > "$OS_RELEASE_FILE_PATH"
     VALIDATE_CALLS=""
 
     # Test doubles intentionally record protected-state composition.
-    dns::check::mode() { VALIDATE_CALLS+="mode "; }
+    dns::state::resolved_stub() { VALIDATE_CALLS+="mode "; }
     dns::validate::strict_runtime() { VALIDATE_CALLS+="strict "; }
     dns::runtime::query_libc() { VALIDATE_CALLS+="libc "; }
 

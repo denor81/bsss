@@ -163,6 +163,14 @@ fi
 printf '%s\n' 'nameserver 8.8.8.8' > "$DNS_RESOLV_CONF_PATH"
 mode=$(dns::mode::get | tr -d '\0')
 test::assert::equals "networkd-direct" "$mode" "direct mode from system facts"
+dns::state::direct_baseline ||
+    test::fail "physical direct baseline was rejected"
+mkdir -p "$DNS_PREPARE_STAGING_DIR"
+dns::state::direct_baseline ||
+    test::fail "recovery artifact changed physical direct baseline"
+mode=$(dns::mode::get | tr -d '\0')
+test::assert::equals "interrupted" "$mode" "artifact still changes public mode"
+rm -r "$DNS_PREPARE_STAGING_DIR"
 
 rm "$DNS_RESOLV_CONF_PATH"
 ln -s "$DNS_RESOLVED_STUB_PATH" "$DNS_RESOLV_CONF_PATH"
@@ -170,6 +178,8 @@ MOCK_RESOLVED_ACTIVE="active"
 MOCK_FAILED_PROPERTY="${DNS_NETWORK_MANAGER_SERVICE}:ActiveState"
 mode=$(dns::mode::get | tr -d '\0')
 test::assert::equals "resolved-stub" "$mode" "stub mode ignores irrelevant direct probes"
+dns::state::resolved_stub ||
+    test::fail "physical resolved stub was rejected"
 
 mkdir -p "$DNS_PREPARE_STAGING_DIR"
 MOCK_FAILED_PROPERTY="${DNS_RESOLVED_SERVICE}:ActiveState"

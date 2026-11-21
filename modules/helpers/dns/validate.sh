@@ -165,7 +165,9 @@ dns::validate::protected() {
     local profile="$1"
 
     dns::profile::is_valid "$profile" || return 1
-    dns::check::mode "resolved-stub" || return
+    dns::state::resolved_stub ||
+        dns::check::block "stub_shape_mismatch" ||
+        return
     dns::validate::strict_runtime "$profile" || return
     dns::runtime::query_libc "$DNS_TEST_DOMAIN" ||
         dns::check::block "libc_query_failed" "$DNS_TEST_DOMAIN"
