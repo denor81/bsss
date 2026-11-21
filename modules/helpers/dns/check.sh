@@ -245,18 +245,28 @@ dns::check::late_conflict() {
 # @stdin:       None
 # @stdout:      issue_code<TAB>ip<TAB>tls_hostname\0 on a blocker
 # @exit_code:   0 endpoint validated
+#               1 retry delay failed
 #               4 endpoint unavailable
 dns::check::endpoint() {
     local ip="$1"
     local tls_hostname="$2"
+    local attempt
 
-    timeout "${DNS_ENDPOINT_TIMEOUT_SECONDS}s" openssl s_client \
-        -connect "${ip}:853" \
-        -servername "$tls_hostname" \
-        -verify_hostname "$tls_hostname" \
-        -verify_return_error \
-        -brief </dev/null >/dev/null 2>&1 ||
-        dns::check::block "endpoint_unavailable" "$ip" "$tls_hostname"
+    for (( attempt = 1; attempt <= DNS_ENDPOINT_CHECK_ATTEMPTS; attempt++ )); do
+        if timeout "${DNS_ENDPOINT_TIMEOUT_SECONDS}s" openssl s_client \
+            -connect "${ip}:853" \
+            -servername "$tls_hostname" \
+            -verify_hostname "$tls_hostname" \
+            -verify_return_error \
+            -brief </dev/null >/dev/null 2>&1; then
+            return
+        fi
+        if (( attempt < DNS_ENDPOINT_CHECK_ATTEMPTS )); then
+            sleep "$DNS_ENDPOINT_RETRY_SECONDS" || return 1
+        fi
+    done
+
+    dns::check::block "endpoint_unavailable" "$ip" "$tls_hostname"
 }
 
 # @type:        Orchestrator

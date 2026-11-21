@@ -17,6 +17,8 @@ readonly DNS_PROFILE_YANDEX_GOOGLE="yandex-google"
 readonly DNS_SERVERS_GOOGLE_CLOUDFLARE="8.8.8.8#dns.google 1.1.1.1#one.one.one.one"
 readonly DNS_SERVERS_YANDEX_GOOGLE="77.88.8.8#common.dot.dns.yandex.net 8.8.8.8#dns.google"
 readonly DNS_ENDPOINT_TIMEOUT_SECONDS=1
+readonly DNS_ENDPOINT_CHECK_ATTEMPTS=3
+readonly DNS_ENDPOINT_RETRY_SECONDS=2
 readonly DNS_QUERY_TIMEOUT_SECONDS=1
 readonly DNS_TEST_DOMAIN="example.com"
 readonly DNS_RESOLVED_SERVICE="systemd-resolved.service"
@@ -128,6 +130,53 @@ test::capture dns::check::commands "command-that-must-not-exist-bsss"
 test::assert::equals "4" "$TEST_STATUS" "missing command status"
 test::assert::equals $'missing_command\tcommand-that-must-not-exist-bsss' \
     "$TEST_OUTPUT" "missing command issue"
+
+(
+    ATTEMPTS=0
+    SLEEPS=0
+    timeout() { (( ATTEMPTS += 1 )); }
+    sleep() { (( SLEEPS += 1 )); }
+
+    dns::check::endpoint "8.8.8.8" "dns.google" ||
+        test::fail "first endpoint attempt failed"
+    test::assert::equals "1" "$ATTEMPTS" "first-attempt call count"
+    test::assert::equals "0" "$SLEEPS" "first-attempt delay count"
+)
+
+(
+    ATTEMPTS=0
+    SLEEPS=0
+    timeout() {
+        (( ATTEMPTS += 1 ))
+        (( ATTEMPTS >= 3 ))
+    }
+    sleep() {
+        test::assert::equals "$DNS_ENDPOINT_RETRY_SECONDS" "$1" "retry delay"
+        (( SLEEPS += 1 ))
+    }
+
+    dns::check::endpoint "8.8.8.8" "dns.google" ||
+        test::fail "retried endpoint did not recover"
+    test::assert::equals "3" "$ATTEMPTS" "recovered endpoint call count"
+    test::assert::equals "2" "$SLEEPS" "recovered endpoint delay count"
+)
+
+(
+    ATTEMPTS=0
+    SLEEPS=0
+    timeout() {
+        (( ATTEMPTS += 1 ))
+        return 124
+    }
+    sleep() { (( SLEEPS += 1 )); }
+
+    test::capture dns::check::endpoint "8.8.8.8" "dns.google"
+    test::assert::equals "4" "$TEST_STATUS" "exhausted endpoint status"
+    test::assert::equals $'endpoint_unavailable\t8.8.8.8\tdns.google' \
+        "$TEST_OUTPUT" "exhausted endpoint blocker"
+    test::assert::equals "3" "$ATTEMPTS" "exhausted endpoint call count"
+    test::assert::equals "2" "$SLEEPS" "exhausted endpoint delay count"
+)
 
 mkdir -p "${TEST_TMP}/foreign-dir"
 ln -s "${TEST_TMP}/foreign-dir" "$DNS_RESOLVED_CONFIG_DIR"
