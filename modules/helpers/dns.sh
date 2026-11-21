@@ -2060,7 +2060,15 @@ dns::prepare::recover() {
 
     if [[ -e "$DNS_PREPARE_CLEANUP_DIR" || -L "$DNS_PREPARE_CLEANUP_DIR" ]]; then
         if [[ -e "$DNS_PREPARE_DIR" || -L "$DNS_PREPARE_DIR" ]] ||
-            ! dns::prepare::partial_is_owned "$DNS_PREPARE_CLEANUP_DIR" ||
+            ! dns::prepare::partial_is_owned "$DNS_PREPARE_CLEANUP_DIR"; then
+            dns::prepare::unlock
+            return 4
+        fi
+        profile=$(dns::status::get_profile | tr -d '\0') || {
+            dns::prepare::unlock
+            return 4
+        }
+        if ! dns::resolver::validate_strict_runtime "$profile" ||
             ! dns::status::is_protected; then
             dns::prepare::unlock
             return 4

@@ -43,6 +43,7 @@ readonly OS_RELEASE_FILE_PATH="${TEST_TMP}/etc/os-release"
 DNS_PREPARE_LOCK_FD=""
 
 MOCK_RESOLVED_ACTIVE=0
+MOCK_PROTECTED=1
 SYNC_ETC=0
 
 mkdir -p \
@@ -302,7 +303,9 @@ dns::service::stop_disable() {
 # @stdout:      None
 # @exit_code:   0 target removed
 dns::config::remove() {
-    rm "$BSSS_DNS_CONFIG_FILE"
+    if [[ -e "$BSSS_DNS_CONFIG_FILE" ]]; then
+        rm "$BSSS_DNS_CONFIG_FILE"
+    fi
     ROLLBACK_ORDER+="remove "
 }
 
@@ -371,7 +374,9 @@ dns::resolver::validate_strict_runtime() { :; }
 # @stdin:       None
 # @stdout:      None
 # @exit_code:   0 always
-dns::status::is_protected() { :; }
+dns::status::is_protected() {
+    (( MOCK_PROTECTED == 1 ))
+}
 
 # @type:        Sink
 # @description: Discards focused final DNS status
@@ -407,6 +412,21 @@ timeout() {
 common::int::actions() { :; }
 
 rm -f "$BSSS_DNS_CONFIG_FILE"
+MOCK_PROTECTED=0
+SYNC_ETC=0
+if dns::prepare::run "$DNS_PROFILE_GOOGLE_CLOUDFLARE"; then
+    test::fail "failed final resolver validation was accepted"
+else
+    test::assert::equals "3" "$?" "failed preparation rollback exit code"
+fi
+[[ -f "$DNS_RESOLV_CONF_PATH" && ! -L "$DNS_RESOLV_CONF_PATH" ]] ||
+    test::fail "failed preparation did not restore the direct resolver file"
+cmp --silent "${TEST_TMP}/expected-resolv.conf" "$DNS_RESOLV_CONF_PATH" ||
+    test::fail "failed preparation changed restored resolver bytes"
+[[ ! -e "$DNS_PREPARE_DIR" && ! -e "$DNS_PREPARE_CLEANUP_DIR" ]] ||
+    test::fail "failed preparation kept a recovery bundle after successful rollback"
+
+MOCK_PROTECTED=1
 dns::prepare::run "$DNS_PROFILE_GOOGLE_CLOUDFLARE" ||
     test::fail "successful resolver preparation failed"
 [[ -L "$DNS_RESOLV_CONF_PATH" ]] ||
