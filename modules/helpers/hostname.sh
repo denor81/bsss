@@ -368,7 +368,7 @@ hostname::file::restore() {
 
     if [[ ! -f "$backup_path" ]]; then
         log_info "$(_ "hostname.restore.missing_backup" "$backup_path")"
-        return
+        return 0
     fi
 
     local res
@@ -391,7 +391,7 @@ hostname::file::restore() {
 hostname::orchestrator::restore() {
     if ! hostname::state::is_configured; then
         log_info "$(_ "hostname.restore.not_configured")"
-        return
+        return 0
     fi
 
     local current_hostname

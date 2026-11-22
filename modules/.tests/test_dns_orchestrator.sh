@@ -114,6 +114,12 @@ rm "$BSSS_DNS_ROLLBACK_FILE"
 DIRECT_ARTIFACTS=0
 
 : > "$CALL_LOG"
+rm -f "$BSSS_DNS_CONFIG_FILE"
+dns::orchestrator::dismantle ||
+    test::fail "absent DNS dismantle returned failure"
+test::assert::calls "" "absent DNS dismantle"
+
+: > "$CALL_LOG"
 DNS_PREPARE_LOCK_FD="9"
 touch "$BSSS_DNS_CONFIG_FILE"
 dns::orchestrator::dismantle

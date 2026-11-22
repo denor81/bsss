@@ -212,6 +212,14 @@ main() {
     hostname::log::status
     grep -Fq 'hostname.cloud_init.setting|false' "$warn_tab_log"
 
+    hostname::state::is_configured() {
+        return 1
+    }
+    if ! hostname::orchestrator::restore; then
+        printf 'Unconfigured hostname restore returned failure\n' >&2
+        return 1
+    fi
+
     printf 'Hostname tests passed\n'
 }
 

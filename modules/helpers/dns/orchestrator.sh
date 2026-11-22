@@ -108,7 +108,7 @@ dns::orchestrator::recover() {
 #               4 observed blocker
 dns::orchestrator::dismantle() {
     if [[ ! -e "$BSSS_DNS_CONFIG_FILE" && ! -L "$BSSS_DNS_CONFIG_FILE" ]]; then
-        return
+        return 0
     fi
     dns::resolved::remove
 }
