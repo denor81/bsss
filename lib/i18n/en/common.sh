@@ -152,6 +152,9 @@ I18N_MESSAGES["ssh.error_port_busy"]="SSH port %s is already in use by another s
 I18N_MESSAGES["ssh.error_rule_creation_failed"]="Failed to create SSH rule: %s"
 I18N_MESSAGES["ssh.error_config_sshd"]="SSH config error [sshd -t]"
 I18N_MESSAGES["ssh.error_config_test_failed"]="SSH configuration test failed! Reverting..."
+I18N_MESSAGES["ssh.error_port_not_effective"]="New SSH port %s is missing from the effective configuration [sshd -T]: %s"
+I18N_MESSAGES["ssh.preflight.include_missing"]="[PRE-SSH-01] Standard early SSH Include is missing: %s"
+I18N_MESSAGES["ssh.preflight.foreign_port"]="[PRE-SSH-02] A foreign active SSH Port rule was found: %s"
 I18N_MESSAGES["ssh.socket.unit_not_found"]="ssh.service unit not found in system"
 I18N_MESSAGES["ssh.socket.script_purpose"]="This script switches SSH to service mode"
 
@@ -179,6 +182,7 @@ I18N_MESSAGES["ssh.guard.test_new"]="OPEN NEW WINDOW and test connection via por
 
 # Error messages
 I18N_MESSAGES["ssh.error_port_not_up"]="PORT %s DID NOT COME UP [%s attempts in %s sec]"
+I18N_MESSAGES["ssh.error_listener_inspection"]="Failed to inspect active SSH ports [ss -ltnp], attempt: %s"
 
 # Socket check messages
 I18N_MESSAGES["ssh.socket.configured"]="SSH works correctly in ssh.service mode"
@@ -426,6 +430,7 @@ I18N_MESSAGES["permissions.info.create_rules"]="File with rules will be created 
 I18N_MESSAGES["permissions.guard.test_access"]="Test server access in new terminal window"
 
 # Permissions check
+I18N_MESSAGES["permissions.error.rules_not_effective"]="Created access rules are absent from the effective configuration [sshd -T]"
 I18N_MESSAGES["permissions.check.current_ssh_config"]="Current SSH configuration [sshd -T]:"
 
 # Permissions warnings

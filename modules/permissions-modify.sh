@@ -13,6 +13,7 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
+source "${PROJECT_ROOT}/modules/helpers/ssh-config.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 
 trap common::int::actions INT
@@ -92,6 +93,7 @@ permissions::toggle::rules() {
     if permissions::rules::is_configured; then
         permissions::orchestrator::restore::rules
     else
+        ssh::config::preflight_dropins || return
         log_info "$(_ "permissions.info.create_rules" "$SSH_CONFIGD_DIR")"
         log_info_simple_tab "$(_ "no_translate" "PermitRootLogin no")"
         log_info_simple_tab "$(_ "no_translate" "PasswordAuthentication no")"

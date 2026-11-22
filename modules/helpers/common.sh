@@ -726,38 +726,6 @@ rollback::orchestrator::trigger_immediate() {
     while true; do sleep 1; done
 }
 
-# @type:        Orchestrator
-# @description: Блокирующая проверка поднятия SSH порта после изменения
-# @params:      port Порт для проверки (string\n)
-# @stdin:       нет
-# @stdout:      нет
-# @exit_code:   0 порт успешно поднят
-#               1 порт не поднялся в течение таймаута
-ssh::port::wait_for_up() {
-    local port="$1"
-    local timeout="${SSH_PORT_CHECK_TIMEOUT:-5}"
-    local elapsed=0
-    local interval=0.5
-    local attempts=1
-
-    log_info "$(_ "ssh.socket.wait_for_ssh_up.info" "$port" "$timeout")"
-
-    while (( elapsed < timeout )); do
-        # Проверяем, есть ли порт в списке активных
-        if ssh::port::get_from_ss | grep -qzxF "$port"; then
-            log_info "$(_ "ssh.success_port_up" "$port" "$attempts" "$elapsed")"
-            return
-        fi
-
-        sleep "$interval"
-        elapsed=$((elapsed + 1))
-        attempts=$((attempts + 1))
-    done
-
-    log_error "$(_ "ssh.error_port_not_up" "$port" "$attempts" "$timeout")"
-    return 1
-}
-
 permissions::check::current_user() {
     local root_id auth_id auth_name current_conn_type err=0
     root_id=$(id -u root)

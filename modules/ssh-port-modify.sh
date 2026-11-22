@@ -17,6 +17,7 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
+source "${PROJECT_ROOT}/modules/helpers/ssh-config.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 
 trap common::int::actions INT
@@ -36,6 +37,7 @@ ssh::install::port() {
     local port
 
     port=$(ssh::ui::get_new_port | tr -d '\0') || return
+    ssh::config::preflight_port_change || return
 
     make_fifo_and_start_reader
     

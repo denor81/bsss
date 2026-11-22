@@ -11,10 +11,8 @@
 #               $? ошибка настройки
 auto::ssh::configure() {
     local configured active port
-    configured=$(ssh::port::get_configured | tr '\0' ',')
-    active=$(ssh::port::get_from_ss | tr '\0' ',')
 
-    if [[ -n "$configured" && "$configured" == "$active" ]] && ! ssh::port::has_default "$configured"; then
+    if ssh::port::is_consistent_nondefault; then
         log_info "$(_ "auto.info.already_configured" "$(_ "module.ssh.name")")"
         return 0
     fi

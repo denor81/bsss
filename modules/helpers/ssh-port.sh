@@ -65,7 +65,7 @@ ssh::rule::reset_and_pass() {
 #               1 ошибка создания
 ssh::config::create_bsss_file() {
     local path="${SSH_CONFIGD_DIR}/$BSSS_SSH_CONFIG_FILE_NAME"
-    local port
+    local port configured
     read -r -d '' port
     
     mkdir -p "$(dirname "$path")" && chmod 755 "$(dirname "$path")"
@@ -85,6 +85,16 @@ EOF
 
     if ! sshd -t; then
         log_error "$(_ "ssh.error_config_test_failed")"
+        rm -f "$path"
+        return 1
+    fi
+
+    configured=$(ssh::port::get_configured | tr '\0' '\n') || {
+        rm -f "$path"
+        return 1
+    }
+    if [[ "$configured" != "$port" ]]; then
+        log_error "$(_ "ssh.error_port_not_effective" "$port" "$configured")"
         rm -f "$path"
         return 1
     fi
@@ -110,6 +120,79 @@ ssh::port::is_port_free() {
 #               $? ошибка чтения конфигурации
 ssh::port::get_configured() {
     sshd -T | gawk 'BEGIN { ORS="\0" } $1 == "port" { print $2 }' | sort -zu
+}
+
+# @type:        Validator
+# @description: Checks that configured and active SSH ports match without port 22
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 matching non-default ports
+#               1 ports differ, are empty, or contain port 22
+ssh::port::is_consistent_nondefault() {
+    local configured active
+
+    configured=$(ssh::port::get_configured | tr '\0' ',') || return 1
+    active=$(ssh::port::get_from_ss | tr '\0' ',') || return 1
+    [[ -n "$configured" && "$configured" == "$active" ]] &&
+        ! ssh::port::has_default "$configured"
+}
+
+# @type:        Validator
+# @description: Checks whether sshd owns the requested listening port
+# @params:      port Port to inspect (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 requested listener found
+#               1 requested listener absent
+#               2 listener inspection failed
+ssh::port::is_up() {
+    local port="$1"
+    local -a statuses
+
+    if ssh::port::get_from_ss |
+        gawk -v RS='\0' -v port="$port" '$0 == port { found = 1 } END { exit found ? 0 : 1 }'
+    then
+        statuses=("${PIPESTATUS[@]}")
+    else
+        statuses=("${PIPESTATUS[@]}")
+    fi
+    (( statuses[0] == 0 && statuses[1] == 0 )) && return 0
+    (( statuses[0] == 0 && statuses[1] == 1 )) && return 1
+    return 2
+}
+
+# @type:        Orchestrator
+# @description: Waits for the requested SSH listener for the configured seconds
+# @params:      port Port to inspect (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 requested listener found
+#               1 timeout or listener inspection failure
+ssh::port::wait_for_up() {
+    local port="$1"
+    local timeout="${SSH_PORT_CHECK_TIMEOUT:-10}"
+    local attempts=0 elapsed=0 status
+
+    log_info "$(_ "ssh.socket.wait_for_ssh_up.info" "$port" "$timeout")"
+
+    while (( attempts < timeout )); do
+        attempts=$((attempts + 1))
+        if ssh::port::is_up "$port"; then
+            log_info "$(_ "ssh.success_port_up" "$port" "$attempts" "$elapsed")"
+            return 0
+        else
+            status=$?
+        fi
+        if (( status != 1 )); then
+            log_error "$(_ "ssh.error_listener_inspection" "$attempts")"
+            return 1
+        fi
+        sleep 1 || return 1
+        elapsed=$((elapsed + 1))
+    done
+
+    log_error "$(_ "ssh.error_port_not_up" "$port" "$attempts" "$timeout")"
+    return 1
 }
 
 # @type:        Sink

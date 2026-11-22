@@ -13,6 +13,7 @@ source "${PROJECT_ROOT}/lib/logging.sh"
 source "${PROJECT_ROOT}/lib/i18n/loader.sh"
 source "${PROJECT_ROOT}/lib/user_confirmation.sh"
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
+source "${PROJECT_ROOT}/modules/helpers/ssh-config.sh"
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/ufw.sh"
 source "${PROJECT_ROOT}/modules/helpers/user.sh"
@@ -111,6 +112,14 @@ auto::selection::check() {
             log_warn "$(_ "auto.warning.ping_requires_ufw")"
             return 4
         fi
+    fi
+    if auto::menu::is_selected "$selection" 3 &&
+        ! ssh::port::is_consistent_nondefault; then
+        ssh::config::preflight_port_change || return
+    fi
+    if auto::menu::is_selected "$selection" 6 &&
+        ! permissions::rules::is_effective; then
+        ssh::config::preflight_dropins || return
     fi
     if auto::menu::is_selected "$selection" 10; then
         if dns_mode=$(dns::mode::get | tr -d '\0'); then

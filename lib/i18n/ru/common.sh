@@ -152,6 +152,9 @@ I18N_MESSAGES["ssh.error_port_busy"]="SSH порт %s уже занят друг
 I18N_MESSAGES["ssh.error_rule_creation_failed"]="Не удалось создать правило SSH: %s"
 I18N_MESSAGES["ssh.error_config_sshd"]="Ошибка конфигурации ssh [sshd -t]"
 I18N_MESSAGES["ssh.error_config_test_failed"]="Тест конфигурации SSH не пройден! Откат..."
+I18N_MESSAGES["ssh.error_port_not_effective"]="Новый SSH порт %s отсутствует в эффективной конфигурации [sshd -T]: %s"
+I18N_MESSAGES["ssh.preflight.include_missing"]="[PRE-SSH-01] Стандартный ранний SSH Include отсутствует: %s"
+I18N_MESSAGES["ssh.preflight.foreign_port"]="[PRE-SSH-02] Найдено стороннее активное правило SSH Port: %s"
 I18N_MESSAGES["ssh.socket.unit_not_found"]="Юнит ssh.service не найден в системе"
 I18N_MESSAGES["ssh.socket.script_purpose"]="Этот скрипт переключает SSH в режим service"
 
@@ -179,6 +182,7 @@ I18N_MESSAGES["ssh.guard.test_new"]="ОТКРОЙТЕ НОВОЕ ОКНО и п�
 
 # Error messages
 I18N_MESSAGES["ssh.error_port_not_up"]="ПОРТ %s НЕ ПОДНЯЛСЯ [%s попыток в течение %s сек]"
+I18N_MESSAGES["ssh.error_listener_inspection"]="Ошибка проверки активных SSH портов [ss -ltnp], попытка: %s"
 
 # Socket check messages
 I18N_MESSAGES["ssh.socket.configured"]="SSH корректно работает в режиме ssh.service"
@@ -426,6 +430,7 @@ I18N_MESSAGES["permissions.info.create_rules"]="Будет создан файл
 I18N_MESSAGES["permissions.guard.test_access"]="Проверьте доступ к серверу в новом окне терминала"
 
 # Permissions check
+I18N_MESSAGES["permissions.error.rules_not_effective"]="Созданные правила доступа отсутствуют в эффективной конфигурации [sshd -T]"
 I18N_MESSAGES["permissions.check.current_ssh_config"]="Текущая конфигурация SSH [sshd -T]:"
 
 # Permissions warnings

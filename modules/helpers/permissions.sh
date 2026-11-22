@@ -158,6 +158,11 @@ EOF
         rm -f "$path"
         return 1
     fi
+    if ! permissions::rules::is_effective; then
+        log_error "$(_ "permissions.error.rules_not_effective")"
+        rm -f "$path"
+        return 1
+    fi
 }
 
 # @type:        Sink
