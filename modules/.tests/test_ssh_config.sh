@@ -66,23 +66,10 @@ EOF
 printf 'Port 22\n' > "${SSH_CONFIGD_DIR}/60-provider.conf"
 printf 'Port 44000\n' > "${SSH_CONFIGD_DIR}/40-bsss-ssh-port.conf"
 
-rules=$(ssh::config::foreign_ports | tr '\0' '\n')
-[[ "$rules" == *"60-provider.conf:1:Port 22"* ]] ||
-    test::fail "foreign Port rule was not emitted"
-[[ "$rules" != *"40-bsss-ssh-port.conf"* ]] ||
-    test::fail "BSSS Port rule was emitted as foreign"
-
 : > "${TEST_TMP_DIR}/guide"
-if ssh::config::preflight_port_change; then
-    test::fail "foreign Port rule passed preflight"
-else
-    [[ "$?" == "4" ]] || test::fail "foreign Port returned the wrong status"
-fi
-[[ "$(wc -l < "${TEST_TMP_DIR}/guide")" == "1" ]] ||
-    test::fail "foreign Port did not display the guide once"
-
-rm "${SSH_CONFIGD_DIR}/60-provider.conf"
-ssh::config::preflight_port_change ||
-    test::fail "standard drop-in layout failed port preflight"
+ssh::config::preflight_dropins ||
+    test::fail "foreign Port rule blocked a supported drop-in layout"
+[[ ! -s "${TEST_TMP_DIR}/guide" ]] ||
+    test::fail "foreign Port rule displayed the preconfiguration guide"
 
 printf 'PASS: SSH configuration preflight\n'

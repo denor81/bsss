@@ -154,7 +154,6 @@ I18N_MESSAGES["ssh.error_config_sshd"]="SSH config error [sshd -t]"
 I18N_MESSAGES["ssh.error_config_test_failed"]="SSH configuration test failed! Reverting..."
 I18N_MESSAGES["ssh.error_port_not_effective"]="New SSH port %s is missing from the effective configuration [sshd -T]: %s"
 I18N_MESSAGES["ssh.preflight.include_missing"]="[PRE-SSH-01] Standard early SSH Include is missing: %s"
-I18N_MESSAGES["ssh.preflight.foreign_port"]="[PRE-SSH-02] A foreign active SSH Port rule was found: %s"
 I18N_MESSAGES["ssh.socket.unit_not_found"]="ssh.service unit not found in system"
 I18N_MESSAGES["ssh.socket.script_purpose"]="This script switches SSH to service mode"
 

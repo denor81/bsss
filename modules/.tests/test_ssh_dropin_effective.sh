@@ -35,17 +35,20 @@ sshd() {
 source "${PROJECT_ROOT}/modules/helpers/ssh-port.sh"
 source "${PROJECT_ROOT}/modules/helpers/permissions.sh"
 
-EFFECTIVE_PORT="44000"
+EFFECTIVE_PORTS="22 44000"
 ssh::port::get_configured() {
-    printf '%s\0' "$EFFECTIVE_PORT"
+    local port
+    for port in $EFFECTIVE_PORTS; do
+        printf '%s\0' "$port"
+    done
 }
 
 printf '44000\0' | ssh::config::create_bsss_file ||
-    test::fail "effective SSH port file was rejected"
+    test::fail "effective SSH port among multiple ports was rejected"
 [[ -f "${SSH_CONFIGD_DIR}/${BSSS_SSH_CONFIG_FILE_NAME}" ]] ||
     test::fail "effective SSH port file was not retained"
 
-EFFECTIVE_PORT="22"
+EFFECTIVE_PORTS="22"
 if printf '44000\0' | ssh::config::create_bsss_file; then
     test::fail "ineffective SSH port file was retained"
 fi

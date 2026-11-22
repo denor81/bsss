@@ -37,7 +37,7 @@ ssh::install::port() {
     local port
 
     port=$(ssh::ui::get_new_port | tr -d '\0') || return
-    ssh::config::preflight_port_change || return
+    ssh::config::preflight_dropins || return
 
     make_fifo_and_start_reader
     

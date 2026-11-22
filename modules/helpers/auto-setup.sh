@@ -26,7 +26,8 @@ auto::ssh::configure() {
 
     configured=$(ssh::port::get_configured | tr '\0' ',')
     active=$(ssh::port::get_from_ss | tr '\0' ',')
-    if [[ "$configured" != "$port," || "$active" != "$configured" ]]; then
+    if [[ "$active" != "$configured" ]] ||
+        ! ssh::port::list_contains "$configured" "$port"; then
         log_error "$(_ "auto.error.ssh_ports")"
         return 1
     fi

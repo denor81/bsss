@@ -51,31 +51,6 @@ ssh::config::standard_include_is_early() {
     ' "$SSH_CONFIG_FILE"
 }
 
-# @type:        Source
-# @description: Emits active foreign SSH Port settings
-# @stdin:       None
-# @stdout:      path:line:setting\0 (0..N)
-# @exit_code:   0 inspection completed
-#               1 unsupported or unreadable configuration object
-ssh::config::foreign_ports() (
-    local path name suffix="${BSSS_SSH_CONFIG_FILE_MASK#\*}"
-    local -a paths=("$SSH_CONFIG_FILE")
-
-    shopt -s nullglob
-    paths+=("${SSH_CONFIGD_DIR}/"*.conf)
-    for path in "${paths[@]}"; do
-        name=$(basename "$path") || return 1
-        [[ "$name" == *"$suffix" ]] && continue
-        [[ -f "$path" && ! -L "$path" && -r "$path" ]] || return 1
-        gawk '
-            BEGIN { IGNORECASE = 1; ORS = "\0" }
-            /^[[:space:]]*Port[[:space:]]+/ {
-                print FILENAME ":" FNR ":" $0
-            }
-        ' "$path" || return 1
-    done
-)
-
 # @type:        Orchestrator
 # @description: Refuses SSH drop-in mutation when the standard include is unavailable
 # @stdin:       None
@@ -91,24 +66,4 @@ ssh::config::preflight_dropins() {
     log_warn "$(_ "ssh.preflight.include_missing" "$SSH_CONFIG_FILE")"
     common::preconfiguration::show || return 1
     return 4
-}
-
-# @type:        Orchestrator
-# @description: Refuses port replacement when SSH drop-ins or foreign Port rules are present
-# @stdin:       None
-# @stdout:      None
-# @exit_code:   0 port replacement supported
-#               1 inspection or guide output failed
-#               4 preconfiguration required
-ssh::config::preflight_port_change() {
-    local rules rule
-
-    ssh::config::preflight_dropins || return
-    rules=$(ssh::config::foreign_ports | tr '\0' '\n') || return 1
-    if [[ -n "$rules" ]]; then
-        rule="${rules%%$'\n'*}"
-        log_warn "$(_ "ssh.preflight.foreign_port" "$rule")"
-        common::preconfiguration::show || return 1
-        return 4
-    fi
 }

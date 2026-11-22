@@ -115,7 +115,7 @@ auto::selection::check() {
     fi
     if auto::menu::is_selected "$selection" 3 &&
         ! ssh::port::is_consistent_nondefault; then
-        ssh::config::preflight_port_change || return
+        ssh::config::preflight_dropins || return
     fi
     if auto::menu::is_selected "$selection" 6 &&
         ! permissions::rules::is_effective; then

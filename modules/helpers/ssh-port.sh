@@ -89,11 +89,11 @@ EOF
         return 1
     fi
 
-    configured=$(ssh::port::get_configured | tr '\0' '\n') || {
+    configured=$(ssh::port::get_configured | tr '\0' ',') || {
         rm -f "$path"
         return 1
     }
-    if [[ "$configured" != "$port" ]]; then
+    if ! ssh::port::list_contains "$configured" "$port"; then
         log_error "$(_ "ssh.error_port_not_effective" "$port" "$configured")"
         rm -f "$path"
         return 1
@@ -123,18 +123,48 @@ ssh::port::get_configured() {
 }
 
 # @type:        Validator
-# @description: Checks that configured and active SSH ports match without port 22
+# @description: Checks whether a comma-delimited port list contains a port
+# @params:      ports Ports (string) without a terminator
+#               port Requested port (string) without a terminator
 # @stdin:       None
 # @stdout:      None
-# @exit_code:   0 matching non-default ports
-#               1 ports differ, are empty, or contain port 22
+# @exit_code:   0 requested port found
+#               1 requested port absent
+ssh::port::list_contains() {
+    [[ ",$1," == *",$2,"* ]]
+}
+
+# @type:        Validator
+# @description: Checks whether a comma-delimited list contains a non-default port
+# @params:      ports Ports (string) without a terminator
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 one or more non-default ports found
+#               1 only port 22 or an empty list
+ssh::port::has_nondefault() {
+    local port
+    local -a ports=()
+
+    IFS=',' read -r -a ports <<< "$1"
+    for port in "${ports[@]}"; do
+        [[ -z "$port" || "$port" == "22" ]] || return 0
+    done
+    return 1
+}
+
+# @type:        Validator
+# @description: Checks matching configured/active sets with a non-default port
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 matching sets contain a non-default port
+#               1 sets differ or contain no non-default port
 ssh::port::is_consistent_nondefault() {
     local configured active
 
     configured=$(ssh::port::get_configured | tr '\0' ',') || return 1
     active=$(ssh::port::get_from_ss | tr '\0' ',') || return 1
     [[ -n "$configured" && "$configured" == "$active" ]] &&
-        ! ssh::port::has_default "$configured"
+        ssh::port::has_nondefault "$configured"
 }
 
 # @type:        Validator

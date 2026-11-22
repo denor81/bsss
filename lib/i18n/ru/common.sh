@@ -154,7 +154,6 @@ I18N_MESSAGES["ssh.error_config_sshd"]="Ошибка конфигурации ss
 I18N_MESSAGES["ssh.error_config_test_failed"]="Тест конфигурации SSH не пройден! Откат..."
 I18N_MESSAGES["ssh.error_port_not_effective"]="Новый SSH порт %s отсутствует в эффективной конфигурации [sshd -T]: %s"
 I18N_MESSAGES["ssh.preflight.include_missing"]="[PRE-SSH-01] Стандартный ранний SSH Include отсутствует: %s"
-I18N_MESSAGES["ssh.preflight.foreign_port"]="[PRE-SSH-02] Найдено стороннее активное правило SSH Port: %s"
 I18N_MESSAGES["ssh.socket.unit_not_found"]="Юнит ssh.service не найден в системе"
 I18N_MESSAGES["ssh.socket.script_purpose"]="Этот скрипт переключает SSH в режим service"
 
