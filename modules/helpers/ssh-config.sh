@@ -58,14 +58,14 @@ ssh::config::standard_include_is_early() {
 # @exit_code:   0 inspection completed
 #               1 unsupported or unreadable configuration object
 ssh::config::foreign_ports() (
-    local path name
+    local path name suffix="${BSSS_SSH_CONFIG_FILE_MASK#\*}"
     local -a paths=("$SSH_CONFIG_FILE")
 
     shopt -s nullglob
     paths+=("${SSH_CONFIGD_DIR}/"*.conf)
     for path in "${paths[@]}"; do
         name=$(basename "$path") || return 1
-        [[ "$name" == $BSSS_SSH_CONFIG_FILE_MASK ]] && continue
+        [[ "$name" == *"$suffix" ]] && continue
         [[ -f "$path" && ! -L "$path" && -r "$path" ]] || return 1
         gawk '
             BEGIN { IGNORECASE = 1; ORS = "\0" }
