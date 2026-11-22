@@ -22,11 +22,56 @@ for guide in "$RU_GUIDE" "$EN_GUIDE"; do
         test::fail "guide contains a line longer than 78 characters: $guide"
     fi
     ! grep -n $'\t' "$guide" || test::fail "guide contains a TAB: $guide"
+    ! grep -nE '^PRE-[A-Z0-9-]+' "$guide" ||
+        test::fail "guide exposes internal blocker identifiers: $guide"
+    ! grep -nE '^---- .*[^ ]$' "$guide" | grep -v ' # ' ||
+        test::fail "diagnostic command lacks an inline comment: $guide"
+    [[ "$(grep -c '^$' "$guide" || true)" == "6" ]] ||
+        test::fail "guide blocks are not separated by one blank line: $guide"
 done
 
-ru_ids=$(grep -oE '^PRE-[A-Z0-9-]+' "$RU_GUIDE" | sort)
-en_ids=$(grep -oE '^PRE-[A-Z0-9-]+' "$EN_GUIDE" | sort)
-[[ "$ru_ids" == "$en_ids" ]] || test::fail "localized guide identifiers differ"
+ru_shape=$(gawk '/^-/{ match($0, /^-+/); print RLENGTH }' "$RU_GUIDE")
+en_shape=$(gawk '/^-/{ match($0, /^-+/); print RLENGTH }' "$EN_GUIDE")
+[[ "$ru_shape" == "$en_shape" ]] ||
+    test::fail "localized guide hierarchy differs"
+
+ru_headings=(
+    "ОБЩИЕ ДЕЙСТВИЯ"
+    "SSH DROP-IN НЕ ПОДКЛЮЧЕН"
+    "СТОРОННИЙ SSH PORT"
+    "ОТДЕЛЬНЫЙ DNS-ДОМЕН ИНТЕРФЕЙСА"
+    "БОЛЕЕ ПОЗДНИЙ RESOLVED DROP-IN"
+    "DNS-OVER-TLS ENDPOINT НЕДОСТУПЕН"
+    "АВТОМАТИКА ПРОВАЙДЕРА"
+)
+en_headings=(
+    "GENERAL ACTIONS"
+    "SSH DROP-IN IS NOT LOADED"
+    "FOREIGN SSH PORT"
+    "SEPARATE LINK DNS DOMAIN"
+    "LATER RESOLVED DROP-IN"
+    "DNS-OVER-TLS ENDPOINT UNAVAILABLE"
+    "PROVIDER AUTOMATION"
+)
+
+for index in "${!ru_headings[@]}"; do
+    gawk -v heading="${ru_headings[$index]}" '
+        $0 == heading {
+            found = 1
+            getline
+            adjacent = ($0 ~ /^- /)
+        }
+        END { exit (found && adjacent) ? 0 : 1 }
+    ' "$RU_GUIDE" || test::fail "RU heading is missing or detached"
+    gawk -v heading="${en_headings[$index]}" '
+        $0 == heading {
+            found = 1
+            getline
+            adjacent = ($0 ~ /^- /)
+        }
+        END { exit (found && adjacent) ? 0 : 1 }
+    ' "$EN_GUIDE" || test::fail "EN heading is missing or detached"
+done
 
 source "${PROJECT_ROOT}/modules/helpers/common.sh"
 i18n::detect_language() {

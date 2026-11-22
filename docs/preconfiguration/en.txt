@@ -1,61 +1,82 @@
 BSSS: PRECONFIGURATION QUICK REFERENCE
 ======================================
-
 GENERAL ACTIONS
-  1. Stop. Keep the current SSH session open.
-  2. Save the BSSS log and the command output named by the error.
-  3. Do not remove or rename foreign files automatically.
-  4. Continue only after confirming the setting's owner and purpose.
+- BSSS found an unsupported or ambiguous configuration.
+-- A change could break access or provider-managed settings.
+--- Keep the current SSH session open.
+--- Save the BSSS log and every reported path.
+--- Do not blindly remove or rename foreign files.
+--- Confirm the setting owner and purpose before continuing.
 
-PRE-SSH-01  SSH DROP-IN IS NOT LOADED
-INDICATION
-  An early Include /etc/ssh/sshd_config.d/*.conf is missing.
-RISK
-  BSSS files can be ignored and the new port may not open.
-ACTION
-  Inspect sshd -T and provider automation.
-  Use standard Ubuntu configuration or an official image.
+SSH DROP-IN IS NOT LOADED
+- /etc/ssh/sshd_config lacks the standard early Include.
+-- Files in /etc/ssh/sshd_config.d/*.conf may be ignored.
+-- The BSSS port and access restrictions may not take effect.
+--- Inspect /etc/ssh/sshd_config.
+--- Inspect /etc/ssh/sshd_config.d/*.conf.
+--- Inspect cloud-init and provider automation.
+---- sudo grep -n '^Include ' /etc/ssh/sshd_config # Include line
+---- sudo sshd -T # effective SSH settings
+---- sudo ls -la /etc/ssh/sshd_config.d # available drop-ins
+--- Use standard Ubuntu configuration or configure SSH manually.
 
-PRE-SSH-02  FOREIGN SSH PORT
-INDICATION
-  An active Port setting exists in a foreign SSH file.
-RISK
-  OpenSSH can retain both the old and the new ports.
-ACTION
-  Identify the rule owner. BSSS does not modify foreign SSH files.
+FOREIGN SSH PORT
+- An active Port setting exists in a foreign SSH file.
+-- OpenSSH can retain both the old and the new ports.
+--- Inspect /etc/ssh/sshd_config.
+--- Inspect /etc/ssh/sshd_config.d/*.conf.
+--- Identify the owner and purpose of every Port rule.
+---- sudo sshd -T | grep '^port ' # configured ports
+---- sudo ss -ltnp | grep sshd # listening ports
+--- BSSS does not modify or remove foreign SSH rules.
 
-PRE-DNS-01  SEPARATE LINK DNS DOMAIN
-INDICATION
-  resolvectl reports a per-link search or route domain.
-RISK
-  Queries for that domain can bypass global strict DoT.
-ACTION
-  Identify its source: Netplan, DHCP, VPN, or a provider agent.
-  Remove it only after confirming that it is unused.
+SEPARATE LINK DNS DOMAIN
+- systemd-resolved reports a per-link search or route domain.
+-- Queries for that domain can bypass global strict DoT.
+--- Inspect /etc/netplan/*.yaml.
+--- Inspect /run/systemd/network/*.network.
+--- Inspect VPN and NetworkManager settings when used.
+---- resolvectl domain # global and per-link domains
+---- resolvectl status --no-pager # complete resolver state
+---- sudo grep -Rni 'search:' /etc/netplan # Netplan search domains
+---- sudo grep -Rni '^Domains=' /run/systemd/network # networkd domains
+--- Remove the domain only after confirming that it is unnecessary.
 
-PRE-DNS-02  LATER RESOLVED DROP-IN
-INDICATION
-  A foreign drop-in sorts after 99-bsss-dot.conf.
-RISK
-  It can override DNS, DoT, DNSSEC, LLMNR, or mDNS.
-ACTION
-  Identify the file owner and purpose.
-  BSSS does not rename or repair foreign drop-ins.
+LATER RESOLVED DROP-IN
+- A foreign drop-in sorts after 99-bsss-dot.conf.
+-- It can override DNS, DoT, DNSSEC, LLMNR, or mDNS.
+--- Inspect /etc/systemd/resolved.conf.d/*.conf.
+--- Inspect /run/systemd/resolved.conf.d/*.conf.
+--- Inspect /usr/lib/systemd/resolved.conf.d/*.conf.
+--- Run systemd-analyze cat-config systemd/resolved.conf.
+---- sudo ls -la /etc/systemd/resolved.conf.d # local drop-ins
+---- sudo ls -la /run/systemd/resolved.conf.d # runtime drop-ins
+---- systemd-analyze cat-config systemd/resolved.conf # file order
+--- Identify the owner and purpose of the reported file.
+--- BSSS does not rename or repair foreign drop-ins.
 
-PRE-NET-01  DNS-OVER-TLS ENDPOINT UNAVAILABLE
-INDICATION
-  TCP/853 and TLS checks failed after every retry.
-RISK
-  Strict DoT cannot be enabled and proven without DNS leak or failure.
-ACTION
-  Check outbound TCP/853, the firewall, and provider restrictions.
-  Do not add a plaintext fallback instead of fixing the cause.
+DNS-OVER-TLS ENDPOINT UNAVAILABLE
+- TCP/853 and TLS checks failed after every retry.
+-- Strict DoT cannot be safely enabled and proven.
+--- Inspect /etc/ufw/user.rules.
+--- Inspect /etc/nftables.conf when nftables is used.
+--- Inspect provider-side network restrictions.
+---- openssl s_client -connect IP:853 -servername NAME # TLS endpoint
+---- sudo ufw status verbose # UFW rules
+---- sudo nft list ruleset # nftables rules
+---- ip route get IP # route to the DNS endpoint
+--- Do not add a plaintext fallback instead of fixing the cause.
 
-PRE-SYS-01  PROVIDER AUTOMATION
-INDICATION
-  Custom cloud-init, per-boot scripts, or a provider agent exist.
-RISK
-  They can restore settings after reboot.
-ACTION
-  Use provider documentation or an official Ubuntu image.
-  BSSS does not disable unknown automation.
+PROVIDER AUTOMATION
+- Custom cloud-init, per-boot scripts, or a provider agent exist.
+-- They can restore settings after reboot.
+--- Inspect /etc/cloud/cloud.cfg.
+--- Inspect /etc/cloud/cloud.cfg.d/*.cfg.
+--- Inspect /var/lib/cloud/scripts/per-boot/*.
+--- Inspect /etc/systemd/system/*.service.
+---- cloud-init status --long # cloud-init state
+---- sudo ls -la /etc/cloud/cloud.cfg.d # cloud-init settings
+---- sudo ls -la /var/lib/cloud/scripts/per-boot # per-boot scripts
+---- systemctl list-unit-files --state=enabled # enabled units
+--- Use provider documentation or an official Ubuntu image.
+--- BSSS does not disable unknown automation.
