@@ -110,6 +110,7 @@ dns::presentation::issues() {
 #               1 malformed input
 dns::presentation::blockers() {
     local record="" code args arg1 arg2 arg3 arg4
+    local show_guide=0
 
     while IFS= read -r -d '' record; do
         [[ "$record" == *$'\t'* ]] || return 1
@@ -125,9 +126,9 @@ dns::presentation::blockers() {
             foreign_target)       log_warn "$(_ "dns.preflight.foreign_target" "$arg1")" ;;
             target_absent)        log_warn "$(_ "dns.preflight.target_missing" "$arg1")" ;;
             local_resolver)       log_warn "$(_ "dns.preflight.local_resolver" "$arg1")" ;;
-            route_domain)         log_warn "$(_ "dns.preflight.route_domain" "$arg1" "$arg2")" ;;
-            late_conflict)        log_warn "$(_ "dns.preflight.late_conflict" "$arg1")" ;;
-            endpoint_unavailable) log_warn "$(_ "dns.endpoint.failed" "$arg1" "$arg2" "unavailable")" ;;
+            route_domain)         log_warn "$(_ "dns.preflight.route_domain" "$arg1" "$arg2")"; show_guide=1 ;;
+            late_conflict)        log_warn "$(_ "dns.preflight.late_conflict" "$arg1")"; show_guide=1 ;;
+            endpoint_unavailable) log_warn "$(_ "dns.endpoint.failed" "$arg1" "$arg2" "unavailable")"; show_guide=1 ;;
             resolv_conf_unsupported) log_warn "$(_ "dns.prepare.resolv_unsupported" "$arg1")" ;;
             state_dir_unsafe)     log_warn "$(_ "dns.prepare.state_dir_unsafe" "$arg1")" ;;
             kernel_override)      log_warn "$(_ "dns.prepare.kernel_override")" ;;
@@ -143,7 +144,8 @@ dns::presentation::blockers() {
         esac
         record=""
     done
-    [[ -z "$record" ]]
+    [[ -z "$record" ]] || return 1
+    (( show_guide == 0 )) || common::preconfiguration::show
 }
 
 # @type:        Orchestrator

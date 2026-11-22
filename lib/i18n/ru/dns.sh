@@ -66,10 +66,10 @@ I18N_MESSAGES["dns.preflight.effective_unavailable"]="Не удалось про
 I18N_MESSAGES["dns.preflight.stale_backup"]="Остаточная копия отката DNS требует ручной проверки: %s"
 I18N_MESSAGES["dns.preflight.foreign_target"]="Целевой DNS-файл не принадлежит BSSS и не будет изменён: %s"
 I18N_MESSAGES["dns.preflight.target_missing"]="Конфигурация DNS от BSSS отсутствует: %s"
-I18N_MESSAGES["dns.preflight.route_domain"]="Интерфейс %s имеет неподдерживаемый отдельный DNS-маршрут: %s"
-I18N_MESSAGES["dns.preflight.late_conflict"]="Более поздний drop-in systemd-resolved может переопределить настройки BSSS: %s"
+I18N_MESSAGES["dns.preflight.route_domain"]="[PRE-DNS-01] Интерфейс %s имеет неподдерживаемый отдельный DNS-маршрут: %s"
+I18N_MESSAGES["dns.preflight.late_conflict"]="[PRE-DNS-02] Более поздний drop-in systemd-resolved может переопределить настройки BSSS: %s"
 
-I18N_MESSAGES["dns.endpoint.failed"]="Проверка DNS-over-TLS endpoint не пройдена: %s (%s): %s"
+I18N_MESSAGES["dns.endpoint.failed"]="[PRE-NET-01] Проверка DNS-over-TLS endpoint не пройдена: %s (%s): %s"
 I18N_MESSAGES["dns.config.installed"]="Конфигурация DNS установлена: %s"
 I18N_MESSAGES["dns.config.bsss_found"]="Есть конфигурация BSSS для DNS:"
 I18N_MESSAGES["dns.config.bsss_absent"]="Нет конфигурации BSSS для DNS: %s"

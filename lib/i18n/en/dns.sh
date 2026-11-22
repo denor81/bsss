@@ -66,10 +66,10 @@ I18N_MESSAGES["dns.preflight.effective_unavailable"]="Effective systemd-resolved
 I18N_MESSAGES["dns.preflight.stale_backup"]="A stale DNS rollback snapshot requires manual inspection: %s"
 I18N_MESSAGES["dns.preflight.foreign_target"]="The DNS target is not owned by BSSS and will not be changed: %s"
 I18N_MESSAGES["dns.preflight.target_missing"]="BSSS DNS configuration is absent: %s"
-I18N_MESSAGES["dns.preflight.route_domain"]="Link %s has an unsupported separate DNS route: %s"
-I18N_MESSAGES["dns.preflight.late_conflict"]="A later systemd-resolved drop-in can override BSSS settings: %s"
+I18N_MESSAGES["dns.preflight.route_domain"]="[PRE-DNS-01] Link %s has an unsupported separate DNS route: %s"
+I18N_MESSAGES["dns.preflight.late_conflict"]="[PRE-DNS-02] A later systemd-resolved drop-in can override BSSS settings: %s"
 
-I18N_MESSAGES["dns.endpoint.failed"]="DNS-over-TLS endpoint validation failed: %s (%s): %s"
+I18N_MESSAGES["dns.endpoint.failed"]="[PRE-NET-01] DNS-over-TLS endpoint validation failed: %s (%s): %s"
 I18N_MESSAGES["dns.config.installed"]="DNS configuration installed: %s"
 I18N_MESSAGES["dns.config.bsss_found"]="BSSS DNS configuration found:"
 I18N_MESSAGES["dns.config.bsss_absent"]="No BSSS DNS configuration: %s"

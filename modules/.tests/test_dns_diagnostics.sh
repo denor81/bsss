@@ -166,6 +166,11 @@ log_info_simple_tab() {
     printf '%s\n' "$1" >> "$TAB_LOG"
 }
 
+GUIDE_LOG="${TEST_TMP}/guide"
+common::preconfiguration::show() {
+    printf 'guide\n' >> "$GUIDE_LOG"
+}
+
 io::ask_value() {
     [[ "$2" == "1" ]] || return 1
     printf '1\0'
@@ -192,5 +197,15 @@ dns::presentation::status
 tab_log=$(cat "$TAB_LOG")
 test::assert::contains "$tab_log" "dns.issue.dot_mode|no" "tabbed config issue"
 test::assert::contains "$tab_log" "dns.issue.runtime_dot|no" "tabbed runtime issue"
+
+: > "$GUIDE_LOG"
+printf 'route_domain\teth0\tdomain.local\0' | dns::presentation::blockers
+[[ "$(wc -l < "$GUIDE_LOG")" == "1" ]] ||
+    test::fail "documented DNS blocker did not display the guide once"
+
+: > "$GUIDE_LOG"
+printf 'missing_command\tss\0' | dns::presentation::blockers
+[[ ! -s "$GUIDE_LOG" ]] ||
+    test::fail "undocumented DNS blocker displayed the guide"
 
 printf 'All DNS diagnostics and presentation tests passed\n'
