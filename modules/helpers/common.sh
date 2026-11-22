@@ -13,6 +13,25 @@ io::command::run_terminal() {
     "$@" </dev/tty >/dev/tty 2>&1
 }
 
+# @type:        Sink
+# @description: Displays the localized preconfiguration quick reference
+# @stdin:       None
+# @stdout:      None
+# @exit_code:   0 guide displayed
+#               1 language detection, guide lookup, or terminal output failed
+common::preconfiguration::show() {
+    local lang guide
+
+    lang=$(i18n::detect_language) || return 1
+    case "$lang" in
+        en|ru) ;;
+        *) return 1 ;;
+    esac
+    guide="${PROJECT_ROOT}/docs/preconfiguration/${lang}.txt"
+    [[ -f "$guide" && -r "$guide" ]] || return 1
+    cat "$guide" >&3
+}
+
 # @type:        Source
 # @description: Получает список путей через нулевой разделитель
 # @params:      dir Директория для поиска (string\n)

@@ -1,0 +1,61 @@
+BSSS: PRECONFIGURATION QUICK REFERENCE
+======================================
+
+GENERAL ACTIONS
+  1. Stop. Keep the current SSH session open.
+  2. Save the BSSS log and the command output named by the error.
+  3. Do not remove or rename foreign files automatically.
+  4. Continue only after confirming the setting's owner and purpose.
+
+PRE-SSH-01  SSH DROP-IN IS NOT LOADED
+INDICATION
+  An early Include /etc/ssh/sshd_config.d/*.conf is missing.
+RISK
+  BSSS files can be ignored and the new port may not open.
+ACTION
+  Inspect sshd -T and provider automation.
+  Use standard Ubuntu configuration or an official image.
+
+PRE-SSH-02  FOREIGN SSH PORT
+INDICATION
+  An active Port setting exists in a foreign SSH file.
+RISK
+  OpenSSH can retain both the old and the new ports.
+ACTION
+  Identify the rule owner. BSSS does not modify foreign SSH files.
+
+PRE-DNS-01  SEPARATE LINK DNS DOMAIN
+INDICATION
+  resolvectl reports a per-link search or route domain.
+RISK
+  Queries for that domain can bypass global strict DoT.
+ACTION
+  Identify its source: Netplan, DHCP, VPN, or a provider agent.
+  Remove it only after confirming that it is unused.
+
+PRE-DNS-02  LATER RESOLVED DROP-IN
+INDICATION
+  A foreign drop-in sorts after 99-bsss-dot.conf.
+RISK
+  It can override DNS, DoT, DNSSEC, LLMNR, or mDNS.
+ACTION
+  Identify the file owner and purpose.
+  BSSS does not rename or repair foreign drop-ins.
+
+PRE-NET-01  DNS-OVER-TLS ENDPOINT UNAVAILABLE
+INDICATION
+  TCP/853 and TLS checks failed after every retry.
+RISK
+  Strict DoT cannot be enabled and proven without DNS leak or failure.
+ACTION
+  Check outbound TCP/853, the firewall, and provider restrictions.
+  Do not add a plaintext fallback instead of fixing the cause.
+
+PRE-SYS-01  PROVIDER AUTOMATION
+INDICATION
+  Custom cloud-init, per-boot scripts, or a provider agent exist.
+RISK
+  They can restore settings after reboot.
+ACTION
+  Use provider documentation or an official Ubuntu image.
+  BSSS does not disable unknown automation.
